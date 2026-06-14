@@ -35,10 +35,11 @@ cp "$MIG/0005_money_functions.sql" "$STUB/0005.sql"
 cp "$MIG/0007_money_lifecycle.sql" "$STUB/0007.sql"
 cp "$MIG/0008_recon_and_freeze.sql" "$STUB/0008.sql"
 cp "$MIG/0009_agent_payout_tax.sql" "$STUB/0009.sql"
+cp "$MIG/0010_subscription_vat.sql" "$STUB/0010.sql"
 
 echo "== apply migrations =="
 APPLY_OK=1
-for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009; do
+for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010; do
   if $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$f.sql" 2>"$TMP/$f.err"; then
     echo "  [ok] $f"
   else
@@ -123,6 +124,17 @@ achk "AGENT_CLAWBACK (no single-sided clearing)" "CLAWBACK exp=90000 reserve=200
 achk "WHT_REMIT remitted 3000"                   "WHT_REMIT remitted=3000"
 achk "wht_payable nets to 0 after remit"         "WHT_AFTER wht_payable=0"
 achk "agent ledger integrity (0 offenders)"     "AG_OFFENDERS=0"
+
+echo "== subscription + VAT test =="
+BOUT="$($PSQL -d $DB -f "$ROOT/db/test/subscription.sql" 2>&1)"
+echo "$BOUT" | sed 's/^/  | /'
+echo "== subscription assertions =="
+bchk(){ if echo "$BOUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+bchk "annual sub → deferred 1.2M + VAT 84k"     "SUB deferred=1200000 vat=84000"
+bchk "recognize 1 month → deferred 1.1M"        "RECOGNIZE deferred=1100000"
+bchk "VAT remitted 84k"                          "VAT_REMIT remitted=84000"
+bchk "vat_output nets to 0 after remit"          "VAT_AFTER vat_output=0"
+bchk "subscription ledger integrity"             "SUB_OFFENDERS=0"
 
 echo ""; echo "RESULT: $pass passed, $fail failed (tables=$TBLS)"
 [ "$fail" = 0 ] || exit 1
