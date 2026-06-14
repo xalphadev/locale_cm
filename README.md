@@ -11,7 +11,9 @@ Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack
 | **Supply + EARN functions** | [`db/migrations/0006...`](db/migrations/) | ✅ apply_proposal (moat writer+SoD) · claim_verify (trust state) · advance_quest (EARN→GRANT bridge) · check_in (geofence) |
 | **Money lifecycle** | [`db/migrations/0007...`](db/migrations/) | ✅ expire (breakage→funder) · payout_merchant (SoD, clearing-flat) · refund (reverse REDEEM) |
 | **S6 recon + freeze** | [`db/migrations/0008...`](db/migrations/) | ✅ reconcile_solvency (invariants + drift detect) · set/clear_freeze (fail-closed gate) |
-| **Acceptance tests** | [`db/test/`](db/test/) | ✅ **whole loop + lifecycle + recon verified** (`bash db/test/run-local.sh` → **28/28**) |
+| **Agent payout + tax** | [`db/migrations/0009...`](db/migrations/) | ✅ agent_payout (3% WHT + 30% reserve, SoD) · agent_clawback · wht_remit |
+| **Subscription + VAT** | [`db/migrations/0010...`](db/migrations/) | ✅ subscribe (annual→deferred + 7% VAT) · recognize_subscription · vat_remit |
+| **Acceptance tests** | [`db/test/`](db/test/) | ✅ **14 txn types + supply + recon verified** (`bash db/test/run-local.sh` → **39/39**) |
 | **API** (NestJS money-plane) | [`apps/api/`](apps/api/) | ✅ scaffolded — typed RPC + 5 endpoints (needs `pnpm install` + live DB to run) |
 | **Web** (Next.js admin) | [`apps/web/`](apps/web/) | ✅ scaffolded — read-only back-office: dashboard (solvency/escrow/revenue), places, money & recon |
 | Mobile (Flutter) | `apps/mobile/` | ⏳ next |

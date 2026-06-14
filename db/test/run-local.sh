@@ -36,10 +36,11 @@ cp "$MIG/0007_money_lifecycle.sql" "$STUB/0007.sql"
 cp "$MIG/0008_recon_and_freeze.sql" "$STUB/0008.sql"
 cp "$MIG/0009_agent_payout_tax.sql" "$STUB/0009.sql"
 cp "$MIG/0010_subscription_vat.sql" "$STUB/0010.sql"
+cp "$MIG/0011_chargeback_recovery.sql" "$STUB/0011.sql"
 
 echo "== apply migrations =="
 APPLY_OK=1
-for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010; do
+for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011; do
   if $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$f.sql" 2>"$TMP/$f.err"; then
     echo "  [ok] $f"
   else
@@ -135,6 +136,16 @@ bchk "recognize 1 month → deferred 1.1M"        "RECOGNIZE deferred=1100000"
 bchk "VAT remitted 84k"                          "VAT_REMIT remitted=84000"
 bchk "vat_output nets to 0 after remit"          "VAT_AFTER vat_output=0"
 bchk "subscription ledger integrity"             "SUB_OFFENDERS=0"
+
+echo "== chargeback / recovery / write-off test =="
+DOUT="$($PSQL -d $DB -f "$ROOT/db/test/chargeback.sql" 2>&1)"
+echo "$DOUT" | sed 's/^/  | /'
+echo "== chargeback assertions =="
+dchk(){ if echo "$DOUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+dchk "CHARGEBACK: escrow drained + receivable booked + frozen" "CHARGEBACK escrow=0 receivable=6000 frozen=true"
+dchk "RECOVERY: receivable reduced"              "RECOVERY receivable=2000"
+dchk "WRITE_OFF: receivable cleared → bad debt"  "WRITEOFF receivable=0 baddebt=2000"
+dchk "chargeback ledger integrity"               "CB_OFFENDERS=0"
 
 echo ""; echo "RESULT: $pass passed, $fail failed (tables=$TBLS)"
 [ "$fail" = 0 ] || exit 1
