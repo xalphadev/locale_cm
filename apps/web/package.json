@@ -1,0 +1,24 @@
+{
+  "name": "@soihop/web",
+  "version": "0.0.1",
+  "description": "Soi Hop admin/merchant back-office (Next.js App Router). Read-only views over the verified ledger.",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002",
+    "build": "next build",
+    "start": "next start -p 3002",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "14.2.5",
+    "pg": "^8.11.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/pg": "^8.11.0",
+    "@types/react": "^18.3.3",
+    "typescript": "^5.3.3"
+  }
+}

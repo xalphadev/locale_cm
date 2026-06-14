@@ -13,7 +13,7 @@ Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack
 | **S6 recon + freeze** | [`db/migrations/0008...`](db/migrations/) | ✅ reconcile_solvency (invariants + drift detect) · set/clear_freeze (fail-closed gate) |
 | **Acceptance tests** | [`db/test/`](db/test/) | ✅ **whole loop + lifecycle + recon verified** (`bash db/test/run-local.sh` → **28/28**) |
 | **API** (NestJS money-plane) | [`apps/api/`](apps/api/) | ✅ scaffolded — typed RPC + 5 endpoints (needs `pnpm install` + live DB to run) |
-| Web (Next.js + Refine) | `apps/web/` | ⏳ next |
+| **Web** (Next.js admin) | [`apps/web/`](apps/web/) | ✅ scaffolded — read-only back-office: dashboard (solvency/escrow/revenue), places, money & recon |
 | Mobile (Flutter) | `apps/mobile/` | ⏳ next |
 
 ## The non-negotiables (from the design)
