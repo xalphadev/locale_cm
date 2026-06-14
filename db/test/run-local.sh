@@ -34,10 +34,11 @@ cp "$MIG/0005_money_functions.sql" "$STUB/0005.sql"
 ( printf 'SET check_function_bodies = off;\n'; cat "$MIG/0006_supply_and_earn.sql" ) > "$STUB/0006.sql"
 cp "$MIG/0007_money_lifecycle.sql" "$STUB/0007.sql"
 cp "$MIG/0008_recon_and_freeze.sql" "$STUB/0008.sql"
+cp "$MIG/0009_agent_payout_tax.sql" "$STUB/0009.sql"
 
 echo "== apply migrations =="
 APPLY_OK=1
-for f in 0001 0002 0003 0004 0005 0006 0007 0008; do
+for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009; do
   if $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$f.sql" 2>"$TMP/$f.err"; then
     echo "  [ok] $f"
   else
@@ -110,6 +111,18 @@ rchk "solvency reconciles clean (pass)"        "RECON1 status=pass"
 rchk "freeze gate blocks money op (fail-closed)" "frozen"
 rchk "freeze clears → op works again"          "FREEZE_CLEARED ok"
 rchk "injected cache drift is detected"        "RECON2 status=break_detected"
+
+echo "== agent payout + WHT test =="
+AOUT="$($PSQL -d $DB -f "$ROOT/db/test/agent.sql" 2>&1)"
+echo "$AOUT" | sed 's/^/  | /'
+echo "== agent payout assertions =="
+achk(){ if echo "$AOUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+achk "AGENT_PAYOUT split (exp/wht/reserve)"     "AGENT_PAY exp=100000 wht=3000 reserve=30000"
+achk "agent payout SoD (creator==approver)"     "agent payout SoD"
+achk "AGENT_CLAWBACK (no single-sided clearing)" "CLAWBACK exp=90000 reserve=20000"
+achk "WHT_REMIT remitted 3000"                   "WHT_REMIT remitted=3000"
+achk "wht_payable nets to 0 after remit"         "WHT_AFTER wht_payable=0"
+achk "agent ledger integrity (0 offenders)"     "AG_OFFENDERS=0"
 
 echo ""; echo "RESULT: $pass passed, $fail failed (tables=$TBLS)"
 [ "$fail" = 0 ] || exit 1
