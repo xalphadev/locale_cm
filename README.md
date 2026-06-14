@@ -7,7 +7,11 @@ Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack
 | layer | dir | status |
 |---|---|---|
 | **Database (migration #1)** | [`db/migrations/`](db/migrations/) | ✅ 53 tables + ledger invariants + seed |
-| **Money functions** (gate+post) | [`db/migrations/0005...`](db/migrations/) | ✅ prefund/settle/fund_quest/grant/redeem — **full loop verified** (`db/test/run-local.sh`, 11/11) |
+| **Money functions** (gate+post) | [`db/migrations/0005...`](db/migrations/) | ✅ prefund/settle/fund_quest/grant/redeem |
+| **Supply + EARN functions** | [`db/migrations/0006...`](db/migrations/) | ✅ apply_proposal (moat writer+SoD) · claim_verify (trust state) · advance_quest (EARN→GRANT bridge) · check_in (geofence) |
+| **Money lifecycle** | [`db/migrations/0007...`](db/migrations/) | ✅ expire (breakage→funder) · payout_merchant (SoD, clearing-flat) · refund (reverse REDEEM) |
+| **S6 recon + freeze** | [`db/migrations/0008...`](db/migrations/) | ✅ reconcile_solvency (invariants + drift detect) · set/clear_freeze (fail-closed gate) |
+| **Acceptance tests** | [`db/test/`](db/test/) | ✅ **whole loop + lifecycle + recon verified** (`bash db/test/run-local.sh` → **28/28**) |
 | **API** (NestJS money-plane) | [`apps/api/`](apps/api/) | ✅ scaffolded — typed RPC + 5 endpoints (needs `pnpm install` + live DB to run) |
 | Web (Next.js + Refine) | `apps/web/` | ⏳ next |
 | Mobile (Flutter) | `apps/mobile/` | ⏳ next |

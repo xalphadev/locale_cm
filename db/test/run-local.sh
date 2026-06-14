@@ -29,10 +29,15 @@ sed -e 's/geography([A-Z]*,4326)/text/g' \
 cp "$MIG/0003_invariants_and_roles.sql" "$STUB/0003.sql"
 cp "$MIG/0004_seed.sql" "$STUB/0004.sql"
 cp "$MIG/0005_money_functions.sql" "$STUB/0005.sql"
+# 0006 has fn_check_in (PostGIS geography/ST_DWithin). Disable body validation locally so it
+# can be created (never invoked in the stub run); the other 0006 fns are PostGIS-free.
+( printf 'SET check_function_bodies = off;\n'; cat "$MIG/0006_supply_and_earn.sql" ) > "$STUB/0006.sql"
+cp "$MIG/0007_money_lifecycle.sql" "$STUB/0007.sql"
+cp "$MIG/0008_recon_and_freeze.sql" "$STUB/0008.sql"
 
 echo "== apply migrations =="
 APPLY_OK=1
-for f in 0001 0002 0003 0004 0005; do
+for f in 0001 0002 0003 0004 0005 0006 0007 0008; do
   if $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$f.sql" 2>"$TMP/$f.err"; then
     echo "  [ok] $f"
   else
@@ -70,6 +75,41 @@ lchk "mint balances liab=back=user=6000"       "AFTER_GRANT liab=6000 back=6000 
 lchk "anti-self-redemption blocked"            "anti-self-redemption"
 lchk "final solvency + 10% take split"         "AFTER_REDEEM liab=0 back=0 user=0 rev=600 payable=5400"
 lchk "ledger integrity (0 offenders)"          "LEDGER_OFFENDERS=0"
+
+echo "== supply (moat) + EARN bridge test =="
+SOUT="$($PSQL -d $DB -f "$ROOT/db/test/supply.sql" 2>&1)"
+echo "$SOUT" | sed 's/^/  | /'
+echo "== supply assertions =="
+schk(){ if echo "$SOUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+schk "moat: apply_proposal version bump"        "APPLY_OK version=2"
+schk "moat: SoD (reviewer==proposer) blocked"   "apply_proposal: SoD"
+schk "place goes live (published v2)"           "PLACE_LIVE status=published v=2"
+schk "merchant claim → finance_verified"        "TRUST=finance_verified"
+schk "merchant verify SoD (reviewer reuse)"     "claim_verify: SoD"
+schk "EARN→GRANT bridge completes quest"        "BRIDGE status=completed"
+schk "bridge auto-minted 6000 lot"              "EARN_GRANT lot_remaining=6000 qp=completed"
+
+echo "== money lifecycle test (expire / payout / refund) =="
+COUT="$($PSQL -d $DB -f "$ROOT/db/test/lifecycle.sql" 2>&1)"
+echo "$COUT" | sed 's/^/  | /'
+echo "== lifecycle assertions =="
+cchk(){ if echo "$COUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+cchk "EXPIRE: lot burned + backing returned"    "EXPIRE userE=0 lot=expired"
+cchk "PAYOUT: merchant_payable settled to 0"    "PAYOUT MP_payable=0"
+cchk "PAYOUT: SoD (creator==approver) blocked"  "payout SoD"
+cchk "REFUND: user re-credited + settle pulled" "REFUND userR=6000 MR_payable=0 status=reversed"
+cchk "REFUND: double-refund blocked"            "refund: redemption not settled"
+cchk "lifecycle ledger integrity (0 offenders)" "LC_OFFENDERS=0"
+
+echo "== S6 reconciliation + freeze test =="
+ROUT="$($PSQL -d $DB -f "$ROOT/db/test/recon.sql" 2>&1)"
+echo "$ROUT" | sed 's/^/  | /'
+echo "== recon assertions =="
+rchk(){ if echo "$ROUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+rchk "solvency reconciles clean (pass)"        "RECON1 status=pass"
+rchk "freeze gate blocks money op (fail-closed)" "frozen"
+rchk "freeze clears → op works again"          "FREEZE_CLEARED ok"
+rchk "injected cache drift is detected"        "RECON2 status=break_detected"
 
 echo ""; echo "RESULT: $pass passed, $fail failed (tables=$TBLS)"
 [ "$fail" = 0 ] || exit 1
