@@ -1,0 +1,22 @@
+# deps
+node_modules/
+.pnp.*
+# env / secrets
+.env
+.env.*
+!.env.example
+# build
+dist/
+build/
+.next/
+*.tsbuildinfo
+# flutter
+apps/mobile/.dart_tool/
+apps/mobile/build/
+# supabase local
+supabase/.branches/
+supabase/.temp/
+# misc
+.DS_Store
+*.log
+coverage/
