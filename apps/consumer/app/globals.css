@@ -212,6 +212,23 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .act .ab{font-size:.85rem;color:var(--muted);margin-top:.15rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .act .as{color:var(--gold);font-size:.78rem;margin-top:.1rem}
 
+/* ===== motion ===== */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes sheetUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.lrow,.act{animation:fadeUp .36s cubic-bezier(.2,.8,.2,1) both}
+.detail-hero{animation:fadeUp .3s ease both}
+.dbody{animation:sheetUp .4s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion: reduce){.lrow,.act,.detail-hero,.dbody{animation:none}}
+
+/* ===== map-peek (mini map on home) ===== */
+.mappeek{position:relative;display:block;height:172px;border-radius:18px;overflow:hidden;margin:8px 16px 0;box-shadow:var(--shadow-card)}
+.mappeek-host{position:absolute;inset:0;pointer-events:none;background:#E8EAED}
+.mappeek-cta{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;background:linear-gradient(to top,rgba(255,255,255,.96),rgba(255,255,255,.6) 70%,transparent);
+  font-weight:700;font-size:.95rem;color:var(--text)}
+.mappeek-chip{font-size:.76rem;font-weight:700;color:#fff;background:var(--accent);padding:.3rem .7rem;border-radius:999px}
+.pindot{display:block;width:11px;height:11px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+
 /* ===== app-grid home (dense, not blog) ===== */
 .segmented{display:flex;gap:7px;overflow-x:auto;padding:10px 16px 4px;scrollbar-width:none}
 .segmented::-webkit-scrollbar{display:none}

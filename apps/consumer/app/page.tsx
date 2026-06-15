@@ -1,7 +1,14 @@
 import { q, demoUserId, i18n, cover } from '@/lib/db';
 import { Icon, CAT_ICON } from './icons';
+import MapPeek from './MapPeek';
 
 export const dynamic = 'force-dynamic';
+
+function parsePoint(geo: string | null) {
+  if (!geo) return null;
+  const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/i.exec(geo);
+  return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
+}
 
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -40,14 +47,16 @@ async function load(tab: string, cat: string, sub: string, query: string) {
   let stamps = 0;
   if (quest && uid) { const [qp] = await q<any>(`SELECT COALESCE(jsonb_array_length(steps_completed),0) n FROM quest_progress WHERE user_id=$1 AND quest_id=$2`, [uid, quest.id]); stamps = qp ? Number(qp.n) : 0; }
   const events = await q<any>(`SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m FROM events WHERE status='published' AND (ends_at IS NULL OR ends_at >= now()) ORDER BY starts_at LIMIT 6`);
-  return { mode: 'home' as const, places, community, quest, stamps, events };
+  const pinRows = await q<any>(`SELECT geo::text geo, category::text cat FROM places WHERE status='published' AND is_visible`);
+  const pins = pinRows.map((r) => { const pt = parsePoint(r.geo); return pt ? { lat: pt.lat, lng: pt.lng, cat: r.cat } : null; }).filter(Boolean);
+  return { mode: 'home' as const, places, community, quest, stamps, events, pins };
 }
 
 function LRow({ p, rank }: { p: any; rank?: number }) {
   const avg = p.rev_n > 0 ? Number(p.rev_avg) : null;
   const cls = avg == null ? '' : avg >= 4.5 ? 'hi' : avg >= 3.8 ? 'mid' : 'lo';
   return (
-    <a className="lrow" href={`/place/${p.id}`}>
+    <a className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
       {rank != null && <span className="rank">{rank}</span>}
       <img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
       <div className="lc">
@@ -109,11 +118,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
         {CATS.map((c) => <a className="cat" key={c.l} href={`/?${c.qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></a>)}
       </div>
 
-      <a className="mapbanner" href="/map">
-        <span className="mi"><Icon n="map" size={22} /></span>
-        <div className="mt"><div className="mtt">สำรวจบนแผนที่</div><div className="mts">ร้านใกล้คุณ {d.places.length} ที่ · กรองตามหมวดได้</div></div>
-        <Icon n="chevR" size={20} style={{ color: 'var(--hint)' }} />
-      </a>
+      <MapPeek pins={d.pins} />
 
       {d.quest && (
         <a className="qbanner" href="/passport" style={{ margin: '10px 16px 0' }}>
