@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
 
-type Pin = { id: string; name: string; lat: number; lng: number; kind: string; vac: number; priceFrom: number | null; badge: string; live: boolean };
+type Pin = { id: string; name: string; lat: number; lng: number; kind: string; priceFrom: number | null; badge: string; live: boolean };
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
 const KIND_COLORS: Record<string, string> = { dorm: '#16284D', apartment: '#1A73E8', homestay: '#28457C', hotel: '#F5B500', guesthouse: '#1559C7' };

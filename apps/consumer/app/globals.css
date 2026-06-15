@@ -764,3 +764,6 @@ a.pcname{color:var(--text)}
 .staytop-ic{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--navy));color:#fff;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 7px 16px -7px rgba(26,115,232,.55)}
 .staytop-tx h1{margin:0;font-size:1.7rem;font-weight:800;letter-spacing:-.025em;line-height:1.12}
 .staytop-sub{font-size:.8rem;color:var(--muted);margin-top:2px}
+/* "ดูห้องว่าง ›" link on the accommodation card (replaces the per-room LINE CTA on the list) */
+.scard-go{display:inline-flex;align-items:center;gap:2px;font-size:.84rem;font-weight:700;color:var(--accent);white-space:nowrap}
+.scard-go svg{flex:none}
