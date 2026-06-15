@@ -14,8 +14,8 @@ Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack
 | **Agent payout + tax** | [`db/migrations/0009...`](db/migrations/) | ✅ agent_payout (3% WHT + 30% reserve, SoD) · agent_clawback · wht_remit |
 | **Subscription + VAT** | [`db/migrations/0010...`](db/migrations/) | ✅ subscribe (annual→deferred + 7% VAT) · recognize_subscription · vat_remit |
 | **Acceptance tests** | [`db/test/`](db/test/) | ✅ **14 txn types + supply + recon verified** (`bash db/test/run-local.sh` → **39/39**) |
-| **API** (NestJS money-plane) | [`apps/api/`](apps/api/) | ✅ scaffolded — typed RPC + 5 endpoints (needs `pnpm install` + live DB to run) |
-| **Web** (Next.js admin) | [`apps/web/`](apps/web/) | ✅ scaffolded — read-only back-office: dashboard (solvency/escrow/revenue), places, money & recon |
+| **API** (NestJS money-plane) | [`apps/api/`](apps/api/) | ✅ **runs** — typed RPC + 5 endpoints; verified live (POST /money/prefund → ledger; /money/redeem self → 403) |
+| **Web** (Next.js admin) | [`apps/web/`](apps/web/) | ✅ **runs** — read-only back-office (dashboard/places/money) rendering live ledger data |
 | Mobile (Flutter) | `apps/mobile/` | ⏳ next |
 
 ## The non-negotiables (from the design)
@@ -26,18 +26,29 @@ Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack
 4. **Anti-self-redemption** (funder ≠ redeemer, device/payment/kyc hash arms) = the BoT e-money compliance boundary.
 5. `merchant_id` + `city_id` on every business table from migration #1 (multi-tenant + multi-city).
 
-## Getting started (DB)
+## Run the whole stack (local dev)
 
 ```bash
-# requires Docker + Supabase CLI (or any Postgres 15+ with PostGIS)
-# apply migration #1 (see db/README.md for details)
-psql "$DATABASE_URL" -f db/migrations/0001_extensions_and_enums.sql
-psql "$DATABASE_URL" -f db/migrations/0002_tables.sql
-psql "$DATABASE_URL" -f db/migrations/0003_invariants_and_roles.sql
-psql "$DATABASE_URL" -f db/migrations/0004_seed.sql
+# 1) verify the money-plane end-to-end (throwaway Postgres; 49/49)
+bash db/test/run-local.sh
+
+# 2) spin a persistent dev DB + demo data → prints DATABASE_URL (:54400)
+bash db/test/setup-dev-db.sh
+
+# 3) money-plane API  (apps/api/.env → that DATABASE_URL)
+cd apps/api && npm install && npm run start        # http://localhost:3001/money/*
+
+# 4) admin web  (apps/web/.env → that DATABASE_URL)
+cd apps/web && npm install && npm run dev           # http://localhost:3002
+
+# stop the dev DB when done
+bash db/test/stop-dev-db.sh
 ```
 
-See [`db/README.md`](db/README.md) for the schema map, the ledger model, and the acceptance tests.
+> Local dev stubs PostGIS (the money keystone needs no geography). On **Supabase** (Postgres + PostGIS)
+> the migrations run unchanged. Apply with `for f in db/migrations/0*.sql; do psql "$DATABASE_URL" -f "$f"; done`.
+
+See [`db/README.md`](db/README.md) for the schema map, the ledger model, and all 22 txn functions.
 
 ## Before going live (from docs/OPEN_DECISIONS.md)
 
