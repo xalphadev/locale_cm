@@ -57,6 +57,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   const openNow = !!(th && th !== 'closed' && hhmm >= th.split('-')[0] && hhmm <= th.split('-')[1]);
   const vDays = p.last_verified_at ? Math.floor((Date.now() - new Date(p.last_verified_at).getTime()) / 86400000) : null;
   const vText = vDays == null ? '' : vDays <= 0 ? 'วันนี้' : vDays === 1 ? 'เมื่อวาน' : `${vDays} วันก่อน`;
+  const scoredP = (rev?.n ?? 0) >= 5; // show a numeric score only with enough verified reviews
   const distMap: Record<number, number> = {}; dist.forEach((r) => (distMap[r.rating] = r.c));
   const total = (rev?.n ?? 0) || 1;
   const mapUrl = pt ? `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}` : '#';
@@ -76,7 +77,9 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         <div className="dtitle">
           <span className="frost" style={{ marginBottom: 8 }}><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={13} /> {catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</span>
           <h1>{i18n(p.name_i18n)}</h1>
-          <div className="dmeta">{rev && rev.n > 0 ? <><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A', verticalAlign: '-.18em' }} /> {rev.avg} · {rev.n} รีวิว</> : 'ยังไม่มีรีวิว'}</div>
+          <div className="dmeta">{scoredP
+            ? <><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A', verticalAlign: '-.18em' }} /> {rev.avg} · {rev.n} รีวิว</>
+            : (rev?.n ?? 0) > 0 ? `ร้านใหม่ · ${rev.n} รีวิว` : 'ร้านใหม่ · ยังไม่มีรีวิว'}</div>
         </div>
       </div>
 
@@ -170,13 +173,17 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         </>)}
 
         {reviews.length > 0 && (<>
-          <h2>รีวิว ({rev?.n})</h2>
-          <div className="rdist">
-            <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
-            <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
-              <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / total) * 100)}%` }} /></span></div>
-            ))}</div>
-          </div>
+          <h2>รีวิว{scoredP ? ` (${rev?.n})` : ''}</h2>
+          {scoredP ? (
+            <div className="rdist">
+              <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
+              <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
+                <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / total) * 100)}%` }} /></span></div>
+              ))}</div>
+            </div>
+          ) : (
+            <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
+          )}
           {reviews.map((r, i) => (
             <div className="review" key={i}>
               <div className="review-top">

@@ -28,7 +28,7 @@ done
 echo "tables: $($PSQL -d $DB -tA -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")"
 
 # demo data from the verified flows
-for t in loop supply lifecycle seed-interactive seed-agents seed-venues seed-facets seed-reviews seed-events seed-deals seed-media seed-profile; do $PSQL -d $DB -q -f "$ROOT/db/test/$t.sql" >/dev/null 2>&1; done
+for t in loop supply lifecycle seed-interactive seed-agents seed-venues seed-facets seed-reviews seed-review-volume seed-events seed-deals seed-media seed-profile; do $PSQL -d $DB -q -f "$ROOT/db/test/$t.sql" >/dev/null 2>&1; done
 $PSQL -d $DB -q -c "SELECT fn_reconcile_solvency((SELECT id FROM cities WHERE code='CNX'));" >/dev/null 2>&1
 $PSQL -d $DB -q -c "SELECT fn_subscribe((SELECT id FROM merchants LIMIT 1),'growth','annual',1284000,'demo-sub');" >/dev/null 2>&1
 echo "data: places=$($PSQL -d $DB -tA -c 'SELECT count(*) FROM places') merchants=$($PSQL -d $DB -tA -c 'SELECT count(*) FROM merchants') redemptions=$($PSQL -d $DB -tA -c 'SELECT count(*) FROM redemptions') recon=$($PSQL -d $DB -tA -c 'SELECT count(*) FROM reconciliation_runs')"

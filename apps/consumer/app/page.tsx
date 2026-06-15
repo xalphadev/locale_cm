@@ -27,10 +27,20 @@ const CATS = [
 ];
 const SEGS = [{ k: '', l: 'แนะนำ' }, { k: 'near', l: 'ใกล้ฉัน' }, { k: 'hot', l: 'ฮิตตอนนี้' }, { k: 'new', l: 'มาใหม่' }];
 const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: 'กิน' }, { k: 'see', l: 'เที่ยว' }, { k: 'do', l: 'ทำกิจกรรม' }];
+// Fair-ranking: discovery sorts by freshness/relevance, NOT by descending stars (don't bury
+// good small/new venues). "ฮิต" is the only popularity sort, and it's by review COUNT, not avg.
 const ORDER: Record<string, string> = {
-  '': 'rv.avg DESC NULLS LAST, rv.n DESC NULLS LAST', near: 'p.verified_at DESC NULLS LAST',
-  hot: 'rv.n DESC NULLS LAST, rv.avg DESC NULLS LAST', new: 'p.created_at DESC',
+  '': 'p.verified_at DESC NULLS LAST', near: 'p.verified_at DESC NULLS LAST',
+  hot: 'rv.n DESC NULLS LAST', new: 'p.created_at DESC',
 };
+const MIN_REVIEWS = 5; // below this we don't show a numeric score (anti-volatility for small shops)
+function venueBadge(n: number, avg: number): { l: string; c: string } | null {
+  if (n < MIN_REVIEWS) return null;
+  if (n >= 10) return { l: 'ยอดนิยม', c: 'pop' };
+  if (avg >= 4.6) return { l: 'ร้านลับ น่าค้นหา', c: 'gem' };
+  if (avg >= 4.2) return { l: 'เป็นที่รัก', c: 'loved' };
+  return null;
+}
 const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band,
   rv.n::int rev_n, rv.avg::text rev_avg, dl.deal_type::text deal_type, dl.value_pct, dl.value_minor, (vid.x IS NOT NULL) has_video`;
 const PJOIN = `FROM places p
@@ -44,7 +54,7 @@ const PJOIN = `FROM places p
 async function load(tab: string, cat: string, sub: string, query: string, facets: string[], wantResults = false) {
   const uid = await demoUserId();
   const isFilter = !!(cat || sub || query || facets.length || wantResults);
-  const order = isFilter ? 'rv.n DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
+  const order = isFilter ? 'p.verified_at DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
   const places = await q<any>(
     `SELECT ${PCOLS} ${PJOIN}
      WHERE p.status='published' AND p.is_visible
@@ -72,8 +82,11 @@ async function load(tab: string, cat: string, sub: string, query: string, facets
 }
 
 function LRow({ p, rank }: { p: any; rank?: number }) {
-  const avg = p.rev_n > 0 ? Number(p.rev_avg) : null;
-  const cls = avg == null ? '' : avg >= 4.5 ? 'hi' : avg >= 3.8 ? 'mid' : 'lo';
+  const n = p.rev_n || 0;
+  const avg = Number(p.rev_avg) || 0;
+  const scored = n >= MIN_REVIEWS;
+  const cls = avg >= 4.5 ? 'hi' : avg >= 3.8 ? 'mid' : 'lo';
+  const vb = venueBadge(n, avg);
   return (
     <a className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
       {rank != null && <span className="rank">{rank}</span>}
@@ -85,13 +98,15 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
         <div className="lname">{i18n(p.name_i18n)}</div>
         <div className="lmeta">
           {p.deal_type && <span className="promopill"><Icon n="tag" size={10} /> {dealLabel(p.deal_type, p.value_pct, p.value_minor)}</span>}
+          {vb && <span className={`btag ${vb.c}`}>{vb.l}</span>}
           <span>{p.subcategory || catTH(p.category)}</span>
           {p.price_band && <><span className="mdot">·</span><span>{'฿'.repeat(Number(p.price_band))}</span></>}
-          {p.rev_n > 0 && <><span className="mdot">·</span><span>{p.rev_n} รีวิว</span></>}
-          <span className="mdot">·</span><span className="open">เปิดอยู่</span>
+          {scored && <><span className="mdot">·</span><span>{n} รีวิว</span></>}
         </div>
       </div>
-      {avg != null ? <span className={`score ${cls}`}>{avg}</span> : <span className="newbadge">ใหม่</span>}
+      {scored
+        ? <span className={`score ${cls}`}>{p.rev_avg}</span>
+        : <span className="newbadge">ใหม่<br />น่าลอง</span>}
     </a>
   );
 }

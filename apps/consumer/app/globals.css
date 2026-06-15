@@ -542,3 +542,10 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
   color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;margin:0 auto 6px}
 .reviewer .rn{font-size:.74rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .reviewer .rc{font-size:.68rem;color:var(--muted);margin-top:1px}
+
+/* fair-rating quality badges (lift the long tail, no public star leaderboard) */
+.btag{font-size:.71rem;font-weight:700;padding:.13rem .46rem;border-radius:6px;white-space:nowrap}
+.btag.pop{background:var(--navy);color:#fff}
+.btag.gem{background:var(--accent-soft);color:var(--accent)}
+.btag.loved{background:#FFF3D2;color:#8A6300}
+.newbadge{font-size:.66rem!important;line-height:1.08;text-align:center;flex-direction:column}
