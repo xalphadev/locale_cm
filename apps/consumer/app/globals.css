@@ -576,3 +576,20 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .post-actions{display:flex;border-top:1px solid var(--hairline);margin-top:9px}
 .post-act{flex:1;display:flex;align-items:center;justify-content:center;gap:.4rem;padding:.72rem .2rem;font-size:.83rem;font-weight:600;color:var(--muted);cursor:pointer}
 .post-act:active{background:var(--sunk)}
+
+/* feed: multi-image gallery + functional likes/comments */
+.post-gallery{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;position:relative;background:#ECECEF}
+.post-gallery::-webkit-scrollbar{display:none}
+.pg-img{flex:none;width:100%;scroll-snap-align:center;display:block}
+.pg-img>img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.pg-count{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.6);color:#fff;font-size:.72rem;font-weight:700;padding:.22rem .55rem;border-radius:999px;display:inline-flex;align-items:center;gap:.25rem}
+.actf{flex:1;display:flex}
+.actf .post-act{flex:1}
+.post-act.liked{color:var(--accent)}
+.post-comments{padding:4px 14px 12px}
+.cmt{font-size:.86rem;line-height:1.4;margin-bottom:5px;color:var(--text)}
+.cmt b{font-weight:700;margin-right:.3rem}
+.cmt-more{font-size:.8rem;color:var(--muted);font-weight:600;margin:.2rem 0 .5rem}
+.cmt-form{display:flex;gap:8px;align-items:center;margin-top:.45rem}
+.cmt-form input{flex:1;border:none;background:var(--sunk);border-radius:999px;padding:.55rem .9rem;font:inherit;font-size:.85rem;outline:none;color:var(--text)}
+.cmt-form button{border:none;background:none;color:var(--accent);font-weight:800;font-size:.88rem;padding:.4rem .5rem;cursor:pointer}

@@ -20,6 +20,21 @@ export async function toggleSaveAction(placeId: string) {
   revalidatePath(`/place/${placeId}`); revalidatePath('/profile');
 }
 
+/** Toggle a like on a feed post (keyed by post_key, e.g. "deal:<id>"). */
+export async function toggleLikeAction(postKey: string) {
+  const ex = await q(`SELECT 1 FROM post_likes WHERE post_key=$1 AND user_id=$2`, [postKey, DEMO_USER]);
+  if (ex.length) await q(`DELETE FROM post_likes WHERE post_key=$1 AND user_id=$2`, [postKey, DEMO_USER]);
+  else await q(`INSERT INTO post_likes(post_key,user_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [postKey, DEMO_USER]);
+  revalidatePath('/feed');
+}
+
+/** Add a comment to a feed post. */
+export async function addCommentAction(postKey: string, formData: FormData) {
+  const body = String(formData.get('body') ?? '').trim().slice(0, 300);
+  if (body) await q(`INSERT INTO post_comments(post_key,user_id,body) VALUES($1,$2,$3)`, [postKey, DEMO_USER, body]);
+  revalidatePath('/feed');
+}
+
 /** Check in at a quest stop → advances the quest (and mints the reward when the last step lands). */
 export async function checkInAction(questId: string, stepId: string) {
   const uid = await demoUserId();
