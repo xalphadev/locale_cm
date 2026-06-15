@@ -23,7 +23,7 @@ PSQL=(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q)
 echo "Target: ${DATABASE_URL%%\?*}"
 echo "PostGIS check (Supabase: enable in Dashboard → Database → Extensions, or it auto-creates in 0001)…"
 
-for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017; do
+for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018; do
   f=$(ls "$MIG/${n}"*.sql)
   printf 'apply %s  %s\n' "$n" "$(basename "$f")"
   "${PSQL[@]}" -f "$f"

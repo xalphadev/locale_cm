@@ -1,6 +1,7 @@
 import { q, i18n, cover, DEMO_USER } from '@/lib/db';
 import { Icon } from '../icons';
 import { toggleLikeAction, addCommentAction } from '../actions';
+import ShareButton from '../ShareButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +31,10 @@ async function load() {
     FROM data_freshness f JOIN places p ON p.id=f.place_id WHERE f.freshness_label='fresh' AND p.status='published' ORDER BY f.last_verified_at DESC LIMIT 5`);
   const news = await q<any>(`SELECT 'new' kind, created_at ts, id pid, name_i18n pname, subcategory psub, category::text pcat
     FROM places WHERE status='published' AND source='agent_seed' ORDER BY created_at DESC LIMIT 5`);
-  const buckets = [deals, events, reviews, verified, news].map((a) => a.slice());
+  const posts = await q<any>(`SELECT 'post' kind, fp.id pgid, fp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
+      fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id
+    WHERE fp.status='published' ORDER BY fp.created_at DESC LIMIT 8`);
+  const buckets = [posts, deals, events, reviews, verified, news].map((a) => a.slice());
   const feed: any[] = []; let added = true;
   while (feed.length < 24 && added) { added = false; for (const b of buckets) { if (b.length) { feed.push(b.shift()); added = true; } } }
 
@@ -45,14 +49,25 @@ async function load() {
 
 function postKey(it: any) {
   return it.kind === 'deal' ? `deal:${it.did}` : it.kind === 'review' ? `review:${it.rid}`
-    : it.kind === 'event' ? `event:${it.eid}` : `${it.kind}:${it.pid}`;
+    : it.kind === 'event' ? `event:${it.eid}` : it.kind === 'post' ? `post:${it.pgid}` : `${it.kind}:${it.pid}`;
 }
 function poster(it: any): { name: string; sub: string; av: string; color: string } {
   const t = relTime(it.ts);
   if (it.kind === 'review') return { name: it.display_name || 'ผู้ใช้', sub: `รีวิว ${i18n(it.pname)} · ${t}`, av: (it.display_name || 'ผ')[0], color: 'var(--spark)' };
   if (it.kind === 'verified') return { name: 'ทีมงาน Soi Hop', sub: `ตรวจสอบความสด · ${t}`, av: 'S', color: 'var(--navy)' };
   if (it.kind === 'event') return { name: i18n(it.title_i18n), sub: `กิจกรรม · ${t}`, av: (i18n(it.title_i18n) || 'อ')[0], color: 'var(--accent)' };
-  return { name: i18n(it.pname), sub: `${it.kind === 'deal' ? 'โปรโมชั่น' : 'เปิดใหม่'} · ${t}`, av: (i18n(it.pname) || 'ร')[0], color: 'var(--accent)' };
+  const role = it.kind === 'deal' ? 'โปรโมชั่น' : it.kind === 'post' ? 'โพสต์จากร้าน' : 'เปิดใหม่';
+  return { name: i18n(it.pname), sub: `${role} · ${t}`, av: (i18n(it.pname) || 'ร')[0], color: 'var(--accent)' };
+}
+// images for a post: merchant-uploaded urls if any, else category placeholders × count
+function imagesFor(it: any, seed: string): string[] {
+  if (it.kind === 'post') {
+    if (it.image_urls && it.image_urls.length) return it.image_urls;
+    return Array.from({ length: it.image_count || 1 }, (_, k) => cover(`${seed}-${k}`, it.psub, it.pcat, 680, 460));
+  }
+  if (it.kind === 'event') return [cover('event' + it.eid, it.ekind, 'see', 680, 460)];
+  const n = IMG_N[it.kind] || 1;
+  return Array.from({ length: n }, (_, k) => cover(`${seed}-${k}`, it.psub, it.pcat, 680, 460));
 }
 
 export default async function Feed() {
@@ -68,8 +83,8 @@ export default async function Feed() {
           const p = poster(it);
           const key = postKey(it);
           const href = it.kind === 'event' ? `/event/${it.eid}` : `/place/${it.pid}`;
-          const seed = it.pid || it.eid || String(i);
-          const n = IMG_N[it.kind] || 1;
+          const seed = it.pid || it.eid || it.pgid || String(i);
+          const imgs = imagesFor(it, seed);
           const lk = d.likes[key] || { c: 0, liked: false };
           const cl = d.cmts[key] || [];
           return (
@@ -86,17 +101,18 @@ export default async function Feed() {
                   {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
                   {it.kind === 'verified' && <>ทีมงานท้องถิ่นเพิ่งตรวจสอบข้อมูล <b>{i18n(it.pname)}</b> ว่าสด ใหม่ ถูกต้อง — เปิดจริง พิกัด/เวลาอัปเดตแล้ว ✓</>}
                   {it.kind === 'new' && <><b>{i18n(it.pname)}</b> เปิดใหม่แล้วในนิมมาน — {it.psub || catTH(it.pcat)} น่าไปลอง</>}
+                  {it.kind === 'post' && i18n(it.body_i18n)}
                 </div>
               </a>
-              {n > 1 ? (
+              {imgs.length > 1 ? (
                 <div className="post-gallery">
-                  {Array.from({ length: n }).map((_, k) => (
-                    <a key={k} href={href} className="pg-img"><img src={cover(`${seed}-${k}`, it.psub, it.pcat, 640, 460)} alt="" loading="lazy" /></a>
+                  {imgs.map((u: string, k: number) => (
+                    <a key={k} href={href} className="pg-img"><img src={u} alt="" loading="lazy" /></a>
                   ))}
-                  <span className="pg-count"><Icon n="play" size={11} fill="currentColor" style={{ transform: 'rotate(0)' }} /> {n} รูป</span>
+                  <span className="pg-count"><Icon n="play" size={11} fill="currentColor" /> {imgs.length} รูป</span>
                 </div>
               ) : (
-                <a href={href}><img className="post-media" src={it.kind === 'event' ? cover('event' + it.eid, it.ekind, 'see', 680, 460) : cover(seed, it.psub, it.pcat, 680, 460)} alt="" loading="lazy" /></a>
+                <a href={href}><img className="post-media" src={imgs[0]} alt="" loading="lazy" /></a>
               )}
               <div className="post-stat"><Icon n="heart" size={13} fill="var(--accent)" style={{ color: 'var(--accent)' }} /> {lk.c} · {cl.length} คอมเมนต์</div>
               <div className="post-actions">
@@ -104,7 +120,7 @@ export default async function Feed() {
                   <button type="submit" className={`post-act ${lk.liked ? 'liked' : ''}`}><Icon n="heart" size={18} fill={lk.liked ? 'currentColor' : 'none'} /> ถูกใจ</button>
                 </form>
                 <a className="post-act" href={`#c-${i}`}><Icon n="chat" size={18} /> คอมเมนต์</a>
-                <span className="post-act"><Icon n="share" size={18} /> แชร์</span>
+                <ShareButton href={href} title={p.name} />
               </div>
               <div className="post-comments" id={`c-${i}`}>
                 {cl.slice(0, 2).reverse().map((c: any, j: number) => (

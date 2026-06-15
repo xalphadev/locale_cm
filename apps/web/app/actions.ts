@@ -3,6 +3,22 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { q, API_BASE, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 
+/** Merchant one-tap post to the consumer feed (caption + N photos). MVP auto-publishes. */
+export async function createPostAction(formData: FormData) {
+  const placeId = String(formData.get('placeId') ?? '').trim();
+  const body = String(formData.get('body') ?? '').trim().slice(0, 500);
+  const n = Math.min(4, Math.max(1, Number(formData.get('image_count')) || 1));
+  const urls = String(formData.get('image_urls') ?? '').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  if (placeId && body) {
+    await q(
+      `INSERT INTO feed_posts(place_id, body_i18n, image_count, image_urls, status, author_kind)
+       VALUES($1, jsonb_build_object('th',$2::text), $3, $4, 'published', 'merchant')`,
+      [placeId, body, urls.length || n, urls.length ? urls : null]);
+  }
+  revalidatePath('/post');
+  redirect('/post?posted=1');
+}
+
 /** Field agent submits a NEW place → POST /supply/proposals (lands as pending change_proposal). */
 export async function createPlaceAction(formData: FormData) {
   const s = (k: string) => String(formData.get(k) ?? '').trim();
