@@ -15,7 +15,14 @@ export const FACET_LABELS: Record<string, string> = {
   // do (activities)
   english_speaking: 'บริการภาษาอังกฤษ', beginner_friendly: 'มือใหม่ได้', booking_required: 'ต้องจองล่วงหน้า',
   pickup: 'รับ-ส่ง', couple_room: 'ห้องคู่', drop_in: 'วอล์กอินได้', materials_included: 'มีอุปกรณ์ให้',
+  // stay (ที่พัก) unit amenities + furnished
+  private_bath: 'ห้องน้ำในตัว', balcony: 'ระเบียง', kitchen: 'ครัว', washing_machine: 'เครื่องซักผ้า',
+  fiber_wifi: 'เน็ตไฟเบอร์', pets_ok: 'เลี้ยงสัตว์ได้',
+  furnished: 'เฟอร์ครบ', partial: 'เฟอร์บางส่วน', unfurnished: 'ไม่มีเฟอร์',
 };
+
+/** Unit amenities offered as filter chips on /stay (match stay_units.unit_amenities[]). */
+export const STAY_AMENITIES = ['aircon', 'private_bath', 'kitchen', 'washing_machine', 'parking', 'pets_ok', 'fiber_wifi', 'balcony'];
 
 // Which facets to OFFER for a subcategory (preferred) or category (fallback).
 const SUB_FACETS: Record<string, string[]> = {
