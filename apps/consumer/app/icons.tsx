@@ -37,6 +37,9 @@ const P: Record<string, JSX.Element> = {
   x: <path d="M18 6 6 18M6 6l12 12" />,
   play: <path d="M7 4.5v15l13-7.5z" />,
   feed: <><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M8 9h8M8 13h8M8 17h5" /></>,
+  heart: <path d="M12 20s-7-4.4-9.4-8.8A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9.4 5.2C19 15.6 12 20 12 20Z" />,
+  share: <><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v13M8 7l4-4 4 4" /></>,
+  dots: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   tag: <><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" /><circle cx="7.5" cy="7.5" r="1.4" /></>,
   clock2: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" /></>,
 };
