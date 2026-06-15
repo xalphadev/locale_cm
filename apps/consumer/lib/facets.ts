@@ -19,6 +19,8 @@ export const FACET_LABELS: Record<string, string> = {
   private_bath: 'ห้องน้ำในตัว', balcony: 'ระเบียง', kitchen: 'ครัว', washing_machine: 'เครื่องซักผ้า',
   fiber_wifi: 'เน็ตไฟเบอร์', pets_ok: 'เลี้ยงสัตว์ได้',
   furnished: 'เฟอร์ครบ', partial: 'เฟอร์บางส่วน', unfurnished: 'ไม่มีเฟอร์',
+  // bills_included tokens
+  water: 'ค่าน้ำ', electricity: 'ค่าไฟ', common_fee: 'ค่าส่วนกลาง',
 };
 
 /** Unit amenities offered as filter chips on /stay (match stay_units.unit_amenities[]). */

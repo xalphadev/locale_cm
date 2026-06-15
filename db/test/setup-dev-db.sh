@@ -20,9 +20,9 @@ sed -e 's/CREATE EXTENSION IF NOT EXISTS postgis;/-- postgis stub/' \
 sed -e 's/geography([A-Z]*,4326)/text/g' -e '/USING GIST/ s/^/-- /' "$MIG/0002_tables.sql" > "$STUB/0002.sql"
 ( printf 'SET check_function_bodies = off;\n'; cat "$MIG/0006_supply_and_earn.sql" ) > "$STUB/0006.sql"
 # 0012 (remaining txns), 0013 (geo via format() strings), 0014 (events), 0015 (event supply) have no compile-time PostGIS dep → copy as-is
-for n in 0003 0004 0005 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020; do cp "$MIG/${n}"*.sql "$STUB/$n.sql"; done
+for n in 0003 0004 0005 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021; do cp "$MIG/${n}"*.sql "$STUB/$n.sql"; done
 
-for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020; do
+for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021; do
   $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$n.sql" || { echo "APPLY FAIL $n"; exit 1; }
 done
 echo "tables: $($PSQL -d $DB -tA -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")"

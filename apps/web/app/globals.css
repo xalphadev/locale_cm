@@ -89,3 +89,8 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .checkrow{display:flex;flex-wrap:wrap;gap:.4rem .9rem}
 .cbox{display:inline-flex;align-items:center;gap:.3rem;font-size:.85rem;color:var(--ink);font-weight:500}
 .cbox input{margin:0}
+/* merchant geo picker */
+.geopick-map{height:240px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.geopick-row{display:flex;gap:.7rem;align-items:flex-end;flex-wrap:wrap;margin-top:.6rem}
+.geopick-row label{display:flex;flex-direction:column;gap:.2rem;font-size:.78rem;color:var(--muted);font-weight:600}
+.geopick-row input{padding:.45rem .6rem;border:1px solid var(--line);border-radius:7px;background:var(--paper);font:inherit;width:130px}
