@@ -659,21 +659,21 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .pcimg{position:relative;aspect-ratio:1/1;background:#ECECEF}
 .pcimg img{width:100%;height:100%;object-fit:cover;display:block}
 .pchip{position:absolute;top:8px;left:8px;font-size:.66rem;font-weight:800;padding:.16rem .48rem;border-radius:999px;color:#fff;letter-spacing:.01em}
-.pchip.season{background:var(--score)}
+.pchip.season{background:var(--gold);color:var(--promo-ink)}
 .pchip.today{background:var(--accent)}
 .pchip.sold{background:#6B6B72}
 .pcbody{padding:9px 11px 11px;display:flex;flex-direction:column;gap:2px;flex:1}
 .pcshop{font-size:.7rem;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pcshop svg{flex:none;color:var(--hint)}
 .pcname{font-size:.86rem;font-weight:700;letter-spacing:-.01em;line-height:1.3;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.2em}
-.pcprice{font-size:.92rem;font-weight:800;color:var(--score);margin-top:1px}
+.pcprice{font-size:.92rem;font-weight:800;color:var(--navy);margin-top:1px}
 .pcbuy{margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:5px;background:var(--accent);color:#fff;font-weight:800;font-size:.8rem;padding:.5rem;border-radius:10px}
-.pcbuy.line{background:#06C755}
+.pcbuy.line{background:var(--accent)}
 .pcbuy.off{background:var(--sunk);color:var(--muted)}
 .pcbuy:active{filter:brightness(.94)}
 .shopnote{display:flex;align-items:flex-start;gap:6px;font-size:.78rem;color:var(--muted);line-height:1.45;margin:10px 0 4px}
 .shopnote svg{flex:none;margin-top:2px;color:var(--hint)}
-.ph-price{color:var(--score);font-weight:800}
+.ph-price{color:var(--navy);font-weight:800}
 /* room card extras (accommodation) */
 .pchip.ask{background:rgba(20,24,45,.78)}
 .pcfacts{font-size:.72rem;color:var(--muted);line-height:1.35;margin-top:1px}
@@ -685,15 +685,15 @@ a.pcname{color:var(--text)}
 .rtitle{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:2px 0;line-height:1.2}
 .rmeta{font-size:.92rem;color:var(--muted);margin-bottom:10px}
 .rhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px}
-.rprice{font-size:1.5rem;font-weight:800;color:var(--score)}
+.rprice{font-size:1.5rem;font-weight:800;color:var(--navy)}
 .rchip{display:inline-block;font-size:.82rem;font-weight:800;padding:.2rem .6rem;border-radius:999px;color:#fff}
-.rchip.season{background:var(--score)}
+.rchip.season{background:var(--gold);color:var(--promo-ink)}
 .rchip.sold{background:#6B6B72}
 .rchip.ask{background:var(--navy)}
 .rsub{font-size:.95rem;font-weight:700;margin:.9rem 0 .4rem}
 .linklike{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:0}
 .roomcta-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:.85rem;border-radius:13px;font-weight:800;font-size:1rem;background:var(--accent);color:#fff;box-shadow:0 8px 20px -10px rgba(26,115,232,.6)}
-.roomcta-btn.line{background:#06C755;box-shadow:0 8px 20px -10px rgba(6,199,85,.6)}
+.roomcta-btn.line{background:var(--accent);box-shadow:0 8px 20px -10px rgba(26,115,232,.6)}
 .roomcta-btn.off{background:var(--sunk);color:var(--muted);box-shadow:none}
 .roomcta-btn:active{filter:brightness(.95)}
 /* /stay search + view toggle + embedded vacancy map */
@@ -728,7 +728,7 @@ a.pcname{color:var(--text)}
 .scard-loc svg{color:var(--hint);flex:none}
 .scard-facts{font-size:.74rem;color:var(--muted);margin-top:3px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .scard-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:7px}
-.scard-price{font-size:1.02rem;font-weight:800;color:var(--score)}
+.scard-price{font-size:1.02rem;font-weight:800;color:var(--navy)}
 .pcbuy.sm{margin-top:0;width:auto;padding:.42rem .7rem;font-size:.78rem;flex:none}
 /* /stay clean filter bar + bottom sheet */
 .staybar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px 4px}
@@ -757,3 +757,10 @@ a.pcname{color:var(--text)}
 .sheet-clear{border:none;background:none;font:inherit;font-weight:700;color:var(--muted);cursor:pointer;padding:.5rem}
 .sheet-apply{flex:1;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:800;font-size:.98rem;padding:.85rem;border-radius:13px;cursor:pointer}
 .sheet-apply:active{filter:brightness(.95)}
+/* /stay header polish (subtle brand tint + icon badge — not a loud blue band) */
+.staytop{background:linear-gradient(180deg,var(--accent-soft) 0%,rgba(232,240,254,0) 92%);padding:18px 18px 10px;border-radius:0 0 22px 22px}
+.staytop .back{display:inline-block;color:var(--accent);font-weight:600;font-size:.92rem;margin-bottom:.55rem}
+.staytop-row{display:flex;align-items:center;gap:12px}
+.staytop-ic{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--navy));color:#fff;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 7px 16px -7px rgba(26,115,232,.55)}
+.staytop-tx h1{margin:0;font-size:1.7rem;font-weight:800;letter-spacing:-.025em;line-height:1.12}
+.staytop-sub{font-size:.8rem;color:var(--muted);margin-top:2px}

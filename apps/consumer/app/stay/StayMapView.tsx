@@ -5,7 +5,7 @@ import { Icon } from '../icons';
 type Pin = { id: string; name: string; lat: number; lng: number; kind: string; vac: number; priceFrom: number | null; badge: string; live: boolean };
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
-const KIND_COLORS: Record<string, string> = { dorm: '#8A5CF6', apartment: '#1A73E8', homestay: '#16A06A', hotel: '#F4A52B', guesthouse: '#EA580C' };
+const KIND_COLORS: Record<string, string> = { dorm: '#16284D', apartment: '#1A73E8', homestay: '#28457C', hotel: '#F5B500', guesthouse: '#1559C7' };
 const KIND_TH: Record<string, string> = { dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', homestay: 'โฮมสเตย์', hotel: 'โรงแรม', guesthouse: 'เกสต์เฮาส์' };
 const loadCss = (id: string, href: string) => { if (!document.getElementById(id)) { const l = document.createElement('link'); l.id = id; l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } };
 const loadJs = (src: string) => new Promise<void>((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(); document.body.appendChild(s); });
