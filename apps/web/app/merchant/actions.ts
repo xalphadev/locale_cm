@@ -170,6 +170,14 @@ export async function updateShopAction(formData: FormData) {
        sells_products = $7, offers_stay = $8, updated_at = now()
      WHERE id = $1`,
     [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay]);
+
+  // Location pin: write only when both coords are finite AND inside the Chiang Mai bbox.
+  // Clamp-and-skip — a save of just name/phone must never zero an existing good geo.
+  const lat = Number(s(formData, 'lat')), lng = Number(s(formData, 'lng'));
+  if (isFinite(lat) && isFinite(lng) && lng >= 98.6 && lng <= 99.3 && lat >= 18.5 && lat <= 19.2) {
+    await q(`SELECT fn_set_place_geo($1, $2, $3)`, [acc.place_id, String(lng), String(lat)]);
+  }
+
   revalidatePath('/merchant/shop'); revalidatePath('/merchant');
   redirect('/merchant/shop?ok=1');
 }

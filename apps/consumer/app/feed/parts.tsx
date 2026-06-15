@@ -55,7 +55,7 @@ export function imagesFor(it: any): string[] {
 }
 
 // Facebook-style photo collage: 1 full · 2 side-by-side · 3 (big + 2 stacked) · 4 grid · 5+ "+N"
-function Collage({ imgs, href }: { imgs: string[]; href: string }) {
+export function Collage({ imgs, href }: { imgs: string[]; href: string }) {
   const n = imgs.length;
   const cls = n <= 1 ? 'cg1' : n === 2 ? 'cg2' : n === 3 ? 'cg3' : 'cg4';
   const show = imgs.slice(0, 4); const extra = n - 4;

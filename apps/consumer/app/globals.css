@@ -678,3 +678,32 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .pchip.ask{background:rgba(20,24,45,.78)}
 .pcfacts{font-size:.72rem;color:var(--muted);line-height:1.35;margin-top:1px}
 .pcfresh{font-size:.66rem;color:var(--hint);margin-top:2px}
+
+.prodcard a.pcimg{display:block}
+a.pcname{color:var(--text)}
+/* room detail */
+.rtitle{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:2px 0;line-height:1.2}
+.rmeta{font-size:.92rem;color:var(--muted);margin-bottom:10px}
+.rhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+.rprice{font-size:1.5rem;font-weight:800;color:var(--score)}
+.rchip{display:inline-block;font-size:.82rem;font-weight:800;padding:.2rem .6rem;border-radius:999px;color:#fff}
+.rchip.season{background:var(--score)}
+.rchip.sold{background:#6B6B72}
+.rchip.ask{background:var(--navy)}
+.rsub{font-size:.95rem;font-weight:700;margin:.9rem 0 .4rem}
+.linklike{border:none;background:none;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:0}
+.roomcta-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:.85rem;border-radius:13px;font-weight:800;font-size:1rem;background:var(--accent);color:#fff;box-shadow:0 8px 20px -10px rgba(26,115,232,.6)}
+.roomcta-btn.line{background:#06C755;box-shadow:0 8px 20px -10px rgba(6,199,85,.6)}
+.roomcta-btn.off{background:var(--sunk);color:var(--muted);box-shadow:none}
+.roomcta-btn:active{filter:brightness(.95)}
+/* /stay search + view toggle + embedded vacancy map */
+.staysearch{display:flex;align-items:center;gap:8px;margin:8px 16px 2px;padding:.55rem .85rem;background:var(--surface);border:1px solid var(--hairline);border-radius:999px}
+.staysearch svg{color:var(--hint);flex:none}
+.staysearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;outline:none;color:var(--text)}
+.staysearch .ss-x{color:var(--hint);flex:none;display:inline-flex}
+.viewtoggle{display:flex;gap:8px;padding:8px 16px 2px}
+.viewtoggle .vt{display:inline-flex;align-items:center;gap:5px;padding:.4rem .95rem;border-radius:999px;font-size:.85rem;font-weight:700;background:var(--surface);border:1px solid var(--hairline);color:var(--muted)}
+.viewtoggle .vt.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.staymap{position:relative;height:58vh;min-height:380px;overflow:hidden;border-radius:14px;margin:8px 12px 0;box-shadow:var(--shadow-sm)}
+.stay-pin{display:inline-flex;align-items:center;justify-content:center;background:var(--c);color:#fff;font-weight:800;font-size:.72rem;padding:.2rem .5rem;border-radius:999px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.32);white-space:nowrap}
+.stay-pin.on{box-shadow:0 0 0 4px color-mix(in srgb, var(--c) 35%, transparent),0 2px 6px rgba(0,0,0,.32)}
