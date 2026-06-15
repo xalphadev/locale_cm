@@ -1,8 +1,16 @@
 'use server';
 import { revalidatePath } from 'next/cache';
-import { q, demoUserId } from '@/lib/db';
+import { q, demoUserId, DEMO_USER } from '@/lib/db';
 
 const API = process.env.MONEY_API ?? 'http://127.0.0.1:3001';
+
+/** Toggle a saved/bookmarked place for the demo user (the "เซฟที่ชอบ" feature). */
+export async function toggleSaveAction(placeId: string) {
+  const ex = await q(`SELECT 1 FROM saved_places WHERE user_id=$1 AND place_id=$2`, [DEMO_USER, placeId]);
+  if (ex.length) await q(`DELETE FROM saved_places WHERE user_id=$1 AND place_id=$2`, [DEMO_USER, placeId]);
+  else await q(`INSERT INTO saved_places(user_id,place_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [DEMO_USER, placeId]);
+  revalidatePath(`/place/${placeId}`); revalidatePath('/profile');
+}
 
 /** Check in at a quest stop → advances the quest (and mints the reward when the last step lands). */
 export async function checkInAction(questId: string, stepId: string) {

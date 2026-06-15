@@ -286,6 +286,13 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .openpill{display:inline-flex;gap:.32rem;align-items:center;font-size:.84rem;font-weight:700}
 .is-open{color:#0F8E6F} .is-closed{color:var(--muted)}
 
+/* bookmark button (over photos) */
+.bm{width:40px;height:40px;border-radius:50%;color:#fff;background:rgba(255,255,255,.18);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.32);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .12s}
+.bm:active{transform:scale(.92)}
+.bm.on{background:#fff;color:var(--accent);border-color:#fff}
+
 /* detail action row */
 .dactions{display:flex;gap:10px;margin:4px 0 14px}
 .dact{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:var(--surface);
@@ -353,3 +360,21 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .pin{display:block;width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);
   background:var(--c);border:2.5px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,.35);transition:transform .12s}
 .pin.on{width:26px;height:26px;border-width:3px;box-shadow:0 3px 10px rgba(0,0,0,.4)}
+
+/* ===== profile + community ===== */
+.phead{display:flex;align-items:center;gap:15px;padding:6px 18px 2px}
+.phead .pav{width:66px;height:66px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#C9482A);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.7rem;flex:none}
+.phead .pn{font-size:1.35rem;font-weight:800;letter-spacing:-.02em}
+.phead .psub{color:var(--muted);font-size:.85rem;margin-top:.15rem}
+.pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0 4px}
+.ptile{background:var(--surface);border-radius:14px;padding:13px 4px;text-align:center;box-shadow:var(--shadow-sm)}
+.ptile .pv{font-size:1.3rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.ptile .pl{font-size:.7rem;color:var(--muted);margin-top:.3rem}
+.reviewers{display:flex;gap:15px;overflow-x:auto;padding:2px 18px 10px;scrollbar-width:none}
+.reviewers::-webkit-scrollbar{display:none}
+.reviewer{flex:none;width:70px;text-align:center}
+.reviewer .rav{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#8B6CFF,#5B3FD9);
+  color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.4rem;margin:0 auto 6px}
+.reviewer .rn{font-size:.74rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.reviewer .rc{font-size:.68rem;color:var(--muted);margin-top:1px}

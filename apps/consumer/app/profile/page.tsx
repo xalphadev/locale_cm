@@ -1,0 +1,63 @@
+import { q, i18n, coins, cover, DEMO_USER } from '@/lib/db';
+import { Icon } from '../icons';
+
+export const dynamic = 'force-dynamic';
+const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
+
+export default async function Profile() {
+  let name = 'ผู้ใช้ Soi Hop', sparks = 0, coinMinor = 0, nSaved = 0, nReviews = 0;
+  let saved: any[] = [], quests: any[] = [], down = false;
+  try {
+    const [pr] = await q<any>(`SELECT display_name FROM profiles WHERE user_id=$1`, [DEMO_USER]);
+    if (pr?.display_name) name = pr.display_name;
+    const [sb] = await q<any>(`SELECT balance FROM spark_balances WHERE user_id=$1`, [DEMO_USER]); sparks = sb ? Number(sb.balance) : 0;
+    const [c] = await q<any>(`SELECT COALESCE(SUM(remaining_minor),0) m FROM coin_lots WHERE user_id=$1 AND state='active'`, [DEMO_USER]); coinMinor = c ? Number(c.m) : 0;
+    const [sv] = await q<any>(`SELECT count(*) n FROM saved_places WHERE user_id=$1`, [DEMO_USER]); nSaved = Number(sv.n);
+    const [rv] = await q<any>(`SELECT count(*) n FROM reviews WHERE user_id=$1`, [DEMO_USER]); nReviews = Number(rv.n);
+    saved = await q<any>(`SELECT p.id, p.name_i18n, p.category::text category, p.subcategory FROM saved_places s JOIN places p ON p.id=s.place_id WHERE s.user_id=$1 ORDER BY s.created_at DESC`, [DEMO_USER]);
+    quests = await q<any>(`SELECT qu.id, qu.title_i18n, qp.status::text status, COALESCE(jsonb_array_length(qp.steps_completed),0) done, qu.min_steps_required need FROM quest_progress qp JOIN quests qu ON qu.id=qp.quest_id WHERE qp.user_id=$1 ORDER BY (qp.status='in_progress') DESC, qp.created_at DESC LIMIT 5`, [DEMO_USER]);
+  } catch { down = true; }
+
+  if (down) return (<><div className="top"><h1>โปรไฟล์</h1></div><div className="body"><p className="empty">ต่อฐานข้อมูลไม่ได้</p></div></>);
+
+  return (
+    <>
+      <div className="top" style={{ paddingBottom: 0 }}>
+        <div className="phead">
+          <div className="pav">{name[0]}</div>
+          <div><div className="pn">{name}</div><div className="psub">สมาชิก Soi Hop · นิมมาน เชียงใหม่</div></div>
+        </div>
+        <div className="body" style={{ paddingTop: 0 }}>
+          <div className="pstats">
+            <div className="ptile"><div className="pv">{sparks}</div><div className="pl">Sparks</div></div>
+            <div className="ptile"><div className="pv">{coins(coinMinor)}</div><div className="pl">Coins</div></div>
+            <div className="ptile"><div className="pv">{nReviews}</div><div className="pl">รีวิว</div></div>
+            <div className="ptile"><div className="pv">{nSaved}</div><div className="pl">เซฟไว้</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="body" style={{ paddingTop: 4 }}>
+        <div className="sec" style={{ padding: 0, marginTop: '.6rem' }}><h2>ที่บันทึกไว้</h2><a className="more" href="/community">ชุมชน ›</a></div>
+        {saved.map((p) => (
+          <a className="erow" key={p.id} href={`/place/${p.id}`}>
+            <div className="ethumb" style={{ background: 'none' }}><img src={cover(p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" /></div>
+            <div><div className="nm">{i18n(p.name_i18n)}</div><div className="meta">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div></div>
+            <span className="chev"><Icon n="chevR" size={18} /></span>
+          </a>
+        ))}
+        {saved.length === 0 && <p className="empty">ยังไม่มีที่บันทึก — แตะ <Icon n="bookmark" size={14} className="flat-ico" /> ในหน้าร้านเพื่อเก็บไว้</p>}
+
+        <div className="sec" style={{ padding: 0 }}><h2>เควสต์ของฉัน</h2></div>
+        {quests.map((qu) => (
+          <a className="erow" key={qu.id} href="/passport">
+            <div className="ethumb" style={{ background: 'linear-gradient(135deg,#E7C56A,#C9962A)' }}><Icon n="ticket" size={24} /></div>
+            <div><div className="nm">{i18n(qu.title_i18n)}</div><div className="meta">{qu.status === 'in_progress' ? `เก็บแล้ว ${qu.done}/${qu.need} แสตมป์` : 'เก็บครบแล้ว'}</div></div>
+            <span className="chev"><Icon n="chevR" size={18} /></span>
+          </a>
+        ))}
+        {quests.length === 0 && <p className="empty">ยังไม่ได้เริ่มเควสต์</p>}
+      </div>
+    </>
+  );
+}

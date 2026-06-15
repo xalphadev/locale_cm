@@ -1,5 +1,6 @@
-import { q, i18n, cover } from '@/lib/db';
+import { q, i18n, cover, DEMO_USER } from '@/lib/db';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
+import { toggleSaveAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,9 +22,10 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
-              f.freshness_label::text fresh
+              f.freshness_label::text fresh,
+              EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
        FROM places p LEFT JOIN districts d ON d.id=p.district_id LEFT JOIN data_freshness f ON f.place_id=p.id
-       WHERE p.id=$1 AND p.status='published'`, [params.id]);
+       WHERE p.id=$1 AND p.status='published'`, [params.id, DEMO_USER]);
     if (p) {
       events = await q<any>(`SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m FROM events WHERE place_id=$1 AND status='published' ORDER BY starts_at`, [params.id]);
       quests = await q<any>(`SELECT DISTINCT q.id, q.title_i18n FROM quest_steps qs JOIN quests q ON q.id=qs.quest_id WHERE qs.place_id=$1 AND q.status IN ('active','draft')`, [params.id]);
@@ -55,7 +57,9 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />
         <div className="scrim" />
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
-        <span className="bm" style={{ position: 'absolute', top: 16, right: 16 }}><Icon n="bookmark" size={18} /></span>
+        <form action={toggleSaveAction.bind(null, p.id)} style={{ position: 'absolute', top: 16, right: 16, zIndex: 3 }}>
+          <button className={`bm ${p.saved ? 'on' : ''}`} type="submit"><Icon n="bookmark" size={18} fill={p.saved ? 'currentColor' : 'none'} /></button>
+        </form>
         <div className="dtitle">
           <span className="frost" style={{ marginBottom: 8 }}><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={13} /> {catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</span>
           <h1>{i18n(p.name_i18n)}</h1>

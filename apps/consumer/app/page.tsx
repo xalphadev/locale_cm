@@ -84,7 +84,7 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
           <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> นิมมาน, เชียงใหม่ <Icon n="chevD" size={15} /></div></div>
         <div className="acts">
           <span className="iconbtn"><Icon n="bell" size={21} /><span className="badge-dot" /></span>
-          <span className="avatar-btn">ก</span>
+          <a className="avatar-btn" href="/profile">ก</a>
         </div>
       </div>
       <form className="searchbar" action="/"><Icon n="search" size={20} />
@@ -150,7 +150,7 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
 
       {d.community.length > 0 && (
         <>
-          <div className="sec"><h2>ชุมชนกำลังพูดถึง</h2></div>
+          <div className="sec"><h2>ชุมชนกำลังพูดถึง</h2><a className="more" href="/community">ดูทั้งหมด</a></div>
           {d.community.map((r: any, i: number) => (
             <a className="crev" key={i} href={`/place/${r.pid}`}>
               <img className="cphoto" src={cover(r.pid, r.psub, r.pcat, 160, 160)} alt="" loading="lazy" />
