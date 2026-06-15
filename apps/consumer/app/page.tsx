@@ -1,5 +1,5 @@
 import { q, demoUserId, i18n, cover } from '@/lib/db';
-import { Icon, CAT_ICON, KIND_ICON } from './icons';
+import { Icon, CAT_ICON } from './icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ const ORDER: Record<string, string> = {
   '': 'rv.avg DESC NULLS LAST, rv.n DESC NULLS LAST', near: 'p.verified_at DESC NULLS LAST',
   hot: 'rv.n DESC NULLS LAST, rv.avg DESC NULLS LAST', new: 'p.created_at DESC',
 };
-const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, rv.n::int rev_n, rv.avg::text rev_avg`;
+const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band, rv.n::int rev_n, rv.avg::text rev_avg`;
 const PJOIN = `FROM places p LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
   WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true`;
 
@@ -32,11 +32,10 @@ async function load(tab: string, cat: string, sub: string, query: string) {
        AND ($3='' OR p.name_i18n->>'th' ILIKE '%'||$3||'%' OR p.name_i18n->>'en' ILIKE '%'||$3||'%')
      ORDER BY ${order} LIMIT 40`, [cat, sub, query]);
   if (isFilter) return { mode: 'filter' as const, places };
-
   const community = await q<any>(
     `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname
      FROM reviews r JOIN profiles pr ON pr.user_id=r.user_id JOIN places p ON p.id=r.place_id
-     WHERE r.moderation_status='approved' ORDER BY r.created_at DESC LIMIT 6`);
+     WHERE r.moderation_status='approved' ORDER BY r.created_at DESC LIMIT 5`);
   const [quest] = await q<any>(`SELECT id, title_i18n, min_steps_required FROM quests WHERE status='active' ORDER BY is_featured DESC, created_at LIMIT 1`);
   let stamps = 0;
   if (quest && uid) { const [qp] = await q<any>(`SELECT COALESCE(jsonb_array_length(steps_completed),0) n FROM quest_progress WHERE user_id=$1 AND quest_id=$2`, [uid, quest.id]); stamps = qp ? Number(qp.n) : 0; }
@@ -44,23 +43,23 @@ async function load(tab: string, cat: string, sub: string, query: string) {
   return { mode: 'home' as const, places, community, quest, stamps, events };
 }
 
-function Gcard({ p }: { p: any }) {
+function LRow({ p, rank }: { p: any; rank?: number }) {
+  const avg = p.rev_n > 0 ? Number(p.rev_avg) : null;
+  const cls = avg == null ? '' : avg >= 4.5 ? 'hi' : avg >= 3.8 ? 'mid' : 'lo';
   return (
-    <a className="gcard" href={`/place/${p.id}`}>
-      <img src={cover(p.id, p.subcategory, p.category, 440, 540)} alt="" loading="lazy" />
-      <div className="gscrim" />
-      <div className="gtop">
-        <span className="gchip"><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={11} /> {catTH(p.category)}</span>
-        <span className="gbm"><Icon n="bookmark" size={14} /></span>
-      </div>
-      <div className="gc">
-        <div className="gnm">{i18n(p.name_i18n)}</div>
-        <div className="gmeta">
-          {p.rev_n > 0 && <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.15rem' }}><Icon n="star" fill="#FFC95A" size={12} style={{ color: '#FFC95A' }} /> {p.rev_avg}</span>}
-          {p.rev_n > 0 && <span className="sep">·</span>}
+    <a className="lrow" href={`/place/${p.id}`}>
+      {rank != null && <span className="rank">{rank}</span>}
+      <img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
+      <div className="lc">
+        <div className="lname">{i18n(p.name_i18n)}</div>
+        <div className="lmeta">
           <span>{p.subcategory || catTH(p.category)}</span>
+          {p.price_band && <><span className="mdot">·</span><span>{'฿'.repeat(Number(p.price_band))}</span></>}
+          {p.rev_n > 0 && <><span className="mdot">·</span><span>{p.rev_n} รีวิว</span></>}
+          <span className="mdot">·</span><span className="open">เปิดอยู่</span>
         </div>
       </div>
+      {avg != null ? <span className={`score ${cls}`}>{avg}</span> : <span className="newbadge">ใหม่</span>}
     </a>
   );
 }
@@ -94,8 +93,8 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       <>
         {header}
         <div className="segmented">{FILTERS.map((f) => <a key={f.k} href={f.k ? `/?cat=${f.k}` : '/'} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</a>)}</div>
-        <h2 style={{ padding: '0 16px', margin: '8px 0 0' }}>{query ? `“${query}”` : sub || catTH(cat)} <span className="muted">({d.places.length})</span></h2>
-        <div className="grid">{d.places.map((p: any) => <Gcard key={p.id} p={p} />)}</div>
+        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{query ? `“${query}”` : sub || catTH(cat)} <span className="muted">({d.places.length})</span></h2>
+        <div className="llist">{d.places.map((p: any) => <LRow key={p.id} p={p} />)}</div>
         {d.places.length === 0 && <p className="empty">ไม่พบผลลัพธ์ — ลองคำอื่นหรือหมวดอื่น</p>}
       </>
     );
@@ -110,8 +109,14 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
         {CATS.map((c) => <a className="cat" key={c.l} href={`/?${c.qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></a>)}
       </div>
 
+      <a className="mapbanner" href="/map">
+        <span className="mi"><Icon n="map" size={22} /></span>
+        <div className="mt"><div className="mtt">สำรวจบนแผนที่</div><div className="mts">ร้านใกล้คุณ {d.places.length} ที่ · กรองตามหมวดได้</div></div>
+        <Icon n="chevR" size={20} style={{ color: 'var(--hint)' }} />
+      </a>
+
       {d.quest && (
-        <a className="qbanner" href="/passport" style={{ margin: '4px 16px 0' }}>
+        <a className="qbanner" href="/passport" style={{ margin: '10px 16px 0' }}>
           <span className="qi"><Icon n="ticket" size={24} /></span>
           <div className="qt"><div className="qname">{i18n(d.quest.title_i18n)}</div>
             <div className="qbar"><div className="qfill" style={{ width: `${Math.round((d.stamps / need) * 100)}%` }} /></div>
@@ -121,18 +126,20 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       )}
 
       <div className="segmented">{SEGS.map((s) => <a key={s.k} href={s.k ? `/?tab=${s.k}` : '/'} className={`seg ${tab === s.k ? 'on' : ''}`}>{s.l}</a>)}</div>
-      <div className="grid">{d.places.map((p: any) => <Gcard key={p.id} p={p} />)}</div>
+      <div className="llist">{d.places.map((p: any, i: number) => <LRow key={p.id} p={p} rank={i + 1} />)}</div>
 
       {d.community.length > 0 && (
         <>
-          <div className="sec"><h2>ชุมชนพูดถึง</h2><a className="more" href="/community">ดูทั้งหมด</a></div>
-          <div className="crail">
+          <div className="sec"><h2>เพื่อนบ้านพูดถึง</h2><a className="more" href="/community">ดูทั้งหมด</a></div>
+          <div className="llist">
             {d.community.map((r: any, i: number) => (
-              <a className="cmini" key={i} href={`/place/${r.pid}`}>
-                <div className="ct"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="cn">{r.display_name}</span>
-                  <span className="cs">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</span></div>
-                <div className="cb">{i18n(r.body_i18n)}</div>
-                <div className="cp"><Icon n="pin" size={12} className="flat-ico" /> {i18n(r.pname)}</div>
+              <a className="act" key={i} href={`/place/${r.pid}`}>
+                <span className="aav">{(r.display_name || 'ผ')[0]}</span>
+                <div className="aw">
+                  <div className="al"><b>{r.display_name}</b> รีวิว <b>{i18n(r.pname)}</b></div>
+                  <div className="ab">{i18n(r.body_i18n)}</div>
+                  <div className="as">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={12} />)}</div>
+                </div>
               </a>
             ))}
           </div>

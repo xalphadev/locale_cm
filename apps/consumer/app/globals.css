@@ -1,8 +1,8 @@
 :root{
-  --primary:#0A0A0B; --primary-press:#000; --accent:#E2603B; --accent-soft:#FBEDE7;
-  --bg:#F4F3F0; --surface:#FFFFFF; --text:#121211; --muted:#6B6862; --hint:#9C988F;
-  --hairline:#ECEAE3; --sunk:#F4F0E9; --gold:#B98A2E; --jade:#1E8E7E; --spark:#7C5CFF; --coin:#C9962A;
-  --r-lg:24px; --r-md:20px; --r-sm:14px;
+  --primary:#0E0E12; --primary-press:#000; --accent:#FF5436; --accent-press:#E63E22; --accent-soft:#FFEDE8;
+  --bg:#F4F4F6; --surface:#FFFFFF; --text:#0E0E12; --muted:#6C6C74; --hint:#A0A0A8;
+  --hairline:#ECECEF; --sunk:#F1F1F4; --gold:#E8A033; --score:#16A06A; --jade:#16A06A; --spark:#6C5CE7; --coin:#E8A033;
+  --r-lg:22px; --r-md:18px; --r-sm:13px;
   --shadow-card:0 1px 2px rgba(16,20,12,.05), 0 10px 26px -10px rgba(16,20,12,.16);
   --shadow-sm:0 4px 16px -8px rgba(16,20,12,.14);
   --shadow-nav:0 10px 34px -8px rgba(16,20,12,.24);
@@ -10,8 +10,9 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:#E7E2DA}
-body{font-family:'Plus Jakarta Sans','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
-  color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"tnum" 1}
+body{font-family:'Inter','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  font-feature-settings:"tnum" 1,"cv11" 1;letter-spacing:-.005em}
 :lang(th),[lang="th"]{line-height:1.6;letter-spacing:0}
 a{color:inherit;text-decoration:none}
 img{display:block;max-width:100%}
@@ -173,6 +174,43 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 
 /* empty / fallback */
 .empty{text-align:center;color:var(--muted);padding:2rem 1rem;font-size:.9rem}
+
+/* ===== Beli-style discovery: dense list rows + score badges + map banner ===== */
+.mapbanner{display:flex;align-items:center;gap:13px;margin:8px 16px 0;background:var(--surface);border-radius:16px;
+  padding:13px 15px;box-shadow:var(--shadow-sm);transition:transform .12s}
+.mapbanner:active{transform:scale(.99)}
+.mapbanner .mi{width:44px;height:44px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.mapbanner .mt{flex:1;min-width:0}
+.mapbanner .mtt{font-weight:700;font-size:.96rem;letter-spacing:-.01em}
+.mapbanner .mts{font-size:.8rem;color:var(--muted);margin-top:.12rem}
+
+.llist{padding:2px 16px 12px}
+.lrow{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--hairline);transition:opacity .1s}
+.lrow:active{opacity:.55}
+.lrow:last-child{border-bottom:none}
+.rank{width:16px;text-align:center;font-weight:800;font-size:.9rem;color:var(--hint);flex:none}
+.lthumb{width:62px;height:62px;border-radius:14px;object-fit:cover;flex:none;background:#ECECEF}
+.lc{flex:1;min-width:0}
+.lname{font-weight:700;font-size:1rem;letter-spacing:-.012em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lmeta{display:flex;gap:.34rem;align-items:center;font-size:.82rem;color:var(--muted);margin-top:.22rem;flex-wrap:wrap}
+.lmeta .open{color:var(--score);font-weight:600}
+.lmeta .mdot{opacity:.45}
+.score{flex:none;min-width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:1.05rem}
+.score.hi{background:var(--score)} .score.mid{background:var(--gold)} .score.lo{background:#B7B7BE}
+.newbadge{flex:none;min-width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;
+  background:var(--sunk);color:var(--muted);font-weight:700;font-size:.74rem}
+
+/* friend/community activity row (Beli-style) */
+.act{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--hairline)}
+.act:last-child{border-bottom:none}
+.act .aav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--spark),#4B3FBF);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:700;flex:none;font-size:.95rem}
+.act .aw{flex:1;min-width:0}
+.act .al{font-size:.88rem;line-height:1.4}
+.act .al b{font-weight:700}
+.act .ab{font-size:.85rem;color:var(--muted);margin-top:.15rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.act .as{color:var(--gold);font-size:.78rem;margin-top:.1rem}
 
 /* ===== app-grid home (dense, not blog) ===== */
 .segmented{display:flex;gap:7px;overflow-x:auto;padding:10px 16px 4px;scrollbar-width:none}
