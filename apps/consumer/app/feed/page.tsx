@@ -68,13 +68,12 @@ function postKey(it: any) {
   return it.kind === 'deal' ? `deal:${it.did}` : it.kind === 'review' ? `review:${it.rid}`
     : it.kind === 'event' ? `event:${it.eid}` : it.kind === 'post' ? `post:${it.pgid}` : `${it.kind}:${it.pid}`;
 }
-function poster(it: any): { name: string; sub: string; av: string; color: string } {
-  const t = relTime(it.ts);
-  if (it.kind === 'review') return { name: it.display_name || 'ผู้ใช้', sub: `รีวิว ${i18n(it.pname)} · ${t}`, av: (it.display_name || 'ผ')[0], color: 'var(--spark)' };
-  if (it.kind === 'verified') return { name: 'ทีมงาน Soi Hop', sub: `ตรวจสอบความสด · ${t}`, av: 'S', color: 'var(--navy)' };
-  if (it.kind === 'event') return { name: i18n(it.title_i18n), sub: `กิจกรรม · ${t}`, av: (i18n(it.title_i18n) || 'อ')[0], color: 'var(--accent)' };
-  const role = it.kind === 'deal' ? 'โปรโมชั่น' : it.kind === 'post' ? 'โพสต์จากร้าน' : 'เปิดใหม่';
-  return { name: i18n(it.pname), sub: `${role} · ${t}`, av: (i18n(it.pname) || 'ร')[0], color: 'var(--accent)' };
+function poster(it: any): { name: string; sub: string; av: string; color: string; verified: boolean } {
+  if (it.kind === 'review') return { name: it.display_name || 'ผู้ใช้', sub: `รีวิว ${i18n(it.pname)}`, av: (it.display_name || 'ผ')[0], color: 'var(--spark)', verified: false };
+  if (it.kind === 'verified') return { name: 'ทีมงาน Soi Hop', sub: 'ตรวจสอบข้อมูลแล้ว', av: 'S', color: 'var(--navy)', verified: true };
+  if (it.kind === 'event') return { name: i18n(it.title_i18n), sub: 'กิจกรรม · นิมมาน', av: (i18n(it.title_i18n) || 'อ')[0], color: 'var(--accent)', verified: true };
+  const role = it.kind === 'deal' ? 'โปรโมชั่น' : it.kind === 'new' ? 'เปิดใหม่' : (it.psub || catTH(it.pcat));
+  return { name: i18n(it.pname), sub: `${role} · นิมมาน`, av: (i18n(it.pname) || 'ร')[0], color: 'var(--accent)', verified: true };
 }
 // images for a post: merchant-uploaded urls if any, else category placeholders × count
 function imagesFor(it: any, seed: string): string[] {
@@ -105,42 +104,54 @@ export default async function Feed() {
           const lk = d.likes[key] || { c: 0, liked: false };
           const cl = d.cmts[key] || [];
           return (
-            <div className="post" key={i}>
-              <a className="post-link" href={href}>
-                <div className="post-head">
-                  <span className="post-av" style={{ background: p.color }}>{p.av}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}><div className="post-name">{p.name}</div><div className="post-sub">{p.sub}</div></div>
-                  <Icon n="dots" size={18} style={{ color: 'var(--hint)' }} />
-                </div>
-                <div className="post-text">
-                  {it.kind === 'deal' && <><span className="dl">{dealLabel(it.deal_type, it.value_pct, it.value_minor)}</span> {i18n(it.dtitle)}{daysLeft(it.ends_at) != null ? ` — เหลืออีก ${daysLeft(it.ends_at)} วัน${it.quota_total ? ` · เหลือ ${it.quota_total - it.quota_used} สิทธิ์` : ''}` : ''}</>}
-                  {it.kind === 'event' && <>{i18n(it.description_i18n) || i18n(it.title_i18n)} · {it.d} {THM[it.m - 1]}</>}
-                  {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
-                  {it.kind === 'verified' && <>ทีมงานท้องถิ่นเพิ่งตรวจสอบข้อมูล <b>{i18n(it.pname)}</b> ว่าสด ใหม่ ถูกต้อง — เปิดจริง พิกัด/เวลาอัปเดตแล้ว ✓</>}
-                  {it.kind === 'new' && <><b>{i18n(it.pname)}</b> เปิดใหม่แล้วในนิมมาน — {it.psub || catTH(it.pcat)} น่าไปลอง</>}
-                  {it.kind === 'post' && i18n(it.body_i18n)}
-                </div>
-              </a>
+            <article className="post" key={i}>
+              <header className="ph">
+                <span className="ph-ring"><span className="post-av" style={{ background: p.color }}>{p.av}</span></span>
+                <a className="ph-meta" href={href}>
+                  <div className="ph-name">{p.name}{p.verified && <span className="vbadge"><Icon n="check" size={9} fill="#fff" /></span>}</div>
+                  <div className="ph-sub"><Icon n={it.kind === 'event' ? 'calendar' : 'pin'} size={11} /> {p.sub}</div>
+                </a>
+                <Icon n="dots" size={18} style={{ color: 'var(--hint)' }} />
+              </header>
+
               <Collage imgs={imgs} href={href} />
-              <div className="post-stat"><Icon n="heart" size={13} fill="var(--accent)" style={{ color: 'var(--accent)' }} /> {lk.c} · {cl.length} คอมเมนต์</div>
-              <div className="post-actions">
-                <form className="actf" action={toggleLikeAction.bind(null, key)}>
-                  <button type="submit" className={`post-act ${lk.liked ? 'liked' : ''}`}><Icon n="heart" size={18} fill={lk.liked ? 'currentColor' : 'none'} /> ถูกใจ</button>
+
+              <div className="ph-actions">
+                <form className="actf2" action={toggleLikeAction.bind(null, key)}>
+                  <button type="submit" className={`pa ${lk.liked ? 'liked' : ''}`} aria-label="ถูกใจ"><Icon n="heart" size={24} fill={lk.liked ? 'currentColor' : 'none'} /></button>
                 </form>
-                <a className="post-act" href={`#c-${i}`}><Icon n="chat" size={18} /> คอมเมนต์</a>
-                <ShareButton href={href} title={p.name} />
+                <a className="pa" href={`#c-${i}`} aria-label="คอมเมนต์"><Icon n="chat" size={23} /></a>
+                <ShareButton href={href} title={p.name} variant="icon" />
+                <span className="pa-sp" />
+                <a className="pa" href={href} aria-label="บันทึก"><Icon n="bookmark" size={22} /></a>
               </div>
+
+              {lk.c > 0 && (
+                <div className="ph-likes"><span className="ph-faces"><i style={{ background: 'var(--accent)' }} /><i style={{ background: 'var(--spark)' }} /><i style={{ background: 'var(--gold)' }} /></span><span>ถูกใจ <b>{lk.c.toLocaleString()}</b> ครั้ง</span></div>
+              )}
+
+              <a className="ph-cap" href={href}>
+                {it.kind === 'post' && <><b className="ph-h">{p.name}</b> {i18n(it.body_i18n)}</>}
+                {it.kind === 'deal' && <><span className="dl">{dealLabel(it.deal_type, it.value_pct, it.value_minor)}</span> {i18n(it.dtitle)}{daysLeft(it.ends_at) != null ? ` — เหลืออีก ${daysLeft(it.ends_at)} วัน${it.quota_total ? ` · เหลือ ${it.quota_total - it.quota_used} สิทธิ์` : ''}` : ''}</>}
+                {it.kind === 'event' && <><b className="ph-h">{p.name}</b> {i18n(it.description_i18n) || ''} · {it.d} {THM[it.m - 1]}</>}
+                {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
+                {it.kind === 'verified' && <>ทีมงานท้องถิ่นเพิ่งตรวจสอบข้อมูล <b className="ph-h">{i18n(it.pname)}</b> ว่าสด ใหม่ ถูกต้อง — เปิดจริง พิกัด/เวลาอัปเดตแล้ว</>}
+                {it.kind === 'new' && <><b className="ph-h">{i18n(it.pname)}</b> เปิดใหม่แล้วในนิมมาน — {it.psub || catTH(it.pcat)} น่าไปลอง</>}
+              </a>
+
+              <div className="ph-time">{relTime(it.ts)}</div>
+
               <div className="post-comments" id={`c-${i}`}>
+                {cl.length > 2 && <a href={`#c-${i}`} className="cmt-more">ดูคอมเมนต์ทั้งหมด {cl.length} รายการ</a>}
                 {cl.slice(0, 2).reverse().map((c: any, j: number) => (
                   <div className="cmt" key={j}><b>{c.display_name || 'ผู้ใช้'}</b> {c.body}</div>
                 ))}
-                {cl.length > 2 && <div className="cmt-more">ดูคอมเมนต์ทั้งหมด {cl.length} รายการ</div>}
                 <form className="cmt-form" action={addCommentAction.bind(null, key)}>
                   <input name="body" placeholder="เขียนคอมเมนต์…" autoComplete="off" maxLength={300} />
                   <button type="submit">ส่ง</button>
                 </form>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>

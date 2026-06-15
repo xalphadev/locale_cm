@@ -594,8 +594,8 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .cmt-form input{flex:1;border:none;background:var(--sunk);border-radius:999px;padding:.55rem .9rem;font:inherit;font-size:.85rem;outline:none;color:var(--text)}
 .cmt-form button{border:none;background:none;color:var(--accent);font-weight:800;font-size:.88rem;padding:.4rem .5rem;cursor:pointer}
 
-/* facebook-style photo collage */
-.collage{display:grid;gap:3px;background:var(--surface);overflow:hidden}
+/* facebook-style photo collage (rounded inset, instagram look) */
+.collage{display:grid;gap:3px;background:var(--surface);overflow:hidden;border-radius:16px;margin:2px 12px 0}
 .collage .ci{position:relative;overflow:hidden;background:#E6E7EA;display:block}
 .collage img{width:100%;height:100%;object-fit:cover;display:block}
 .cg1{grid-template-columns:1fr}
@@ -607,10 +607,38 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .cg4{grid-template-columns:1fr 1fr}
 .cg4 .ci{aspect-ratio:1/1}
 .more-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800}
-/* feed polish */
-.feed{padding:6px 14px 18px}
-.post{border-radius:14px;box-shadow:0 1px 2px rgba(16,20,12,.05),0 6px 18px -10px rgba(16,20,12,.16)}
-.post-head{padding:12px 14px 9px}
-.post-text{padding:2px 14px 10px;font-size:.92rem;line-height:1.5}
-.post-stat{padding:10px 14px 3px;border-top:none}
-.post-act{padding:.66rem .2rem;font-size:.85rem}
+
+/* ===== instagram-style feed card ===== */
+.feed{padding:8px 12px 22px}
+.post{background:var(--surface);border-radius:20px;box-shadow:0 1px 2px rgba(16,20,12,.05),0 14px 30px -16px rgba(16,20,12,.18);margin-bottom:16px;overflow:hidden;padding-bottom:4px}
+/* header */
+.ph{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.ph-ring{flex:none;padding:2.5px;border-radius:50%;background:conic-gradient(from 200deg,#1A73E8,#6C5CE7,#F5B500,#16A06A,#1A73E8)}
+.ph-ring .post-av{width:40px;height:40px;border:2.5px solid var(--surface);box-sizing:border-box;font-size:1rem}
+.ph-meta{flex:1;min-width:0;display:block}
+.ph-name{display:flex;align-items:center;font-weight:800;font-size:.92rem;letter-spacing:-.01em;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbadge{flex:none;display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--accent);margin-left:4px}
+.ph-sub{display:flex;align-items:center;gap:3px;font-size:.76rem;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ph-sub svg{flex:none;color:var(--hint)}
+/* action bar (icon-only, instagram) */
+.ph-actions{display:flex;align-items:center;gap:2px;padding:10px 10px 2px}
+.actf2{display:flex}
+.pa{display:inline-flex;align-items:center;justify-content:center;padding:6px;color:var(--text);background:none;border:none;cursor:pointer;border-radius:50%;transition:transform .12s,color .12s}
+.pa:active{transform:scale(.86)}
+.pa.liked{color:#E0245E}
+.pa-sp{flex:1}
+/* likes line + faces */
+.ph-likes{display:flex;align-items:center;gap:8px;padding:3px 16px 1px;font-size:.85rem;color:var(--text)}
+.ph-likes b{font-weight:800}
+.ph-faces{display:inline-flex;flex:none}
+.ph-faces i{width:18px;height:18px;border-radius:50%;border:2px solid var(--surface);margin-left:-7px;box-shadow:0 0 0 .5px rgba(0,0,0,.04)}
+.ph-faces i:first-child{margin-left:0}
+/* caption */
+.ph-cap{display:block;padding:5px 16px 0;font-size:.9rem;line-height:1.5;color:var(--text);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ph-cap .ph-h{font-weight:800;letter-spacing:-.01em;margin-right:.15rem}
+.ph-cap .dl{background:var(--promo);color:var(--promo-ink);font-weight:800;font-size:.78rem;padding:.08rem .42rem;border-radius:6px;margin-right:.2rem}
+.ph-time{padding:6px 16px 2px;font-size:.7rem;letter-spacing:.02em;text-transform:uppercase;color:var(--hint)}
+/* comments reuse */
+.post-comments{padding:6px 16px 12px}
+.cmt-form{margin-top:.5rem}
