@@ -32,6 +32,9 @@ const P: Record<string, JSX.Element> = {
   flower: <><circle cx="12" cy="12" r="2.5" /><path d="M12 9.5V5M12 14.5V19M9.5 12H5M14.5 12H19" /></>,
   dumbbell: <path d="M6.5 7v10M18 7v10M4 9.5v5M20.5 9.5v5M6.5 12H18" />,
   calendar: <><rect x="3.5" y="5" width="17" height="16" rx="2" /><path d="M3.5 9.5h17M8 3v4M16 3v4" /></>,
+  map: <><path d="m9 4 6 2 5.4-2.2A.5.5 0 0 1 21 4.3v13.4a1 1 0 0 1-.6.9L15 21l-6-2-5.4 2.2A.5.5 0 0 1 3 20.7V7.3a1 1 0 0 1 .6-.9Z" /><path d="M9 4v15M15 6v15" /></>,
+  locate: <><circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5" /></>,
+  x: <path d="M18 6 6 18M6 6l12 12" />,
 };
 
 export function Icon({ n, size = 22, fill = 'none', style, className }:

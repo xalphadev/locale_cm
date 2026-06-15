@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 const TABS = [
   { href: '/', label: 'สำรวจ', match: (p: string) => p === '/' || p.startsWith('/place') || p.startsWith('/event'),
     icon: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></> },
+  { href: '/map', label: 'แผนที่', match: (p: string) => p.startsWith('/map'),
+    icon: <><path d="m9 4 6 2 5-2v14l-5 2-6-2-5 2V6Z" /><path d="M9 4v14M15 6v14" /></> },
   { href: '/passport', label: 'พาสปอร์ต', match: (p: string) => p.startsWith('/passport'),
     icon: <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6" /></> },
   { href: '/wallet', label: 'กระเป๋า', match: (p: string) => p.startsWith('/wallet'),
