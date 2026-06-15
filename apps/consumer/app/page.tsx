@@ -3,6 +3,7 @@ import { Icon, CAT_ICON } from './icons';
 import MapPeek from './MapPeek';
 import LangSwitch from './LangSwitch';
 import { facetsFor, facetLabel } from '@/lib/facets';
+import { parse as parseIntent } from '@/lib/intent';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,9 +41,9 @@ const PJOIN = `FROM places p
   LEFT JOIN LATERAL (SELECT 1 x FROM media mv
     WHERE mv.owner_type='place' AND mv.owner_id=p.id AND mv.kind='video' AND mv.moderation_status='approved' LIMIT 1) vid ON true`;
 
-async function load(tab: string, cat: string, sub: string, query: string, facets: string[]) {
+async function load(tab: string, cat: string, sub: string, query: string, facets: string[], wantResults = false) {
   const uid = await demoUserId();
-  const isFilter = !!(cat || sub || query || facets.length);
+  const isFilter = !!(cat || sub || query || facets.length || wantResults);
   const order = isFilter ? 'rv.n DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
   const places = await q<any>(
     `SELECT ${PCOLS} ${PJOIN}
@@ -97,12 +98,24 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
 
 export default async function Discover({ searchParams }: { searchParams: { tab?: string; cat?: string; sub?: string; q?: string; f?: string } }) {
   const tab = ['near', 'hot', 'new'].includes(searchParams?.tab ?? '') ? searchParams!.tab! : '';
-  const cat = ['eat', 'see', 'do'].includes(searchParams?.cat ?? '') ? searchParams!.cat! : '';
-  const sub = (searchParams?.sub ?? '').replace(/[^a-z_]/g, '');
-  const query = (searchParams?.q ?? '').trim().slice(0, 40);
-  const facets = (searchParams?.f ?? '').split(',').map((s) => s.replace(/[^a-z_]/g, '')).filter(Boolean).slice(0, 8);
+  let cat = ['eat', 'see', 'do'].includes(searchParams?.cat ?? '') ? searchParams!.cat! : '';
+  let sub = (searchParams?.sub ?? '').replace(/[^a-z_]/g, '');
+  const query = (searchParams?.q ?? '').trim().slice(0, 80);
+  let facets = (searchParams?.f ?? '').split(',').map((s) => s.replace(/[^a-z_]/g, '')).filter(Boolean).slice(0, 8);
+
+  // natural-language search: "คาเฟ่ใกล้ๆ มี wifi" → structured filters
+  let nameQ = '', nearMe = false; let interpChips: string[] = [];
+  if (query) {
+    const it = parseIntent(query);
+    if (it.matched) {
+      if (it.sub) sub = it.sub; else if (it.cat) cat = it.cat;
+      facets = [...new Set([...facets, ...it.facets])];
+      nearMe = it.nearMe; interpChips = it.chips;
+    } else { nameQ = query; }
+  }
+
   let d: any;
-  try { d = await load(tab, cat, sub, query, facets); }
+  try { d = await load(tab, cat, sub, nameQ, facets, !!query); }
   catch {
     return (<><div className="appbar"><div><div className="greet">Soi Hop</div><div className="loc">เชียงใหม่</div></div></div>
       <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code></p></div></>);
@@ -116,25 +129,31 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
         <div className="acts"><LangSwitch cur={getLocale()} /><a className="avatar-btn" href="/profile">ก</a></div>
       </div>
       <form className="searchbar" action="/"><Icon n="search" size={20} />
-        <input name="q" defaultValue={query} placeholder="ค้นหาร้าน ที่เที่ยว กิจกรรม…" /></form>
+        <input name="q" defaultValue={query} placeholder="ลองพิมพ์: คาเฟ่ใกล้ๆ มี wifi" /></form>
     </>
   );
 
   if (d.mode === 'filter') {
     const fset = new Set(facets);
     const baseParams: string[] = [];
-    if (cat) baseParams.push(`cat=${cat}`);
-    if (sub) baseParams.push(`sub=${sub}`);
-    if (query) baseParams.push(`q=${encodeURIComponent(query)}`);
+    if (nameQ) baseParams.push(`q=${encodeURIComponent(nameQ)}`);
+    else { if (cat) baseParams.push(`cat=${cat}`); if (sub) baseParams.push(`sub=${sub}`); }
     const facetHref = (tok: string | null) => {
       const n = new Set(fset); if (tok) (n.has(tok) ? n.delete(tok) : n.add(tok));
       const ps = [...baseParams]; if (tok && n.size) ps.push(`f=${[...n].join(',')}`);
-      return `/?${ps.join('&') || ''}` || '/';
+      return ps.length ? `/?${ps.join('&')}` : '/';
     };
     const offered = facetsFor(cat, sub);
     return (
       <>
         {header}
+        {interpChips.length > 0 && (
+          <div className="interp">
+            <span className="interp-h"><Icon n="sparkles" size={15} style={{ color: 'var(--accent)' }} /> แนะนำสำหรับ</span>
+            {interpChips.map((c, i) => <span className="ichip" key={i}>{c}</span>)}
+          </div>
+        )}
+        {nearMe && <a className="nearcta" href="/map"><Icon n="locate" size={16} /> เรียงตามระยะใกล้ฉันบนแผนที่ →</a>}
         <div className="segmented">{FILTERS.map((f) => <a key={f.k} href={f.k ? `/?cat=${f.k}` : '/'} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</a>)}</div>
         {offered.length > 0 && (
           <div className="facetbar">
@@ -142,7 +161,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
             {facets.length > 0 && <a className="facet-clear" href={facetHref(null)}>ล้าง</a>}
           </div>
         )}
-        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{query ? `“${query}”` : sub ? facetLabel(sub) : catTH(cat)} <span className="muted">({d.places.length})</span></h2>
+        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{interpChips.length ? `พบ ${d.places.length} ที่ตรงใจ` : nameQ ? `“${nameQ}” (${d.places.length})` : `${sub ? facetLabel(sub) : catTH(cat)} (${d.places.length})`}</h2>
         <div className="llist">{d.places.map((p: any) => <LRow key={p.id} p={p} />)}</div>
         {d.places.length === 0 && <p className="empty">ไม่พบร้านที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
       </>

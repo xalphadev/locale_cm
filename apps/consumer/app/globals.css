@@ -238,6 +238,14 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .facet.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .facet-clear{font-size:.82rem;font-weight:700;color:var(--muted);padding:.42rem .6rem;align-self:center}
 
+/* natural-language search interpretation */
+.interp{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 16px 2px}
+.interp-h{display:inline-flex;align-items:center;gap:.35rem;font-size:.86rem;font-weight:700;color:var(--text)}
+.ichip{font-size:.8rem;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:.34rem .72rem;border-radius:999px}
+.nearcta{display:inline-flex;align-items:center;gap:.42rem;margin:10px 16px 0;background:var(--navy);color:#fff;
+  font-weight:700;font-size:.86rem;padding:.62rem .95rem;border-radius:12px;box-shadow:var(--shadow-sm)}
+.nearcta:active{transform:scale(.98)}
+
 /* deals / promotions */
 .dealrail{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 6px;scrollbar-width:none}
 .dealrail::-webkit-scrollbar{display:none}
