@@ -1,6 +1,7 @@
 import { q, i18n, cover, DEMO_USER } from '@/lib/db';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
+import { facetLabel } from '@/lib/facets';
 
 export const dynamic = 'force-dynamic';
 
@@ -154,7 +155,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           </div>
         </>)}
 
-        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{a}</span>)}</div></>)}
+        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{facetLabel(a)}</span>)}</div></>)}
 
         {quests.length > 0 && (<>
           <h2>อยู่ในเควสต์</h2>

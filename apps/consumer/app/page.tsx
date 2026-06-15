@@ -2,6 +2,7 @@ import { q, demoUserId, i18n, cover, getLocale } from '@/lib/db';
 import { Icon, CAT_ICON } from './icons';
 import MapPeek from './MapPeek';
 import LangSwitch from './LangSwitch';
+import { facetsFor, facetLabel } from '@/lib/facets';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,16 +40,17 @@ const PJOIN = `FROM places p
   LEFT JOIN LATERAL (SELECT 1 x FROM media mv
     WHERE mv.owner_type='place' AND mv.owner_id=p.id AND mv.kind='video' AND mv.moderation_status='approved' LIMIT 1) vid ON true`;
 
-async function load(tab: string, cat: string, sub: string, query: string) {
+async function load(tab: string, cat: string, sub: string, query: string, facets: string[]) {
   const uid = await demoUserId();
-  const isFilter = !!(cat || sub || query);
+  const isFilter = !!(cat || sub || query || facets.length);
   const order = isFilter ? 'rv.n DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
   const places = await q<any>(
     `SELECT ${PCOLS} ${PJOIN}
      WHERE p.status='published' AND p.is_visible
        AND ($1='' OR p.category::text=$1) AND ($2='' OR p.subcategory=$2)
        AND ($3='' OR p.name_i18n->>'th' ILIKE '%'||$3||'%' OR p.name_i18n->>'en' ILIKE '%'||$3||'%')
-     ORDER BY ${order} LIMIT 40`, [cat, sub, query]);
+       AND (cardinality($4::text[])=0 OR p.amenities @> $4::text[])
+     ORDER BY ${order} LIMIT 40`, [cat, sub, query, facets]);
   if (isFilter) return { mode: 'filter' as const, places };
   const community = await q<any>(
     `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname
@@ -93,13 +95,14 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
   );
 }
 
-export default async function Discover({ searchParams }: { searchParams: { tab?: string; cat?: string; sub?: string; q?: string } }) {
+export default async function Discover({ searchParams }: { searchParams: { tab?: string; cat?: string; sub?: string; q?: string; f?: string } }) {
   const tab = ['near', 'hot', 'new'].includes(searchParams?.tab ?? '') ? searchParams!.tab! : '';
   const cat = ['eat', 'see', 'do'].includes(searchParams?.cat ?? '') ? searchParams!.cat! : '';
   const sub = (searchParams?.sub ?? '').replace(/[^a-z_]/g, '');
   const query = (searchParams?.q ?? '').trim().slice(0, 40);
+  const facets = (searchParams?.f ?? '').split(',').map((s) => s.replace(/[^a-z_]/g, '')).filter(Boolean).slice(0, 8);
   let d: any;
-  try { d = await load(tab, cat, sub, query); }
+  try { d = await load(tab, cat, sub, query, facets); }
   catch {
     return (<><div className="appbar"><div><div className="greet">Soi Hop</div><div className="loc">เชียงใหม่</div></div></div>
       <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code></p></div></>);
@@ -118,13 +121,30 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
   );
 
   if (d.mode === 'filter') {
+    const fset = new Set(facets);
+    const baseParams: string[] = [];
+    if (cat) baseParams.push(`cat=${cat}`);
+    if (sub) baseParams.push(`sub=${sub}`);
+    if (query) baseParams.push(`q=${encodeURIComponent(query)}`);
+    const facetHref = (tok: string | null) => {
+      const n = new Set(fset); if (tok) (n.has(tok) ? n.delete(tok) : n.add(tok));
+      const ps = [...baseParams]; if (tok && n.size) ps.push(`f=${[...n].join(',')}`);
+      return `/?${ps.join('&') || ''}` || '/';
+    };
+    const offered = facetsFor(cat, sub);
     return (
       <>
         {header}
         <div className="segmented">{FILTERS.map((f) => <a key={f.k} href={f.k ? `/?cat=${f.k}` : '/'} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</a>)}</div>
-        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{query ? `“${query}”` : sub || catTH(cat)} <span className="muted">({d.places.length})</span></h2>
+        {offered.length > 0 && (
+          <div className="facetbar">
+            {offered.map((tok) => <a key={tok} href={facetHref(tok)} className={`facet ${fset.has(tok) ? 'on' : ''}`}>{facetLabel(tok)}</a>)}
+            {facets.length > 0 && <a className="facet-clear" href={facetHref(null)}>ล้าง</a>}
+          </div>
+        )}
+        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{query ? `“${query}”` : sub ? facetLabel(sub) : catTH(cat)} <span className="muted">({d.places.length})</span></h2>
         <div className="llist">{d.places.map((p: any) => <LRow key={p.id} p={p} />)}</div>
-        {d.places.length === 0 && <p className="empty">ไม่พบผลลัพธ์ — ลองคำอื่นหรือหมวดอื่น</p>}
+        {d.places.length === 0 && <p className="empty">ไม่พบร้านที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
       </>
     );
   }

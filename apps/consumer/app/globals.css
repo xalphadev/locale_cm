@@ -229,6 +229,14 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .mappeek-chip{font-size:.76rem;font-weight:700;color:#fff;background:var(--accent);padding:.3rem .7rem;border-radius:999px}
 .pindot{display:block;width:11px;height:11px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 
+/* category-specific facet filters */
+.facetbar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 2px}
+.facet{font-size:.82rem;font-weight:600;padding:.42rem .8rem;border-radius:999px;background:var(--surface);
+  color:var(--muted);border:1px solid var(--hairline);transition:transform .1s}
+.facet:active{transform:scale(.95)}
+.facet.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.facet-clear{font-size:.82rem;font-weight:700;color:var(--muted);padding:.42rem .6rem;align-self:center}
+
 /* deals / promotions */
 .dealrail{display:flex;gap:12px;overflow-x:auto;padding:2px 16px 6px;scrollbar-width:none}
 .dealrail::-webkit-scrollbar{display:none}
