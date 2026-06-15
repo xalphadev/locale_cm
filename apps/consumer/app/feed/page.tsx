@@ -1,21 +1,7 @@
-import { q, i18n, cover, DEMO_USER } from '@/lib/db';
-import { Icon } from '../icons';
-import { toggleLikeAction, addCommentAction } from '../actions';
-import ShareButton from '../ShareButton';
+import { q, DEMO_USER } from '@/lib/db';
+import { PostCard, postKey } from './parts';
 
 export const dynamic = 'force-dynamic';
-
-const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
-const dealLabel = (t: string, pct: any, minor: any) =>
-  t === 'percent_off' ? `ลด ${Math.round(Number(pct))}%` : t === 'fixed_off' ? `ลด ฿${Math.round(Number(minor) / 100)}`
-    : t === 'bogo' ? '1 แถม 1' : t === 'freebie' ? 'ของแถมฟรี' : 'ดีล';
-const daysLeft = (e: any) => (e ? Math.max(0, Math.ceil((new Date(e).getTime() - Date.now()) / 86400000)) : null);
-function relTime(ts: any) {
-  const m = (Date.now() - new Date(ts).getTime()) / 60000;
-  if (m < 60) return 'เมื่อสักครู่'; if (m < 1440) return `${Math.floor(m / 60)} ชม.`; return `${Math.floor(m / 1440)} วันก่อน`;
-}
-const IMG_N: Record<string, number> = { deal: 3, new: 4, event: 3, verified: 1, review: 1 };
 
 async function load() {
   const deals = await q<any>(`SELECT 'deal' kind, d.id did, d.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
@@ -40,54 +26,14 @@ async function load() {
 
   const keys = feed.map(postKey);
   const likeRows = await q<any>(`SELECT post_key, count(*)::int c, bool_or(user_id=$2) liked FROM post_likes WHERE post_key = ANY($1) GROUP BY post_key`, [keys, DEMO_USER]);
-  const cmtRows = await q<any>(`SELECT pc.post_key, pc.body, pc.created_at, pr.display_name FROM post_comments pc
-    LEFT JOIN profiles pr ON pr.user_id=pc.user_id WHERE pc.post_key = ANY($1) ORDER BY pc.created_at DESC`, [keys]);
+  const cmtRows = await q<any>(`SELECT post_key, count(*)::int c FROM post_comments WHERE post_key = ANY($1) GROUP BY post_key`, [keys]);
   const likes: Record<string, any> = {}; likeRows.forEach((r) => (likes[r.post_key] = r));
-  const cmts: Record<string, any[]> = {}; cmtRows.forEach((r) => { (cmts[r.post_key] ||= []).push(r); });
-  return { feed, likes, cmts };
-}
-
-// Facebook-style photo collage: 1 full · 2 side-by-side · 3 (big + 2 stacked) · 4 grid · 5+ "+N"
-function Collage({ imgs, href }: { imgs: string[]; href: string }) {
-  const n = imgs.length;
-  const cls = n <= 1 ? 'cg1' : n === 2 ? 'cg2' : n === 3 ? 'cg3' : 'cg4';
-  const show = imgs.slice(0, 4); const extra = n - 4;
-  return (
-    <a href={href} className={`collage ${cls}`}>
-      {show.map((u, k) => (
-        <span className="ci" key={k}>
-          <img src={u} alt="" loading="lazy" />
-          {k === 3 && extra > 0 && <span className="more-ov">+{extra}</span>}
-        </span>
-      ))}
-    </a>
-  );
-}
-
-function postKey(it: any) {
-  return it.kind === 'deal' ? `deal:${it.did}` : it.kind === 'review' ? `review:${it.rid}`
-    : it.kind === 'event' ? `event:${it.eid}` : it.kind === 'post' ? `post:${it.pgid}` : `${it.kind}:${it.pid}`;
-}
-function poster(it: any): { name: string; sub: string; av: string; color: string; verified: boolean } {
-  if (it.kind === 'review') return { name: it.display_name || 'ผู้ใช้', sub: `รีวิว ${i18n(it.pname)}`, av: (it.display_name || 'ผ')[0], color: 'var(--spark)', verified: false };
-  if (it.kind === 'verified') return { name: 'ทีมงาน Soi Hop', sub: 'ตรวจสอบข้อมูลแล้ว', av: 'S', color: 'var(--navy)', verified: true };
-  if (it.kind === 'event') return { name: i18n(it.title_i18n), sub: 'กิจกรรม · นิมมาน', av: (i18n(it.title_i18n) || 'อ')[0], color: 'var(--accent)', verified: true };
-  const role = it.kind === 'deal' ? 'โปรโมชั่น' : it.kind === 'new' ? 'เปิดใหม่' : (it.psub || catTH(it.pcat));
-  return { name: i18n(it.pname), sub: `${role} · นิมมาน`, av: (i18n(it.pname) || 'ร')[0], color: 'var(--accent)', verified: true };
-}
-// images for a post: merchant-uploaded urls if any, else category placeholders × count
-function imagesFor(it: any, seed: string): string[] {
-  if (it.kind === 'post') {
-    if (it.image_urls && it.image_urls.length) return it.image_urls;
-    return Array.from({ length: it.image_count || 1 }, (_, k) => cover(`${seed}-${k}`, it.psub, it.pcat, 680, 460));
-  }
-  if (it.kind === 'event') return [cover('event' + it.eid, it.ekind, 'see', 680, 460)];
-  const n = IMG_N[it.kind] || 1;
-  return Array.from({ length: n }, (_, k) => cover(`${seed}-${k}`, it.psub, it.pcat, 680, 460));
+  const cmtCount: Record<string, number> = {}; cmtRows.forEach((r) => (cmtCount[r.post_key] = r.c));
+  return { feed, likes, cmtCount };
 }
 
 export default async function Feed() {
-  let d: any = { feed: [], likes: {}, cmts: {} };
+  let d: any = { feed: [], likes: {}, cmtCount: {} };
   try { d = await load(); } catch { /* db down */ }
 
   return (
@@ -96,62 +42,15 @@ export default async function Feed() {
       <div className="feed">
         {d.feed.length === 0 && <p className="empty">ยังไม่มีอัปเดต — รัน <code>db/test/setup-dev-db.sh</code></p>}
         {d.feed.map((it: any, i: number) => {
-          const p = poster(it);
           const key = postKey(it);
-          const href = it.kind === 'event' ? `/event/${it.eid}` : `/place/${it.pid}`;
-          const seed = it.pid || it.eid || it.pgid || String(i);
-          const imgs = imagesFor(it, seed);
-          const lk = d.likes[key] || { c: 0, liked: false };
-          const cl = d.cmts[key] || [];
           return (
-            <article className="post" key={i}>
-              <header className="ph">
-                <span className="ph-ring"><span className="post-av" style={{ background: p.color }}>{p.av}</span></span>
-                <a className="ph-meta" href={href}>
-                  <div className="ph-name">{p.name}{p.verified && <span className="vbadge"><Icon n="check" size={9} fill="#fff" /></span>}</div>
-                  <div className="ph-sub"><Icon n={it.kind === 'event' ? 'calendar' : 'pin'} size={11} /> {p.sub}</div>
-                </a>
-                <Icon n="dots" size={18} style={{ color: 'var(--hint)' }} />
-              </header>
-
-              <Collage imgs={imgs} href={href} />
-
-              <div className="ph-actions">
-                <form className="actf2" action={toggleLikeAction.bind(null, key)}>
-                  <button type="submit" className={`pa ${lk.liked ? 'liked' : ''}`} aria-label="ถูกใจ"><Icon n="heart" size={24} fill={lk.liked ? 'currentColor' : 'none'} /></button>
-                </form>
-                <a className="pa" href={`#c-${i}`} aria-label="คอมเมนต์"><Icon n="chat" size={23} /></a>
-                <ShareButton href={href} title={p.name} variant="icon" />
-                <span className="pa-sp" />
-                <a className="pa" href={href} aria-label="บันทึก"><Icon n="bookmark" size={22} /></a>
-              </div>
-
-              {lk.c > 0 && (
-                <div className="ph-likes"><span className="ph-faces"><i style={{ background: 'var(--accent)' }} /><i style={{ background: 'var(--spark)' }} /><i style={{ background: 'var(--gold)' }} /></span><span>ถูกใจ <b>{lk.c.toLocaleString()}</b> ครั้ง</span></div>
-              )}
-
-              <a className="ph-cap" href={href}>
-                {it.kind === 'post' && <><b className="ph-h">{p.name}</b> {i18n(it.body_i18n)}</>}
-                {it.kind === 'deal' && <><span className="dl">{dealLabel(it.deal_type, it.value_pct, it.value_minor)}</span> {i18n(it.dtitle)}{daysLeft(it.ends_at) != null ? ` — เหลืออีก ${daysLeft(it.ends_at)} วัน${it.quota_total ? ` · เหลือ ${it.quota_total - it.quota_used} สิทธิ์` : ''}` : ''}</>}
-                {it.kind === 'event' && <><b className="ph-h">{p.name}</b> {i18n(it.description_i18n) || ''} · {it.d} {THM[it.m - 1]}</>}
-                {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
-                {it.kind === 'verified' && <>ทีมงานท้องถิ่นเพิ่งตรวจสอบข้อมูล <b className="ph-h">{i18n(it.pname)}</b> ว่าสด ใหม่ ถูกต้อง — เปิดจริง พิกัด/เวลาอัปเดตแล้ว</>}
-                {it.kind === 'new' && <><b className="ph-h">{i18n(it.pname)}</b> เปิดใหม่แล้วในนิมมาน — {it.psub || catTH(it.pcat)} น่าไปลอง</>}
-              </a>
-
-              <div className="ph-time">{relTime(it.ts)}</div>
-
-              <div className="post-comments" id={`c-${i}`}>
-                {cl.length > 2 && <a href={`#c-${i}`} className="cmt-more">ดูคอมเมนต์ทั้งหมด {cl.length} รายการ</a>}
-                {cl.slice(0, 2).reverse().map((c: any, j: number) => (
-                  <div className="cmt" key={j}><b>{c.display_name || 'ผู้ใช้'}</b> {c.body}</div>
-                ))}
-                <form className="cmt-form" action={addCommentAction.bind(null, key)}>
-                  <input name="body" placeholder="เขียนคอมเมนต์…" autoComplete="off" maxLength={300} />
-                  <button type="submit">ส่ง</button>
-                </form>
-              </div>
-            </article>
+            <PostCard
+              key={i}
+              it={it}
+              lk={d.likes[key] || { c: 0, liked: false }}
+              commentCount={d.cmtCount[key] || 0}
+              mode="list"
+            />
           );
         })}
       </div>
