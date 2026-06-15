@@ -3,6 +3,35 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { q, API_BASE, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 
+/** Merchant one-tap post to the consumer feed (caption + N photos). MVP auto-publishes. */
+export async function createPostAction(formData: FormData) {
+  const placeId = String(formData.get('placeId') ?? '').trim();
+  const body = String(formData.get('body') ?? '').trim().slice(0, 500);
+  const n = Math.min(4, Math.max(1, Number(formData.get('image_count')) || 1));
+  const urls = String(formData.get('image_urls') ?? '').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  if (placeId && body) {
+    await q(
+      `INSERT INTO feed_posts(place_id, body_i18n, image_count, image_urls, status, author_kind)
+       VALUES($1, jsonb_build_object('th',$2::text), $3, $4, 'published', 'merchant')`,
+      [placeId, body, urls.length || n, urls.length ? urls : null]);
+  }
+  revalidatePath('/post');
+  redirect('/post?posted=1');
+}
+
+/** Staff publishes a merchant-submitted shop (draft → live). Scoped to source='merchant'. */
+export async function publishMerchantPlaceAction(placeId: string) {
+  await q(`UPDATE places SET status='published', verified_at=now() WHERE id=$1 AND source='merchant'`, [placeId]);
+  revalidatePath('/shops'); revalidatePath('/');
+  redirect('/shops?ok=published');
+}
+/** Staff hides a merchant shop again (live → draft). */
+export async function unpublishMerchantPlaceAction(placeId: string) {
+  await q(`UPDATE places SET status='draft' WHERE id=$1 AND source='merchant'`, [placeId]);
+  revalidatePath('/shops'); revalidatePath('/');
+  redirect('/shops?ok=hidden');
+}
+
 /** Field agent submits a NEW place → POST /supply/proposals (lands as pending change_proposal). */
 export async function createPlaceAction(formData: FormData) {
   const s = (k: string) => String(formData.get(k) ?? '').trim();

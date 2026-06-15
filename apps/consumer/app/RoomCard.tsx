@@ -1,0 +1,67 @@
+import { i18n, cover } from '@/lib/db';
+import { Icon } from './icons';
+import { lineHref } from './ProductCard';
+
+const PERIOD_TH: Record<string, string> = { month: 'เดือน', night: 'คืน' };
+const FURNISH_TH: Record<string, string> = { furnished: 'เฟอร์ครบ', partial: 'เฟอร์บางส่วน', unfurnished: 'ไม่มีเฟอร์' };
+const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const fmtDate = (d: any) => { const t = new Date(d); return `${t.getDate()} ${THM[t.getMonth()]}`; };
+const daysAgo = (ts: any) => Math.floor((Date.now() - new Date(ts).getTime()) / 86400000);
+const staleAfter = (mode: string) => (mode === 'daily' ? 3 : 14);
+
+export function rentText(u: any): string {
+  if (u.price_text_i18n) return i18n(u.price_text_i18n);
+  if (u.price_minor == null) return 'สอบถามราคา';
+  return `฿${Math.round(Number(u.price_minor) / 100).toLocaleString()}/${PERIOD_TH[u.price_period] || u.price_period}`;
+}
+export function roomImg(u: any): string {
+  if (u.image_urls && u.image_urls.length) return u.image_urls[0];
+  return cover(`stay-${u.id}`, u.stay_kind || 'stay', 'see', 360, 360);
+}
+
+/** Non-transactional accommodation card. Mode-aware vacancy chip + a "contact the place" CTA (LINE → phone).
+ *  Vacancy that's gone stale (no owner update past the threshold) degrades to a neutral "สอบถามห้องว่าง". */
+export function RoomCard({ u, line_id, phone, shopName, shopHref }: {
+  u: any; line_id?: string | null; phone?: string | null; shopName?: string; shopHref?: string;
+}) {
+  const line = lineHref(line_id);
+  const cta = line ? { href: line, label: 'ทักไลน์สอบถามห้อง', icon: 'chat' as const, ext: true, cls: 'line' }
+    : phone ? { href: `tel:${phone}`, label: 'โทรสอบถาม', icon: 'phone' as const, ext: false, cls: 'tel' }
+      : null;
+  const monthly = u.rental_mode === 'monthly';
+  const stale = daysAgo(u.availability_updated_at) > staleAfter(u.rental_mode);
+
+  let chip = monthly
+    ? (u.available_units > 0 ? { cls: 'season', label: `ว่าง ${u.available_units} ห้อง` } : { cls: 'sold', label: 'เต็ม' })
+    : (u.daily_status === 'vacant' ? { cls: 'season', label: 'ว่างวันนี้' }
+      : u.daily_status === 'full' ? { cls: 'sold', label: 'เต็มวันนี้' } : { cls: 'ask', label: 'สอบถามว่าง' });
+  if (stale && chip.cls === 'season') chip = { cls: 'ask', label: 'สอบถามห้องว่าง' };
+
+  const facts: string[] = [];
+  if (u.capacity) facts.push(`${u.capacity} ท่าน`);
+  if (monthly && u.available_from) facts.push(`ว่าง ${fmtDate(u.available_from)}`);
+  if (u.deposit_minor != null) facts.push(`มัดจำ ฿${Math.round(u.deposit_minor / 100).toLocaleString()}`);
+  if (u.min_stay) facts.push(`ขั้นต่ำ ${u.min_stay} ${monthly ? 'เดือน' : 'คืน'}`);
+  if (u.furnished && FURNISH_TH[u.furnished]) facts.push(FURNISH_TH[u.furnished]);
+
+  return (
+    <div className="prodcard">
+      <div className="pcimg">
+        <img src={roomImg(u)} alt="" loading="lazy" />
+        <span className={`pchip ${chip.cls}`}>{chip.label}</span>
+      </div>
+      <div className="pcbody">
+        {shopName && (shopHref
+          ? <a className="pcshop" href={shopHref}><Icon n="pin" size={11} /> {shopName}</a>
+          : <span className="pcshop"><Icon n="pin" size={11} /> {shopName}</span>)}
+        <div className="pcname">{i18n(u.name_i18n)}</div>
+        <div className="pcprice">{rentText(u)}</div>
+        {facts.length > 0 && <div className="pcfacts">{facts.join(' · ')}</div>}
+        <div className="pcfresh">อัปเดตห้องว่าง {daysAgo(u.availability_updated_at) <= 0 ? 'วันนี้' : `${daysAgo(u.availability_updated_at)} วันก่อน`}</div>
+        {cta
+          ? <a className={`pcbuy ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={14} /> {cta.label}</a>
+          : <span className="pcbuy off"><Icon n="chat" size={14} /> ติดต่อที่พัก</span>}
+      </div>
+    </div>
+  );
+}

@@ -35,6 +35,14 @@ const P: Record<string, JSX.Element> = {
   map: <><path d="m9 4 6 2 5.4-2.2A.5.5 0 0 1 21 4.3v13.4a1 1 0 0 1-.6.9L15 21l-6-2-5.4 2.2A.5.5 0 0 1 3 20.7V7.3a1 1 0 0 1 .6-.9Z" /><path d="M9 4v15M15 6v15" /></>,
   locate: <><circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5" /></>,
   x: <path d="M18 6 6 18M6 6l12 12" />,
+  play: <path d="M7 4.5v15l13-7.5z" />,
+  feed: <><rect x="4" y="4" width="16" height="16" rx="2.5" /><path d="M8 9h8M8 13h8M8 17h5" /></>,
+  heart: <path d="M12 20s-7-4.4-9.4-8.8A4.5 4.5 0 0 1 12 6a4.5 4.5 0 0 1 9.4 5.2C19 15.6 12 20 12 20Z" />,
+  share: <><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v13M8 7l4-4 4 4" /></>,
+  dots: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
+  tag: <><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" /><circle cx="7.5" cy="7.5" r="1.4" /></>,
+  bed: <><path d="M3 7v11M3 12h18M21 18v-6a2 2 0 0 0-2-2H9v4" /><circle cx="6.5" cy="9.5" r="1.2" /></>,
+  clock2: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" /></>,
 };
 
 export function Icon({ n, size = 22, fill = 'none', style, className }:
@@ -51,6 +59,7 @@ export const CAT_ICON: Record<string, string> = {
   cafe: 'coffee', restaurant: 'bowl', street_food: 'flame', dessert: 'cake', bar: 'coffee',
   temple: 'landmark', viewpoint: 'pin', market: 'bowl', museum: 'landmark',
   cooking_class: 'flame', spa: 'flower', muay_thai: 'dumbbell', workshop: 'palette',
+  dorm: 'bed', apartment: 'bed', homestay: 'bed', hotel: 'bed', guesthouse: 'bed',
 };
 export const KIND_ICON: Record<string, string> = {
   festival: 'sparkles', market: 'bowl', performance: 'palette', workshop: 'palette', seasonal: 'calendar',

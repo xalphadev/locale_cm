@@ -1,10 +1,17 @@
 import { q, i18n, cover, DEMO_USER } from '@/lib/db';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
+import { facetLabel } from '@/lib/facets';
+import { ProductCard } from '../../ProductCard';
+import { RoomCard } from '../../RoomCard';
 
 export const dynamic = 'force-dynamic';
 
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
+const dealLabel = (t: string, pct: any, minor: any) =>
+  t === 'percent_off' ? `ลด ${Math.round(Number(pct))}%` : t === 'fixed_off' ? `ลด ฿${Math.round(Number(minor) / 100)}`
+    : t === 'bogo' ? '1 แถม 1' : t === 'freebie' ? 'ของแถมฟรี' : 'ดีล';
+const daysLeft = (e: any) => (e ? Math.max(0, Math.ceil((new Date(e).getTime() - Date.now()) / 86400000)) : null);
 const DAYS: [string, string][] = [['mon', 'จันทร์'], ['tue', 'อังคาร'], ['wed', 'พุธ'], ['thu', 'พฤหัส'], ['fri', 'ศุกร์'], ['sat', 'เสาร์'], ['sun', 'อาทิตย์']];
 const DKEY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -16,13 +23,14 @@ function parsePoint(geo: string | null) {
 }
 
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = [];
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = [];
   try {
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
+              p.offers_stay, p.stay_kind,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
-              f.freshness_label::text fresh,
+              f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
        FROM places p LEFT JOIN districts d ON d.id=p.district_id LEFT JOIN data_freshness f ON f.place_id=p.id
        WHERE p.id=$1 AND p.status='published'`, [params.id, DEMO_USER]);
@@ -32,6 +40,15 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       [rev] = await q<any>(`SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [params.id]);
       reviews = await q<any>(`SELECT r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 10`, [params.id]);
       dist = await q<any>(`SELECT rating, count(*)::int c FROM reviews WHERE place_id=$1 AND moderation_status='approved' GROUP BY rating`, [params.id]);
+      const [vid] = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='video' AND moderation_status='approved' LIMIT 1`, [params.id]);
+      videoUrl = vid?.storage_path ?? null;
+      deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
+      products = await q<any>(`SELECT id, name_i18n, subtype, price_minor, price_unit, price_text_i18n, image_urls, in_season, available_today, sold_out
+        FROM shop_products WHERE place_id=$1 AND status='published' ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
+      units = await q<any>(`SELECT id, name_i18n, rental_mode, price_minor, price_period, price_text_i18n, image_urls,
+          available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
+        FROM stay_units WHERE place_id=$1 AND status='published'
+        ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 20`, [params.id]);
     }
   } catch { /* db down */ }
 
@@ -47,6 +64,9 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   const hhmm = now.toTimeString().slice(0, 5);
   const th = hours[dkey];
   const openNow = !!(th && th !== 'closed' && hhmm >= th.split('-')[0] && hhmm <= th.split('-')[1]);
+  const vDays = p.last_verified_at ? Math.floor((Date.now() - new Date(p.last_verified_at).getTime()) / 86400000) : null;
+  const vText = vDays == null ? '' : vDays <= 0 ? 'วันนี้' : vDays === 1 ? 'เมื่อวาน' : `${vDays} วันก่อน`;
+  const scoredP = (rev?.n ?? 0) >= 5; // show a numeric score only with enough verified reviews
   const distMap: Record<number, number> = {}; dist.forEach((r) => (distMap[r.rating] = r.c));
   const total = (rev?.n ?? 0) || 1;
   const mapUrl = pt ? `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}` : '#';
@@ -54,7 +74,10 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   return (
     <>
       <div className="detail-hero">
-        <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />
+        {videoUrl
+          ? <video src={videoUrl} poster={cover(p.id, p.subcategory, p.category, 760, 500)} muted loop autoPlay playsInline />
+          : <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />}
+        {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
         <div className="scrim" />
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
         <form action={toggleSaveAction.bind(null, p.id)} style={{ position: 'absolute', top: 16, right: 16, zIndex: 3 }}>
@@ -63,7 +86,9 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         <div className="dtitle">
           <span className="frost" style={{ marginBottom: 8 }}><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={13} /> {catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</span>
           <h1>{i18n(p.name_i18n)}</h1>
-          <div className="dmeta">{rev && rev.n > 0 ? <><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A', verticalAlign: '-.18em' }} /> {rev.avg} · {rev.n} รีวิว</> : 'ยังไม่มีรีวิว'}</div>
+          <div className="dmeta">{scoredP
+            ? <><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A', verticalAlign: '-.18em' }} /> {rev.avg} · {rev.n} รีวิว</>
+            : (rev?.n ?? 0) > 0 ? `ร้านใหม่ · ${rev.n} รีวิว` : 'ร้านใหม่ · ยังไม่มีรีวิว'}</div>
         </div>
       </div>
 
@@ -73,6 +98,15 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           <span className="dact"><Icon n="bookmark" size={22} />บันทึก</span>
           {p.phone ? <a className="dact" href={`tel:${p.phone}`}><Icon n="phone" size={22} />โทร</a> : <span className="dact" style={{ opacity: .5 }}><Icon n="phone" size={22} />โทร</span>}
         </div>
+
+        {p.fresh && (
+          <div className="trust">
+            <span className="ti"><Icon n="check" size={18} /></span>
+            <div className="tt"><b>ตรวจสอบโดยทีมงานท้องถิ่น</b> · {vText}<br />
+              <span className="muted">ข้อมูลร้านนี้การันตีความสด — ไม่ใช่ข้อมูลเก่าที่ไม่มีใครดูแล</span></div>
+            <span className="tflag">แจ้งไม่ตรง</span>
+          </div>
+        )}
 
         {Object.keys(hours).length > 0 && (
           <div className="openpill" style={{ marginBottom: 12 }}>
@@ -88,6 +122,43 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           {p.district_name && <span className="fact"><Icon n="pin" size={15} /> {i18n(p.district_name)}</span>}
           {p.fresh === 'fresh' && <span className="fact"><Icon n="check" size={15} /> ตรวจสอบแล้ว</span>}
         </div>
+
+        {deals.length > 0 && (
+          <>
+            <h2>โปรโมชั่น</h2>
+            {deals.map((dl) => {
+              const left = dl.quota_total ? dl.quota_total - dl.quota_used : null;
+              const dd = daysLeft(dl.ends_at);
+              return (
+                <div className="dealrow" key={dl.id}>
+                  <div className="drt"><span className="drlabel">{dealLabel(dl.deal_type, dl.value_pct, dl.value_minor)}</span> {i18n(dl.title_i18n)}</div>
+                  {i18n(dl.terms_i18n) && <div className="drterms">{i18n(dl.terms_i18n)}</div>}
+                  <div className="drbar">
+                    {dd != null && <span className="b1">{dd === 0 ? 'วันสุดท้าย!' : `เหลืออีก ${dd} วัน`}</span>}
+                    {left != null && <span className="b2">เหลือ {left} สิทธิ์</span>}
+                  </div>
+                  <span className="dealcta"><Icon n="ticket" size={15} /> แสดงที่เคาน์เตอร์เพื่อรับสิทธิ์</span>
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {products.length > 0 && (<>
+          <h2>สินค้าในร้าน</h2>
+          <div className="prail">
+            {products.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
+          </div>
+          <p className="shopnote"><Icon n="chat" size={13} /> สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ</p>
+        </>)}
+
+        {units.length > 0 && (<>
+          <h2>ห้องพัก / ห้องว่าง</h2>
+          <div className="prail">
+            {units.map((u) => <RoomCard key={u.id} u={{ ...u, stay_kind: p.stay_kind }} line_id={p.line_id} phone={p.phone} />)}
+          </div>
+          <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Soi Hop ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
+        </>)}
 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 
@@ -112,7 +183,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           </div>
         </>)}
 
-        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{a}</span>)}</div></>)}
+        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{facetLabel(a)}</span>)}</div></>)}
 
         {quests.length > 0 && (<>
           <h2>อยู่ในเควสต์</h2>
@@ -127,13 +198,17 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         </>)}
 
         {reviews.length > 0 && (<>
-          <h2>รีวิว ({rev?.n})</h2>
-          <div className="rdist">
-            <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
-            <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
-              <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / total) * 100)}%` }} /></span></div>
-            ))}</div>
-          </div>
+          <h2>รีวิว{scoredP ? ` (${rev?.n})` : ''}</h2>
+          {scoredP ? (
+            <div className="rdist">
+              <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
+              <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
+                <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / total) * 100)}%` }} /></span></div>
+              ))}</div>
+            </div>
+          ) : (
+            <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
+          )}
           {reviews.map((r, i) => (
             <div className="review" key={i}>
               <div className="review-top">

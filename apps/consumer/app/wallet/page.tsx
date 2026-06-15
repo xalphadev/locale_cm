@@ -40,6 +40,11 @@ export default async function Wallet() {
           </div>
         </div>
 
+        <div className="shield">
+          <Icon n="check" size={18} />
+          <span>ทุกเหรียญค้ำด้วย<b>เงินบาทจริง</b>ที่ร้านพาร์ตเนอร์ฝากไว้ — มีมูลค่าจริงเสมอ ไม่ใช่แต้มลอยๆ ที่หมดค่า</span>
+        </div>
+
         <h2>รางวัลของฉัน</h2>
         {readyReward ? (
           <div className="reward-row">

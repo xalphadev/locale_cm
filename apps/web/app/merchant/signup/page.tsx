@@ -1,0 +1,40 @@
+import { signupAction } from '../actions';
+
+export const dynamic = 'force-dynamic';
+
+export default function Signup({ searchParams }: { searchParams: { error?: string } }) {
+  return (
+    <div className="portal-auth">
+      <div className="pa-brand">Soi Hop · ร้านค้า</div>
+      <h1>สมัครร้านค้า</h1>
+      <p className="note">สมัครเพื่อลงข้อมูลร้าน โพสต์ลงฟีด และโชว์สินค้าให้ลูกค้าเห็น — เราไม่ยุ่งเรื่องการขาย ลูกค้าติดต่อร้านโดยตรง</p>
+      {searchParams?.error && <div className="banner-err">{searchParams.error}</div>}
+      <form className="form" action={signupAction}>
+        <div className="field"><label>ชื่อร้าน *</label><input name="shop_name" required placeholder="เช่น รากเหง้า สโลว์บาร์" /></div>
+        <div className="field"><label>ประเภทร้าน</label>
+          <select name="shop_type" defaultValue="cafe">
+            <optgroup label="ร้าน / สถานที่">
+              <option value="cafe">คาเฟ่</option><option value="restaurant">ร้านอาหาร</option>
+              <option value="street_food">สตรีทฟู้ด</option><option value="dessert">ของหวาน / เบเกอรี</option>
+              <option value="market">ร้านขายของ / ผลไม้ผัก</option><option value="shop">ร้านค้าอื่นๆ</option>
+            </optgroup>
+            <optgroup label="ที่พัก (เช่ารายเดือน/รายวัน)">
+              <option value="dorm">หอพัก</option><option value="apartment">อพาร์ตเมนต์</option>
+              <option value="homestay">โฮมสเตย์</option><option value="guesthouse">เกสต์เฮาส์</option>
+              <option value="hotel">โรงแรม</option>
+            </optgroup>
+          </select></div>
+        <div className="grid2">
+          <div className="field"><label>เบอร์โทร</label><input name="phone" placeholder="08x-xxx-xxxx" /></div>
+          <div className="field"><label>LINE ID</label><input name="line_id" placeholder="@yourshop" /></div>
+        </div>
+        <label className="check"><input type="checkbox" name="sells_products" /> ร้านของฉันมีสินค้าขาย (ผลไม้ ผัก เบเกอรี ของฝาก ฯลฯ) — อยากโชว์ให้ลูกค้าเห็น</label>
+        <hr className="phr" />
+        <div className="field"><label>อีเมล *</label><input name="email" type="email" required autoComplete="email" /></div>
+        <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
+        <button className="btn btn-primary" type="submit">สมัครและเริ่มใช้งาน →</button>
+      </form>
+      <p className="note">มีบัญชีแล้ว? <a href="/merchant/login">เข้าสู่ระบบ</a></p>
+    </div>
+  );
+}
