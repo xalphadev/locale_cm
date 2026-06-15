@@ -13,30 +13,36 @@ const PRICE: Record<string, [string, string][]> = {
 };
 const CAPS: [string, string][] = [['1', '1 ท่าน'], ['2', '2 ท่าน'], ['3', '3+ ท่าน']];
 const FURNISH: [string, string][] = [['furnished', 'เฟอร์ครบ'], ['partial', 'เฟอร์บางส่วน'], ['unfurnished', 'ไม่มีเฟอร์']];
+const MULTI = 'เลือกได้หลายอย่าง';
+const ONE = 'เลือก 1 อย่าง';
 
 type Props = {
   mode: string; view: string; q: string;
-  kind: string; sort: string; am: string[]; fr: string; pr: string; cap: string; count: number;
+  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; cap: string; count: number;
 };
 
 export default function StayFilterSheet(p: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [s, setS] = useState({ kind: p.kind, sort: p.sort, am: [...p.am], fr: p.fr, pr: p.pr, cap: p.cap });
+  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr, cap: p.cap });
+  const [s, setS] = useState(init);
 
-  function openSheet() { setS({ kind: p.kind, sort: p.sort, am: [...p.am], fr: p.fr, pr: p.pr, cap: p.cap }); setOpen(true); }
-  const single = (key: 'kind' | 'sort' | 'fr' | 'pr' | 'cap', val: string) => setS((x) => ({ ...x, [key]: x[key] === val ? '' : val }));
-  const toggleAm = (a: string) => setS((x) => ({ ...x, am: x.am.includes(a) ? x.am.filter((y) => y !== a) : [...x.am, a] }));
-  function clearAll() { setS({ kind: '', sort: '', am: [], fr: '', pr: '', cap: '' }); }
+  function openSheet() { setS(init()); setOpen(true); }
+  // single-select (radio): ช่วงราคา · รองรับ · เรียงลำดับ — click again to clear
+  const single = (key: 'sort' | 'pr' | 'cap', val: string) => setS((x) => ({ ...x, [key]: x[key] === val ? '' : val }));
+  // multi-select (checkbox): ประเภทที่พัก · เฟอร์นิเจอร์ · สิ่งอำนวยความสะดวก
+  const multi = (key: 'kind' | 'am' | 'fr', val: string) =>
+    setS((x) => ({ ...x, [key]: x[key].includes(val) ? x[key].filter((y) => y !== val) : [...x[key], val] }));
+  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '', cap: '' }); }
   function apply() {
     const u = new URLSearchParams();
     if (p.mode !== 'monthly') u.set('mode', p.mode);
     if (p.q) u.set('q', p.q);
     if (p.view === 'map') u.set('view', 'map');
-    if (s.kind) u.set('kind', s.kind);
+    if (s.kind.length) u.set('kind', s.kind.join(','));
     if (s.sort) u.set('sort', s.sort);
     if (s.am.length) u.set('am', s.am.join(','));
-    if (s.fr) u.set('fr', s.fr);
+    if (s.fr.length) u.set('fr', s.fr.join(','));
     if (s.pr) u.set('pr', s.pr);
     if (s.cap) u.set('cap', s.cap);
     const qs = u.toString();
@@ -44,8 +50,16 @@ export default function StayFilterSheet(p: Props) {
     router.push(qs ? `/stay?${qs}` : '/stay');
   }
 
-  const Chip = ({ on, onClick, children }: { on: boolean; onClick: () => void; children: any }) =>
-    <button type="button" className={`fchip ${on ? 'on' : ''}`} onClick={onClick}>{children}</button>;
+  const selected = s.kind.length + s.am.length + s.fr.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.cap ? 1 : 0);
+
+  const Chip = ({ on, onClick, check = false, children }: { on: boolean; onClick: () => void; check?: boolean; children: any }) =>
+    <button type="button" className={`fchip ${on ? 'on' : ''}`} onClick={onClick}>{check && on && <Icon n="check" size={13} className="fchip-ck" />}{children}</button>;
+
+  const Sec = ({ icon, title, hint, children }: { icon: string; title: string; hint: string; children: any }) =>
+    <div className="fsec">
+      <div className="fsec-h"><span className="fsec-ic"><Icon n={icon} size={15} /></span>{title}<span className="fsec-hint">{hint}</span></div>
+      <div className="fchips">{children}</div>
+    </div>;
 
   return (
     <>
@@ -59,16 +73,30 @@ export default function StayFilterSheet(p: Props) {
             <div className="sheet-grab" />
             <div className="sheet-head"><b>ตัวกรอง</b><button type="button" className="sheet-x" onClick={() => setOpen(false)} aria-label="ปิด"><Icon n="x" size={20} /></button></div>
             <div className="sheet-body">
-              <div className="fsec"><div className="fsec-h">ประเภทที่พัก</div><div className="fchips">{STAY_KINDS.map((k) => <Chip key={k} on={s.kind === k} onClick={() => single('kind', k)}>{STAY_KIND_TH[k]}</Chip>)}</div></div>
-              <div className="fsec"><div className="fsec-h">ช่วงราคา</div><div className="fchips">{PRICE[p.mode].map(([k, l]) => <Chip key={k} on={s.pr === k} onClick={() => single('pr', k)}>฿{l}</Chip>)}</div></div>
-              <div className="fsec"><div className="fsec-h">รองรับ</div><div className="fchips">{CAPS.map(([k, l]) => <Chip key={k} on={s.cap === k} onClick={() => single('cap', k)}>{l}</Chip>)}</div></div>
-              {p.mode === 'monthly' && <div className="fsec"><div className="fsec-h">เฟอร์นิเจอร์</div><div className="fchips">{FURNISH.map(([k, l]) => <Chip key={k} on={s.fr === k} onClick={() => single('fr', k)}>{l}</Chip>)}</div></div>}
-              <div className="fsec"><div className="fsec-h">สิ่งอำนวยความสะดวก</div><div className="fchips">{STAY_AMENITIES.map((a) => <Chip key={a} on={s.am.includes(a)} onClick={() => toggleAm(a)}>{facetLabel(a)}</Chip>)}</div></div>
-              <div className="fsec"><div className="fsec-h">เรียงลำดับ</div><div className="fchips">{SORTS[p.mode].map(([k, l]) => <Chip key={k || 'new'} on={s.sort === k} onClick={() => single('sort', k)}>{l}</Chip>)}</div></div>
+              <Sec icon="bed" title="ประเภทที่พัก" hint={MULTI}>
+                {STAY_KINDS.map((k) => <Chip key={k} on={s.kind.includes(k)} check onClick={() => multi('kind', k)}>{STAY_KIND_TH[k]}</Chip>)}
+              </Sec>
+              <Sec icon="tag" title="ช่วงราคา" hint={ONE}>
+                {PRICE[p.mode].map(([k, l]) => <Chip key={k} on={s.pr === k} onClick={() => single('pr', k)}>฿{l}</Chip>)}
+              </Sec>
+              <Sec icon="users" title="รองรับ" hint={ONE}>
+                {CAPS.map(([k, l]) => <Chip key={k} on={s.cap === k} onClick={() => single('cap', k)}>{l}</Chip>)}
+              </Sec>
+              {p.mode === 'monthly' && (
+                <Sec icon="sofa" title="เฟอร์นิเจอร์" hint={MULTI}>
+                  {FURNISH.map(([k, l]) => <Chip key={k} on={s.fr.includes(k)} check onClick={() => multi('fr', k)}>{l}</Chip>)}
+                </Sec>
+              )}
+              <Sec icon="sparkles" title="สิ่งอำนวยความสะดวก" hint={MULTI}>
+                {STAY_AMENITIES.map((a) => <Chip key={a} on={s.am.includes(a)} check onClick={() => multi('am', a)}>{facetLabel(a)}</Chip>)}
+              </Sec>
+              <Sec icon="sort" title="เรียงลำดับ" hint={ONE}>
+                {SORTS[p.mode].map(([k, l]) => <Chip key={k || 'new'} on={s.sort === k} onClick={() => single('sort', k)}>{l}</Chip>)}
+              </Sec>
             </div>
             <div className="sheet-foot">
               <button type="button" className="sheet-clear" onClick={clearAll}>ล้างทั้งหมด</button>
-              <button type="button" className="sheet-apply" onClick={apply}>ดูผลลัพธ์</button>
+              <button type="button" className="sheet-apply" onClick={apply}>ดูผลลัพธ์{selected ? ` (${selected})` : ''}</button>
             </div>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
 import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
 
-type Pin = { id: string; name: string; lat: number; lng: number; kind: string; priceFrom: number | null; badge: string; live: boolean };
+type Pin = { id: string; name: string; lat: number; lng: number; kind: string; priceFrom: number | null; badge: string; live: boolean; img: string };
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
 const KIND_COLORS: Record<string, string> = {
@@ -35,7 +35,7 @@ export default function StayMapView({ pins, focus }: { pins: Pin[]; focus?: stri
       const L = w.L;
       const map = L.map(hostRef.current, { zoomControl: false, attributionControl: false }).setView(NIMMAN, 15);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+      L.control.zoom({ position: 'topright' }).addTo(map);
       L.control.attribution({ position: 'bottomleft', prefix: false }).addAttribution('© OpenStreetMap, © CARTO').addTo(map);
       layerRef.current = L.markerClusterGroup({ maxClusterRadius: 46, showCoverageOnHover: false, spiderfyOnMaxZoom: true });
       map.addLayer(layerRef.current);
@@ -53,7 +53,7 @@ export default function StayMapView({ pins, focus }: { pins: Pin[]; focus?: stri
     pins.forEach((p) => {
       const c = p.live ? (KIND_COLORS[p.kind] || '#1A73E8') : '#9AA0A6';
       const on = p.id === sel;
-      const icon = L.divIcon({ className: 'pin-wrap', html: `<span class="stay-pin${on ? ' on' : ''}" style="--c:${c}"><b>${p.badge}</b></span>`, iconSize: [54, 26], iconAnchor: [27, 26] });
+      const icon = L.divIcon({ className: 'pin-wrap', html: `<span class="stay-pin${on ? ' on' : ''}" style="--c:${c}"><img src="${p.img}" alt="" /><b>${p.badge}</b></span>`, iconSize: [84, 32], iconAnchor: [42, 32] });
       const mk = L.marker([p.lat, p.lng], { icon, zIndexOffset: (on ? 2000 : 0) + (p.live ? 500 : 0) });
       mk.on('click', () => select(p.id, true));
       grp.addLayer(mk);
@@ -83,13 +83,14 @@ export default function StayMapView({ pins, focus }: { pins: Pin[]; focus?: stri
         {pins.map((p) => (
           <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}`}
             className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
+            <img src={p.img} alt="" loading="lazy" />
             <div className="mc">
               <div className="mc-nm">{p.name}</div>
               <div className="mc-meta">
-                <span className={`rchip ${p.live ? 'season' : 'ask'}`} style={{ fontSize: '.7rem', padding: '.1rem .45rem' }}>{p.badge}</span>
-                <span className="sep">·</span>
-                <span>{KIND_TH[p.kind] || 'ที่พัก'}{p.priceFrom != null ? ` · เริ่ม ฿${p.priceFrom.toLocaleString()}` : ''}</span>
+                <span className={`rchip ${p.live ? 'season' : 'ask'}`}>{p.badge}</span>
+                <span className="mc-kind">{KIND_TH[p.kind] || 'ที่พัก'}</span>
               </div>
+              {p.priceFrom != null && <div className="mc-price">เริ่ม ฿{p.priceFrom.toLocaleString()}</div>}
             </div>
             <Icon n="chevR" size={18} className="flat-ico" />
           </a>

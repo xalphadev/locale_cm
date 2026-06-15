@@ -4,6 +4,7 @@ import { toggleSaveAction } from '../../actions';
 import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
 import { parsePoint } from '@/lib/geo';
 import { RoomCard, rentText, roomVacancy, FURNISH_TH, fmtDate, stayDaysAgo } from '../../RoomCard';
+import { StayGallery } from '../../Lightbox';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,13 +67,7 @@ export default async function StayUnitDetail({ params }: { params: { id: string 
 
   return (
     <>
-      <div className="rgallery-wrap">
-        <div className="rgallery">
-          {gallery.map((src, i) => <span className="rgi" key={i}><img src={src} alt="" loading="lazy" /></span>)}
-        </div>
-        <a className="rgallery-back" href="/stay"><Icon n="back" size={19} /></a>
-        <span className="rgallery-count"><Icon n="play" size={11} fill="currentColor" /> {gallery.length} รูป</span>
-      </div>
+      <StayGallery images={gallery} backHref="/stay" />
 
       <div className="dbody">
         <span className="rkind"><Icon n={CAT_ICON[u.stay_kind] || 'bed'} size={13} /> {STAY_KIND_TH[u.stay_kind] || 'ที่พัก'}</span>
