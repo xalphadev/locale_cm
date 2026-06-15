@@ -37,10 +37,11 @@ cp "$MIG/0008_recon_and_freeze.sql" "$STUB/0008.sql"
 cp "$MIG/0009_agent_payout_tax.sql" "$STUB/0009.sql"
 cp "$MIG/0010_subscription_vat.sql" "$STUB/0010.sql"
 cp "$MIG/0011_chargeback_recovery.sql" "$STUB/0011.sql"
+cp "$MIG/0012_remaining_txns.sql" "$STUB/0012.sql"
 
 echo "== apply migrations =="
 APPLY_OK=1
-for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011; do
+for f in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012; do
   if $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$f.sql" 2>"$TMP/$f.err"; then
     echo "  [ok] $f"
   else
@@ -146,6 +147,18 @@ dchk "CHARGEBACK: escrow drained + receivable booked + frozen" "CHARGEBACK escro
 dchk "RECOVERY: receivable reduced"              "RECOVERY receivable=2000"
 dchk "WRITE_OFF: receivable cleared → bad debt"  "WRITEOFF receivable=0 baddebt=2000"
 dchk "chargeback ledger integrity"               "CB_OFFENDERS=0"
+
+echo "== final 5 txn types test (→ 22/22) =="
+XOUT="$($PSQL -d $DB -f "$ROOT/db/test/txns.sql" 2>&1)"
+echo "$XOUT" | sed 's/^/  | /'
+echo "== final-txns assertions =="
+xchk(){ if echo "$XOUT" | grep -q "$2"; then echo "  PASS: $1"; pass=$((pass+1)); else echo "  FAIL: $1"; fail=$((fail+1)); fi; }
+xchk "MERCHANT_CLAWBACK (receivable + backing)"  "MCLAW receivable=5000 backing=5000"
+xchk "CHURN_SWEEP (escrow swept + closed)"       "CHURN escrow=0 state=closed"
+xchk "OWNERSHIP_TRANSFER (payable migrated)"     "OWNER match=true oldpay=0 newpay=3000"
+xchk "CAMPAIGN_END (leftover forfeited)"         "CAMPAIGN sponsor_budget=0"
+xchk "AFFILIATE (commission booked)"             "AFFILIATE txns=1"
+xchk "final-txns ledger integrity"               "TX_OFFENDERS=0"
 
 echo ""; echo "RESULT: $pass passed, $fail failed (tables=$TBLS)"
 [ "$fail" = 0 ] || exit 1

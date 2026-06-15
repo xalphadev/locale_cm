@@ -11,6 +11,25 @@ PostgreSQL 15+ with PostGIS (Supabase has both). Source of truth: [`../docs/04_m
 | `migrations/0003_invariants_and_roles.sql` | append-only triggers · **A.8.1 sum-to-zero** · **A.8.1b clearing-flat** · currency-match · `money_writer` role |
 | `migrations/0004_seed.sql` | 12 roles · place categories · CNX + Nimman · fail-closed config flags (COGS caps = null) |
 | `migrations/0005_money_functions.sql` | `fn_prefund` · `fn_psp_settle` · `fn_fund_quest` · `fn_grant_coins` · `fn_redeem` (gate+post) |
+| `migrations/0006_supply_and_earn.sql` | `fn_apply_proposal` · `fn_claim_verify` · `fn_advance_quest` (EARN→GRANT) · `fn_check_in` |
+| `migrations/0007_money_lifecycle.sql` | `fn_expire` · `fn_payout_merchant` · `fn_refund` |
+| `migrations/0008_recon_and_freeze.sql` | `fn_reconcile_solvency` · `fn_set_freeze` / `fn_clear_freeze` |
+| `migrations/0009_agent_payout_tax.sql` | `fn_agent_payout` (3% WHT) · `fn_agent_clawback` · `fn_wht_remit` |
+| `migrations/0010_subscription_vat.sql` | `fn_subscribe` · `fn_recognize_subscription` · `fn_vat_remit` |
+| `migrations/0011_chargeback_recovery.sql` | `fn_chargeback` · `fn_recovery` · `fn_write_off` |
+
+| `migrations/0012_remaining_txns.sql` | `fn_merchant_clawback` · `fn_churn_sweep` · `fn_ownership_transfer` · `fn_campaign_end` · `fn_affiliate` |
+
+**ALL 22 canonical txn types implemented + verified** (`bash db/test/run-local.sh` → **49/49**).
+
+## Run the app against real data (local dev)
+
+```bash
+bash db/test/setup-dev-db.sh      # persistent Postgres on :54400 + demo data → prints DATABASE_URL
+cd apps/web && npm install && npm run dev   # admin at http://localhost:3002 (dashboard / places / money)
+bash db/test/stop-dev-db.sh       # when done
+```
+(PostGIS is stubbed locally; on Supabase the migrations run unchanged.)
 
 ```bash
 for f in db/migrations/0*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
