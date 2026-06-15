@@ -1,4 +1,4 @@
-import { q, i18n } from '@/lib/db';
+import { q, i18n, DEMO_USER } from '@/lib/db';
 import { Icon } from '../icons';
 import { RoomCard, roomVacancy } from '../RoomCard';
 import { STAY_AMENITIES, facetLabel } from '@/lib/facets';
@@ -51,11 +51,13 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     const order = mode === 'monthly'
       ? (sort === 'soon' ? 'su.available_from NULLS FIRST, su.created_at DESC' : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST' : 'su.created_at DESC')
       : (sort === 'vacant' ? `(su.daily_status='vacant') DESC, su.created_at DESC` : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST' : 'su.created_at DESC');
+    params.push(DEMO_USER); const sIdx = params.length;
     rows = await q<any>(
       `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n, su.image_urls,
               su.available_units, su.available_from, su.daily_status, su.availability_updated_at,
               su.capacity, su.deposit_minor, su.min_stay, su.furnished,
-              p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo
+              p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo,
+              EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$${sIdx}) saved
          FROM stay_units su JOIN places p ON p.id=su.place_id LEFT JOIN districts d ON d.id=p.district_id
         WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 60`, params);
   } catch { /* db down */ }
@@ -99,21 +101,26 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
 
   return (
     <>
-      <div className="top">
-        <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
-        <div className="hi">หอพัก · อพาร์ตเมนต์ · โฮมสเตย์ ในนิมมาน/ใกล้ มช.</div><h1>ที่พัก</h1>
+      <div className="stayhero">
+        <div className="sh-top">
+          <a className="sh-icon" href="/"><Icon n="back" size={18} /></a>
+          <span className="sh-loc"><Icon n="pin" size={14} /> นิมมาน · เชียงใหม่</span>
+          <a className="sh-icon" href="/feed"><Icon n="bell" size={18} /></a>
+        </div>
+        <div className="sh-title">หาที่พักแบบไหนดี?</div>
       </div>
 
-      <form className="staysearch" method="GET" action="/stay">
-        {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        <Icon n="search" size={17} />
-        <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก/ห้อง หรือย่าน" autoComplete="off" />
-        {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
-      </form>
-
-      <div className="segmented">
-        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
-        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
+      <div className="searchcard">
+        <form className="sc-form" method="GET" action="/stay">
+          {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+          <span className="sc-field"><Icon n="search" size={17} /><input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
+            {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={15} /></a>}</span>
+          <button className="sc-go" type="submit"><Icon n="search" size={16} /> ค้นหา</button>
+        </form>
+        <div className="sc-seg">
+          <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`scseg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
+          <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`scseg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
+        </div>
       </div>
 
       <div className="viewtoggle">
@@ -146,8 +153,8 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
       ) : (
         <>
           <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ห้องเช่ารายเดือน' : 'ที่พักรายวัน'} ({rows.length})</h2>
-          <div className="pgrid">
-            {rows.map((r) => <RoomCard key={r.id} u={r} line_id={r.line_id} phone={r.phone} shopName={i18n(r.shop_name)} shopHref={`/place/${r.place_id}`} />)}
+          <div className="staylist">
+            {rows.map((r) => <RoomCard key={r.id} u={r} variant="wide" placeId={r.place_id} saved={r.saved} line_id={r.line_id} phone={r.phone} shopName={i18n(r.shop_name)} shopHref={`/place/${r.place_id}`} />)}
           </div>
           {rows.length === 0 && <p className="empty">ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
         </>
