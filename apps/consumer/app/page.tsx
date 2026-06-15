@@ -78,7 +78,7 @@ export default async function Discover() {
 
         <h2>ใกล้คุณตอนนี้</h2>
         {d.places.map((p) => (
-          <a className="card" key={p.id} href="#">
+          <a className="card" key={p.id} href={`/place/${p.id}`}>
             <div className="thumb">{icon(p.category)}</div>
             <div>
               <div className="nm">{i18n(p.name_i18n)}</div>

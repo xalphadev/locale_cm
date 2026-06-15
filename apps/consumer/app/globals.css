@@ -41,6 +41,23 @@ a{color:inherit;text-decoration:none}
 .fresh{background:#E6F5EE;color:#1E8E7E} .aging{background:#FBF1D8;color:#9A6A00}
 .stale{background:#F3ECE0;color:#8A8170} .nada{background:#F3ECE0;color:#8A8170}
 
+/* place detail */
+.back{display:inline-block;color:var(--jade);font-size:.9rem;font-weight:600;margin-bottom:.4rem}
+.hero-emoji{font-size:2.4rem;margin-top:.2rem}
+.hero-meta{color:var(--muted);font-size:.9rem;margin-top:.2rem}
+.desc{font-size:.95rem;line-height:1.55;color:var(--ink);margin:.2rem 0 1rem}
+.rating-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.4rem}
+.stars{color:var(--coin);font-weight:800}
+.info{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 14px}
+.info-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:.9rem;align-items:flex-start}
+.info-row:last-child{border-bottom:none}
+.info-row a{color:var(--jade)}
+.hours{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.hour-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.hour-row:last-child{border-bottom:none}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--sunk);color:var(--teak);font-size:.8rem;padding:.3rem .7rem;border-radius:999px}
+
 /* wallet pills */
 .bal{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:.5rem}
 .pill{border-radius:16px;padding:16px;color:#fff}
