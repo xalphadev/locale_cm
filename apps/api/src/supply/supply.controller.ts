@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { SupplyService } from './supply.service';
-import { ApproveDto, CreatePlaceDto } from './dto';
+import { ApproveDto, CreateEventDto, CreatePlaceDto } from './dto';
 
 @Controller('supply')
 export class SupplyController {
@@ -11,6 +11,13 @@ export class SupplyController {
   @HttpCode(201)
   create(@Body() dto: CreatePlaceDto) {
     return this.svc.createPlaceProposal(dto);
+  }
+
+  /** Field agent proposes a new event (กิจกรรม) → pending change_proposal. */
+  @Post('events')
+  @HttpCode(201)
+  createEvent(@Body() dto: CreateEventDto) {
+    return this.svc.createEventProposal(dto);
   }
 
   /** Admin queue: pending place proposals awaiting review. */

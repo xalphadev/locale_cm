@@ -1,6 +1,6 @@
 import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { CreatePlaceDto } from './dto';
+import { CreateEventDto, CreatePlaceDto } from './dto';
 
 /**
  * Content-supply pipeline (NON-money). Field agents never write `places` directly — they submit
@@ -45,17 +45,45 @@ export class SupplyService {
     }
   }
 
+  async createEventProposal(dto: CreateEventDto): Promise<{ proposalId: string; status: string }> {
+    const after: Record<string, unknown> = {
+      title_i18n: dto.titleI18n,
+      kind: dto.kind,
+      starts_at: dto.startsAt,
+    };
+    if (dto.descriptionI18n) after.description_i18n = dto.descriptionI18n;
+    if (dto.endsAt) after.ends_at = dto.endsAt;
+    if (dto.districtId) after.district_id = dto.districtId;
+    if (dto.placeId) after.place_id = dto.placeId;
+    if (dto.isFeatured != null) after.is_featured = dto.isFeatured;
+    if (dto.isRecurring != null) after.is_recurring = dto.isRecurring;
+    if (dto.recurrence) after.recurrence = dto.recurrence;
+    try {
+      const { rows } = await this.db.pool.query(
+        `INSERT INTO change_proposals(target_type,target_id,city_id,proposed_by,proposer_role,diff,status)
+         SELECT 'event', NULL, c.id, $1, 'field_agent', jsonb_build_object('after',$2::jsonb), 'pending'
+         FROM cities c WHERE c.code='CNX'
+         RETURNING id`,
+        [dto.proposedBy, JSON.stringify(after)]);
+      if (rows.length === 0) throw new Error('city CNX not found');
+      return { proposalId: rows[0].id as string, status: 'pending' };
+    } catch (e: any) {
+      throw new UnprocessableEntityException(e?.message ?? 'create event proposal failed');
+    }
+  }
+
+  /** Pending place + event proposals (one queue). label = name_i18n (place) or title_i18n (event). */
   async pending(): Promise<unknown[]> {
     const { rows } = await this.db.pool.query(
-      `SELECT cp.id,
-              cp.diff->'after'->'name_i18n'        AS name_i18n,
-              cp.diff->'after'->>'category'        AS category,
+      `SELECT cp.id, cp.target_type::text AS target_type,
+              COALESCE(cp.diff->'after'->'name_i18n', cp.diff->'after'->'title_i18n') AS name_i18n,
+              COALESCE(cp.diff->'after'->>'category', cp.diff->'after'->>'kind')      AS category,
               cp.diff->'after'->>'subcategory'     AS subcategory,
               cp.diff->'after'->>'price_band'      AS price_band,
-              cp.diff->'after'->>'phone'           AS phone,
+              cp.diff->'after'->>'starts_at'       AS starts_at,
               cp.proposed_by, cp.created_at
        FROM change_proposals cp
-       WHERE cp.status='pending' AND cp.target_type='place'
+       WHERE cp.status='pending' AND cp.target_type IN ('place','event')
        ORDER BY cp.created_at DESC`);
     return rows;
   }

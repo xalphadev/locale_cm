@@ -39,6 +39,36 @@ export async function createPlaceAction(formData: FormData) {
   redirect('/proposals?created=1');
 }
 
+/** Field agent submits a NEW event (กิจกรรม) → POST /supply/events (pending change_proposal). */
+export async function createEventAction(formData: FormData) {
+  const s = (k: string) => String(formData.get(k) ?? '').trim();
+  const titleTh = s('title_th'), titleEn = s('title_en'), descTh = s('desc_th');
+  const [d] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
+
+  const body: Record<string, unknown> = {
+    proposedBy: DEMO_AGENT,
+    titleI18n: { th: titleTh, ...(titleEn ? { en: titleEn } : {}) },
+    kind: s('kind'),
+    startsAt: s('starts_at'),
+  };
+  if (descTh) body.descriptionI18n = { th: descTh };
+  if (s('ends_at')) body.endsAt = s('ends_at');
+  if (d?.id) body.districtId = d.id;
+  if (formData.get('is_featured')) body.isFeatured = true;
+  if (formData.get('is_recurring')) body.isRecurring = true;
+
+  const res = await fetch(`${API_BASE}/supply/events`, {
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body), cache: 'no-store',
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    redirect(`/event?error=${encodeURIComponent(t.slice(0, 200))}`);
+  }
+  revalidatePath('/proposals');
+  redirect('/proposals?created=1');
+}
+
 /** Merchant counter confirms a customer's redemption → burns Coins at THIS merchant (≠ funder, anti-self). */
 export async function confirmRedeemAction(userId: string, merchantId: string) {
   const [lot] = await q<{ minor: string }>(
