@@ -55,7 +55,7 @@ export async function currentAccount(): Promise<any | null> {
   if (!id) return null;
   const [a] = await q<any>(
     `SELECT ma.id, ma.email, ma.display_name, ma.phone, ma.place_id, ma.status,
-            p.name_i18n place_name, p.status::text place_status, p.sells_products, p.category::text category, p.subcategory
+            p.name_i18n place_name, p.status::text place_status, p.sells_products, p.offers_stay, p.category::text category, p.subcategory
        FROM merchant_accounts ma LEFT JOIN places p ON p.id = ma.place_id
       WHERE ma.id = $1 AND ma.status = 'active'`, [id]);
   return a ?? null;

@@ -7,15 +7,18 @@ import { saveUploads } from '@/lib/storage';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: 98.967, lat: 18.796 };
-// Shop-type → (category, subcategory) for the platform taxonomy.
-const SHOP_TYPES: Record<string, { category: string; subcategory: string; stay?: boolean }> = {
-  cafe: { category: 'eat', subcategory: 'cafe' },
-  restaurant: { category: 'eat', subcategory: 'restaurant' },
-  street_food: { category: 'eat', subcategory: 'street_food' },
-  dessert: { category: 'eat', subcategory: 'dessert' },
-  market: { category: 'see', subcategory: 'market' },
-  shop: { category: 'see', subcategory: 'shop' },
-  // accommodations — picking one of these auto-flags places.offers_stay + stay_kind
+// Shop-type → (category, subcategory) + DEFAULT capabilities. The type chosen at signup sets
+// whether the shop sells products and/or has rooms — which drives the portal tabs. All editable
+// later in /merchant/shop. `general` = a plain shop/service (no products, no rooms): feed + info only.
+const SHOP_TYPES: Record<string, { category: string; subcategory: string; sells?: boolean; stay?: boolean }> = {
+  cafe: { category: 'eat', subcategory: 'cafe', sells: true },
+  restaurant: { category: 'eat', subcategory: 'restaurant', sells: true },
+  street_food: { category: 'eat', subcategory: 'street_food', sells: true },
+  dessert: { category: 'eat', subcategory: 'dessert', sells: true },
+  market: { category: 'see', subcategory: 'market', sells: true },
+  shop: { category: 'see', subcategory: 'shop', sells: true },
+  general: { category: 'see', subcategory: 'service' },   // ร้านค้า/บริการทั่วไป — neither products nor rooms
+  // accommodations — auto-flag offers_stay + stay_kind
   dorm: { category: 'see', subcategory: 'dorm', stay: true },
   apartment: { category: 'see', subcategory: 'apartment', stay: true },
   condo: { category: 'see', subcategory: 'condo', stay: true },
@@ -26,6 +29,16 @@ const SHOP_TYPES: Record<string, { category: string; subcategory: string; stay?:
   hotel: { category: 'see', subcategory: 'hotel', stay: true },
 };
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
+// whole-baht string → integer minor units, rejecting blank / NaN / Infinity (a Server Action
+// accepts any posted value, so 'Infinity'/'1e309' would otherwise reach an int column and 500).
+const bahtToMinor = (raw: string) => (raw && Number.isFinite(Number(raw)) ? Math.max(0, Math.round(Number(raw) * 100)) : null);
+// Capability guard. The bottom-tab UI only HIDES products/rooms for a shop that lacks the flag;
+// this enforces it at the trust boundary so a shop can't publish rows its type says it has none of
+// by hitting the route/Server Action directly. (place_id scoping already blocks cross-tenant writes.)
+function requireCap(acc: any, cap: 'sells_products' | 'offers_stay') {
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (!acc[cap]) redirect('/merchant');
+}
 
 /** Self-service signup → creates the shop (published via fn_create_place) + the login account, then logs in. */
 export async function signupAction(formData: FormData) {
@@ -35,7 +48,6 @@ export async function signupAction(formData: FormData) {
   const phone = s(formData, 'phone');
   const lineId = s(formData, 'line_id');
   const type = SHOP_TYPES[s(formData, 'shop_type')] ? s(formData, 'shop_type') : 'cafe';
-  const sells = !!formData.get('sells_products');
   const err = (m: string) => redirect(`/merchant/signup?error=${encodeURIComponent(m)}`);
 
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) err('อีเมลไม่ถูกต้อง');
@@ -45,7 +57,7 @@ export async function signupAction(formData: FormData) {
   const [city] = await q<{ id: string }>(`SELECT id FROM cities WHERE code='CNX'`);
   if (!city) err('ระบบยังไม่พร้อมในเมืองนี้ กรุณาติดต่อทีมงาน');
   const [dist] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
-  const { category, subcategory, stay: isStay } = SHOP_TYPES[type];
+  const { category, subcategory, sells: isSells, stay: isStay } = SHOP_TYPES[type];
 
   // Create as DRAFT — the shop is fully manageable in the portal immediately, but only goes
   // public to customers after staff review (apps/web /shops). This avoids anonymous signups
@@ -68,7 +80,7 @@ export async function signupAction(formData: FormData) {
         `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
         [JSON.stringify(payload), city.id, dist?.id ?? null, DEMO_AGENT, DEMO_ADMIN])).rows[0];
       await c.query(`UPDATE places SET sells_products=$2, offers_stay=$3, stay_kind=$4, source='merchant' WHERE id=$1`,
-        [pl.id, sells, !!isStay, isStay ? subcategory : null]);
+        [pl.id, !!isSells, !!isStay, isStay ? subcategory : null]);
       const acc = (await c.query<{ id: string }>(
         `INSERT INTO merchant_accounts(email, password_hash, display_name, phone, place_id)
          VALUES($1,$2,$3,$4,$5) RETURNING id`,
@@ -103,12 +115,11 @@ export async function logoutAction() {
 
 export async function createMerchantProductAction(formData: FormData) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'sells_products');
   const nameTh = s(formData, 'name_th');
-  if (!nameTh) redirect('/merchant/products?error=name');
+  if (!nameTh) redirect('/merchant/products/new?error=name');
   const subtype = s(formData, 'subtype') || 'other';
-  const priceRaw = s(formData, 'price'); // whole baht
-  const priceMinor = priceRaw && !isNaN(Number(priceRaw)) ? Math.max(0, Math.round(Number(priceRaw) * 100)) : null;
+  const priceMinor = bahtToMinor(s(formData, 'price'));
   const unit = s(formData, 'price_unit') || null;
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
@@ -124,7 +135,7 @@ export async function createMerchantProductAction(formData: FormData) {
 /** Toggle a boolean flag on one of the merchant's OWN products. flag ∈ sold_out|in_season|available_today; or hide/show. */
 export async function setProductFlagAction(productId: string, flag: string) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'sells_products');
   if (flag === 'hide') await q(`UPDATE shop_products SET status='hidden', updated_at=now() WHERE id=$1 AND place_id=$2`, [productId, acc.place_id]);
   else if (flag === 'show') await q(`UPDATE shop_products SET status='published', updated_at=now() WHERE id=$1 AND place_id=$2`, [productId, acc.place_id]);
   else if (['sold_out', 'in_season', 'available_today'].includes(flag))
@@ -132,11 +143,41 @@ export async function setProductFlagAction(productId: string, flag: string) {
   revalidatePath('/merchant/products');
 }
 
+/** Edit one of the merchant's OWN products. New photos/urls replace image_urls; none → keep existing. */
+export async function updateMerchantProductAction(productId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'sells_products');
+  const nameTh = s(formData, 'name_th');
+  if (!nameTh) redirect(`/merchant/products/${productId}/edit?error=name`);
+  const subtype = s(formData, 'subtype') || 'other';
+  const priceMinor = bahtToMinor(s(formData, 'price'));
+  const unit = s(formData, 'price_unit') || null;
+  const inSeason = !!formData.get('in_season');
+  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  // Edit replaces image_urls only when new images arrive (CASE below). If some uploads were
+  // rejected (bad type / >6MB) we'd otherwise silently overwrite the gallery with the survivors,
+  // so abort and keep the existing images — the merchant retries with valid files.
+  const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const saved = await saveUploads(photos);
+  if (photos.length && saved.length < photos.length) redirect(`/merchant/products/${productId}/edit?error=upload&rej=${photos.length - saved.length}`);
+  const urls = [...saved, ...pasted];
+  await q(
+    `UPDATE shop_products SET name_i18n=jsonb_build_object('th',$3::text), subtype=$4, price_minor=$5, price_unit=$6, in_season=$7,
+       image_urls = CASE WHEN $8::text[] IS NOT NULL THEN $8 ELSE image_urls END,
+       image_count = CASE WHEN $8::text[] IS NOT NULL THEN COALESCE(array_length($8,1),1) ELSE image_count END,
+       updated_at=now()
+     WHERE id=$1 AND place_id=$2`,
+    [productId, acc.place_id, nameTh, subtype, priceMinor, unit, inSeason, urls.length ? urls : null]);
+  revalidatePath('/merchant/products');
+  redirect('/merchant/products?ok=updated');
+}
+
 export async function deleteProductAction(productId: string) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'sells_products');
   await q(`DELETE FROM shop_products WHERE id=$1 AND place_id=$2`, [productId, acc.place_id]);
   revalidatePath('/merchant/products');
+  redirect('/merchant/products?ok=deleted');
 }
 
 export async function createMerchantPostAction(formData: FormData) {
@@ -174,6 +215,12 @@ export async function updateShopAction(formData: FormData) {
      WHERE id = $1`,
     [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay]);
 
+  // Clearing a capability also hides its now-unreachable child rows: the portal tab disappears,
+  // so without this the published products/rooms would linger on the consumer side with no way to
+  // manage them. (Re-checking the flag doesn't auto-republish — the merchant shows each row again.)
+  if (!sells) await q(`UPDATE shop_products SET status='hidden', updated_at=now() WHERE place_id=$1 AND status='published'`, [acc.place_id]);
+  if (!offersStay) await q(`UPDATE stay_units SET status='hidden', updated_at=now() WHERE place_id=$1 AND status='published'`, [acc.place_id]);
+
   // Location pin: write only when both coords are finite AND inside the Chiang Mai bbox.
   // Clamp-and-skip — a save of just name/phone must never zero an existing good geo.
   const lat = Number(s(formData, 'lat')), lng = Number(s(formData, 'lng'));
@@ -189,15 +236,16 @@ export async function updateShopAction(formData: FormData) {
 
 export async function createStayUnitAction(formData: FormData) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'offers_stay');
   const nameTh = s(formData, 'name_th');
-  if (!nameTh) redirect('/merchant/rooms?error=name');
+  if (!nameTh) redirect('/merchant/rooms/new?error=name');
   const mode = s(formData, 'rental_mode') === 'daily' ? 'daily' : 'monthly';
   const period = mode === 'daily' ? 'night' : 'month';
-  const num = (k: string) => { const v = s(formData, k); return v !== '' && !isNaN(Number(v)) ? Number(v) : null; };
+  const num = (k: string) => { const v = s(formData, k); return v !== '' && Number.isFinite(Number(v)) ? Number(v) : null; };
   const priceMinor = num('price') != null ? Math.max(0, Math.round(num('price')! * 100)) : null;
   const depositMinor = num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
-  const availUnits = mode === 'monthly' ? Math.max(0, Math.round(num('available_units') ?? 0)) : 0;
+  // blank vacancy on create → 1 (matches the form default), never silently "full" (0)
+  const availUnits = mode === 'monthly' ? Math.max(0, Math.round(num('available_units') ?? 1)) : 0;
   const dailyStatus = mode === 'daily' && ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
   const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
   const bills = formData.getAll('bills').map(String).filter(Boolean);
@@ -219,7 +267,7 @@ export async function createStayUnitAction(formData: FormData) {
 /** +/- the monthly vacancy count AND restamp freshness in one tap — the 10-second update. */
 export async function updateVacancyAction(unitId: string, delta: number) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'offers_stay');
   // clamp to a single step — the UI only ever sends ±1, but a Server Action accepts any
   // caller value; bounding it removes the int4-overflow / non-integer paths.
   const step = Math.max(-1, Math.min(1, Math.trunc(Number(delta)) || 0));
@@ -231,7 +279,7 @@ export async function updateVacancyAction(unitId: string, delta: number) {
 /** Cycle daily availability vacant→full→ask→vacant, or hide/show — restamps freshness on cycle. */
 export async function setStayUnitFlagAction(unitId: string, flag: string) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'offers_stay');
   if (flag === 'hide') await q(`UPDATE stay_units SET status='hidden', updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
   else if (flag === 'show') await q(`UPDATE stay_units SET status='published', updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
   else if (flag === 'cycle_daily')
@@ -240,9 +288,52 @@ export async function setStayUnitFlagAction(unitId: string, flag: string) {
   revalidatePath('/merchant/rooms');
 }
 
+/** Edit one of the merchant's OWN rooms. New photos/urls replace image_urls; none → keep existing. */
+export async function updateStayUnitAction(unitId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'offers_stay');
+  const nameTh = s(formData, 'name_th');
+  if (!nameTh) redirect(`/merchant/rooms/${unitId}/edit?error=name`);
+  const mode = s(formData, 'rental_mode') === 'daily' ? 'daily' : 'monthly';
+  const period = mode === 'daily' ? 'night' : 'month';
+  const num = (k: string) => { const v = s(formData, k); return v !== '' && Number.isFinite(Number(v)) ? Number(v) : null; };
+  const priceMinor = num('price') != null ? Math.max(0, Math.round(num('price')! * 100)) : null;
+  const depositMinor = num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
+  // blank vacancy → null = "leave unchanged" (the SQL COALESCEs it), never silently zero to "full"
+  const availUnits = num('available_units') != null ? Math.max(0, Math.round(num('available_units')!)) : null;
+  const dailyStatus = ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
+  const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
+  const bills = formData.getAll('bills').map(String).filter(Boolean);
+  const amen = formData.getAll('amenity').map(String).filter(Boolean);
+  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const saved = await saveUploads(photos);
+  if (photos.length && saved.length < photos.length) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${photos.length - saved.length}`);
+  const urls = [...saved, ...pasted];
+  await q(
+    // available_units/daily_status are written only for the row's ACTIVE mode, so toggling
+    // rental_mode never zeroes the other mode's value; for monthly, COALESCE keeps the live count
+    // when the vacancy box was left blank. ($4=mode, $7=availUnits|null, $8=dailyStatus.)
+    `UPDATE stay_units SET name_i18n=jsonb_build_object('th',$3::text), rental_mode=$4, price_minor=$5, price_period=$6,
+       available_units = CASE WHEN $4='monthly' THEN COALESCE($7, available_units) ELSE available_units END,
+       daily_status    = CASE WHEN $4='daily'   THEN $8 ELSE daily_status END,
+       capacity=$9, deposit_minor=$10, min_stay=$11, room_size_sqm=$12, furnished=$13,
+       bills_included=$14, unit_amenities=$15,
+       image_urls = CASE WHEN $16::text[] IS NOT NULL THEN $16 ELSE image_urls END,
+       image_count = CASE WHEN $16::text[] IS NOT NULL THEN COALESCE(array_length($16,1),1) ELSE image_count END,
+       availability_updated_at=now(), updated_at=now()
+     WHERE id=$1 AND place_id=$2`,
+    [unitId, acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
+      num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
+      bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null]);
+  revalidatePath('/merchant/rooms');
+  redirect('/merchant/rooms?ok=updated');
+}
+
 export async function deleteStayUnitAction(unitId: string) {
   const acc = await currentAccount();
-  if (!acc?.place_id) redirect('/merchant/login');
+  requireCap(acc, 'offers_stay');
   await q(`DELETE FROM stay_units WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
   revalidatePath('/merchant/rooms');
+  redirect('/merchant/rooms?ok=deleted');
 }
