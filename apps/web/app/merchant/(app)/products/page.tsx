@@ -32,7 +32,8 @@ export default async function Products({ searchParams }: { searchParams: { ok?: 
             <select name="price_unit" defaultValue=""><option value="">—</option><option value="kg">กก.</option><option value="piece">ชิ้น</option><option value="bag">ถุง</option><option value="box">กล่อง</option><option value="cup">แก้ว</option><option value="jar">กระปุก</option></select></div>
         </div>
         <label className="check"><input type="checkbox" name="in_season" /> สินค้าตามฤดูกาล (แสดงป้าย “ในฤดู”)</label>
-        <div className="field"><label>ลิงก์รูป (ถ้าไม่ใส่ ระบบใช้รูปตัวอย่าง — ทีละบรรทัด)</label><textarea name="image_urls" placeholder="https://...jpg" style={{ minHeight: 50 }} /></div>
+        <div className="field"><label>อัปโหลดรูป (เลือกได้หลายรูป)</label><input type="file" name="photos" accept="image/*" multiple /></div>
+        <div className="field"><label>หรือวางลิงก์รูป (ทีละบรรทัด) — ถ้าไม่ใส่เลย ระบบใช้รูปตัวอย่าง</label><textarea name="image_urls" placeholder="https://...jpg" style={{ minHeight: 44 }} /></div>
         <button className="btn btn-primary" type="submit">+ เพิ่มสินค้า</button>
       </form>
 

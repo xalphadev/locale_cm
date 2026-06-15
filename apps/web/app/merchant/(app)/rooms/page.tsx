@@ -46,7 +46,8 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
           <div className="checkrow">{BILLS.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="bills" value={k} /> {l}</label>)}</div></div>
         <div className="field"><label>สิ่งอำนวยความสะดวก</label>
           <div className="checkrow">{AMEN.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="amenity" value={k} /> {l}</label>)}</div></div>
-        <div className="field"><label>ลิงก์รูป (ไม่ใส่ = ใช้รูปตัวอย่าง — ทีละบรรทัด)</label><textarea name="image_urls" placeholder="https://...jpg" style={{ minHeight: 50 }} /></div>
+        <div className="field"><label>อัปโหลดรูปห้อง (เลือกได้หลายรูป)</label><input type="file" name="photos" accept="image/*" multiple /></div>
+        <div className="field"><label>หรือวางลิงก์รูป (ทีละบรรทัด) — ถ้าไม่ใส่เลย ใช้รูปตัวอย่าง</label><textarea name="image_urls" placeholder="https://...jpg" style={{ minHeight: 44 }} /></div>
         <button className="btn btn-primary" type="submit">+ เพิ่มห้อง</button>
       </form>
 

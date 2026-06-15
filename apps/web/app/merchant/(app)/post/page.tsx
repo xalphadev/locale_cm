@@ -16,7 +16,8 @@ export default function Post({ searchParams }: { searchParams: { ok?: string; er
           <div className="field"><label>จำนวนรูป (ไม่ใส่ลิงก์ = ใช้รูปตัวอย่าง)</label>
             <select name="image_count" defaultValue="1"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
         </div>
-        <div className="field"><label>ลิงก์รูป (ทีละบรรทัด)</label><textarea name="image_urls" style={{ minHeight: 50 }} placeholder="https://...jpg" /></div>
+        <div className="field"><label>อัปโหลดรูป (เลือกได้หลายรูป)</label><input type="file" name="photos" accept="image/*" multiple /></div>
+        <div className="field"><label>หรือวางลิงก์รูป (ทีละบรรทัด)</label><textarea name="image_urls" style={{ minHeight: 44 }} placeholder="https://...jpg" /></div>
         <button className="btn btn-primary" type="submit">โพสต์เลย →</button>
       </form>
     </>

@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { q, withTx, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 import { hashPassword, verifyPassword, setSession, clearSession, currentAccount } from '@/lib/auth';
+import { saveUploads } from '@/lib/storage';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: 98.967, lat: 18.796 };
@@ -106,7 +107,8 @@ export async function createMerchantProductAction(formData: FormData) {
   const priceRaw = s(formData, 'price'); // whole baht
   const priceMinor = priceRaw && !isNaN(Number(priceRaw)) ? Math.max(0, Math.round(Number(priceRaw) * 100)) : null;
   const unit = s(formData, 'price_unit') || null;
-  const urls = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
   const inSeason = !!formData.get('in_season');
   await q(
     `INSERT INTO shop_products(place_id, name_i18n, subtype, price_minor, price_unit, image_urls, image_count, in_season, status, author_kind)
@@ -140,7 +142,8 @@ export async function createMerchantPostAction(formData: FormData) {
   const body = s(formData, 'body').slice(0, 500);
   if (!body) redirect('/merchant/post?error=body');
   const n = Math.min(4, Math.max(1, Number(formData.get('image_count')) || 1));
-  const urls = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
   await q(
     `INSERT INTO feed_posts(place_id, body_i18n, image_count, image_urls, status, author_kind)
      VALUES($1, jsonb_build_object('th',$2::text), $3, $4, 'published', 'merchant')`,
@@ -188,7 +191,8 @@ export async function createStayUnitAction(formData: FormData) {
   const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
   const bills = formData.getAll('bills').map(String).filter(Boolean);
   const amen = formData.getAll('amenity').map(String).filter(Boolean);
-  const urls = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
   await q(
     `INSERT INTO stay_units(place_id, name_i18n, rental_mode, price_minor, price_period, available_units, daily_status,
         capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
