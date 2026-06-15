@@ -15,8 +15,9 @@ Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack
 | **Subscription + VAT** | [`db/migrations/0010...`](db/migrations/) | ✅ subscribe (annual→deferred + 7% VAT) · recognize_subscription · vat_remit |
 | **Acceptance tests** | [`db/test/`](db/test/) | ✅ **14 txn types + supply + recon verified** (`bash db/test/run-local.sh` → **39/39**) |
 | **API** (NestJS money-plane) | [`apps/api/`](apps/api/) | ✅ **runs** — typed RPC + 5 endpoints; verified live (POST /money/prefund → ledger; /money/redeem self → 403) |
-| **Web** (Next.js admin) | [`apps/web/`](apps/web/) | ✅ **runs** — read-only back-office (dashboard/places/money) rendering live ledger data |
-| Mobile (Flutter) | `apps/mobile/` | ⏳ next |
+| **Admin web** (Next.js) | [`apps/web/`](apps/web/) | ✅ **runs** — read-only back-office (dashboard/places/money) rendering live ledger data |
+| **Consumer app** (Next.js) | [`apps/consumer/`](apps/consumer/) | ✅ **runs** — customer eat/see/do + Cafe-Hop quest (Discover/Passport/Wallet) on :3003 |
+| Consumer (Flutter mobile) | `apps/mobile/` | ⏳ production target (docs/05); consumer web above is the runnable demo |
 
 ## The non-negotiables (from the design)
 
