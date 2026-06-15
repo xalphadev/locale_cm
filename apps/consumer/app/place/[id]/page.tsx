@@ -2,6 +2,7 @@ import { q, i18n, cover, DEMO_USER } from '@/lib/db';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
+import { ProductCard } from '../../ProductCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ function parsePoint(geo: string | null) {
 }
 
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = [];
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = [];
   try {
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
@@ -40,6 +41,8 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       const [vid] = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='video' AND moderation_status='approved' LIMIT 1`, [params.id]);
       videoUrl = vid?.storage_path ?? null;
       deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
+      products = await q<any>(`SELECT id, name_i18n, subtype, price_minor, price_unit, price_text_i18n, image_urls, in_season, available_today, sold_out
+        FROM shop_products WHERE place_id=$1 AND status='published' ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
     }
   } catch { /* db down */ }
 
@@ -134,6 +137,14 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
             })}
           </>
         )}
+
+        {products.length > 0 && (<>
+          <h2>สินค้าในร้าน</h2>
+          <div className="prail">
+            {products.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
+          </div>
+          <p className="shopnote"><Icon n="chat" size={13} /> สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ</p>
+        </>)}
 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 

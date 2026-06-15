@@ -23,7 +23,7 @@ const CATS = [
   { i: 'coffee', l: 'คาเฟ่', qs: 'sub=cafe' }, { i: 'bowl', l: 'อาหาร', qs: 'sub=restaurant' },
   { i: 'flame', l: 'สตรีท', qs: 'sub=street_food' }, { i: 'cake', l: 'ของหวาน', qs: 'sub=dessert' },
   { i: 'landmark', l: 'เที่ยว', qs: 'cat=see' }, { i: 'palette', l: 'กิจกรรม', qs: 'cat=do' },
-  { i: 'flower', l: 'สปา', qs: 'sub=spa' }, { i: 'dumbbell', l: 'มวยไทย', qs: 'sub=muay_thai' },
+  { i: 'tag', l: 'ตลาด', to: '/market' }, { i: 'flower', l: 'สปา', qs: 'sub=spa' },
 ];
 const SEGS = [{ k: '', l: 'แนะนำ' }, { k: 'near', l: 'ใกล้ฉัน' }, { k: 'hot', l: 'ฮิตตอนนี้' }, { k: 'new', l: 'มาใหม่' }];
 const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: 'กิน' }, { k: 'see', l: 'เที่ยว' }, { k: 'do', l: 'ทำกิจกรรม' }];
@@ -189,7 +189,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       {header}
 
       <div className="cats">
-        {CATS.map((c) => <a className="cat" key={c.l} href={`/?${c.qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></a>)}
+        {CATS.map((c) => <a className="cat" key={c.l} href={(c as any).to || `/?${(c as any).qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></a>)}
       </div>
 
       <MapPeek pins={d.pins} />

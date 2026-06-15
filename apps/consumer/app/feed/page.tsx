@@ -20,7 +20,11 @@ async function load() {
   const posts = await q<any>(`SELECT 'post' kind, fp.id pgid, fp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
       fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id
     WHERE fp.status='published' ORDER BY fp.created_at DESC LIMIT 8`);
-  const buckets = [posts, deals, events, reviews, verified, news].map((a) => a.slice());
+  const products = await q<any>(`SELECT 'product' kind, sp.id, sp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
+      sp.name_i18n prod_name, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls, sp.image_count, sp.subtype
+    FROM shop_products sp JOIN places p ON p.id=sp.place_id
+    WHERE sp.status='published' AND NOT sp.sold_out AND p.status='published' ORDER BY sp.created_at DESC LIMIT 8`);
+  const buckets = [posts, products, deals, events, reviews, verified, news].map((a) => a.slice());
   const feed: any[] = []; let added = true;
   while (feed.length < 24 && added) { added = false; for (const b of buckets) { if (b.length) { feed.push(b.shift()); added = true; } } }
 

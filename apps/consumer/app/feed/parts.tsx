@@ -2,6 +2,7 @@ import { i18n, cover } from '@/lib/db';
 import { Icon } from '../icons';
 import { toggleLikeAction, addCommentAction } from '../actions';
 import ShareButton from '../ShareButton';
+import { priceText } from '../ProductCard';
 
 export const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 export const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
@@ -19,7 +20,8 @@ const avColor = (s: string) => AV_COLORS[(s || '').split('').reduce((a, c) => a 
 
 export function postKey(it: any) {
   return it.kind === 'deal' ? `deal:${it.did}` : it.kind === 'review' ? `review:${it.rid}`
-    : it.kind === 'event' ? `event:${it.eid}` : it.kind === 'post' ? `post:${it.pgid}` : `${it.kind}:${it.pid}`;
+    : it.kind === 'event' ? `event:${it.eid}` : it.kind === 'post' ? `post:${it.pgid}`
+      : it.kind === 'product' ? `product:${it.id}` : `${it.kind}:${it.pid}`;
 }
 export function hrefFor(it: any) {
   return it.kind === 'event' ? `/event/${it.eid}` : `/place/${it.pid}`;
@@ -31,15 +33,21 @@ function poster(it: any): { name: string; sub: string; av: string; color: string
   if (it.kind === 'review') return { name: it.display_name || 'ผู้ใช้', sub: `รีวิว ${i18n(it.pname)}`, av: (it.display_name || 'ผ')[0], color: 'var(--spark)', verified: false };
   if (it.kind === 'verified') return { name: 'ทีมงาน Soi Hop', sub: 'ตรวจสอบข้อมูลแล้ว', av: 'S', color: 'var(--navy)', verified: true };
   if (it.kind === 'event') return { name: i18n(it.title_i18n), sub: 'กิจกรรม · นิมมาน', av: (i18n(it.title_i18n) || 'อ')[0], color: 'var(--accent)', verified: true };
+  if (it.kind === 'product') return { name: i18n(it.pname), sub: 'สินค้าใหม่ · นิมมาน', av: (i18n(it.pname) || 'ร')[0], color: 'var(--score)', verified: true };
   const role = it.kind === 'deal' ? 'โปรโมชั่น' : it.kind === 'new' ? 'เปิดใหม่' : (it.psub || catTH(it.pcat));
   return { name: i18n(it.pname), sub: `${role} · นิมมาน`, av: (i18n(it.pname) || 'ร')[0], color: 'var(--accent)', verified: true };
 }
 // images for a post: merchant-uploaded urls if any, else category placeholders × count
+const PROD_POOL: Record<string, string> = { bakery: 'dessert', menu_item: 'restaurant' };
 export function imagesFor(it: any): string[] {
   const seed = it.pid || it.eid || it.pgid || it.kind;
   if (it.kind === 'post') {
     if (it.image_urls && it.image_urls.length) return it.image_urls;
     return Array.from({ length: it.image_count || 1 }, (_, k) => cover(`${seed}-${k}`, it.psub, it.pcat, 680, 460));
+  }
+  if (it.kind === 'product') {
+    if (it.image_urls && it.image_urls.length) return it.image_urls;
+    return [cover('prod-' + it.id, PROD_POOL[it.subtype] || 'market', it.pcat, 680, 460)];
   }
   if (it.kind === 'event') return [cover('event' + it.eid, it.ekind, 'see', 680, 460)];
   const n = IMG_N[it.kind] || 1;
@@ -67,6 +75,7 @@ function Caption({ it, p }: { it: any; p: ReturnType<typeof poster> }) {
   return (
     <>
       {it.kind === 'post' && <><b className="ph-h">{p.name}</b> {i18n(it.body_i18n)}</>}
+      {it.kind === 'product' && <><b className="ph-h">{i18n(it.pname)}</b> {i18n(it.prod_name)} · <span className="ph-price">{priceText(it)}</span></>}
       {it.kind === 'deal' && <><span className="dl">{dealLabel(it.deal_type, it.value_pct, it.value_minor)}</span> {i18n(it.dtitle)}{daysLeft(it.ends_at) != null ? ` — เหลืออีก ${daysLeft(it.ends_at)} วัน${it.quota_total ? ` · เหลือ ${it.quota_total - it.quota_used} สิทธิ์` : ''}` : ''}</>}
       {it.kind === 'event' && <><b className="ph-h">{p.name}</b> {i18n(it.description_i18n) || ''} · {it.d} {THM[it.m - 1]}</>}
       {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
