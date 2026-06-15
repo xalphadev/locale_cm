@@ -47,6 +47,23 @@ async function load() {
   return { feed, likes, cmts };
 }
 
+// Facebook-style photo collage: 1 full · 2 side-by-side · 3 (big + 2 stacked) · 4 grid · 5+ "+N"
+function Collage({ imgs, href }: { imgs: string[]; href: string }) {
+  const n = imgs.length;
+  const cls = n <= 1 ? 'cg1' : n === 2 ? 'cg2' : n === 3 ? 'cg3' : 'cg4';
+  const show = imgs.slice(0, 4); const extra = n - 4;
+  return (
+    <a href={href} className={`collage ${cls}`}>
+      {show.map((u, k) => (
+        <span className="ci" key={k}>
+          <img src={u} alt="" loading="lazy" />
+          {k === 3 && extra > 0 && <span className="more-ov">+{extra}</span>}
+        </span>
+      ))}
+    </a>
+  );
+}
+
 function postKey(it: any) {
   return it.kind === 'deal' ? `deal:${it.did}` : it.kind === 'review' ? `review:${it.rid}`
     : it.kind === 'event' ? `event:${it.eid}` : it.kind === 'post' ? `post:${it.pgid}` : `${it.kind}:${it.pid}`;
@@ -104,16 +121,7 @@ export default async function Feed() {
                   {it.kind === 'post' && i18n(it.body_i18n)}
                 </div>
               </a>
-              {imgs.length > 1 ? (
-                <div className="post-gallery">
-                  {imgs.map((u: string, k: number) => (
-                    <a key={k} href={href} className="pg-img"><img src={u} alt="" loading="lazy" /></a>
-                  ))}
-                  <span className="pg-count"><Icon n="play" size={11} fill="currentColor" /> {imgs.length} รูป</span>
-                </div>
-              ) : (
-                <a href={href}><img className="post-media" src={imgs[0]} alt="" loading="lazy" /></a>
-              )}
+              <Collage imgs={imgs} href={href} />
               <div className="post-stat"><Icon n="heart" size={13} fill="var(--accent)" style={{ color: 'var(--accent)' }} /> {lk.c} · {cl.length} คอมเมนต์</div>
               <div className="post-actions">
                 <form className="actf" action={toggleLikeAction.bind(null, key)}>

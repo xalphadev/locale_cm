@@ -593,3 +593,24 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .cmt-form{display:flex;gap:8px;align-items:center;margin-top:.45rem}
 .cmt-form input{flex:1;border:none;background:var(--sunk);border-radius:999px;padding:.55rem .9rem;font:inherit;font-size:.85rem;outline:none;color:var(--text)}
 .cmt-form button{border:none;background:none;color:var(--accent);font-weight:800;font-size:.88rem;padding:.4rem .5rem;cursor:pointer}
+
+/* facebook-style photo collage */
+.collage{display:grid;gap:3px;background:var(--surface);overflow:hidden}
+.collage .ci{position:relative;overflow:hidden;background:#E6E7EA;display:block}
+.collage img{width:100%;height:100%;object-fit:cover;display:block}
+.cg1{grid-template-columns:1fr}
+.cg1 .ci{aspect-ratio:4/3}
+.cg2{grid-template-columns:1fr 1fr}
+.cg2 .ci{aspect-ratio:1/1}
+.cg3{grid-template-columns:1.7fr 1fr;grid-auto-rows:1fr;height:300px}
+.cg3 .ci:first-child{grid-row:1 / span 2}
+.cg4{grid-template-columns:1fr 1fr}
+.cg4 .ci{aspect-ratio:1/1}
+.more-ov{position:absolute;inset:0;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:800}
+/* feed polish */
+.feed{padding:6px 14px 18px}
+.post{border-radius:14px;box-shadow:0 1px 2px rgba(16,20,12,.05),0 6px 18px -10px rgba(16,20,12,.16)}
+.post-head{padding:12px 14px 9px}
+.post-text{padding:2px 14px 10px;font-size:.92rem;line-height:1.5}
+.post-stat{padding:10px 14px 3px;border-top:none}
+.post-act{padding:.66rem .2rem;font-size:.85rem}
