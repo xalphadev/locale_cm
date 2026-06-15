@@ -2,7 +2,7 @@
 import { useEffect, useRef } from 'react';
 
 type Pin = { lat: number; lng: number; cat: string };
-const COLORS: Record<string, string> = { eat: '#FF5436', see: '#16A06A', do: '#8A5CF6' };
+const COLORS: Record<string, string> = { eat: '#F4A52B', see: '#1A73E8', do: '#8A5CF6' };
 
 export default function MapPeek({ pins }: { pins: Pin[] }) {
   const ref = useRef<HTMLDivElement>(null);
