@@ -94,9 +94,15 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
 
   return (
     <>
-      <div className="top">
+      <div className="staytop">
         <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
-        <div className="hi">หอพัก · อพาร์ตเมนต์ · โฮมสเตย์ ในนิมมาน/ใกล้ มช.</div><h1>ที่พัก</h1>
+        <div className="staytop-row">
+          <span className="staytop-ic"><Icon n="bed" size={23} /></span>
+          <div className="staytop-tx">
+            <h1>ที่พัก</h1>
+            <div className="staytop-sub">หอพัก · อพาร์ตเมนต์ · โฮมสเตย์ ในนิมมาน / ใกล้ มช.</div>
+          </div>
+        </div>
       </div>
 
       <form className="staysearch" method="GET" action="/stay">
