@@ -143,7 +143,7 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
 
       {d.nearby.length > 0 && (
         <>
-          <div className="sec"><h2>ใกล้คุณตอนนี้</h2><a className="more" href="/?cat=eat">ดูทั้งหมด</a></div>
+          <div className="sec"><h2>ใกล้คุณตอนนี้</h2><a className="more" href="/map"><Icon n="map" size={14} style={{ verticalAlign: '-.2em' }} /> ดูบนแผนที่</a></div>
           <div className="hscroll">{d.nearby.map((p: any) => <MiniCard key={p.id} p={p} />)}</div>
         </>
       )}
