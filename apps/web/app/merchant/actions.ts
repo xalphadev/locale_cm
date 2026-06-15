@@ -18,9 +18,12 @@ const SHOP_TYPES: Record<string, { category: string; subcategory: string; stay?:
   // accommodations — picking one of these auto-flags places.offers_stay + stay_kind
   dorm: { category: 'see', subcategory: 'dorm', stay: true },
   apartment: { category: 'see', subcategory: 'apartment', stay: true },
+  condo: { category: 'see', subcategory: 'condo', stay: true },
+  mansion: { category: 'see', subcategory: 'mansion', stay: true },
+  house: { category: 'see', subcategory: 'house', stay: true },
   homestay: { category: 'see', subcategory: 'homestay', stay: true },
-  hotel: { category: 'see', subcategory: 'hotel', stay: true },
   guesthouse: { category: 'see', subcategory: 'guesthouse', stay: true },
+  hotel: { category: 'see', subcategory: 'hotel', stay: true },
 };
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 

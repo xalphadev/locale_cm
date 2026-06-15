@@ -1,12 +1,15 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
+import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
 
 type Pin = { id: string; name: string; lat: number; lng: number; kind: string; priceFrom: number | null; badge: string; live: boolean };
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
-const KIND_COLORS: Record<string, string> = { dorm: '#16284D', apartment: '#1A73E8', homestay: '#28457C', hotel: '#F5B500', guesthouse: '#1559C7' };
-const KIND_TH: Record<string, string> = { dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', homestay: 'โฮมสเตย์', hotel: 'โรงแรม', guesthouse: 'เกสต์เฮาส์' };
+const KIND_COLORS: Record<string, string> = {
+  dorm: '#16284D', apartment: '#1A73E8', condo: '#1559C7', mansion: '#28457C', house: '#16284D',
+  homestay: '#28457C', hotel: '#F5B500', guesthouse: '#1559C7',
+};
 const loadCss = (id: string, href: string) => { if (!document.getElementById(id)) { const l = document.createElement('link'); l.id = id; l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } };
 const loadJs = (src: string) => new Promise<void>((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(); document.body.appendChild(s); });
 

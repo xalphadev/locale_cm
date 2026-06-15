@@ -1,8 +1,8 @@
 import { Icon } from '../icons';
 import { toggleSaveAction } from '../actions';
+import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
 
 const PERIOD_TH: Record<string, string> = { month: 'เดือน', night: 'คืน' };
-const KIND_TH: Record<string, string> = { dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', homestay: 'โฮมสเตย์', hotel: 'โรงแรม', guesthouse: 'เกสต์เฮาส์' };
 
 export type StayPlace = {
   id: string; name: string; district: string; kind: string; period: string;

@@ -1,7 +1,7 @@
 import { q, i18n, DEMO_USER } from '@/lib/db';
 import { Icon } from '../icons';
 import { roomVacancy, roomImg } from '../RoomCard';
-import { STAY_AMENITIES } from '@/lib/facets';
+import { STAY_AMENITIES, STAY_KINDS } from '@/lib/facets';
 import { parsePoint, isDefaultGeo } from '@/lib/geo';
 import StayMapView from './StayMapView';
 import StayFilterSheet from './StayFilterSheet';
@@ -10,7 +10,6 @@ import { PlaceStayCard } from './PlaceStayCard';
 export const dynamic = 'force-dynamic';
 
 // validation lists (the selectable UI lives in StayFilterSheet)
-const KINDS: Record<string, string[]> = { monthly: ['dorm', 'apartment'], daily: ['homestay', 'guesthouse', 'hotel'] };
 const SORTS: Record<string, string[]> = { monthly: ['', 'soon', 'cheap'], daily: ['', 'vacant', 'cheap'] };
 // price buckets (price_minor satang): key → [lo, hi]
 const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
@@ -20,7 +19,7 @@ const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
 
 export default async function Stay({ searchParams }: { searchParams: Record<string, string> }) {
   const mode = searchParams?.mode === 'daily' ? 'daily' : 'monthly';
-  const kind = KINDS[mode].includes(searchParams?.kind) ? searchParams.kind : '';
+  const kind = STAY_KINDS.includes(searchParams?.kind) ? searchParams.kind : '';
   const sort = SORTS[mode].includes(searchParams?.sort) ? searchParams.sort : '';
   const am = String(searchParams?.am || '').split(',').map((x) => x.trim()).filter((x) => STAY_AMENITIES.includes(x));
   const fr = ['furnished', 'partial', 'unfurnished'].includes(searchParams?.fr || '') ? searchParams.fr : '';
