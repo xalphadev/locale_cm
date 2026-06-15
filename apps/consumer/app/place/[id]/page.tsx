@@ -5,6 +5,10 @@ import { toggleSaveAction } from '../../actions';
 export const dynamic = 'force-dynamic';
 
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
+const dealLabel = (t: string, pct: any, minor: any) =>
+  t === 'percent_off' ? `ลด ${Math.round(Number(pct))}%` : t === 'fixed_off' ? `ลด ฿${Math.round(Number(minor) / 100)}`
+    : t === 'bogo' ? '1 แถม 1' : t === 'freebie' ? 'ของแถมฟรี' : 'ดีล';
+const daysLeft = (e: any) => (e ? Math.max(0, Math.ceil((new Date(e).getTime() - Date.now()) / 86400000)) : null);
 const DAYS: [string, string][] = [['mon', 'จันทร์'], ['tue', 'อังคาร'], ['wed', 'พุธ'], ['thu', 'พฤหัส'], ['fri', 'ศุกร์'], ['sat', 'เสาร์'], ['sun', 'อาทิตย์']];
 const DKEY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -16,7 +20,7 @@ function parsePoint(geo: string | null) {
 }
 
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = [];
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = [];
   try {
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
@@ -32,6 +36,9 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       [rev] = await q<any>(`SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [params.id]);
       reviews = await q<any>(`SELECT r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 10`, [params.id]);
       dist = await q<any>(`SELECT rating, count(*)::int c FROM reviews WHERE place_id=$1 AND moderation_status='approved' GROUP BY rating`, [params.id]);
+      const [vid] = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='video' AND moderation_status='approved' LIMIT 1`, [params.id]);
+      videoUrl = vid?.storage_path ?? null;
+      deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
     }
   } catch { /* db down */ }
 
@@ -56,7 +63,10 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   return (
     <>
       <div className="detail-hero">
-        <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />
+        {videoUrl
+          ? <video src={videoUrl} poster={cover(p.id, p.subcategory, p.category, 760, 500)} muted loop autoPlay playsInline />
+          : <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />}
+        {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
         <div className="scrim" />
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
         <form action={toggleSaveAction.bind(null, p.id)} style={{ position: 'absolute', top: 16, right: 16, zIndex: 3 }}>
@@ -99,6 +109,27 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           {p.district_name && <span className="fact"><Icon n="pin" size={15} /> {i18n(p.district_name)}</span>}
           {p.fresh === 'fresh' && <span className="fact"><Icon n="check" size={15} /> ตรวจสอบแล้ว</span>}
         </div>
+
+        {deals.length > 0 && (
+          <>
+            <h2>โปรโมชั่น</h2>
+            {deals.map((dl) => {
+              const left = dl.quota_total ? dl.quota_total - dl.quota_used : null;
+              const dd = daysLeft(dl.ends_at);
+              return (
+                <div className="dealrow" key={dl.id}>
+                  <div className="drt"><span className="drlabel">{dealLabel(dl.deal_type, dl.value_pct, dl.value_minor)}</span> {i18n(dl.title_i18n)}</div>
+                  {i18n(dl.terms_i18n) && <div className="drterms">{i18n(dl.terms_i18n)}</div>}
+                  <div className="drbar">
+                    {dd != null && <span className="b1">{dd === 0 ? 'วันสุดท้าย!' : `เหลืออีก ${dd} วัน`}</span>}
+                    {left != null && <span className="b2">เหลือ {left} สิทธิ์</span>}
+                  </div>
+                  <span className="dealcta"><Icon n="ticket" size={15} /> แสดงที่เคาน์เตอร์เพื่อรับสิทธิ์</span>
+                </div>
+              );
+            })}
+          </>
+        )}
 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 

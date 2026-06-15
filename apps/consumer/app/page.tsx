@@ -12,7 +12,11 @@ function parsePoint(geo: string | null) {
 }
 
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
-const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const dealLabel = (t: string, pct: any, minor: any) =>
+  t === 'percent_off' ? `ลด ${Math.round(Number(pct))}%` : t === 'fixed_off' ? `ลด ฿${Math.round(Number(minor) / 100)}`
+    : t === 'bogo' ? '1 แถม 1' : t === 'freebie' ? 'ของแถมฟรี' : 'ดีล';
+const daysLeft = (e: any) => (e ? Math.max(0, Math.ceil((new Date(e).getTime() - Date.now()) / 86400000)) : null);
+const THM =['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const CATS = [
   { i: 'coffee', l: 'คาเฟ่', qs: 'sub=cafe' }, { i: 'bowl', l: 'อาหาร', qs: 'sub=restaurant' },
   { i: 'flame', l: 'สตรีท', qs: 'sub=street_food' }, { i: 'cake', l: 'ของหวาน', qs: 'sub=dessert' },
@@ -25,9 +29,15 @@ const ORDER: Record<string, string> = {
   '': 'rv.avg DESC NULLS LAST, rv.n DESC NULLS LAST', near: 'p.verified_at DESC NULLS LAST',
   hot: 'rv.n DESC NULLS LAST, rv.avg DESC NULLS LAST', new: 'p.created_at DESC',
 };
-const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band, rv.n::int rev_n, rv.avg::text rev_avg`;
-const PJOIN = `FROM places p LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
-  WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true`;
+const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band,
+  rv.n::int rev_n, rv.avg::text rev_avg, dl.deal_type::text deal_type, dl.value_pct, dl.value_minor, (vid.x IS NOT NULL) has_video`;
+const PJOIN = `FROM places p
+  LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
+    WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
+  LEFT JOIN LATERAL (SELECT deal_type, value_pct, value_minor FROM deals d2
+    WHERE d2.place_id=p.id AND d2.status='active' AND (d2.ends_at IS NULL OR d2.ends_at>=now()) ORDER BY d2.ends_at NULLS LAST LIMIT 1) dl ON true
+  LEFT JOIN LATERAL (SELECT 1 x FROM media mv
+    WHERE mv.owner_type='place' AND mv.owner_id=p.id AND mv.kind='video' AND mv.moderation_status='approved' LIMIT 1) vid ON true`;
 
 async function load(tab: string, cat: string, sub: string, query: string) {
   const uid = await demoUserId();
@@ -50,7 +60,12 @@ async function load(tab: string, cat: string, sub: string, query: string) {
   const events = await q<any>(`SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m FROM events WHERE status='published' AND (ends_at IS NULL OR ends_at >= now()) ORDER BY starts_at LIMIT 6`);
   const pinRows = await q<any>(`SELECT geo::text geo, category::text cat FROM places WHERE status='published' AND is_visible`);
   const pins = pinRows.map((r) => { const pt = parsePoint(r.geo); return pt ? { lat: pt.lat, lng: pt.lng, cat: r.cat } : null; }).filter(Boolean);
-  return { mode: 'home' as const, places, community, quest, stamps, events, pins };
+  const deals = await q<any>(
+    `SELECT d.id, d.place_id, d.deal_type::text deal_type, d.value_pct, d.value_minor, d.title_i18n,
+            d.ends_at, d.quota_total, d.quota_used, p.name_i18n pname, p.subcategory psub, p.category::text pcat
+     FROM deals d JOIN places p ON p.id=d.place_id
+     WHERE d.status='active' AND (d.ends_at IS NULL OR d.ends_at>=now()) ORDER BY d.ends_at NULLS LAST LIMIT 8`);
+  return { mode: 'home' as const, places, community, quest, stamps, events, pins, deals };
 }
 
 function LRow({ p, rank }: { p: any; rank?: number }) {
@@ -59,10 +74,14 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
   return (
     <a className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
       {rank != null && <span className="rank">{rank}</span>}
-      <img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
+      <span className="lthumb-wrap">
+        <img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
+        {p.has_video && <span className="vidbadge"><Icon n="play" size={11} fill="currentColor" /></span>}
+      </span>
       <div className="lc">
         <div className="lname">{i18n(p.name_i18n)}</div>
         <div className="lmeta">
+          {p.deal_type && <span className="promopill"><Icon n="tag" size={10} /> {dealLabel(p.deal_type, p.value_pct, p.value_minor)}</span>}
           <span>{p.subcategory || catTH(p.category)}</span>
           {p.price_band && <><span className="mdot">·</span><span>{'฿'.repeat(Number(p.price_band))}</span></>}
           {p.rev_n > 0 && <><span className="mdot">·</span><span>{p.rev_n} รีวิว</span></>}
@@ -129,6 +148,32 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
             <div className="qsub">เก็บแล้ว {d.stamps}/{need} แสตมป์ · รับฟรีกาแฟ</div></div>
           <span className="qgo"><Icon n="chevR" size={20} /></span>
         </a>
+      )}
+
+      {d.deals.length > 0 && (
+        <>
+          <div className="sec"><h2>ดีลเด็ดใกล้คุณ</h2><span className="more" style={{ color: 'var(--muted)' }}>{d.deals.length} โปรฯ</span></div>
+          <div className="dealrail">
+            {d.deals.map((dl: any) => {
+              const left = dl.quota_total ? dl.quota_total - dl.quota_used : null;
+              const dd = daysLeft(dl.ends_at);
+              return (
+                <a className="dealc" key={dl.id} href={`/place/${dl.place_id}`}>
+                  <div className="dp"><img src={cover(dl.place_id, dl.psub, dl.pcat, 360, 200)} alt="" loading="lazy" />
+                    <span className="dbadge">{dealLabel(dl.deal_type, dl.value_pct, dl.value_minor)}</span></div>
+                  <div className="db">
+                    <div className="dnm">{i18n(dl.pname)}</div>
+                    <div className="dt">{i18n(dl.title_i18n)}</div>
+                    <div className="durg">
+                      {dd != null && <span className="u1"><Icon n="clock2" size={12} className="flat-ico" style={{ color: 'var(--accent)' }} /> {dd === 0 ? 'วันสุดท้าย!' : `อีก ${dd} วัน`}</span>}
+                      {left != null && <span className="u2">เหลือ {left} สิทธิ์</span>}
+                    </div>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <div className="segmented">{SEGS.map((s) => <a key={s.k} href={s.k ? `/?tab=${s.k}` : '/'} className={`seg ${tab === s.k ? 'on' : ''}`}>{s.l}</a>)}</div>
