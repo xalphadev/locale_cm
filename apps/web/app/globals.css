@@ -159,3 +159,20 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* geo picker */
 .merchant-root .geopick-map{border-radius:13px;border:1px solid var(--m-line)}
 .merchant-root .geopick-row input{border:1.5px solid var(--m-line);border-radius:9px}
+
+/* ===== merchant portal: MOBILE APP SHELL (phone frame + bottom tab bar, responsive) ===== */
+.merchant-root{background:#E4E8EF}                       /* darker behind the shell so it pops on desktop */
+.mshell{max-width:480px;margin:0 auto;min-height:100vh;background:#F3F5F8;position:relative;padding-bottom:92px;box-shadow:0 0 60px rgba(0,0,0,.13);overflow-x:hidden}
+.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:linear-gradient(125deg,var(--m-accent),var(--m-navy));color:#fff;padding:16px 18px 18px;border-radius:0 0 22px 22px;box-shadow:0 8px 22px -12px rgba(16,40,77,.5)}
+.mtop-brand{font-size:.66rem;font-weight:800;letter-spacing:.09em;color:rgba(255,255,255,.78)}
+.mtop-shop{font-size:1.18rem;font-weight:800;margin-top:3px;letter-spacing:-.01em;line-height:1.2}
+.mtop-status{display:inline-block;margin-top:7px;font-size:.72rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border-radius:999px;padding:.18rem .62rem}
+.mtop-status.on{background:rgba(255,255,255,.24)}
+.mtop-out{flex:none;border:1px solid rgba(255,255,255,.42);background:rgba(255,255,255,.16);color:#fff;border-radius:999px;padding:.42rem .9rem;font:inherit;font-weight:800;font-size:.82rem;cursor:pointer}
+.mtop-out:active{transform:scale(.96)}
+.mbody{padding:1.1rem 1rem 1rem}
+.mbody h1{font-size:1.4rem;font-weight:800;margin:.2rem 0 .7rem;letter-spacing:-.02em}
+.mtab{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);width:calc(100% - 26px);max-width:454px;z-index:40;display:flex;background:var(--m-surface);border:1px solid var(--m-line);border-radius:20px;box-shadow:0 12px 34px -8px rgba(16,20,12,.26);padding:8px 4px}
+.mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--m-muted);font-size:.66rem;font-weight:700;padding:3px 2px;border-radius:13px;transition:transform .12s}
+.mtab-i:active{transform:scale(.92)}
+.mtab-i.on{color:var(--m-accent)}
