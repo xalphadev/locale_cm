@@ -1,0 +1,40 @@
+import { Icon } from '../icons';
+import { toggleSaveAction } from '../actions';
+
+const PERIOD_TH: Record<string, string> = { month: 'เดือน', night: 'คืน' };
+const KIND_TH: Record<string, string> = { dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', homestay: 'โฮมสเตย์', hotel: 'โรงแรม', guesthouse: 'เกสต์เฮาส์' };
+
+export type StayPlace = {
+  id: string; name: string; district: string; kind: string; period: string;
+  units: number; vac: number; priceMin: number | null; priceMax: number | null; saved: boolean; img: string;
+};
+
+/** One ACCOMMODATION on the /stay list (groups its rooms). Tap → /place/[id] (shows all rooms). No LINE CTA here. */
+export function PlaceStayCard({ p }: { p: StayPlace }) {
+  const href = `/place/${p.id}`;
+  const per = PERIOD_TH[p.period] || p.period;
+  const price = p.priceMin == null ? 'สอบถามราคา'
+    : p.priceMin === p.priceMax ? `฿${p.priceMin.toLocaleString()}/${per}`
+      : `฿${p.priceMin.toLocaleString()}–${(p.priceMax ?? p.priceMin).toLocaleString()}/${per}`;
+  const chip = p.vac > 0 ? { cls: 'season', label: `ว่าง ${p.vac} ห้อง` } : { cls: 'ask', label: 'สอบถามห้องว่าง' };
+  return (
+    <div className="scard">
+      <a className="scard-img" href={href}>
+        <img src={p.img} alt="" loading="lazy" />
+        <span className={`pchip ${chip.cls}`}>{chip.label}</span>
+      </a>
+      <div className="scard-body">
+        <a className="scard-nm" href={href}>{p.name}</a>
+        <div className="scard-loc"><Icon n="pin" size={12} /> {KIND_TH[p.kind] || 'ที่พัก'}{p.district ? ` · ${p.district}` : ''}</div>
+        <div className="scard-facts">{p.units > 1 ? `${p.units} แบบห้องให้เลือก` : '1 แบบห้อง'}</div>
+        <div className="scard-foot">
+          <span className="scard-price">{price}</span>
+          <a className="scard-go" href={href}>ดูห้องว่าง <Icon n="chevR" size={14} /></a>
+        </div>
+      </div>
+      <form className="scard-save" action={toggleSaveAction.bind(null, p.id)}>
+        <button type="submit" aria-label="บันทึก" className={p.saved ? 'on' : ''}><Icon n="heart" size={16} fill={p.saved ? 'currentColor' : 'none'} /></button>
+      </form>
+    </div>
+  );
+}

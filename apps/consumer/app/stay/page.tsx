@@ -1,10 +1,11 @@
 import { q, i18n, DEMO_USER } from '@/lib/db';
 import { Icon } from '../icons';
-import { RoomCard, roomVacancy } from '../RoomCard';
+import { roomVacancy, roomImg } from '../RoomCard';
 import { STAY_AMENITIES } from '@/lib/facets';
 import { parsePoint, isDefaultGeo } from '@/lib/geo';
 import StayMapView from './StayMapView';
 import StayFilterSheet from './StayFilterSheet';
+import { PlaceStayCard } from './PlaceStayCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,28 +49,37 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
       `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n, su.image_urls,
               su.available_units, su.available_from, su.daily_status, su.availability_updated_at,
               su.capacity, su.deposit_minor, su.min_stay, su.furnished,
-              p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo,
+              p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo, d.name_i18n district_name,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$${sIdx}) saved
          FROM stay_units su JOIN places p ON p.id=su.place_id LEFT JOIN districts d ON d.id=p.district_id
         WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 60`, params);
   } catch { /* db down */ }
 
-  // group rows → one pin per place (active mode only); omit un-pinned (default/no geo) honestly
-  const byPlace: Record<string, any> = {}; const seenUnpinned = new Set<string>();
+  // group rooms → one ACCOMMODATION (place) per card; serves both the list and the map.
+  // vac counts only units the cards show as live-vacant (post stale-decay).
+  const byId: Record<string, any> = {}; const order: string[] = [];
   for (const r of rows) {
-    const pt = parsePoint(r.geo);
-    if (!pt || isDefaultGeo(pt.lng, pt.lat)) { seenUnpinned.add(r.place_id); continue; }
-    // count only units the LIST would show as live-vacant (post stale-decay), so the pin badge
-    // can't claim more vacant rooms than the cards present.
-    const vac = roomVacancy(r).cls === 'season' ? (r.rental_mode === 'monthly' ? r.available_units : 1) : 0;
-    const g = byPlace[r.place_id] || (byPlace[r.place_id] = { id: r.place_id, name: i18n(r.shop_name), lat: pt.lat, lng: pt.lng, kind: r.stay_kind, vac: 0, priceFrom: null as number | null });
-    g.vac += vac;
-    if (r.price_minor != null) g.priceFrom = g.priceFrom == null ? r.price_minor : Math.min(g.priceFrom, r.price_minor);
+    let g = byId[r.place_id];
+    if (!g) {
+      const pt = parsePoint(r.geo);
+      g = byId[r.place_id] = {
+        id: r.place_id, name: i18n(r.shop_name), district: i18n(r.district_name), kind: r.stay_kind,
+        period: r.price_period, units: 0, vac: 0, priceMin: null as number | null, priceMax: null as number | null,
+        saved: !!r.saved, img: roomImg(r), lat: pt?.lat ?? null, lng: pt?.lng ?? null,
+      };
+      order.push(r.place_id);
+    }
+    g.units++;
+    if (roomVacancy(r).cls === 'season') g.vac += (r.rental_mode === 'monthly' ? r.available_units : 1);
+    if (r.price_minor != null) { const b = Math.round(r.price_minor / 100); g.priceMin = g.priceMin == null ? b : Math.min(g.priceMin, b); g.priceMax = g.priceMax == null ? b : Math.max(g.priceMax, b); }
   }
-  const unpinned = [...seenUnpinned].filter((id) => !byPlace[id]).length;
-  const pins = Object.values(byPlace).map((g: any) => ({
-    ...g, priceFrom: g.priceFrom != null ? Math.round(g.priceFrom / 100) : null,
-    badge: g.vac > 0 ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.vac > 0,
+  const placeList = order.map((id) => byId[id]);
+  // map pins: same groups, minus the un-pinned (default/no geo) ones (counted for the footer note)
+  const pinned = placeList.filter((g) => g.lat != null && !isDefaultGeo(g.lng, g.lat));
+  const unpinned = placeList.length - pinned.length;
+  const pins = pinned.map((g) => ({
+    id: g.id, name: g.name, lat: g.lat, lng: g.lng, kind: g.kind,
+    priceFrom: g.priceMin, badge: g.vac > 0 ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.vac > 0,
   }));
 
   // href is only for the mode segmented + list/map toggle (server links); all other filters
@@ -133,11 +143,11 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         </>
       ) : (
         <>
-          <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ห้องเช่ารายเดือน' : 'ที่พักรายวัน'} ({rows.length})</h2>
+          <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : 'ที่พักรายวัน'} ({placeList.length})</h2>
           <div className="staylist">
-            {rows.map((r) => <RoomCard key={r.id} u={r} variant="wide" placeId={r.place_id} saved={r.saved} line_id={r.line_id} phone={r.phone} shopName={i18n(r.shop_name)} shopHref={`/place/${r.place_id}`} />)}
+            {placeList.map((p) => <PlaceStayCard key={p.id} p={p} />)}
           </div>
-          {rows.length === 0 && <p className="empty">ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
+          {placeList.length === 0 && <p className="empty">ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
         </>
       )}
       <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Soi Hop ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
