@@ -205,8 +205,11 @@ export async function createStayUnitAction(formData: FormData) {
 export async function updateVacancyAction(unitId: string, delta: number) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
+  // clamp to a single step — the UI only ever sends ±1, but a Server Action accepts any
+  // caller value; bounding it removes the int4-overflow / non-integer paths.
+  const step = Math.max(-1, Math.min(1, Math.trunc(Number(delta)) || 0));
   await q(`UPDATE stay_units SET available_units=GREATEST(0, available_units + $3), availability_updated_at=now(), updated_at=now()
-           WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id, delta]);
+           WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id, step]);
   revalidatePath('/merchant/rooms');
 }
 
