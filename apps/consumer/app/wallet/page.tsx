@@ -1,4 +1,5 @@
 import { q, demoUserId, coins } from '@/lib/db';
+import { Icon } from '../icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,21 +20,21 @@ export default async function Wallet() {
     }
   } catch { down = true; }
 
-  if (down) return (<><div className="top"><h1>Wallet 👛</h1></div>
-    <div className="body"><p className="muted">ต่อฐานข้อมูลไม่ได้</p></div></>);
+  if (down) return (<><div className="top"><div className="hi">ยอดสะสม</div><h1>กระเป๋าของฉัน</h1></div>
+    <div className="body"><p className="empty">ต่อฐานข้อมูลไม่ได้</p></div></>);
 
   return (
     <>
-      <div className="top"><div className="hi">กระเป๋าของฉัน</div><h1>Wallet 👛</h1></div>
+      <div className="top"><div className="hi">ยอดสะสม</div><h1>กระเป๋าของฉัน</h1></div>
       <div className="body">
         <div className="bal">
           <div className="balcard sp">
-            <div className="lab">✦ Sparks</div>
+            <div className="lab"><Icon n="sparkles" size={15} style={{ verticalAlign: '-.18em' }} /> Sparks</div>
             <div className="v">{sparks}</div>
             <div className="note">สะสมเลื่อนระดับ · แลกของไม่ได้</div>
           </div>
           <div className="balcard co">
-            <div className="lab">◉ Coins</div>
+            <div className="lab"><Icon n="ticket" size={15} style={{ verticalAlign: '-.18em' }} /> Coins</div>
             <div className="v">{coins(coinMinor)}</div>
             <div className="note">แลกของจริงที่ร้าน · ถอนเป็นเงินสดไม่ได้{expiry ? ` · หมดอายุ ${expiry}` : ''}</div>
           </div>
@@ -42,7 +43,7 @@ export default async function Wallet() {
         <h2>รางวัลของฉัน</h2>
         {readyReward ? (
           <div className="reward-row">
-            <div className="seal">☕</div>
+            <div className="seal"><Icon n="coffee" size={22} style={{ color: '#fff' }} /></div>
             <div><div style={{ fontWeight: 700 }}>ฟรีกาแฟ 1 แก้ว</div>
               <div className="muted">ให้พนักงานสแกนที่เคาน์เตอร์เพื่อแลก</div></div>
             <span className="ready">พร้อมแลก</span>

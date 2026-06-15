@@ -1,21 +1,21 @@
 import { q, demoUserId, i18n, cover } from '@/lib/db';
+import { Icon, CAT_ICON, KIND_ICON } from './icons';
 
 export const dynamic = 'force-dynamic';
 
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
-const eIcon = (k: string) => ({ festival: '🎆', market: '🛍️', performance: '🎭', workshop: '🎨', seasonal: '🌸' } as any)[k] ?? '✨';
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const CATS = [
-  { e: '☕', l: 'คาเฟ่', qs: 'sub=cafe' }, { e: '🍜', l: 'ร้านอาหาร', qs: 'sub=restaurant' },
-  { e: '🌶️', l: 'สตรีทฟู้ด', qs: 'sub=street_food' }, { e: '🍰', l: 'ของหวาน', qs: 'sub=dessert' },
-  { e: '⛩️', l: 'ที่เที่ยว', qs: 'cat=see' }, { e: '🎨', l: 'กิจกรรม', qs: 'cat=do' },
-  { e: '💆', l: 'สปา', qs: 'sub=spa' }, { e: '🥊', l: 'มวยไทย', qs: 'sub=muay_thai' },
+  { i: 'coffee', l: 'คาเฟ่', qs: 'sub=cafe' }, { i: 'bowl', l: 'ร้านอาหาร', qs: 'sub=restaurant' },
+  { i: 'flame', l: 'สตรีทฟู้ด', qs: 'sub=street_food' }, { i: 'cake', l: 'ของหวาน', qs: 'sub=dessert' },
+  { i: 'landmark', l: 'ที่เที่ยว', qs: 'cat=see' }, { i: 'palette', l: 'กิจกรรม', qs: 'cat=do' },
+  { i: 'flower', l: 'สปา', qs: 'sub=spa' }, { i: 'dumbbell', l: 'มวยไทย', qs: 'sub=muay_thai' },
 ];
-const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: '☕ กิน' }, { k: 'see', l: '⛩️ เที่ยว' }, { k: 'do', l: '🎨 ทำกิจกรรม' }];
+const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: 'กิน' }, { k: 'see', l: 'เที่ยว' }, { k: 'do', l: 'ทำกิจกรรม' }];
 
-const PLACE_COLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, f.freshness_label::text fresh,
+const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, f.freshness_label::text fresh,
   rv.n::int rev_n, rv.avg::text rev_avg`;
-const PLACE_JOIN = `FROM places p
+const PJOIN = `FROM places p
   LEFT JOIN data_freshness f ON f.place_id=p.id
   LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
                      WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true`;
@@ -23,9 +23,8 @@ const PLACE_JOIN = `FROM places p
 async function load(cat: string, sub: string, query: string) {
   const uid = await demoUserId();
   const isFilter = !!(cat || sub || query);
-
   const places = await q<any>(
-    `SELECT ${PLACE_COLS} ${PLACE_JOIN}
+    `SELECT ${PCOLS} ${PJOIN}
      WHERE p.status='published' AND p.is_visible
        AND ($1='' OR p.category::text=$1) AND ($2='' OR p.subcategory=$2)
        AND ($3='' OR p.name_i18n->>'th' ILIKE '%'||$3||'%' OR p.name_i18n->>'en' ILIKE '%'||$3||'%')
@@ -33,13 +32,13 @@ async function load(cat: string, sub: string, query: string) {
     [cat, sub, query]);
   if (isFilter) return { mode: 'filter' as const, places };
 
-  const popular = await q<any>(
-    `SELECT ${PLACE_COLS} ${PLACE_JOIN}
-     WHERE p.status='published' AND p.is_visible ORDER BY rv.n DESC NULLS LAST, rv.avg DESC NULLS LAST LIMIT 10`);
+  const [hero] = await q<any>(
+    `SELECT ${PCOLS} ${PJOIN}
+     WHERE p.status='published' AND p.is_visible ORDER BY rv.n DESC NULLS LAST, rv.avg DESC NULLS LAST LIMIT 1`);
   const community = await q<any>(
-    `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname, p.category::text pcat
+    `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname
      FROM reviews r JOIN profiles pr ON pr.user_id=r.user_id JOIN places p ON p.id=r.place_id
-     WHERE r.moderation_status='approved' ORDER BY r.created_at DESC LIMIT 8`);
+     WHERE r.moderation_status='approved' ORDER BY r.created_at DESC LIMIT 4`);
   const [quest] = await q<any>(
     `SELECT id, title_i18n, min_steps_required FROM quests WHERE status='active' ORDER BY is_featured DESC, created_at LIMIT 1`);
   let stamps = 0;
@@ -49,22 +48,20 @@ async function load(cat: string, sub: string, query: string) {
   }
   const events = await q<any>(
     `SELECT id, title_i18n, kind, is_recurring, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m
-     FROM events WHERE status='published' AND (ends_at IS NULL OR ends_at >= now()) ORDER BY starts_at LIMIT 6`);
-  return { mode: 'home' as const, places, popular, community, quest, stamps, events };
+     FROM events WHERE status='published' AND (ends_at IS NULL OR ends_at >= now()) ORDER BY starts_at LIMIT 4`);
+  const nearby = places.filter((p: any) => p.id !== hero?.id).slice(0, 10);
+  return { mode: 'home' as const, hero, nearby, community, quest, stamps, events };
 }
+
+const Stars = ({ v, size = 13 }: { v: string; size?: number }) =>
+  <span className="rate"><Icon n="star" fill="currentColor" size={size} /> {v}</span>;
 
 function MiniCard({ p }: { p: any }) {
   return (
     <a className="mini" href={`/place/${p.id}`}>
-      <div className="ph"><img src={cover(p.id, 420, 280)} alt="" loading="lazy" /><div className="scrim" style={{ opacity: .35 }} />
-        {p.fresh === 'fresh' && <span className="chip-top frost"><span className="gdot" style={{ background: '#36D399' }} /></span>}</div>
-      <div className="mb">
-        <div className="nm">{i18n(p.name_i18n)}</div>
-        <div className="mmeta">
-          {p.rev_n > 0 ? <span className="rate"><span className="s">★</span> {p.rev_avg} <span style={{ opacity: .7 }}>({p.rev_n})</span></span> : <span>ใหม่</span>}
-          <span className="sep">·</span><span>{catTH(p.category)}</span>
-        </div>
-      </div>
+      <div className="ph"><img src={cover(p.id, 440, 300)} alt="" loading="lazy" /><div className="scrim" style={{ opacity: .28 }} /></div>
+      <div className="mb"><div className="nm">{i18n(p.name_i18n)}</div>
+        <div className="mmeta">{p.rev_n > 0 ? <Stars v={p.rev_avg} /> : <span>ใหม่</span>}<span className="sep">·</span><span>{catTH(p.category)}</span></div></div>
     </a>
   );
 }
@@ -80,22 +77,21 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
       <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code></p></div></>);
   }
 
-  // ── App bar + search (shared) ──
   const header = (
     <>
       <div className="appbar">
-        <div><div className="greet">สวัสดีตอนบ่าย ☀️</div><div className="loc">📍 นิมมานเหมินท์ ▾</div></div>
+        <div><div className="greet">สำรวจรอบตัวคุณ</div>
+          <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> นิมมาน, เชียงใหม่ <Icon n="chevD" size={15} /></div></div>
         <div className="acts">
-          <span className="iconbtn">🔔<span className="badge-dot" /></span>
+          <span className="iconbtn"><Icon n="bell" size={21} /><span className="badge-dot" /></span>
           <span className="avatar-btn">ก</span>
         </div>
       </div>
-      <form className="searchbar" action="/"><span>🔍</span>
+      <form className="searchbar" action="/"><Icon n="search" size={20} />
         <input name="q" defaultValue={query} placeholder="ค้นหาร้าน ที่เที่ยว กิจกรรม รอบตัวคุณ…" /></form>
     </>
   );
 
-  // ── FILTER / SEARCH RESULTS ──
   if (d.mode === 'filter') {
     return (
       <>
@@ -108,10 +104,10 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
           {d.places.map((p: any) => (
             <a className="pcard" key={p.id} href={`/place/${p.id}`}>
               <div className="ph"><img src={cover(p.id)} alt="" loading="lazy" /><div className="scrim" />
-                {p.fresh === 'fresh' && <span className="chip-top frost"><span className="gdot" style={{ background: '#36D399' }} /> ตรวจสอบล่าสุด</span>}</div>
+                {p.fresh === 'fresh' && <span className="chip-top frost"><Icon n="check" size={13} /> ตรวจสอบแล้ว</span>}</div>
               <div className="cc"><div className="eyebrow">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div>
                 <div className="nm">{i18n(p.name_i18n)}</div>
-                <div className="meta">{p.rev_n > 0 && <span className="rate"><span className="s">★</span> {p.rev_avg} ({p.rev_n})</span>}{p.rev_n > 0 && <span className="sep">·</span>}<span>เดิน 4 นาที</span></div></div>
+                <div className="meta">{p.rev_n > 0 && <Stars v={p.rev_avg} size={14} />}{p.rev_n > 0 && <span className="sep">·</span>}<span>เดิน 4 นาที</span></div></div>
             </a>
           ))}
           {d.places.length === 0 && <p className="empty">ไม่พบผลลัพธ์ — ลองคำอื่นหรือเลือกหมวดอื่น</p>}
@@ -120,120 +116,83 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
     );
   }
 
-  // ── HOME FEED ──
   const need = d.quest?.min_steps_required ?? 3;
   return (
     <>
       {header}
 
-      {/* quick category icons */}
       <div className="cats">
         {CATS.map((c) => (
-          <a className="cat" key={c.l} href={`/?${c.qs}`}><span className="ci">{c.e}</span><span className="cl">{c.l}</span></a>
+          <a className="cat" key={c.l} href={`/?${c.qs}`}><span className="ci"><Icon n={c.i} size={26} /></span><span className="cl">{c.l}</span></a>
         ))}
       </div>
 
-      {/* stories — new in the neighborhood */}
-      {d.places.length > 0 && (
-        <div className="stories">
-          {d.places.slice(0, 8).map((p: any) => (
-            <a className="story" key={p.id} href={`/place/${p.id}`}>
-              <div className="ring"><img src={cover(p.id, 160, 160)} alt="" loading="lazy" /></div>
-              <div className="sl">{i18n(p.name_i18n)}</div>
-            </a>
-          ))}
-        </div>
+      {d.hero && (
+        <a className="edhero" href={`/place/${d.hero.id}`}>
+          <img src={cover(d.hero.id, 680, 850)} alt="" />
+          <div className="scrim" />
+          <span className="frost" style={{ position: 'absolute', top: 14, left: 14 }}><Icon n={CAT_ICON[d.hero.subcategory] || CAT_ICON[d.hero.category]} size={14} /> {catTH(d.hero.category)}</span>
+          <span className="bm"><Icon n="bookmark" size={18} /></span>
+          <div className="ec">
+            <div className="eyebrow" style={{ color: 'rgba(255,255,255,.85)' }}>ที่เด็ดประจำย่าน</div>
+            <h2>{i18n(d.hero.name_i18n)}</h2>
+            <div className="em">{d.hero.rev_n > 0 && <><span className="rate" style={{ color: '#fff' }}><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A' }} /> {d.hero.rev_avg}</span><span className="sep">·</span></>}<span>{d.hero.subcategory || catTH(d.hero.category)} · เดิน 5 นาที</span></div>
+          </div>
+        </a>
       )}
 
-      {/* featured carousel */}
-      <div className="sec"><h2>น่าสนใจวันนี้</h2></div>
-      <div className="hscroll">
-        {d.quest && (
-          <a className="feat" href="/passport">
-            <img src={cover('quest' + d.quest.id, 600, 750)} alt="" />
-            <div className="scrim" />
-            <span className="chip-top frost"><span className="gdot" /> ภารกิจ</span>
-            <div className="fc"><div className="eyebrow">QUEST</div><h3>{i18n(d.quest.title_i18n)}</h3>
-              <div className="meta">เก็บ {need} แสตมป์ · ฟรีกาแฟ</div></div>
-          </a>
-        )}
-        {d.popular.slice(0, 6).map((p: any) => (
-          <a className="feat" key={p.id} href={`/place/${p.id}`}>
-            <img src={cover(p.id, 600, 750)} alt="" loading="lazy" /><div className="scrim" />
-            <div className="fc"><div className="eyebrow">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div>
-              <h3>{i18n(p.name_i18n)}</h3>
-              <div className="meta">{p.rev_n > 0 && <span className="rate"><span className="s">★</span> {p.rev_avg}</span>}{p.rev_n > 0 && <span className="sep">·</span>}<span>เดิน 4 นาที</span></div></div>
-          </a>
-        ))}
-      </div>
+      {d.nearby.length > 0 && (
+        <>
+          <div className="sec"><h2>ใกล้คุณตอนนี้</h2><a className="more" href="/?cat=eat">ดูทั้งหมด</a></div>
+          <div className="hscroll">{d.nearby.map((p: any) => <MiniCard key={p.id} p={p} />)}</div>
+        </>
+      )}
 
-      {/* popular carousel */}
-      <div className="sec"><h2>🔥 ฮิตตอนนี้</h2><a className="more" href="/?cat=eat">ดูทั้งหมด</a></div>
-      <div className="hscroll">{d.popular.map((p: any) => <MiniCard key={p.id} p={p} />)}</div>
-
-      {/* community reviews feed — the "soul" */}
       {d.community.length > 0 && (
         <>
-          <div className="sec"><h2>💬 รีวิวล่าสุดจากชุมชน</h2></div>
+          <div className="sec"><h2>ชุมชนกำลังพูดถึง</h2></div>
           {d.community.map((r: any, i: number) => (
             <a className="crev" key={i} href={`/place/${r.pid}`}>
               <img className="cphoto" src={cover(r.pid, 160, 160)} alt="" loading="lazy" />
               <div className="cw">
                 <div className="ctop"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="cname">{r.display_name || 'ผู้ใช้'}</span>
-                  <span className="cstars">{'★'.repeat(r.rating)}</span></div>
+                  <span className="cstars">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={12} />)}</span></div>
                 <div className="cbody">{i18n(r.body_i18n)}</div>
-                <div className="cplace">📍 {i18n(r.pname)}</div>
+                <div className="cplace"><Icon n="pin" size={13} className="flat-ico" /> {i18n(r.pname)}</div>
               </div>
             </a>
           ))}
         </>
       )}
 
-      {/* quest mini (demoted, not the headline) */}
       {d.quest && (
         <>
-          <div className="sec"><h2>🎯 ภารกิจสะสมแสตมป์</h2></div>
-          <a className="qmini" href="/passport">
-            <img src={cover('q2' + d.quest.id, 640, 360)} alt="" />
-            <div className="scrim" />
-            <div className="qc"><div className="eyebrow" style={{ color: 'rgba(255,255,255,.85)' }}>เดินซอย เก็บแสตมป์</div>
-              <h3>{i18n(d.quest.title_i18n)}</h3>
-              <div className="qtrack">
-                {Array.from({ length: need }).map((_, i) => <span key={i} className={`qs ${i < d.stamps ? 'on' : ''}`}>{i < d.stamps ? '✓' : i + 1}</span>)}
-                <span style={{ marginLeft: 8, fontSize: '.82rem' }}>{d.stamps}/{need} · ฟรีกาแฟ</span>
-              </div>
+          <div className="sec"><h2>ภารกิจสะสมแสตมป์</h2></div>
+          <a className="qbanner" href="/passport">
+            <span className="qi"><Icon n="ticket" size={24} /></span>
+            <div className="qt">
+              <div className="qname">{i18n(d.quest.title_i18n)}</div>
+              <div className="qbar"><div className="qfill" style={{ width: `${Math.round((d.stamps / need) * 100)}%` }} /></div>
+              <div className="qsub">เก็บแล้ว {d.stamps}/{need} แสตมป์ · รับฟรีกาแฟ</div>
             </div>
+            <span className="qgo"><Icon n="chevR" size={20} /></span>
           </a>
         </>
       )}
 
-      {/* events */}
       {d.events.length > 0 && (
         <>
-          <div className="sec"><h2>📅 กิจกรรม &amp; เทศกาล</h2></div>
+          <div className="sec"><h2>กิจกรรมเร็วๆ นี้</h2></div>
           <div className="body" style={{ paddingTop: 0, paddingBottom: 0 }}>
             {d.events.map((e: any) => (
-              <a className="erow" key={e.id} href={`/event/${e.id}`}><div className="ethumb">{eIcon(e.kind)}</div>
-                <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta">📅 {e.d} {THM[e.m - 1]}{e.is_recurring ? ' · ทุกสัปดาห์' : ''}</div></div>
-                <span className="chev">›</span></a>
+              <a className="erow" key={e.id} href={`/event/${e.id}`}><div className="ethumb"><Icon n={KIND_ICON[e.kind] || 'sparkles'} size={26} /></div>
+                <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta"><Icon n="calendar" size={13} className="flat-ico" style={{ color: 'var(--muted)' }} /> {e.d} {THM[e.m - 1]}{e.is_recurring ? ' · ทุกสัปดาห์' : ''}</div></div>
+                <span className="chev"><Icon n="chevR" size={18} /></span></a>
             ))}
           </div>
         </>
       )}
-
-      {/* explore all */}
-      <div className="sec"><h2>สำรวจรอบตัว</h2></div>
-      <div className="body" style={{ paddingTop: 0 }}>
-        {d.places.slice(0, 8).map((p: any) => (
-          <a className="pcard" key={p.id} href={`/place/${p.id}`}>
-            <div className="ph"><img src={cover(p.id)} alt="" loading="lazy" /><div className="scrim" />
-              {p.fresh === 'fresh' && <span className="chip-top frost"><span className="gdot" style={{ background: '#36D399' }} /> ตรวจสอบล่าสุด</span>}</div>
-            <div className="cc"><div className="eyebrow">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div>
-              <div className="nm">{i18n(p.name_i18n)}</div>
-              <div className="meta">{p.rev_n > 0 && <span className="rate"><span className="s">★</span> {p.rev_avg} ({p.rev_n})</span>}{p.rev_n > 0 && <span className="sep">·</span>}<span>เดิน 4 นาที</span></div></div>
-          </a>
-        ))}
-      </div>
+      <div style={{ height: 8 }} />
     </>
   );
 }

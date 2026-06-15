@@ -1,5 +1,6 @@
 import { q, demoUserId, i18n } from '@/lib/db';
 import { checkInAction, redeemAction } from '../actions';
+import { Icon } from '../icons';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,7 +28,7 @@ export default async function Passport() {
 
   return (
     <>
-      <div className="top"><div className="hi">สมุดสะสมแสตมป์</div><h1>Passport 📕</h1></div>
+      <div className="top"><div className="hi">สมุดสะสมแสตมป์</div><h1>พาสปอร์ตของฉัน</h1></div>
       <div className="body">
         {quests.map((quest) => {
           const complete = quest.status !== 'in_progress';
@@ -39,7 +40,7 @@ export default async function Passport() {
           return (
             <div className="quest" key={quest.qid} style={{ marginBottom: 16 }}>
               <h3>{i18n(quest.title_i18n)}</h3>
-              <div className="sub">{complete ? 'ครบแล้ว 🎉' : `เก็บแล้ว ${doneCount}/${quest.need} แสตมป์`}</div>
+              <div className="sub">{complete ? 'เก็บครบแล้ว — พร้อมแลกรางวัล' : `เก็บแล้ว ${doneCount}/${quest.need} แสตมป์`}</div>
 
               <div className="steps">
                 {steps.map((s) => {
@@ -47,7 +48,7 @@ export default async function Passport() {
                   const isNext = s.sid === nextSid && !complete;
                   return (
                     <div className="steprow" key={s.sid}>
-                      <div className={`stepdot ${isDone ? 'on' : ''}`}>{isDone ? '✓' : s.step_order}</div>
+                      <div className={`stepdot ${isDone ? 'on' : ''}`}>{isDone ? <Icon n="check" size={16} /> : s.step_order}</div>
                       <div className="stepname">{i18n(s.name_i18n)}</div>
                       {isDone ? (
                         <span className="done-tag">เช็คอินแล้ว</span>
@@ -62,12 +63,12 @@ export default async function Passport() {
               </div>
 
               <div className="reward-row">
-                <div className="seal">🪙</div>
+                <div className="seal"><Icon n="gift" size={22} style={{ color: '#fff' }} /></div>
                 <div><div style={{ fontWeight: 700 }}>ฟรีกาแฟ 1 แก้ว</div>
                   <div className="muted">แลกที่ร้านพาร์ตเนอร์</div></div>
                 {complete && (
                   <form action={redeemAction} style={{ marginLeft: 'auto' }}>
-                    <button className="rbtn" type="submit">แลกรางวัล 🎁</button>
+                    <button className="rbtn" type="submit">แลกรางวัล</button>
                   </form>
                 )}
               </div>
