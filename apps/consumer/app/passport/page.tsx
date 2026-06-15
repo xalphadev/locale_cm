@@ -47,7 +47,7 @@ export default async function Passport() {
                   const isNext = s.sid === nextSid && !complete;
                   return (
                     <div className="steprow" key={s.sid}>
-                      <div className={`dot ${isDone ? 'on' : ''}`}>{isDone ? '✓' : s.step_order}</div>
+                      <div className={`stepdot ${isDone ? 'on' : ''}`}>{isDone ? '✓' : s.step_order}</div>
                       <div className="stepname">{i18n(s.name_i18n)}</div>
                       {isDone ? (
                         <span className="done-tag">เช็คอินแล้ว</span>

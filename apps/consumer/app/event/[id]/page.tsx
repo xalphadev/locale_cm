@@ -1,4 +1,4 @@
-import { q, i18n } from '@/lib/db';
+import { q, i18n, cover } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,18 +23,22 @@ export default async function EventDetail({ params }: { params: { id: string } }
 
   if (!e) {
     return (<><div className="top"><a className="back" href="/">‹ กลับ</a><h1>ไม่พบกิจกรรม</h1></div>
-      <div className="body"><p className="muted">กิจกรรมนี้อาจจบแล้วหรือยังไม่เผยแพร่</p></div></>);
+      <div className="body"><p className="empty">กิจกรรมนี้อาจจบแล้วหรือยังไม่เผยแพร่</p></div></>);
   }
 
   return (
     <>
-      <div className="top">
-        <a className="back" href="/">‹ กลับ</a>
-        <div className="hero-emoji">{eIcon(e.kind)}</div>
-        <h1>{i18n(e.title_i18n)}</h1>
-        <div className="hero-meta">{eLabel(e.kind)}{e.is_recurring ? ' · จัดประจำ' : ''}</div>
+      <div className="detail-hero">
+        <img src={cover('event' + e.id, 720, 480)} alt="" />
+        <div className="scrim" />
+        <a className="back-fab" href="/">‹</a>
+        <div className="dtitle">
+          <div className="eyebrow" style={{ color: 'rgba(255,255,255,.85)' }}>{eIcon(e.kind)} {eLabel(e.kind)}{e.is_recurring ? ' · จัดประจำ' : ''}</div>
+          <h1>{i18n(e.title_i18n)}</h1>
+        </div>
       </div>
-      <div className="body">
+
+      <div className="dbody">
         <div className="info">
           <div className="info-row"><span>📅</span><span>
             {fmt(e.sd, e.sm, e.sh)}{e.ed ? ` → ${e.ed === e.sd && e.em === e.sm ? e.eh : fmt(e.ed, e.em, e.eh)}` : ''} น.
@@ -45,15 +49,14 @@ export default async function EventDetail({ params }: { params: { id: string } }
 
         {i18n(e.description_i18n) && <p className="desc">{i18n(e.description_i18n)}</p>}
 
-        {e.place_id && (
-          <>
-            <h2>สถานที่จัด</h2>
-            <a className="card" href={`/place/${e.place_id}`}>
-              <div className="thumb">📍</div>
-              <div><div className="nm">{i18n(e.place_name)}</div><div className="meta">ดูรายละเอียดสถานที่ ›</div></div>
-            </a>
-          </>
-        )}
+        {e.place_id && (<>
+          <h2>สถานที่จัด</h2>
+          <a className="erow" href={`/place/${e.place_id}`}>
+            <div className="ethumb" style={{ background: 'linear-gradient(135deg,#1E8E7E,#0F6E5F)' }}>📍</div>
+            <div><div className="nm">{i18n(e.place_name)}</div><div className="meta">ดูรายละเอียดสถานที่</div></div>
+            <span className="chev">›</span>
+          </a>
+        </>)}
       </div>
     </>
   );

@@ -27,12 +27,12 @@ export default async function Wallet() {
       <div className="top"><div className="hi">กระเป๋าของฉัน</div><h1>Wallet 👛</h1></div>
       <div className="body">
         <div className="bal">
-          <div className="pill sp">
+          <div className="balcard sp">
             <div className="lab">✦ Sparks</div>
             <div className="v">{sparks}</div>
             <div className="note">สะสมเลื่อนระดับ · แลกของไม่ได้</div>
           </div>
-          <div className="pill co">
+          <div className="balcard co">
             <div className="lab">◉ Coins</div>
             <div className="v">{coins(coinMinor)}</div>
             <div className="note">แลกของจริงที่ร้าน · ถอนเป็นเงินสดไม่ได้{expiry ? ` · หมดอายุ ${expiry}` : ''}</div>

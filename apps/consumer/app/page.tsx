@@ -1,12 +1,13 @@
-import { q, demoUserId, i18n } from '@/lib/db';
+import { q, demoUserId, i18n, cover } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
-const icon = (c: string) => (c === 'eat' ? '☕' : c === 'see' ? '⛩️' : '🎨');
-const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-const eIcon = (k: string) => ({ festival: '🎆', market: '🛍️', performance: '🎭', workshop: '🎨', seasonal: '🌸' }[k] ?? '✨');
-const eLabel = (k: string) => ({ festival: 'เทศกาล', market: 'ตลาด/มาร์เก็ต', performance: 'การแสดง', workshop: 'เวิร์กช็อป', seasonal: 'ตามฤดูกาล' }[k] ?? k);
 
-async function load() {
+const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
+const eIcon = (k: string) => ({ festival: '🎆', market: '🛍️', performance: '🎭', workshop: '🎨', seasonal: '🌸' } as any)[k] ?? '✨';
+const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: '☕ กิน' }, { k: 'see', l: '⛩️ เที่ยว' }, { k: 'do', l: '🎨 ทำกิจกรรม' }];
+
+async function load(cat: string) {
   const uid = await demoUserId();
   const [quest] = await q<any>(
     `SELECT id, title_i18n, min_steps_required FROM quests
@@ -25,24 +26,26 @@ async function load() {
      LEFT JOIN data_freshness f ON f.place_id=p.id
      LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
                         WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
-     WHERE p.status='published' AND p.is_visible ORDER BY p.verified_at DESC NULLS LAST LIMIT 12`);
+     WHERE p.status='published' AND p.is_visible AND ($1='' OR p.category::text=$1)
+     ORDER BY p.verified_at DESC NULLS LAST LIMIT 20`, [cat]);
   const events = await q<any>(
     `SELECT id, title_i18n, kind, is_recurring,
             EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m
-     FROM events
-     WHERE status='published' AND (ends_at IS NULL OR ends_at >= now())
+     FROM events WHERE status='published' AND (ends_at IS NULL OR ends_at >= now())
      ORDER BY starts_at LIMIT 6`);
   return { quest, stamps, places, events };
 }
 
-export default async function Discover() {
+export default async function Discover({ searchParams }: { searchParams: { cat?: string } }) {
+  const cat = ['eat', 'see', 'do'].includes(searchParams?.cat ?? '') ? searchParams!.cat! : '';
   let d: Awaited<ReturnType<typeof load>>;
-  try { d = await load(); }
-  catch (e: any) {
+  try { d = await load(cat); }
+  catch {
     return (<><div className="top"><h1>Soi Hop</h1></div>
-      <div className="body"><p className="muted">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code> ก่อน</p></div></>);
+      <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code> ก่อน</p></div></>);
   }
   const need = d.quest?.min_steps_required ?? 3;
+
   return (
     <>
       <div className="top">
@@ -50,52 +53,73 @@ export default async function Discover() {
         <h1>เดินซอย เก็บแสตมป์</h1>
         <div className="city">📍 นิมมานเหมินท์ · เชียงใหม่</div>
       </div>
-      <div className="body">
-        {d.quest && (
-          <div className="quest">
-            <span className="tag">★ แนะนำ</span>
-            <h3>{i18n(d.quest.title_i18n)}</h3>
-            <div className="sub">เก็บ {need} แสตมป์จากคาเฟ่ในนิมมาน แล้วรับของรางวัล</div>
-            <div className="stamps">
-              {Array.from({ length: need }).map((_, i) => (
-                <div key={i} className={`st ${i < d.stamps ? 'on' : ''}`}>{i < d.stamps ? '✓' : '☕'}</div>
-              ))}
-            </div>
-            <div className="reward">🎁 ครบ {need} แสตมป์ → ฟรีกาแฟ 1 แก้ว</div>
-          </div>
-        )}
 
-        {d.events.length > 0 && (
+      <div className="body" style={{ paddingBottom: 0 }}>
+        {d.quest && (
+          <a className="hero" href="/passport" style={{ display: 'block' }}>
+            <img src={cover('quest' + d.quest.id, 600, 720)} alt="" />
+            <div className="scrim" />
+            <div className="htop"><span className="frost"><span className="gdot" /> แนะนำสำหรับคุณ</span>
+              <span className="frost">{need} ร้าน</span></div>
+            <div className="hbody">
+              <div className="eyebrow" style={{ color: 'rgba(255,255,255,.85)' }}>FEATURED QUEST</div>
+              <h3>{i18n(d.quest.title_i18n)}</h3>
+              <div className="hsub">เก็บ {need} แสตมป์จากคาเฟ่ในนิมมาน แล้วรับฟรีกาแฟ</div>
+              <div className="htrack">
+                {Array.from({ length: need }).flatMap((_, i) => {
+                  const els = [<div key={`s${i}`} className={`hstamp ${i < d.stamps ? 'on' : ''}`}>{i < d.stamps ? '✓' : i + 1}</div>];
+                  if (i < need - 1) els.push(<div key={`c${i}`} className="hconn" />);
+                  return els;
+                })}
+              </div>
+              <div className="hreward">🪙 รางวัล: ฟรีกาแฟ 1 แก้ว · เก็บแล้ว {d.stamps}/{need}</div>
+              <div className="cta">{d.stamps > 0 ? 'เก็บต่อ' : 'เริ่มเก็บแสตมป์'} →</div>
+            </div>
+          </a>
+        )}
+      </div>
+
+      <div className="filters">
+        {FILTERS.map((f) => (
+          <a key={f.k} href={f.k ? `/?cat=${f.k}` : '/'} className={`fpill ${cat === f.k ? 'on' : ''}`}>{f.l}</a>
+        ))}
+      </div>
+
+      <div className="body" style={{ paddingTop: 4 }}>
+        {d.events.length > 0 && cat === '' && (
           <>
             <h2>กิจกรรม &amp; เทศกาลเร็วๆ นี้</h2>
             {d.events.map((e: any) => (
-              <a className="card" key={e.id} href={`/event/${e.id}`}>
-                <div className="thumb">{eIcon(e.kind)}</div>
-                <div>
-                  <div className="nm">{i18n(e.title_i18n)}</div>
-                  <div className="meta">📅 {e.d} {THM[e.m - 1]}{e.is_recurring ? ' · ทุกสัปดาห์' : ''} · {eLabel(e.kind)}</div>
-                </div>
+              <a className="erow" key={e.id} href={`/event/${e.id}`}>
+                <div className="ethumb">{eIcon(e.kind)}</div>
+                <div><div className="nm">{i18n(e.title_i18n)}</div>
+                  <div className="meta">📅 {e.d} {THM[e.m - 1]}{e.is_recurring ? ' · ทุกสัปดาห์' : ''}</div></div>
+                <span className="chev">›</span>
               </a>
             ))}
           </>
         )}
 
-        <h2>ใกล้คุณตอนนี้</h2>
-        {d.places.map((p) => (
-          <a className="card" key={p.id} href={`/place/${p.id}`}>
-            <div className="thumb">{icon(p.category)}</div>
-            <div>
+        <h2>{cat ? `${catTH(cat)} ในนิมมาน` : 'แนะนำใกล้คุณ'}</h2>
+        {d.places.map((p: any) => (
+          <a className="pcard" key={p.id} href={`/place/${p.id}`}>
+            <div className="ph">
+              <img src={cover(p.id)} alt="" loading="lazy" />
+              <div className="scrim" />
+              {p.fresh === 'fresh' && <span className="chip-top frost"><span className="gdot" style={{ background: '#36D399' }} /> ตรวจสอบล่าสุด</span>}
+            </div>
+            <div className="cc">
+              <div className="eyebrow">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div>
               <div className="nm">{i18n(p.name_i18n)}</div>
-              <div className="meta">{p.category === 'eat' ? 'กิน' : p.category === 'see' ? 'เที่ยว' : 'ทำกิจกรรม'}
-                {p.subcategory ? ` · ${p.subcategory}` : ''}</div>
-              {p.rev_n > 0 && <div className="rating">★ {p.rev_avg} <span className="muted">({p.rev_n})</span></div>}
-              <span className={`badge ${p.fresh ?? 'nada'}`}>
-                {p.fresh === 'fresh' ? '✓ ตรวจสอบล่าสุด' : p.fresh === 'aging' ? 'อัปเดตไม่นาน' : 'ยังไม่ตรวจสอบ'}
-              </span>
+              <div className="meta">
+                {p.rev_n > 0 && <span className="rate"><span className="s">★</span> {p.rev_avg} <span style={{ opacity: .8 }}>({p.rev_n})</span></span>}
+                {p.rev_n > 0 && <span className="sep">·</span>}
+                <span>เดิน 4 นาที</span>
+              </div>
             </div>
           </a>
         ))}
-        {d.places.length === 0 && <p className="muted">ยังไม่มีร้าน — agent กำลังเก็บข้อมูลนิมมาน</p>}
+        {d.places.length === 0 && <p className="empty">ยังไม่มีร้านในหมวดนี้</p>}
       </div>
     </>
   );

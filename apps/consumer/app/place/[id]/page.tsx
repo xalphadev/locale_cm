@@ -1,9 +1,8 @@
-import { q, i18n } from '@/lib/db';
+import { q, i18n, cover } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const icon = (c: string) => (c === 'eat' ? '☕' : c === 'see' ? '⛩️' : '🎨');
-const catLabel = (c: string) => (c === 'eat' ? 'ที่กิน' : c === 'see' ? 'ที่เที่ยว' : 'กิจกรรม');
+const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
 const eIcon = (k: string) => ({ festival: '🎆', market: '🛍️', performance: '🎭', workshop: '🎨', seasonal: '🌸' } as any)[k] ?? '✨';
 const DAYS: [string, string][] = [['mon', 'จันทร์'], ['tue', 'อังคาร'], ['wed', 'พุธ'], ['thu', 'พฤหัส'], ['fri', 'ศุกร์'], ['sat', 'เสาร์'], ['sun', 'อาทิตย์']];
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
@@ -46,7 +45,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
 
   if (!p) {
     return (<><div className="top"><a className="back" href="/">‹ กลับ</a><h1>ไม่พบสถานที่</h1></div>
-      <div className="body"><p className="muted">สถานที่นี้อาจยังไม่เผยแพร่ หรือถูกลบไปแล้ว</p></div></>);
+      <div className="body"><p className="empty">สถานที่นี้อาจยังไม่เผยแพร่ หรือถูกลบไปแล้ว</p></div></>);
   }
   const pt = parsePoint(p.geo);
   const hours = p.opening_hours ?? {};
@@ -54,92 +53,71 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
 
   return (
     <>
-      <div className="top">
-        <a className="back" href="/">‹ กลับ</a>
-        <div className="hero-emoji">{icon(p.category)}</div>
-        <h1>{i18n(p.name_i18n)}</h1>
-        <div className="hero-meta">
-          {catLabel(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}
-          {p.price_band ? ` · ${'฿'.repeat(Number(p.price_band))}` : ''}
-        </div>
-        <div style={{ marginTop: 6 }}>
-          {p.fresh && <span className={`badge ${p.fresh}`}>
-            {p.fresh === 'fresh' ? `✓ ตรวจสอบล่าสุด ${p.verified_at ?? ''}` : p.fresh === 'aging' ? 'อัปเดตไม่นาน' : 'ยังไม่ตรวจสอบ'}</span>}
+      <div className="detail-hero">
+        <img src={cover(p.id, 720, 480)} alt="" />
+        <div className="scrim" />
+        <a className="back-fab" href="/">‹</a>
+        <div className="dtitle">
+          <div className="eyebrow" style={{ color: 'rgba(255,255,255,.85)' }}>{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}{p.price_band ? ` · ${'฿'.repeat(Number(p.price_band))}` : ''}</div>
+          <h1>{i18n(p.name_i18n)}</h1>
+          <div className="dmeta">
+            {rev && rev.n > 0 ? <><span className="stars" style={{ color: '#FFC95A' }}>★ {rev.avg}</span> · {rev.n} รีวิว</> : 'ยังไม่มีรีวิว'}
+            {p.fresh === 'fresh' ? ' · ✓ ตรวจสอบล่าสุด' : ''}
+          </div>
         </div>
       </div>
 
-      <div className="body">
+      <div className="dbody">
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 
-        <div className="rating-row">
-          <span className="stars">★ {rev && Number(rev.avg) > 0 ? rev.avg : '—'}</span>
-          <span className="muted">{rev && rev.n > 0 ? `${rev.n} รีวิว` : 'ยังไม่มีรีวิว'}</span>
-        </div>
-
-        <h2>ข้อมูล</h2>
         <div className="info">
-          {i18n(p.address_i18n) && <div className="info-row"><span>📍</span><span>{i18n(p.address_i18n)}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</span></div>}
-          {!i18n(p.address_i18n) && p.district_name && <div className="info-row"><span>📍</span><span>{i18n(p.district_name)} · เชียงใหม่</span></div>}
+          {(i18n(p.address_i18n) || p.district_name) && <div className="info-row"><span>📍</span><span>{i18n(p.address_i18n) || (p.district_name ? `${i18n(p.district_name)} · เชียงใหม่` : '')}</span></div>}
           {p.phone && <div className="info-row"><span>📞</span><a href={`tel:${p.phone}`}>{p.phone}</a></div>}
           {p.line_id && <div className="info-row"><span>💬</span><span>LINE: {p.line_id}</span></div>}
           {p.website && <div className="info-row"><span>🌐</span><a href={p.website}>{p.website}</a></div>}
-          {pt && <div className="info-row"><span>🗺️</span>
-            <a href={`https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}`} target="_blank">เปิดในแผนที่</a></div>}
+          {pt && <div className="info-row"><span>🗺️</span><a href={`https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}`} target="_blank">เปิดในแผนที่ Google Maps</a></div>}
         </div>
 
-        {Object.keys(hours).length > 0 && (
-          <>
-            <h2>เวลาเปิด-ปิด</h2>
-            <div className="hours">
-              {DAYS.map(([k, label]) => (
-                <div className="hour-row" key={k}>
-                  <span>{label}</span>
-                  <span className={!hours[k] || hours[k] === 'closed' ? 'muted' : 'mono'}>
-                    {!hours[k] || hours[k] === 'closed' ? 'ปิด' : hours[k]}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {amen.length > 0 && (
-          <>
-            <h2>สิ่งอำนวยความสะดวก</h2>
-            <div className="chips">{amen.map((a) => <span className="chip" key={a}>{a}</span>)}</div>
-          </>
-        )}
-
-        {quests.length > 0 && (
-          <>
-            <h2>อยู่ในเควสต์</h2>
-            {quests.map((qu) => <a className="card" key={qu.id} href="/passport"><div className="thumb">🎯</div>
-              <div><div className="nm">{i18n(qu.title_i18n)}</div><div className="meta">เช็คอินที่นี่เพื่อเก็บแสตมป์</div></div></a>)}
-          </>
-        )}
-
-        {events.length > 0 && (
-          <>
-            <h2>กิจกรรมที่นี่</h2>
-            {events.map((e) => <a className="card" key={e.id} href={`/event/${e.id}`}><div className="thumb">{eIcon(e.kind)}</div>
-              <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta">📅 {e.d} {THM[e.m - 1]}</div></div></a>)}
-          </>
-        )}
-
-        {reviews.length > 0 && (
-          <>
-            <h2>รีวิว ({rev?.n})</h2>
-            {reviews.map((r, i) => (
-              <div className="review" key={i}>
-                <div className="review-top">
-                  <span className="review-name">{r.display_name || 'ผู้ใช้'}</span>
-                  <span className="stars">{'★'.repeat(r.rating)}<span className="star-off">{'★'.repeat(5 - r.rating)}</span></span>
-                </div>
-                <div className="review-body">{i18n(r.body_i18n)}</div>
-                <div className="review-date">{r.d}</div>
+        {Object.keys(hours).length > 0 && (<>
+          <h2>เวลาเปิด-ปิด</h2>
+          <div className="hours">
+            {DAYS.map(([k, label]) => (
+              <div className="hour-row" key={k}>
+                <span>{label}</span>
+                <span style={{ color: !hours[k] || hours[k] === 'closed' ? 'var(--muted)' : 'var(--text)', fontWeight: 600 }}>
+                  {!hours[k] || hours[k] === 'closed' ? 'ปิด' : hours[k]}</span>
               </div>
             ))}
-          </>
-        )}
+          </div>
+        </>)}
+
+        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{a}</span>)}</div></>)}
+
+        {quests.length > 0 && (<>
+          <h2>อยู่ในเควสต์</h2>
+          {quests.map((qu) => <a className="erow" key={qu.id} href="/passport"><div className="ethumb" style={{ background: 'linear-gradient(135deg,#F3D58A,#C9962A)' }}>🎯</div>
+            <div><div className="nm">{i18n(qu.title_i18n)}</div><div className="meta">เช็คอินที่นี่เพื่อเก็บแสตมป์</div></div><span className="chev">›</span></a>)}
+        </>)}
+
+        {events.length > 0 && (<>
+          <h2>กิจกรรมที่นี่</h2>
+          {events.map((e) => <a className="erow" key={e.id} href={`/event/${e.id}`}><div className="ethumb">{eIcon(e.kind)}</div>
+            <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta">📅 {e.d} {THM[e.m - 1]}</div></div><span className="chev">›</span></a>)}
+        </>)}
+
+        {reviews.length > 0 && (<>
+          <h2>รีวิว ({rev?.n})</h2>
+          {reviews.map((r, i) => (
+            <div className="review" key={i}>
+              <div className="review-top">
+                <span className="rname"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="review-name">{r.display_name || 'ผู้ใช้'}</span></span>
+                <span className="stars">{'★'.repeat(r.rating)}<span className="star-off">{'★'.repeat(5 - r.rating)}</span></span>
+              </div>
+              <div className="review-body">{i18n(r.body_i18n)}</div>
+              <div className="review-date">{r.d}</div>
+            </div>
+          ))}
+        </>)}
       </div>
     </>
   );
