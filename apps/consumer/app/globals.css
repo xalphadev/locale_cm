@@ -1,0 +1,64 @@
+:root{
+  --amber:#E8852C; --amber-press:#C46A1A; --jade:#1E8E7E; --teak:#5A4632;
+  --ink:#221B12; --muted:#5C5346; --hint:#8A8170; --paper:#FBF6EE; --card:#fff; --sunk:#F2EADD; --line:#E6DDCE;
+  --spark:#7C5CFF; --coin:#C9962A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:#E9E2D6;}
+body{font-family:ui-sans-serif,system-ui,-apple-system,"Noto Sans Thai",sans-serif;color:var(--ink);}
+/* phone frame */
+.phone{max-width:440px;margin:0 auto;min-height:100vh;background:var(--paper);
+  box-shadow:0 0 40px rgba(0,0,0,.12);position:relative;padding-bottom:74px;}
+.top{padding:18px 18px 8px;}
+.top .hi{color:var(--muted);font-size:.85rem}
+.top h1{margin:.1rem 0 0;font-size:1.35rem}
+.top .city{color:var(--jade);font-weight:600;font-size:.9rem}
+.body{padding:6px 16px 20px}
+h2{font-size:1.02rem;margin:1.3rem 0 .6rem}
+a{color:inherit;text-decoration:none}
+
+/* featured quest banner */
+.quest{background:linear-gradient(135deg,#FFF3E0,#FBE9CF);border:1px solid #EAD7B8;border-radius:16px;
+  padding:16px;position:relative;overflow:hidden}
+.quest .tag{display:inline-block;background:var(--amber);color:#fff;font-size:.7rem;font-weight:700;
+  padding:.15rem .5rem;border-radius:999px;letter-spacing:.02em}
+.quest h3{margin:.5rem 0 .2rem;font-size:1.15rem}
+.quest .sub{color:var(--muted);font-size:.85rem}
+.quest .reward{margin-top:.7rem;display:flex;align-items:center;gap:.4rem;font-weight:700;color:var(--teak)}
+.stamps{display:flex;gap:8px;margin-top:.7rem;flex-wrap:wrap}
+.st{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  border:2px dashed #CDB68C;color:#CDB68C;font-size:1rem;background:#fff7}
+.st.on{border-style:solid;border-color:var(--jade);color:var(--jade);background:#E6F5EE}
+
+/* place cards */
+.card{display:flex;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px;margin-bottom:10px;align-items:center}
+.thumb{width:54px;height:54px;border-radius:12px;background:var(--sunk);display:flex;align-items:center;
+  justify-content:center;font-size:1.5rem;flex-shrink:0}
+.card .nm{font-weight:600}
+.card .meta{color:var(--muted);font-size:.82rem;margin-top:.1rem}
+.badge{display:inline-block;font-size:.72rem;font-weight:600;padding:.1rem .45rem;border-radius:999px;margin-top:.3rem}
+.fresh{background:#E6F5EE;color:#1E8E7E} .aging{background:#FBF1D8;color:#9A6A00}
+.stale{background:#F3ECE0;color:#8A8170} .nada{background:#F3ECE0;color:#8A8170}
+
+/* wallet pills */
+.bal{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:.5rem}
+.pill{border-radius:16px;padding:16px;color:#fff}
+.pill.sp{background:linear-gradient(135deg,#7C5CFF,#5B3FD9)}
+.pill.co{background:linear-gradient(135deg,#C9962A,#9C7416)}
+.pill .lab{font-size:.78rem;opacity:.9}
+.pill .v{font-size:1.9rem;font-weight:800;line-height:1.1;margin-top:.2rem}
+.pill .note{font-size:.72rem;opacity:.92;margin-top:.4rem}
+.reward-row{display:flex;align-items:center;gap:.5rem;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:14px;margin-top:.6rem}
+.seal{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#F3D58A,#C9962A);
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.ready{margin-left:auto;background:var(--jade);color:#fff;font-size:.78rem;font-weight:700;padding:.3rem .7rem;border-radius:999px}
+
+/* bottom nav */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;
+  background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 12px}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--hint);font-size:.7rem}
+.nav a .ic{font-size:1.25rem}
+.nav a.active{color:var(--amber)}
+.muted{color:var(--muted);font-size:.85rem}
