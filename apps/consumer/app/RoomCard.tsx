@@ -55,7 +55,7 @@ export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'gri
   if (u.min_stay) facts.push(`ขั้นต่ำ ${u.min_stay} ${monthly ? 'เดือน' : 'คืน'}`);
   if (u.furnished && FURNISH_TH[u.furnished]) facts.push(FURNISH_TH[u.furnished]);
 
-  // wide hotel-style card (used on the /stay list) — photo-forward, badge + save heart + price row
+  // wide list-ROW card (used on /stay): image LEFT, info RIGHT — compact, one per row
   if (variant === 'wide') {
     return (
       <div className="scard">
@@ -63,16 +63,10 @@ export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'gri
           <img src={roomImg(u)} alt="" loading="lazy" />
           <span className={`pchip ${chip.cls}`}>{chip.label}</span>
         </a>
-        {placeId && (
-          <form className="scard-save" action={toggleSaveAction.bind(null, placeId)}>
-            <button type="submit" aria-label="บันทึก" className={saved ? 'on' : ''}><Icon n="heart" size={17} fill={saved ? 'currentColor' : 'none'} /></button>
-          </form>
-        )}
         <div className="scard-body">
           <a className="scard-nm" href={href}>{i18n(u.name_i18n)}</a>
           {shopName && <div className="scard-loc"><Icon n="pin" size={12} /> {shopName}</div>}
           {facts.length > 0 && <div className="scard-facts">{facts.join(' · ')}</div>}
-          <div className="scard-fresh">{freshTxt}</div>
           <div className="scard-foot">
             <span className="scard-price">{rentText(u)}</span>
             {cta
@@ -80,6 +74,11 @@ export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'gri
               : <span className="pcbuy sm off"><Icon n="chat" size={14} /> ติดต่อ</span>}
           </div>
         </div>
+        {placeId && (
+          <form className="scard-save" action={toggleSaveAction.bind(null, placeId)}>
+            <button type="submit" aria-label="บันทึก" className={saved ? 'on' : ''}><Icon n="heart" size={16} fill={saved ? 'currentColor' : 'none'} /></button>
+          </form>
+        )}
       </div>
     );
   }

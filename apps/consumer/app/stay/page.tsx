@@ -35,6 +35,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   const pr = PRICE[mode].some((b) => b[0] === searchParams?.pr) ? searchParams.pr : '';
   const cap = ['1', '2', '3'].includes(searchParams?.cap || '') ? searchParams.cap : '';
   const view = searchParams?.view === 'map' ? 'map' : 'list';
+  const adv = searchParams?.adv === '1';
   const focus = typeof searchParams?.focus === 'string' ? searchParams.focus : undefined;
 
   let rows: any[] = [];
@@ -80,70 +81,68 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     badge: g.vac > 0 ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.vac > 0,
   }));
 
-  const cur = { mode, kind, sort, am: am.join(','), fr, q: qtext, pr, cap, view };
+  const cur = { mode, kind, sort, am: am.join(','), fr, q: qtext, pr, cap, view, adv: adv ? '1' : '' };
   const href = (patch: Partial<typeof cur>) => {
     const s = { ...cur, ...patch }; const u = new URLSearchParams();
     if (s.mode !== 'monthly') u.set('mode', s.mode);
     if (s.kind) u.set('kind', s.kind); if (s.sort) u.set('sort', s.sort);
     if (s.am) u.set('am', s.am); if (s.fr) u.set('fr', s.fr);
     if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr); if (s.cap) u.set('cap', s.cap);
-    if (s.view === 'map') u.set('view', 'map');
+    if (s.view === 'map') u.set('view', 'map'); if (s.adv === '1') u.set('adv', '1');
     const qs = u.toString(); return qs ? `/stay?${qs}` : '/stay';
   };
   const toggleAm = (a: string) => { const set = new Set(am); set.has(a) ? set.delete(a) : set.add(a); return href({ am: [...set].join(',') }); };
-  const activeFilters = am.length + (fr ? 1 : 0) + (pr ? 1 : 0) + (cap ? 1 : 0);
+  const advCount = am.length + (fr ? 1 : 0) + (pr ? 1 : 0) + (cap ? 1 : 0);
   // hidden inputs carry all OTHER active filters through the GET search form (else searching resets them)
   const hidden: [string, string][] = [];
   if (mode !== 'monthly') hidden.push(['mode', mode]);
   if (kind) hidden.push(['kind', kind]); if (sort) hidden.push(['sort', sort]);
   if (am.length) hidden.push(['am', am.join(',')]); if (fr) hidden.push(['fr', fr]);
   if (pr) hidden.push(['pr', pr]); if (cap) hidden.push(['cap', cap]); if (view === 'map') hidden.push(['view', 'map']);
+  if (adv) hidden.push(['adv', '1']);
 
   return (
     <>
-      <div className="stayhero">
-        <div className="sh-top">
-          <a className="sh-icon" href="/"><Icon n="back" size={18} /></a>
-          <span className="sh-loc"><Icon n="pin" size={14} /> นิมมาน · เชียงใหม่</span>
-          <a className="sh-icon" href="/feed"><Icon n="bell" size={18} /></a>
-        </div>
-        <div className="sh-title">หาที่พักแบบไหนดี?</div>
+      <div className="top">
+        <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
+        <div className="hi">หอพัก · อพาร์ตเมนต์ · โฮมสเตย์ ในนิมมาน/ใกล้ มช.</div><h1>ที่พัก</h1>
       </div>
 
-      <div className="searchcard">
-        <form className="sc-form" method="GET" action="/stay">
-          {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-          <span className="sc-field"><Icon n="search" size={17} /><input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
-            {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={15} /></a>}</span>
-          <button className="sc-go" type="submit"><Icon n="search" size={16} /> ค้นหา</button>
-        </form>
-        <div className="sc-seg">
-          <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`scseg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
-          <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`scseg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
-        </div>
+      <form className="staysearch" method="GET" action="/stay">
+        {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+        <Icon n="search" size={17} />
+        <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
+        {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
+      </form>
+
+      <div className="segmented">
+        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
+        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
       </div>
 
-      <div className="viewtoggle">
-        <a href={href({ view: 'list' })} className={`vt ${view === 'list' ? 'on' : ''}`}><Icon n="feed" size={15} /> รายการ</a>
-        <a href={href({ view: 'map' })} className={`vt ${view === 'map' ? 'on' : ''}`}><Icon n="map" size={15} /> แผนที่</a>
-      </div>
-
-      <div className="facetbar">
+      {/* compact filter rows: single-line horizontal scroll; advanced filters collapsed behind a button */}
+      <div className="facetbar frow">
+        <a href={href({ view: 'list' })} className={`facet ${view === 'list' ? 'on' : ''}`}><Icon n="feed" size={13} /> รายการ</a>
+        <a href={href({ view: 'map' })} className={`facet ${view === 'map' ? 'on' : ''}`}><Icon n="map" size={13} /> แผนที่</a>
+        <span className="frow-sep" />
         <a href={href({ kind: '' })} className={`facet ${!kind ? 'on' : ''}`}>ทั้งหมด</a>
         {kinds.map(([k, l]) => <a key={k} href={href({ kind: k })} className={`facet ${kind === k ? 'on' : ''}`}>{l}</a>)}
       </div>
-      <div className="facetbar">
-        {PRICE[mode].map(([k, l]) => <a key={k} href={href({ pr: pr === k ? '' : k })} className={`facet ${pr === k ? 'on' : ''}`}>฿{l}</a>)}
-        {CAPS.map(([k, l]) => <a key={k} href={href({ cap: cap === k ? '' : k })} className={`facet ${cap === k ? 'on' : ''}`}>{l}</a>)}
+      <div className="facetbar frow">
+        <a className={`facet ${adv ? 'on' : ''}`} href={href({ adv: adv ? '' : '1' })}><Icon n="dots" size={14} /> ตัวกรอง{advCount ? ` · ${advCount}` : ''} {adv ? '▲' : '▾'}</a>
+        {sorts.map((srt) => <a key={srt.k} href={href({ sort: srt.k })} className={`facet ${sort === srt.k ? 'on' : ''}`}>{srt.l}</a>)}
+        {advCount > 0 && <a className="facet-clear" href={href({ am: '', fr: '', pr: '', cap: '' })}>ล้าง</a>}
       </div>
-      <div className="segmented" style={{ paddingTop: 0 }}>
-        {sorts.map((srt) => <a key={srt.k} href={href({ sort: srt.k })} className={`seg ${sort === srt.k ? 'on' : ''}`}>{srt.l}</a>)}
-      </div>
-      <div className="facetbar">
-        {STAY_AMENITIES.map((a) => <a key={a} href={toggleAm(a)} className={`facet ${am.includes(a) ? 'on' : ''}`}>{facetLabel(a)}</a>)}
-        {mode === 'monthly' && FURNISH.map(([k, l]) => <a key={k} href={href({ fr: fr === k ? '' : k })} className={`facet ${fr === k ? 'on' : ''}`}>{l}</a>)}
-        {activeFilters > 0 && <a className="facet-clear" href={href({ am: '', fr: '', pr: '', cap: '' })}>ล้าง</a>}
-      </div>
+      {adv && (<>
+        <div className="facetbar frow">
+          {PRICE[mode].map(([k, l]) => <a key={k} href={href({ pr: pr === k ? '' : k })} className={`facet ${pr === k ? 'on' : ''}`}>฿{l}</a>)}
+          {CAPS.map(([k, l]) => <a key={k} href={href({ cap: cap === k ? '' : k })} className={`facet ${cap === k ? 'on' : ''}`}>{l}</a>)}
+        </div>
+        <div className="facetbar frow">
+          {STAY_AMENITIES.map((a) => <a key={a} href={toggleAm(a)} className={`facet ${am.includes(a) ? 'on' : ''}`}>{facetLabel(a)}</a>)}
+          {mode === 'monthly' && FURNISH.map(([k, l]) => <a key={k} href={href({ fr: fr === k ? '' : k })} className={`facet ${fr === k ? 'on' : ''}`}>{l}</a>)}
+        </div>
+      </>)}
 
       {view === 'map' ? (
         <>
