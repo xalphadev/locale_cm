@@ -229,6 +229,24 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .mappeek-chip{font-size:.76rem;font-weight:700;color:#fff;background:var(--accent);padding:.3rem .7rem;border-radius:999px}
 .pindot{display:block;width:11px;height:11px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
 
+/* language switch */
+.langsw{display:flex;background:var(--sunk);border-radius:999px;padding:2px;align-self:center}
+.langsw button{border:none;background:none;font:inherit;font-weight:700;font-size:.74rem;color:var(--muted);
+  padding:.34rem .48rem;border-radius:999px;cursor:pointer;min-width:30px;transition:transform .1s}
+.langsw button:active{transform:scale(.92)}
+.langsw button.on{background:#fff;color:var(--accent);box-shadow:var(--shadow-sm)}
+
+/* verified-freshness trust seal */
+.trust{display:flex;align-items:center;gap:.5rem;background:var(--accent-soft);border-radius:13px;padding:11px 13px;margin:0 0 14px}
+.trust .ti{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.trust .tt{flex:1;min-width:0;font-size:.86rem;line-height:1.35}
+.trust .tt b{font-weight:700}
+.trust .tflag{font-size:.76rem;color:var(--accent);font-weight:700;flex:none}
+.fresh-pill{display:inline-flex;align-items:center;gap:.28rem;font-size:.72rem;font-weight:700;color:var(--score);}
+/* reward provenance shield (wallet) */
+.shield{display:flex;align-items:center;gap:.55rem;background:#EAF7F1;border-radius:12px;padding:10px 13px;margin-top:.7rem;font-size:.84rem;color:#0F7A53}
+.shield svg{flex:none}
+
 /* ===== app-grid home (dense, not blog) ===== */
 .segmented{display:flex;gap:7px;overflow-x:auto;padding:10px 16px 4px;scrollbar-width:none}
 .segmented::-webkit-scrollbar{display:none}

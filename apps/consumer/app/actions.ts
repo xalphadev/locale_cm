@@ -1,6 +1,14 @@
 'use server';
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { q, demoUserId, DEMO_USER } from '@/lib/db';
+
+/** Switch UI language (TH/EN/ZH) — sets a cookie; the cookie-aware i18n re-renders everything. */
+export async function setLangAction(lang: string) {
+  const v = ['en', 'zh', 'th'].includes(lang) ? lang : 'th';
+  cookies().set('lang', v, { path: '/', maxAge: 31536000 });
+  revalidatePath('/', 'layout');
+}
 
 const API = process.env.MONEY_API ?? 'http://127.0.0.1:3001';
 

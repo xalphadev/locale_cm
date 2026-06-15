@@ -22,7 +22,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
-              f.freshness_label::text fresh,
+              f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
        FROM places p LEFT JOIN districts d ON d.id=p.district_id LEFT JOIN data_freshness f ON f.place_id=p.id
        WHERE p.id=$1 AND p.status='published'`, [params.id, DEMO_USER]);
@@ -47,6 +47,8 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   const hhmm = now.toTimeString().slice(0, 5);
   const th = hours[dkey];
   const openNow = !!(th && th !== 'closed' && hhmm >= th.split('-')[0] && hhmm <= th.split('-')[1]);
+  const vDays = p.last_verified_at ? Math.floor((Date.now() - new Date(p.last_verified_at).getTime()) / 86400000) : null;
+  const vText = vDays == null ? '' : vDays <= 0 ? 'วันนี้' : vDays === 1 ? 'เมื่อวาน' : `${vDays} วันก่อน`;
   const distMap: Record<number, number> = {}; dist.forEach((r) => (distMap[r.rating] = r.c));
   const total = (rev?.n ?? 0) || 1;
   const mapUrl = pt ? `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}` : '#';
@@ -73,6 +75,15 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           <span className="dact"><Icon n="bookmark" size={22} />บันทึก</span>
           {p.phone ? <a className="dact" href={`tel:${p.phone}`}><Icon n="phone" size={22} />โทร</a> : <span className="dact" style={{ opacity: .5 }}><Icon n="phone" size={22} />โทร</span>}
         </div>
+
+        {p.fresh && (
+          <div className="trust">
+            <span className="ti"><Icon n="check" size={18} /></span>
+            <div className="tt"><b>ตรวจสอบโดยทีมงานท้องถิ่น</b> · {vText}<br />
+              <span className="muted">ข้อมูลร้านนี้การันตีความสด — ไม่ใช่ข้อมูลเก่าที่ไม่มีใครดูแล</span></div>
+            <span className="tflag">แจ้งไม่ตรง</span>
+          </div>
+        )}
 
         {Object.keys(hours).length > 0 && (
           <div className="openpill" style={{ marginBottom: 12 }}>
