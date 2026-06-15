@@ -176,3 +176,44 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--m-muted);font-size:.66rem;font-weight:700;padding:3px 2px;border-radius:13px;transition:transform .12s}
 .mtab-i:active{transform:scale(.92)}
 .mtab-i.on{color:var(--m-accent)}
+
+/* ===== merchant portal: LIST + ADD/EDIT split (thumbnails, rows, forms) ===== */
+.merchant-root .listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:.1rem 0 .5rem}
+.merchant-root .listhead h1{margin:0;font-size:1.4rem}
+.merchant-root .listcount{display:inline-block;min-width:1.4em;text-align:center;font-size:.8rem;font-weight:800;color:var(--m-muted);background:var(--m-soft);border-radius:999px;padding:.1rem .5rem;vertical-align:middle}
+.merchant-root .addbtn{flex:none;background:var(--m-accent);color:#fff;font-weight:800;font-size:.86rem;border-radius:999px;padding:.5rem .95rem;box-shadow:0 6px 16px -8px var(--m-accent)}
+.merchant-root .addbtn:active{transform:scale(.96)}
+
+.merchant-root .mlist{display:flex;flex-direction:column;gap:10px;margin-top:.7rem}
+.merchant-root .mrow{display:flex;align-items:stretch;gap:11px;background:var(--m-surface);border:1px solid var(--m-line);border-radius:15px;box-shadow:var(--m-sh);padding:9px;position:relative}
+.merchant-root .mrow.off{opacity:.62}
+.merchant-root .mrow-img{flex:none;width:66px;height:66px;border-radius:11px;overflow:hidden;background:var(--m-sunk);display:block}
+.merchant-root .mrow-img img{width:100%;height:100%;object-fit:cover;display:block}
+.merchant-root .mrow-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px;color:inherit}
+.merchant-root .mrow-nm{font-weight:800;font-size:.98rem;color:var(--m-text);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .mrow-meta{font-size:.78rem;color:var(--m-muted);line-height:1.3}
+.merchant-root .mrow-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.merchant-root .mrow-tags .t{font-size:.66rem;font-weight:800;padding:.1rem .45rem;border-radius:6px}
+.merchant-root .mrow-tags .t.season{background:var(--m-soft);color:var(--m-accent)}
+.merchant-root .mrow-tags .t.sold{background:#FDECEC;color:#C0392B}
+.merchant-root .mrow-tags .t.off{background:var(--m-sunk);color:var(--m-muted)}
+.merchant-root .mrow-acts{flex:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:6px}
+.merchant-root .mrow-acts form{margin:0}
+.merchant-root .mrow-acts .mini{padding:.32rem .6rem;font-size:.76rem;white-space:nowrap}
+.merchant-root .mini.edit{background:var(--m-soft);color:var(--m-accent);border-color:#BCD4F7}
+.merchant-root .stepper{display:flex;align-items:center;gap:6px}
+.merchant-root .mini.step{width:30px;padding:.3rem 0;text-align:center;font-size:1rem;line-height:1}
+.merchant-root .step-n{min-width:1.3em;text-align:center;font-weight:800;font-size:.95rem;color:var(--m-navy)}
+
+.merchant-root .mempty{text-align:center;background:var(--m-surface);border:1px dashed var(--m-line);border-radius:16px;padding:2.2rem 1.2rem;margin-top:1rem}
+.merchant-root .mempty p{color:var(--m-muted);margin:0 0 1rem;font-size:.92rem}
+
+.merchant-root .mback{margin:.1rem 0 .5rem}
+.merchant-root .mback a{color:var(--m-muted);font-weight:700;font-size:.88rem}
+.merchant-root .mback a:active{color:var(--m-accent)}
+.merchant-root .mform{margin-top:.3rem}
+.merchant-root .mform .grid3{gap:.7rem}
+.merchant-root .mform-save{width:100%;margin-top:.4rem}
+.merchant-root .delwrap{margin-top:.9rem;text-align:center}
+.merchant-root .delwrap .mini.danger{padding:.5rem 1.1rem;font-size:.84rem}
+@media(max-width:380px){.merchant-root .mform .grid3{grid-template-columns:1fr 1fr}}

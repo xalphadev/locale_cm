@@ -17,12 +17,13 @@ const GLYPH: Record<string, JSX.Element> = {
 function MIcon({ n }: { n: string }) {
   return <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{GLYPH[n]}</svg>;
 }
+// cap = capability flag this tab needs (null = always shown). Tabs adapt to the shop's type.
 const TABS = [
-  { href: '/merchant', icon: 'home', label: 'ภาพรวม', match: (p: string) => p === '/merchant' },
-  { href: '/merchant/products', icon: 'tag', label: 'สินค้า', match: (p: string) => p.startsWith('/merchant/products') },
-  { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', match: (p: string) => p.startsWith('/merchant/rooms') },
-  { href: '/merchant/post', icon: 'feed', label: 'โพสต์', match: (p: string) => p.startsWith('/merchant/post') },
-  { href: '/merchant/shop', icon: 'store', label: 'ร้าน', match: (p: string) => p.startsWith('/merchant/shop') },
+  { href: '/merchant', icon: 'home', label: 'ภาพรวม', cap: null, match: (p: string) => p === '/merchant' },
+  { href: '/merchant/products', icon: 'tag', label: 'สินค้า', cap: 'sells_products', match: (p: string) => p.startsWith('/merchant/products') },
+  { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: (p: string) => p.startsWith('/merchant/rooms') },
+  { href: '/merchant/post', icon: 'feed', label: 'โพสต์', cap: null, match: (p: string) => p.startsWith('/merchant/post') },
+  { href: '/merchant/shop', icon: 'store', label: 'ร้าน', cap: null, match: (p: string) => p.startsWith('/merchant/shop') },
 ];
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
@@ -30,6 +31,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   if (!acc) redirect('/merchant/login');
   const path = headers().get('x-pathname') || '/merchant';
   const live = acc.place_status === 'published';
+  const tabs = TABS.filter((t) => !t.cap || acc[t.cap]);
   return (
     <div className="mshell">
       <header className="mtop">
@@ -42,7 +44,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       </header>
       <main className="mbody">{children}</main>
       <nav className="mtab">
-        {TABS.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} /><span>{t.label}</span></a>)}
+        {tabs.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} /><span>{t.label}</span></a>)}
       </nav>
     </div>
   );
