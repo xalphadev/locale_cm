@@ -20,8 +20,9 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
             </optgroup>
             <optgroup label="ที่พัก (เช่ารายเดือน/รายวัน)">
               <option value="dorm">หอพัก</option><option value="apartment">อพาร์ตเมนต์</option>
-              <option value="homestay">โฮมสเตย์</option><option value="guesthouse">เกสต์เฮาส์</option>
-              <option value="hotel">โรงแรม</option>
+              <option value="condo">คอนโด</option><option value="mansion">แมนชั่น</option>
+              <option value="house">บ้านเช่า</option><option value="homestay">โฮมสเตย์</option>
+              <option value="guesthouse">เกสต์เฮาส์</option><option value="hotel">โรงแรม</option>
             </optgroup>
           </select></div>
         <div className="grid2">

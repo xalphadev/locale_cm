@@ -8,7 +8,7 @@ DECLARE
   v_city uuid; v_dist uuid;
   ag uuid := '00000000-0000-4000-8000-00000000a6e7';   -- DEMO_AGENT (proposer)
   ad uuid := '00000000-0000-4000-8000-00000000ad11';   -- DEMO_ADMIN (reviewer; SoD: ag<>ad)
-  p_dorm uuid; p_apt uuid; p_home uuid; p_guest uuid;
+  p_dorm uuid; p_apt uuid; p_home uuid; p_guest uuid; p_condo uuid; p_hotel uuid;
 BEGIN
   IF EXISTS (SELECT 1 FROM stay_units) THEN RETURN; END IF;
   SELECT id INTO v_city FROM cities WHERE code='CNX';
@@ -41,4 +41,18 @@ BEGIN
   INSERT INTO stay_units(place_id, city_id, name_i18n, rental_mode, price_minor, price_period, daily_status, capacity, min_stay, furnished, unit_amenities, sort, status) VALUES
     (p_guest, v_city, '{"th":"ห้องดับเบิล แอร์","en":"Double room, A/C"}'::jsonb, 'daily', 65000, 'night', 'vacant', 2, 1, 'furnished', '{aircon,private_bath,fiber_wifi}', 1, 'published'),
     (p_guest, v_city, '{"th":"ห้องเตียงเดี่ยว ประหยัด","en":"Single room, budget"}'::jsonb, 'daily', 45000, 'night', 'ask', 1, 1, 'partial', '{fan,private_bath}', 2, 'published');
+
+  -- 5) MONTHLY — condo
+  p_condo := fn_create_place('{"name_i18n":{"th":"นิมมาน วัน คอนโด","en":"Nimman One Condo","zh":"宁曼壹公寓"},"description_i18n":{"th":"คอนโดใหม่ใจกลางนิมมาน มีฟิตเนส สระว่ายน้ำ รปภ.24 ชม."},"category":"see","subcategory":"condo","status":"published","lng":98.9690,"lat":18.7958,"phone":"053-900-100","line_id":"@nimmanonecondo"}'::jsonb, v_city, v_dist, ag, ad);
+  UPDATE places SET offers_stay=true, stay_kind='condo' WHERE id=p_condo;
+  INSERT INTO stay_units(place_id, city_id, name_i18n, rental_mode, price_minor, price_period, available_units, capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities, sort, status) VALUES
+    (p_condo, v_city, '{"th":"สตูดิโอ วิวเมือง","en":"Studio, city view"}'::jsonb, 'monthly', 1500000, 'month', 2, 2, 3000000, 6, 32, 'furnished', '{wifi,common_fee}', '{aircon,private_bath,balcony,washing_machine,parking,fiber_wifi}', 1, 'published'),
+    (p_condo, v_city, '{"th":"1 ห้องนอน วิวดอย","en":"1BR, mountain view"}'::jsonb, 'monthly', 1800000, 'month', 1, 2, 3600000, 6, 40, 'furnished', '{wifi,common_fee}', '{aircon,private_bath,balcony,kitchen,washing_machine,parking,fiber_wifi}', 2, 'published');
+
+  -- 6) DAILY — hotel
+  p_hotel := fn_create_place('{"name_i18n":{"th":"นิมมาน แกรนด์ โฮเทล","en":"Nimman Grand Hotel","zh":"宁曼格兰德酒店"},"description_i18n":{"th":"โรงแรมบูทีคใจกลางนิมมาน ใกล้คาเฟ่และ One Nimman"},"category":"see","subcategory":"hotel","status":"published","lng":98.9676,"lat":18.7948,"phone":"053-900-200","line_id":"@nimmangrand"}'::jsonb, v_city, v_dist, ag, ad);
+  UPDATE places SET offers_stay=true, stay_kind='hotel' WHERE id=p_hotel;
+  INSERT INTO stay_units(place_id, city_id, name_i18n, rental_mode, price_minor, price_period, daily_status, capacity, min_stay, furnished, unit_amenities, sort, status) VALUES
+    (p_hotel, v_city, '{"th":"ห้องดีลักซ์ เตียงคิง","en":"Deluxe King"}'::jsonb, 'daily', 180000, 'night', 'vacant', 2, 1, 'furnished', '{aircon,private_bath,balcony,fiber_wifi}', 1, 'published'),
+    (p_hotel, v_city, '{"th":"ห้องสวีท","en":"Suite"}'::jsonb, 'daily', 350000, 'night', 'vacant', 3, 1, 'furnished', '{aircon,private_bath,kitchen,fiber_wifi}', 2, 'published');
 END $$;

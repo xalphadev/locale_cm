@@ -26,6 +26,14 @@ export const FACET_LABELS: Record<string, string> = {
 /** Unit amenities offered as filter chips on /stay (match stay_units.unit_amenities[]). */
 export const STAY_AMENITIES = ['aircon', 'private_bath', 'kitchen', 'washing_machine', 'parking', 'pets_ok', 'fiber_wifi', 'balcony'];
 
+/** Accommodation types (places.stay_kind). Shown for both rental modes — a place's type is
+ *  independent of whether its rooms rent monthly or daily. */
+export const STAY_KINDS = ['dorm', 'apartment', 'condo', 'mansion', 'house', 'homestay', 'guesthouse', 'hotel'];
+export const STAY_KIND_TH: Record<string, string> = {
+  dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', condo: 'คอนโด', mansion: 'แมนชั่น', house: 'บ้านเช่า',
+  homestay: 'โฮมสเตย์', guesthouse: 'เกสต์เฮาส์', hotel: 'โรงแรม', mixed: 'ที่พัก',
+};
+
 // Which facets to OFFER for a subcategory (preferred) or category (fallback).
 const SUB_FACETS: Record<string, string[]> = {
   cafe: ['wifi', 'work_friendly', 'power_outlet', 'pet_friendly', 'kid_friendly', 'outdoor_seating', 'vegan'],

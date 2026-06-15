@@ -2,12 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '../icons';
-import { STAY_AMENITIES, facetLabel } from '@/lib/facets';
-
-const KINDS: Record<string, [string, string][]> = {
-  monthly: [['dorm', 'หอพัก'], ['apartment', 'อพาร์ตเมนต์']],
-  daily: [['homestay', 'โฮมสเตย์'], ['guesthouse', 'เกสต์เฮาส์'], ['hotel', 'โรงแรม']],
-};
+import { STAY_AMENITIES, STAY_KINDS, STAY_KIND_TH, facetLabel } from '@/lib/facets';
 const SORTS: Record<string, [string, string][]> = {
   monthly: [['', 'มาใหม่'], ['soon', 'ว่างเร็วๆนี้'], ['cheap', 'ราคาประหยัด']],
   daily: [['', 'มาใหม่'], ['vacant', 'ว่างวันนี้'], ['cheap', 'ราคาประหยัด']],
@@ -64,7 +59,7 @@ export default function StayFilterSheet(p: Props) {
             <div className="sheet-grab" />
             <div className="sheet-head"><b>ตัวกรอง</b><button type="button" className="sheet-x" onClick={() => setOpen(false)} aria-label="ปิด"><Icon n="x" size={20} /></button></div>
             <div className="sheet-body">
-              <div className="fsec"><div className="fsec-h">ประเภทที่พัก</div><div className="fchips">{KINDS[p.mode].map(([k, l]) => <Chip key={k} on={s.kind === k} onClick={() => single('kind', k)}>{l}</Chip>)}</div></div>
+              <div className="fsec"><div className="fsec-h">ประเภทที่พัก</div><div className="fchips">{STAY_KINDS.map((k) => <Chip key={k} on={s.kind === k} onClick={() => single('kind', k)}>{STAY_KIND_TH[k]}</Chip>)}</div></div>
               <div className="fsec"><div className="fsec-h">ช่วงราคา</div><div className="fchips">{PRICE[p.mode].map(([k, l]) => <Chip key={k} on={s.pr === k} onClick={() => single('pr', k)}>฿{l}</Chip>)}</div></div>
               <div className="fsec"><div className="fsec-h">รองรับ</div><div className="fchips">{CAPS.map(([k, l]) => <Chip key={k} on={s.cap === k} onClick={() => single('cap', k)}>{l}</Chip>)}</div></div>
               {p.mode === 'monthly' && <div className="fsec"><div className="fsec-h">เฟอร์นิเจอร์</div><div className="fchips">{FURNISH.map(([k, l]) => <Chip key={k} on={s.fr === k} onClick={() => single('fr', k)}>{l}</Chip>)}</div></div>}
