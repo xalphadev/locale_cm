@@ -13,9 +13,16 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
         <div className="field"><label>ชื่อร้าน *</label><input name="shop_name" required placeholder="เช่น รากเหง้า สโลว์บาร์" /></div>
         <div className="field"><label>ประเภทร้าน</label>
           <select name="shop_type" defaultValue="cafe">
-            <option value="cafe">คาเฟ่</option><option value="restaurant">ร้านอาหาร</option>
-            <option value="street_food">สตรีทฟู้ด</option><option value="dessert">ของหวาน / เบเกอรี</option>
-            <option value="market">ร้านขายของ / ผลไม้ผัก</option><option value="shop">ร้านค้าอื่นๆ</option>
+            <optgroup label="ร้าน / สถานที่">
+              <option value="cafe">คาเฟ่</option><option value="restaurant">ร้านอาหาร</option>
+              <option value="street_food">สตรีทฟู้ด</option><option value="dessert">ของหวาน / เบเกอรี</option>
+              <option value="market">ร้านขายของ / ผลไม้ผัก</option><option value="shop">ร้านค้าอื่นๆ</option>
+            </optgroup>
+            <optgroup label="ที่พัก (เช่ารายเดือน/รายวัน)">
+              <option value="dorm">หอพัก</option><option value="apartment">อพาร์ตเมนต์</option>
+              <option value="homestay">โฮมสเตย์</option><option value="guesthouse">เกสต์เฮาส์</option>
+              <option value="hotel">โรงแรม</option>
+            </optgroup>
           </select></div>
         <div className="grid2">
           <div className="field"><label>เบอร์โทร</label><input name="phone" placeholder="08x-xxx-xxxx" /></div>

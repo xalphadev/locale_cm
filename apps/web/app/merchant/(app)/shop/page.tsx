@@ -9,7 +9,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
   return (
     <>
       <h1>ข้อมูลร้าน</h1>
@@ -23,6 +23,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
         </div>
         <div className="field"><label>เว็บไซต์</label><input name="website" defaultValue={p?.website || ''} placeholder="https://..." /></div>
         <label className="check"><input type="checkbox" name="sells_products" defaultChecked={!!p?.sells_products} /> ร้านมีสินค้าขาย (แสดงแถบ “สินค้าในร้าน” ให้ลูกค้า)</label>
+        <label className="check"><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า (แสดงแถบ “ห้องว่าง” + ขึ้นในหน้า “ที่พัก” — จัดการห้องที่เมนู “ห้องพัก”)</label>
         <button className="btn btn-primary" type="submit">บันทึก</button>
       </form>
       <p className="note">ในเวอร์ชันนี้การแก้ข้อมูลมีผลทันที — โปรดักชันจะให้ทีมงานตรวจก่อนเผยแพร่ (ข้อมูล LINE/เบอร์โทรคือช่องทางที่ลูกค้าใช้ติดต่อสั่งซื้อ)</p>

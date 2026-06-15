@@ -7,13 +7,19 @@ import { hashPassword, verifyPassword, setSession, clearSession, currentAccount 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: 98.967, lat: 18.796 };
 // Shop-type → (category, subcategory) for the platform taxonomy.
-const SHOP_TYPES: Record<string, { category: string; subcategory: string }> = {
+const SHOP_TYPES: Record<string, { category: string; subcategory: string; stay?: boolean }> = {
   cafe: { category: 'eat', subcategory: 'cafe' },
   restaurant: { category: 'eat', subcategory: 'restaurant' },
   street_food: { category: 'eat', subcategory: 'street_food' },
   dessert: { category: 'eat', subcategory: 'dessert' },
   market: { category: 'see', subcategory: 'market' },
   shop: { category: 'see', subcategory: 'shop' },
+  // accommodations — picking one of these auto-flags places.offers_stay + stay_kind
+  dorm: { category: 'see', subcategory: 'dorm', stay: true },
+  apartment: { category: 'see', subcategory: 'apartment', stay: true },
+  homestay: { category: 'see', subcategory: 'homestay', stay: true },
+  hotel: { category: 'see', subcategory: 'hotel', stay: true },
+  guesthouse: { category: 'see', subcategory: 'guesthouse', stay: true },
 };
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? '').trim();
 
@@ -35,7 +41,7 @@ export async function signupAction(formData: FormData) {
   const [city] = await q<{ id: string }>(`SELECT id FROM cities WHERE code='CNX'`);
   if (!city) err('ระบบยังไม่พร้อมในเมืองนี้ กรุณาติดต่อทีมงาน');
   const [dist] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
-  const { category, subcategory } = SHOP_TYPES[type];
+  const { category, subcategory, stay: isStay } = SHOP_TYPES[type];
 
   // Create as DRAFT — the shop is fully manageable in the portal immediately, but only goes
   // public to customers after staff review (apps/web /shops). This avoids anonymous signups
@@ -57,7 +63,8 @@ export async function signupAction(formData: FormData) {
       const pl = (await c.query<{ id: string }>(
         `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
         [JSON.stringify(payload), city.id, dist?.id ?? null, DEMO_AGENT, DEMO_ADMIN])).rows[0];
-      await c.query(`UPDATE places SET sells_products=$2, source='merchant' WHERE id=$1`, [pl.id, sells]);
+      await c.query(`UPDATE places SET sells_products=$2, offers_stay=$3, stay_kind=$4, source='merchant' WHERE id=$1`,
+        [pl.id, sells, !!isStay, isStay ? subcategory : null]);
       const acc = (await c.query<{ id: string }>(
         `INSERT INTO merchant_accounts(email, password_hash, display_name, phone, place_id)
          VALUES($1,$2,$3,$4,$5) RETURNING id`,
@@ -151,14 +158,73 @@ export async function updateShopAction(formData: FormData) {
   const lineId = s(formData, 'line_id');
   const website = s(formData, 'website');
   const sells = !!formData.get('sells_products');
+  const offersStay = !!formData.get('offers_stay');
   await q(
     `UPDATE places SET
        name_i18n = CASE WHEN $2<>'' THEN jsonb_set(COALESCE(name_i18n,'{}'),'{th}',to_jsonb($2::text)) ELSE name_i18n END,
        description_i18n = CASE WHEN $3<>'' THEN jsonb_set(COALESCE(description_i18n,'{}'),'{th}',to_jsonb($3::text)) ELSE description_i18n END,
        phone = NULLIF($4,''), line_id = NULLIF($5,''), website = NULLIF($6,''),
-       sells_products = $7, updated_at = now()
+       sells_products = $7, offers_stay = $8, updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay]);
   revalidatePath('/merchant/shop'); revalidatePath('/merchant');
   redirect('/merchant/shop?ok=1');
+}
+
+// ── stay units (rooms) — same tenancy discipline as products (place_id from session, never form) ──
+
+export async function createStayUnitAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const nameTh = s(formData, 'name_th');
+  if (!nameTh) redirect('/merchant/rooms?error=name');
+  const mode = s(formData, 'rental_mode') === 'daily' ? 'daily' : 'monthly';
+  const period = mode === 'daily' ? 'night' : 'month';
+  const num = (k: string) => { const v = s(formData, k); return v !== '' && !isNaN(Number(v)) ? Number(v) : null; };
+  const priceMinor = num('price') != null ? Math.max(0, Math.round(num('price')! * 100)) : null;
+  const depositMinor = num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
+  const availUnits = mode === 'monthly' ? Math.max(0, Math.round(num('available_units') ?? 0)) : 0;
+  const dailyStatus = mode === 'daily' && ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
+  const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
+  const bills = formData.getAll('bills').map(String).filter(Boolean);
+  const amen = formData.getAll('amenity').map(String).filter(Boolean);
+  const urls = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  await q(
+    `INSERT INTO stay_units(place_id, name_i18n, rental_mode, price_minor, price_period, available_units, daily_status,
+        capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
+        image_urls, image_count, status, author_kind)
+     VALUES($1, jsonb_build_object('th',$2::text), $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'published','merchant')`,
+    [acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
+      num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
+      bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null, urls.length || 1]);
+  revalidatePath('/merchant/rooms');
+  redirect('/merchant/rooms?ok=1');
+}
+
+/** +/- the monthly vacancy count AND restamp freshness in one tap — the 10-second update. */
+export async function updateVacancyAction(unitId: string, delta: number) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  await q(`UPDATE stay_units SET available_units=GREATEST(0, available_units + $3), availability_updated_at=now(), updated_at=now()
+           WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id, delta]);
+  revalidatePath('/merchant/rooms');
+}
+
+/** Cycle daily availability vacant→full→ask→vacant, or hide/show — restamps freshness on cycle. */
+export async function setStayUnitFlagAction(unitId: string, flag: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (flag === 'hide') await q(`UPDATE stay_units SET status='hidden', updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+  else if (flag === 'show') await q(`UPDATE stay_units SET status='published', updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+  else if (flag === 'cycle_daily')
+    await q(`UPDATE stay_units SET daily_status = CASE daily_status WHEN 'vacant' THEN 'full' WHEN 'full' THEN 'ask' ELSE 'vacant' END,
+               availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+  revalidatePath('/merchant/rooms');
+}
+
+export async function deleteStayUnitAction(unitId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  await q(`DELETE FROM stay_units WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+  revalidatePath('/merchant/rooms');
 }

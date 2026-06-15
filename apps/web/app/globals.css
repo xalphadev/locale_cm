@@ -85,3 +85,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mini{border:1px solid var(--line);background:var(--paper);border-radius:7px;padding:.35rem .6rem;font:inherit;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--ink)}
 .mini.danger{color:#C0392B;border-color:#F2C9C4}
 .mini:active{filter:brightness(.95)}
+/* room form checkbox rows */
+.checkrow{display:flex;flex-wrap:wrap;gap:.4rem .9rem}
+.cbox{display:inline-flex;align-items:center;gap:.3rem;font-size:.85rem;color:var(--ink);font-weight:500}
+.cbox input{margin:0}

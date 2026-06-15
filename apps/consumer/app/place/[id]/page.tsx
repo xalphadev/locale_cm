@@ -3,6 +3,7 @@ import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
 import { ProductCard } from '../../ProductCard';
+import { RoomCard } from '../../RoomCard';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,11 +23,12 @@ function parsePoint(geo: string | null) {
 }
 
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = [];
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = [];
   try {
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
+              p.offers_stay, p.stay_kind,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -43,6 +45,10 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
       products = await q<any>(`SELECT id, name_i18n, subtype, price_minor, price_unit, price_text_i18n, image_urls, in_season, available_today, sold_out
         FROM shop_products WHERE place_id=$1 AND status='published' ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
+      units = await q<any>(`SELECT id, name_i18n, rental_mode, price_minor, price_period, price_text_i18n, image_urls,
+          available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
+        FROM stay_units WHERE place_id=$1 AND status='published'
+        ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 20`, [params.id]);
     }
   } catch { /* db down */ }
 
@@ -144,6 +150,14 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
             {products.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
           </div>
           <p className="shopnote"><Icon n="chat" size={13} /> สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ</p>
+        </>)}
+
+        {units.length > 0 && (<>
+          <h2>ห้องพัก / ห้องว่าง</h2>
+          <div className="prail">
+            {units.map((u) => <RoomCard key={u.id} u={{ ...u, stay_kind: p.stay_kind }} line_id={p.line_id} phone={p.phone} />)}
+          </div>
+          <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Soi Hop ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
         </>)}
 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}

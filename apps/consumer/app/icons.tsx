@@ -41,6 +41,7 @@ const P: Record<string, JSX.Element> = {
   share: <><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7" /><path d="M12 3v13M8 7l4-4 4 4" /></>,
   dots: <><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></>,
   tag: <><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" /><circle cx="7.5" cy="7.5" r="1.4" /></>,
+  bed: <><path d="M3 7v11M3 12h18M21 18v-6a2 2 0 0 0-2-2H9v4" /><circle cx="6.5" cy="9.5" r="1.2" /></>,
   clock2: <><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 1.8" /></>,
 };
 
@@ -58,6 +59,7 @@ export const CAT_ICON: Record<string, string> = {
   cafe: 'coffee', restaurant: 'bowl', street_food: 'flame', dessert: 'cake', bar: 'coffee',
   temple: 'landmark', viewpoint: 'pin', market: 'bowl', museum: 'landmark',
   cooking_class: 'flame', spa: 'flower', muay_thai: 'dumbbell', workshop: 'palette',
+  dorm: 'bed', apartment: 'bed', homestay: 'bed', hotel: 'bed', guesthouse: 'bed',
 };
 export const KIND_ICON: Record<string, string> = {
   festival: 'sparkles', market: 'bowl', performance: 'palette', workshop: 'palette', seasonal: 'calendar',

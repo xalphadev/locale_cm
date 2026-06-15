@@ -21,6 +21,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       <nav className="portal-nav">
         <a href="/merchant">ภาพรวม</a>
         <a href="/merchant/products">สินค้า</a>
+        <a href="/merchant/rooms">ห้องพัก</a>
         <a href="/merchant/post">โพสต์ฟีด</a>
         <a href="/merchant/shop">ข้อมูลร้าน</a>
       </nav>

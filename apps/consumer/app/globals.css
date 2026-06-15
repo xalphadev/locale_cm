@@ -674,3 +674,7 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .shopnote{display:flex;align-items:flex-start;gap:6px;font-size:.78rem;color:var(--muted);line-height:1.45;margin:10px 0 4px}
 .shopnote svg{flex:none;margin-top:2px;color:var(--hint)}
 .ph-price{color:var(--score);font-weight:800}
+/* room card extras (accommodation) */
+.pchip.ask{background:rgba(20,24,45,.78)}
+.pcfacts{font-size:.72rem;color:var(--muted);line-height:1.35;margin-top:1px}
+.pcfresh{font-size:.66rem;color:var(--hint);margin-top:2px}
