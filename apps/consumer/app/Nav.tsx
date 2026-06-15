@@ -14,6 +14,8 @@ const TABS = [
 
 export default function Nav() {
   const p = usePathname() || '/';
+  // Show the tab bar only on main (top-level) pages — hide it on detail/sub pages.
+  if (!TABS.some((t) => t.href === p)) return null;
   return (
     <nav className="nav">
       {TABS.map((t) => (

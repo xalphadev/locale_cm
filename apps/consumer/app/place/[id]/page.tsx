@@ -4,6 +4,7 @@ import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
 import { ProductCard } from '../../ProductCard';
 import { RoomCard } from '../../RoomCard';
+import { HeroZoom } from '../../Lightbox';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           : <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />}
         {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
         <div className="scrim" />
+        {!videoUrl && <HeroZoom images={[cover(p.id, p.subcategory, p.category, 1280, 860)]} />}
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
         <form action={toggleSaveAction.bind(null, p.id)} style={{ position: 'absolute', top: 16, right: 16, zIndex: 3 }}>
           <button className={`bm ${p.saved ? 'on' : ''}`} type="submit"><Icon n="bookmark" size={18} fill={p.saved ? 'currentColor' : 'none'} /></button>

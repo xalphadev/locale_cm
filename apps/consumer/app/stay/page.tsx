@@ -19,10 +19,10 @@ const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
 
 export default async function Stay({ searchParams }: { searchParams: Record<string, string> }) {
   const mode = searchParams?.mode === 'daily' ? 'daily' : 'monthly';
-  const kind = STAY_KINDS.includes(searchParams?.kind) ? searchParams.kind : '';
+  const kind = String(searchParams?.kind || '').split(',').map((x) => x.trim()).filter((x) => STAY_KINDS.includes(x));
   const sort = SORTS[mode].includes(searchParams?.sort) ? searchParams.sort : '';
   const am = String(searchParams?.am || '').split(',').map((x) => x.trim()).filter((x) => STAY_AMENITIES.includes(x));
-  const fr = ['furnished', 'partial', 'unfurnished'].includes(searchParams?.fr || '') ? searchParams.fr : '';
+  const fr = String(searchParams?.fr || '').split(',').map((x) => x.trim()).filter((x) => ['furnished', 'partial', 'unfurnished'].includes(x));
   const qtext = String(searchParams?.q || '').slice(0, 60).trim();
   const pr = PRICE[mode][searchParams?.pr] ? searchParams.pr : '';
   const cap = ['1', '2', '3'].includes(searchParams?.cap || '') ? searchParams.cap : '';
@@ -34,9 +34,9 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     const where = [`su.status='published'`, `p.status='published'`, `p.is_visible`, `su.rental_mode=$1`];
     const params: any[] = [mode];
     where.push(mode === 'monthly' ? `su.available_units>0` : `su.daily_status<>'full'`);
-    if (kind) { params.push(kind); where.push(`p.stay_kind=$${params.length}`); }
+    if (kind.length) { params.push(kind); where.push(`p.stay_kind = ANY($${params.length}::text[])`); }
     if (am.length) { params.push(am); where.push(`su.unit_amenities @> $${params.length}::text[]`); }
-    if (mode === 'monthly' && fr) { params.push(fr); where.push(`su.furnished=$${params.length}`); }
+    if (mode === 'monthly' && fr.length) { params.push(fr); where.push(`su.furnished = ANY($${params.length}::text[])`); }
     if (qtext) { params.push('%' + qtext + '%'); const n = params.length; where.push(`(su.name_i18n->>'th' ILIKE $${n} OR su.name_i18n->>'en' ILIKE $${n} OR p.name_i18n->>'th' ILIKE $${n} OR p.name_i18n->>'en' ILIKE $${n} OR d.name_i18n->>'th' ILIKE $${n})`); }
     if (pr) { const [lo, hi] = PRICE[mode][pr]; if (lo != null) { params.push(lo); where.push(`su.price_minor>=$${params.length}`); } if (hi != null) { params.push(hi); where.push(`su.price_minor<$${params.length}`); } }
     if (cap) { params.push(Number(cap)); where.push(`su.capacity>=$${params.length}`); }
@@ -77,13 +77,13 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   const pinned = placeList.filter((g) => g.lat != null && !isDefaultGeo(g.lng, g.lat));
   const unpinned = placeList.length - pinned.length;
   const pins = pinned.map((g) => ({
-    id: g.id, name: g.name, lat: g.lat, lng: g.lng, kind: g.kind,
+    id: g.id, name: g.name, lat: g.lat, lng: g.lng, kind: g.kind, img: g.img,
     priceFrom: g.priceMin, badge: g.vac > 0 ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.vac > 0,
   }));
 
   // href is only for the mode segmented + list/map toggle (server links); all other filters
   // are set by the StayFilterSheet client component.
-  const cur = { mode, kind, sort, am: am.join(','), fr, q: qtext, pr, cap, view };
+  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, cap, view };
   const href = (patch: Partial<typeof cur>) => {
     const s = { ...cur, ...patch }; const u = new URLSearchParams();
     if (s.mode !== 'monthly') u.set('mode', s.mode);
@@ -93,12 +93,12 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     if (s.view === 'map') u.set('view', 'map');
     const qs = u.toString(); return qs ? `/stay?${qs}` : '/stay';
   };
-  const activeCount = (kind ? 1 : 0) + (sort ? 1 : 0) + am.length + (fr ? 1 : 0) + (pr ? 1 : 0) + (cap ? 1 : 0);
+  const activeCount = kind.length + (sort ? 1 : 0) + am.length + fr.length + (pr ? 1 : 0) + (cap ? 1 : 0);
   // hidden inputs carry all active filters through the GET search form (else searching resets them)
   const hidden: [string, string][] = [];
   if (mode !== 'monthly') hidden.push(['mode', mode]);
-  if (kind) hidden.push(['kind', kind]); if (sort) hidden.push(['sort', sort]);
-  if (am.length) hidden.push(['am', am.join(',')]); if (fr) hidden.push(['fr', fr]);
+  if (kind.length) hidden.push(['kind', kind.join(',')]); if (sort) hidden.push(['sort', sort]);
+  if (am.length) hidden.push(['am', am.join(',')]); if (fr.length) hidden.push(['fr', fr.join(',')]);
   if (pr) hidden.push(['pr', pr]); if (cap) hidden.push(['cap', cap]); if (view === 'map') hidden.push(['view', 'map']);
 
   return (
