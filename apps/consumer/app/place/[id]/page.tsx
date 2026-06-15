@@ -15,7 +15,7 @@ function parsePoint(geo: string | null): { lat: number; lng: number } | null {
 }
 
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null;
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = [];
   try {
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
@@ -28,13 +28,19 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
        WHERE p.id=$1 AND p.status='published'`, [params.id]);
     if (p) {
       events = await q<any>(
-        `SELECT title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m
+        `SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m
          FROM events WHERE place_id=$1 AND status='published' ORDER BY starts_at`, [params.id]);
       quests = await q<any>(
         `SELECT DISTINCT q.id, q.title_i18n FROM quest_steps qs JOIN quests q ON q.id=qs.quest_id
          WHERE qs.place_id=$1 AND q.status IN ('active','draft')`, [params.id]);
       [rev] = await q<any>(
-        `SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1`, [params.id]);
+        `SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg
+         FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [params.id]);
+      reviews = await q<any>(
+        `SELECT r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d
+         FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id
+         WHERE r.place_id=$1 AND r.moderation_status='approved'
+         ORDER BY r.created_at DESC, r.rating DESC LIMIT 10`, [params.id]);
     }
   } catch { /* db down */ }
 
@@ -114,8 +120,24 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         {events.length > 0 && (
           <>
             <h2>กิจกรรมที่นี่</h2>
-            {events.map((e, i) => <div className="card" key={i}><div className="thumb">{eIcon(e.kind)}</div>
-              <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta">📅 {e.d} {THM[e.m - 1]}</div></div></div>)}
+            {events.map((e) => <a className="card" key={e.id} href={`/event/${e.id}`}><div className="thumb">{eIcon(e.kind)}</div>
+              <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta">📅 {e.d} {THM[e.m - 1]}</div></div></a>)}
+          </>
+        )}
+
+        {reviews.length > 0 && (
+          <>
+            <h2>รีวิว ({rev?.n})</h2>
+            {reviews.map((r, i) => (
+              <div className="review" key={i}>
+                <div className="review-top">
+                  <span className="review-name">{r.display_name || 'ผู้ใช้'}</span>
+                  <span className="stars">{'★'.repeat(r.rating)}<span className="star-off">{'★'.repeat(5 - r.rating)}</span></span>
+                </div>
+                <div className="review-body">{i18n(r.body_i18n)}</div>
+                <div className="review-date">{r.d}</div>
+              </div>
+            ))}
           </>
         )}
       </div>

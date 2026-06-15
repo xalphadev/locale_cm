@@ -19,8 +19,12 @@ async function load() {
     stamps = qp ? Number(qp.n) : 0;
   }
   const places = await q<any>(
-    `SELECT p.id, p.name_i18n, p.category::text category, p.subcategory, f.freshness_label::text fresh
-     FROM places p LEFT JOIN data_freshness f ON f.place_id=p.id
+    `SELECT p.id, p.name_i18n, p.category::text category, p.subcategory, f.freshness_label::text fresh,
+            rv.n::int rev_n, rv.avg::text rev_avg
+     FROM places p
+     LEFT JOIN data_freshness f ON f.place_id=p.id
+     LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
+                        WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
      WHERE p.status='published' AND p.is_visible ORDER BY p.verified_at DESC NULLS LAST LIMIT 12`);
   const events = await q<any>(
     `SELECT id, title_i18n, kind, is_recurring,
@@ -65,7 +69,7 @@ export default async function Discover() {
           <>
             <h2>กิจกรรม &amp; เทศกาลเร็วๆ นี้</h2>
             {d.events.map((e: any) => (
-              <a className="card" key={e.id} href="#">
+              <a className="card" key={e.id} href={`/event/${e.id}`}>
                 <div className="thumb">{eIcon(e.kind)}</div>
                 <div>
                   <div className="nm">{i18n(e.title_i18n)}</div>
@@ -84,6 +88,7 @@ export default async function Discover() {
               <div className="nm">{i18n(p.name_i18n)}</div>
               <div className="meta">{p.category === 'eat' ? 'กิน' : p.category === 'see' ? 'เที่ยว' : 'ทำกิจกรรม'}
                 {p.subcategory ? ` · ${p.subcategory}` : ''}</div>
+              {p.rev_n > 0 && <div className="rating">★ {p.rev_avg} <span className="muted">({p.rev_n})</span></div>}
               <span className={`badge ${p.fresh ?? 'nada'}`}>
                 {p.fresh === 'fresh' ? '✓ ตรวจสอบล่าสุด' : p.fresh === 'aging' ? 'อัปเดตไม่นาน' : 'ยังไม่ตรวจสอบ'}
               </span>

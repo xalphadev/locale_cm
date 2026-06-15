@@ -57,6 +57,15 @@ a{color:inherit;text-decoration:none}
 .hour-row:last-child{border-bottom:none}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--sunk);color:var(--teak);font-size:.8rem;padding:.3rem .7rem;border-radius:999px}
+/* reviews */
+.review{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.review-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.review-name{font-weight:600;font-size:.9rem}
+.review .stars{color:var(--coin);font-size:.85rem;letter-spacing:1px}
+.star-off{color:#E0D5C2}
+.review-body{font-size:.9rem;line-height:1.5;color:var(--ink);margin:.35rem 0 .2rem}
+.review-date{color:var(--hint);font-size:.74rem}
+.card .rating{color:var(--coin);font-size:.78rem;font-weight:700;margin-top:.2rem}
 
 /* wallet pills */
 .bal{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:.5rem}
