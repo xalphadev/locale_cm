@@ -19,6 +19,7 @@ BEGIN
   IF p_lng IS NULL OR p_lat IS NULL THEN RETURN; END IF;
   v_geo_sql := _place_geo_sql(p_lng, p_lat);
   IF v_geo_sql IS NULL THEN RETURN; END IF;
-  EXECUTE format('UPDATE places SET geo=%s, verified_at=now(), updated_at=now() WHERE id=$1', v_geo_sql)
+  -- NB: do NOT touch verified_at — that's the staff freshness/ranking signal, not a geo edit.
+  EXECUTE format('UPDATE places SET geo=%s, updated_at=now() WHERE id=$1', v_geo_sql)
     USING p_id;
 END $$;

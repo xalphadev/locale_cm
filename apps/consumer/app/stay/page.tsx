@@ -65,17 +65,17 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   for (const r of rows) {
     const pt = parsePoint(r.geo);
     if (!pt || isDefaultGeo(pt.lng, pt.lat)) { seenUnpinned.add(r.place_id); continue; }
-    const v = roomVacancy(r);
-    const vac = r.rental_mode === 'monthly' ? (r.available_units > 0 ? r.available_units : 0) : (r.daily_status === 'vacant' ? 1 : 0);
-    const g = byPlace[r.place_id] || (byPlace[r.place_id] = { id: r.place_id, name: i18n(r.shop_name), lat: pt.lat, lng: pt.lng, kind: r.stay_kind, vac: 0, priceFrom: null as number | null, fresh: false });
+    // count only units the LIST would show as live-vacant (post stale-decay), so the pin badge
+    // can't claim more vacant rooms than the cards present.
+    const vac = roomVacancy(r).cls === 'season' ? (r.rental_mode === 'monthly' ? r.available_units : 1) : 0;
+    const g = byPlace[r.place_id] || (byPlace[r.place_id] = { id: r.place_id, name: i18n(r.shop_name), lat: pt.lat, lng: pt.lng, kind: r.stay_kind, vac: 0, priceFrom: null as number | null });
     g.vac += vac;
     if (r.price_minor != null) g.priceFrom = g.priceFrom == null ? r.price_minor : Math.min(g.priceFrom, r.price_minor);
-    if (v.cls === 'season') g.fresh = true;
   }
   const unpinned = [...seenUnpinned].filter((id) => !byPlace[id]).length;
   const pins = Object.values(byPlace).map((g: any) => ({
     ...g, priceFrom: g.priceFrom != null ? Math.round(g.priceFrom / 100) : null,
-    badge: (g.fresh && g.vac > 0) ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.fresh && g.vac > 0,
+    badge: g.vac > 0 ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.vac > 0,
   }));
 
   const cur = { mode, kind, sort, am: am.join(','), fr, q: qtext, pr, cap, view };
