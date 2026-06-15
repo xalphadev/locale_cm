@@ -21,3 +21,18 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .ok { background:#E6F5EE; color:#1E8E7E; } .warn{ background:#FBF1D8; color:#9A6A00; } .bad{ background:#FCE8E6; color:#C0392B; }
 .mono { font-variant-numeric: tabular-nums; }
 .note { color:var(--muted); font-size:.85rem; }
+
+/* forms (agent place entry) */
+.form { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1.2rem; max-width:640px; }
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+.field { display:flex; flex-direction:column; gap:.3rem; margin-bottom:.9rem; }
+.field label { font-size:.8rem; color:var(--muted); font-weight:600; }
+.field input, .field select, .field textarea {
+  padding:.5rem .6rem; border:1px solid var(--line); border-radius:7px; background:var(--paper);
+  color:var(--ink); font:inherit; }
+.field textarea { resize:vertical; min-height:60px; }
+.btn { border:none; border-radius:8px; padding:.55rem 1.1rem; font:inherit; font-weight:700; cursor:pointer; }
+.btn-primary { background:var(--amber); color:#fff; }
+.btn-approve { background:var(--jade); color:#fff; }
+.btn:active { filter:brightness(.93); }
+.banner-ok { background:#E6F5EE; color:#1E8E7E; border-radius:8px; padding:.6rem .9rem; margin-bottom:1rem; font-size:.9rem; }

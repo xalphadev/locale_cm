@@ -11,6 +11,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <span className="brand">Soi Hop · Admin</span>
           <a href="/">Dashboard</a>
           <a href="/places">Places</a>
+          <a href="/agent">+ Add place</a>
+          <a href="/proposals">Review queue</a>
+          <a href="/counter">Counter</a>
           <a href="/money">Money &amp; Recon</a>
         </nav>
         <main className="wrap">{children}</main>

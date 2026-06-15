@@ -9,10 +9,14 @@ export async function q<T = Record<string, unknown>>(text: string, params: unkno
   return res.rows as T[];
 }
 
-/** A consistent demo "logged-in" customer (the one with the most Sparks). */
+/** The stable demo "logged-in" customer (seeded by seed-interactive.sql). Falls back if absent. */
+export const DEMO_USER = '00000000-0000-4000-8000-0000000000d0';
 export async function demoUserId(): Promise<string | null> {
-  const r = await q<{ user_id: string }>(`SELECT user_id FROM spark_balances ORDER BY balance DESC LIMIT 1`);
-  return r[0]?.user_id ?? null;
+  const a = await q<{ id: string }>(`SELECT id FROM users WHERE id=$1`, [DEMO_USER]);
+  if (a[0]) return DEMO_USER;
+  const b = await q<{ user_id: string }>(
+    `SELECT user_id FROM quest_progress WHERE status='in_progress' ORDER BY created_at DESC LIMIT 1`);
+  return b[0]?.user_id ?? null;
 }
 
 export function i18n(j: any, locale = 'th'): string {
