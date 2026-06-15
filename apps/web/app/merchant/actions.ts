@@ -1,7 +1,7 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { q, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
+import { q, withTx, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 import { hashPassword, verifyPassword, setSession, clearSession, currentAccount } from '@/lib/auth';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
@@ -32,34 +32,44 @@ export async function signupAction(formData: FormData) {
   if (pw.length < 8) err('รหัสผ่านอย่างน้อย 8 ตัวอักษร');
   if (!shopName) err('กรุณากรอกชื่อร้าน');
 
-  const dup = await q(`SELECT 1 FROM merchant_accounts WHERE email=$1`, [email]);
-  if (dup.length) err('อีเมลนี้ถูกใช้แล้ว');
-
   const [city] = await q<{ id: string }>(`SELECT id FROM cities WHERE code='CNX'`);
+  if (!city) err('ระบบยังไม่พร้อมในเมืองนี้ กรุณาติดต่อทีมงาน');
   const [dist] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
   const { category, subcategory } = SHOP_TYPES[type];
 
+  // Create as DRAFT — the shop is fully manageable in the portal immediately, but only goes
+  // public to customers after staff review (apps/web /shops). This avoids anonymous signups
+  // pushing live spam venues onto the consumer surfaces.
   const payload = {
     name_i18n: { th: shopName },
-    category, subcategory,
+    category, subcategory, status: 'draft',
     lng: NIMMAN.lng, lat: NIMMAN.lat,
     ...(phone ? { phone } : {}),
     ...(lineId ? { line_id: lineId } : {}),
   };
-  // fn_create_place is the portable, SoD-guarded place writer (geo + freshness + history). MVP
-  // auto-publishes the shop (like feed_posts); production would gate on staff identity verification.
-  const [pl] = await q<{ id: string }>(
-    `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
-    [JSON.stringify(payload), city.id, dist?.id ?? null, DEMO_AGENT, DEMO_ADMIN]);
-  if (sells) await q(`UPDATE places SET sells_products=true, source='merchant' WHERE id=$1`, [pl.id]);
-  else await q(`UPDATE places SET source='merchant' WHERE id=$1`, [pl.id]);
 
-  const [acc] = await q<{ id: string }>(
-    `INSERT INTO merchant_accounts(email, password_hash, display_name, phone, place_id)
-     VALUES($1,$2,$3,$4,$5) RETURNING id`,
-    [email, hashPassword(pw), shopName, phone || null, pl.id]);
+  // Atomic: place-create + flags + account INSERT in one transaction so a failed signup (e.g. the
+  // email-unique race) never leaves an orphaned place behind. fn_create_place is the portable,
+  // SoD-guarded place writer (geo + freshness + history).
+  let accId = '';
+  try {
+    accId = await withTx(async (c) => {
+      const pl = (await c.query<{ id: string }>(
+        `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
+        [JSON.stringify(payload), city.id, dist?.id ?? null, DEMO_AGENT, DEMO_ADMIN])).rows[0];
+      await c.query(`UPDATE places SET sells_products=$2, source='merchant' WHERE id=$1`, [pl.id, sells]);
+      const acc = (await c.query<{ id: string }>(
+        `INSERT INTO merchant_accounts(email, password_hash, display_name, phone, place_id)
+         VALUES($1,$2,$3,$4,$5) RETURNING id`,
+        [email, hashPassword(pw), shopName, phone || null, pl.id])).rows[0];
+      return acc.id;
+    });
+  } catch (e: any) {
+    if (e?.code === '23505') err('อีเมลนี้ถูกใช้แล้ว');  // unique_violation on email
+    throw e;
+  }
 
-  setSession(acc.id);
+  setSession(accId);
   revalidatePath('/'); // staff dashboard place count
   redirect('/merchant');
 }

@@ -5,7 +5,13 @@ import { q } from './db';
 // Self-service merchant portal auth. Credentials live in merchant_accounts (the money-plane
 // users table has no password). Passwords: scrypt. Session: an HMAC-signed cookie (no DB session
 // table needed for the MVP). NOT used by the staff back-office, which stays unauthenticated in dev.
-const SECRET = process.env.MERCHANT_SESSION_SECRET || 'soihop-dev-merchant-secret-change-me';
+// Fail closed in production: a missing secret would make every m_session cookie forgeable
+// (anyone could sign a token for any account id → cross-tenant takeover). In dev we allow a
+// known default so localhost works without setup. Set MERCHANT_SESSION_SECRET in any real deploy.
+const SECRET = process.env.MERCHANT_SESSION_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') throw new Error('MERCHANT_SESSION_SECRET is required in production');
+  return 'soihop-dev-merchant-secret-change-me';
+})();
 const COOKIE = 'm_session';
 
 export function hashPassword(pw: string): string {
@@ -34,7 +40,10 @@ function unsign(token: string): string | null {
 }
 
 export function setSession(accountId: string) {
-  cookies().set(COOKIE, sign(accountId), { httpOnly: true, sameSite: 'lax', path: '/', maxAge: 60 * 60 * 24 * 30 });
+  cookies().set(COOKIE, sign(accountId), {
+    httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production',
+    path: '/', maxAge: 60 * 60 * 24 * 30,
+  });
 }
 export function clearSession() { cookies().delete(COOKIE); }
 

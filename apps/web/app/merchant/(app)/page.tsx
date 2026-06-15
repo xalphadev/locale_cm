@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 
@@ -7,6 +8,7 @@ const CONSUMER = process.env.CONSUMER_BASE ?? 'http://127.0.0.1:3003';
 
 export default async function Dashboard() {
   const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
   const [stats] = await q<any>(
     `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND status='published') products,
             (SELECT count(*) FROM feed_posts   WHERE place_id=$1 AND status='published') posts`, [acc.place_id]);

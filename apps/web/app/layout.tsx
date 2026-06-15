@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <a href="/event">+ Add event</a>
           <a href="/post">+ โพสต์</a>
           <a href="/proposals">Review queue</a>
+          <a href="/shops">ร้านสมัคร</a>
           <a href="/counter">Counter</a>
           <a href="/money">Money &amp; Recon</a>
           <a href="/merchant" style={{ marginLeft: 'auto' }}>ร้านค้า ↗</a>

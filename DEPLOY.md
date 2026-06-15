@@ -55,14 +55,27 @@ Build & run: `npm ci && npm run build && node dist/main` (in `apps/api`). Expose
 
 ## 3. Web apps (Vercel / Netlify)
 
-Two Next.js apps (`apps/web` = admin/agent/counter back-office, `apps/consumer` = customer).
-Both are server-rendered and read the DB as `app_readonly`; all writes go to the API.
+Two Next.js apps (`apps/web` = admin/agent/counter back-office + the merchant self-service portal,
+`apps/consumer` = customer, read-only). `apps/consumer` reads as `app_readonly`; **`apps/web` needs a
+role with INSERT/UPDATE on the content tables** (feed_posts, shop_products, places, merchant_accounts)
+because the staff composers and the merchant portal write directly via server actions — money/ledger
+mutations still only go through the API.
 
 ```
+# apps/consumer
 DATABASE_URL=postgres://app_readonly:<READONLY_PASSWORD>@db.<ref>.supabase.co:5432/postgres
 MONEY_API=https://<your-money-plane-host>
+
+# apps/web (back-office + merchant portal)
+DATABASE_URL=postgres://app_content:<CONTENT_PASSWORD>@db.<ref>.supabase.co:5432/postgres
+MONEY_API=https://<your-money-plane-host>
+MERCHANT_SESSION_SECRET=<32+ random bytes — REQUIRED; server refuses to start without it in prod>
+CONSUMER_BASE=https://<your-consumer-host>
 ```
+Generate the secret: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 On Vercel set these as Environment Variables; `serverExternalPackages:['pg']` is already configured.
+Without `MERCHANT_SESSION_SECRET`, `apps/web/lib/auth.ts` throws on boot in production — by design,
+so merchant session cookies can never be signed with a public/default key.
 
 ## 4. Verify the deploy
 

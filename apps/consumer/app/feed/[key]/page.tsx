@@ -39,7 +39,7 @@ async function loadOne(kind: string, id: string): Promise<any | null> {
   if (kind === 'product') {
     const [r] = await q<any>(`SELECT 'product' kind, sp.id, sp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
         sp.name_i18n prod_name, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls, sp.image_count, sp.subtype
-      FROM shop_products sp JOIN places p ON p.id=sp.place_id WHERE sp.id=$1 AND sp.status='published' AND NOT sp.sold_out AND p.status='published'`, [id]);
+      FROM shop_products sp JOIN places p ON p.id=sp.place_id WHERE sp.id=$1 AND sp.status='published' AND NOT sp.sold_out AND p.status='published' AND p.is_visible`, [id]);
     return r ?? null;
   }
   if (kind === 'verified') {

@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 
 // Single read-only pool reused across HMR reloads in dev.
 const g = globalThis as unknown as { _pgPool?: Pool };
@@ -8,6 +8,23 @@ if (process.env.NODE_ENV !== 'production') g._pgPool = pool;
 export async function q<T = Record<string, unknown>>(text: string, params: unknown[] = []): Promise<T[]> {
   const res = await pool.query(text, params);
   return res.rows as T[];
+}
+
+/** Run fn inside a single transaction (BEGIN/COMMIT, ROLLBACK on throw). Use for multi-write
+ *  operations that must be atomic — e.g. merchant signup (create place + account together). */
+export async function withTx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (e) {
+    try { await client.query('ROLLBACK'); } catch { /* ignore */ }
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 /** satang/coin-minor → "฿1,234.50" */

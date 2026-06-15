@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { createMerchantProductAction, setProductFlagAction, deleteProductAction } from '../../actions';
@@ -12,6 +13,7 @@ const subLabel = (k: string) => (SUBTYPES.find(([s]) => s === k) || [, ''])[1];
 
 export default async function Products({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
   const rows = await q<any>(
     `SELECT id, name_i18n, subtype, price_minor, price_unit, status, sold_out, in_season
        FROM shop_products WHERE place_id=$1 ORDER BY created_at DESC`, [acc.place_id]);

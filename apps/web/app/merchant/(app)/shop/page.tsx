@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { updateShopAction } from '../../actions';
@@ -6,6 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Shop({ searchParams }: { searchParams: { ok?: string } }) {
   const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
     `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products FROM places WHERE id=$1`, [acc.place_id]);
   return (
