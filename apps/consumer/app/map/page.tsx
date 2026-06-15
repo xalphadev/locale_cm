@@ -9,7 +9,7 @@ function parsePoint(geo: string | null) {
   return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
 }
 
-export default async function MapPage() {
+export default async function MapPage({ searchParams }: { searchParams: { focus?: string } }) {
   let rows: any[] = [];
   try {
     rows = await q<any>(
@@ -28,5 +28,5 @@ export default async function MapPage() {
     } : null; })
     .filter(Boolean) as any[];
 
-  return <MapView places={places} />;
+  return <MapView places={places} focus={typeof searchParams?.focus === 'string' ? searchParams.focus : undefined} />;
 }

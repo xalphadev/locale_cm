@@ -36,7 +36,7 @@ async function load(cat: string, sub: string, query: string) {
     `SELECT ${PCOLS} ${PJOIN}
      WHERE p.status='published' AND p.is_visible ORDER BY rv.n DESC NULLS LAST, rv.avg DESC NULLS LAST LIMIT 1`);
   const community = await q<any>(
-    `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname
+    `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat
      FROM reviews r JOIN profiles pr ON pr.user_id=r.user_id JOIN places p ON p.id=r.place_id
      WHERE r.moderation_status='approved' ORDER BY r.created_at DESC LIMIT 4`);
   const [quest] = await q<any>(
@@ -59,7 +59,7 @@ const Stars = ({ v, size = 13 }: { v: string; size?: number }) =>
 function MiniCard({ p }: { p: any }) {
   return (
     <a className="mini" href={`/place/${p.id}`}>
-      <div className="ph"><img src={cover(p.id, 440, 300)} alt="" loading="lazy" /><div className="scrim" style={{ opacity: .28 }} /></div>
+      <div className="ph"><img src={cover(p.id, p.subcategory, p.category, 440, 300)} alt="" loading="lazy" /><div className="scrim" style={{ opacity: .28 }} /></div>
       <div className="mb"><div className="nm">{i18n(p.name_i18n)}</div>
         <div className="mmeta">{p.rev_n > 0 ? <Stars v={p.rev_avg} /> : <span>ใหม่</span>}<span className="sep">·</span><span>{catTH(p.category)}</span></div></div>
     </a>
@@ -129,7 +129,7 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
 
       {d.hero && (
         <a className="edhero" href={`/place/${d.hero.id}`}>
-          <img src={cover(d.hero.id, 680, 850)} alt="" />
+          <img src={cover(d.hero.id, d.hero.subcategory, d.hero.category, 680, 850)} alt="" />
           <div className="scrim" />
           <span className="frost" style={{ position: 'absolute', top: 14, left: 14 }}><Icon n={CAT_ICON[d.hero.subcategory] || CAT_ICON[d.hero.category]} size={14} /> {catTH(d.hero.category)}</span>
           <span className="bm"><Icon n="bookmark" size={18} /></span>
@@ -153,7 +153,7 @@ export default async function Discover({ searchParams }: { searchParams: { cat?:
           <div className="sec"><h2>ชุมชนกำลังพูดถึง</h2></div>
           {d.community.map((r: any, i: number) => (
             <a className="crev" key={i} href={`/place/${r.pid}`}>
-              <img className="cphoto" src={cover(r.pid, 160, 160)} alt="" loading="lazy" />
+              <img className="cphoto" src={cover(r.pid, r.psub, r.pcat, 160, 160)} alt="" loading="lazy" />
               <div className="cw">
                 <div className="ctop"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="cname">{r.display_name || 'ผู้ใช้'}</span>
                   <span className="cstars">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={12} />)}</span></div>

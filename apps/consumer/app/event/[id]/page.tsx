@@ -27,7 +27,7 @@ export default async function EventDetail({ params }: { params: { id: string } }
   return (
     <>
       <div className="detail-hero">
-        <img src={cover('event' + e.id, 760, 500)} alt="" />
+        <img src={cover('event' + e.id, e.kind, 'see', 760, 500)} alt="" />
         <div className="scrim" />
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
         <div className="dtitle">

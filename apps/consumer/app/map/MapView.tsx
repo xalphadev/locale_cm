@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
+import { cover } from '../../lib/img';
 
 type Place = { id: string; name: string; category: string; subcategory: string | null; lat: number; lng: number; rev_n: number; rev_avg: string | null };
 
@@ -8,7 +9,6 @@ const NIMMAN: [number, number] = [18.7965, 98.9685];
 const COLORS: Record<string, string> = { eat: '#E2603B', see: '#1E8E7E', do: '#8A5CF6' };
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
 const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: 'กิน' }, { k: 'see', l: 'เที่ยว' }, { k: 'do', l: 'ทำกิจกรรม' }];
-const cover = (id: string) => `https://picsum.photos/seed/${id.slice(0, 12)}/120/120`;
 
 function haversine(a: [number, number], b: [number, number]) {
   const R = 6371, toR = (d: number) => (d * Math.PI) / 180;
@@ -16,16 +16,17 @@ function haversine(a: [number, number], b: [number, number]) {
   const s = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a[0])) * Math.cos(toR(b[0])) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
-const fmtDist = (km: number) => (km < 1 ? `${Math.round(km * 1000)} ม.` : `${km.toFixed(1)} กม.`);
 const walkMin = (km: number) => Math.max(1, Math.round((km / 5) * 60));
+const loadCss = (id: string, href: string) => { if (!document.getElementById(id)) { const l = document.createElement('link'); l.id = id; l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } };
+const loadJs = (src: string) => new Promise<void>((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(); document.body.appendChild(s); });
 
-export default function MapView({ places }: { places: Place[] }) {
+export default function MapView({ places, focus }: { places: Place[]; focus?: string }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const meRef = useRef<any>(null);
-  const markerById = useRef<Record<string, any>>({});
   const cardById = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const focused = useRef(false);
   const [cat, setCat] = useState('');
   const [sel, setSel] = useState<string | null>(null);
   const [me, setMe] = useState<[number, number] | null>(null);
@@ -35,21 +36,20 @@ export default function MapView({ places }: { places: Place[] }) {
     let dead = false;
     async function boot() {
       const w = window as any;
-      if (!document.getElementById('leaflet-css')) {
-        const l = document.createElement('link'); l.id = 'leaflet-css'; l.rel = 'stylesheet';
-        l.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'; document.head.appendChild(l);
-      }
-      if (!w.L) await new Promise<void>((res, rej) => {
-        const s = document.createElement('script'); s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        s.onload = () => res(); s.onerror = () => rej(); document.body.appendChild(s);
-      });
+      loadCss('leaflet-css', 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+      loadCss('mcl-css', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css');
+      loadCss('mcl-css-d', 'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css');
+      if (!w.L) await loadJs('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js');
+      if (!w.L.markerClusterGroup) await loadJs('https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js');
       if (dead || mapRef.current || !hostRef.current) return;
       const L = w.L;
       const map = L.map(hostRef.current, { zoomControl: false, attributionControl: false }).setView(NIMMAN, 15);
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
       L.control.zoom({ position: 'bottomright' }).addTo(map);
       L.control.attribution({ position: 'bottomleft', prefix: false }).addAttribution('© OpenStreetMap, © CARTO').addTo(map);
-      mapRef.current = map; layerRef.current = L.layerGroup().addTo(map);
+      layerRef.current = L.markerClusterGroup({ maxClusterRadius: 46, showCoverageOnHover: false, spiderfyOnMaxZoom: true });
+      map.addLayer(layerRef.current);
+      mapRef.current = map;
       setReady(true);
     }
     boot();
@@ -61,25 +61,30 @@ export default function MapView({ places }: { places: Place[] }) {
     .map((p) => ({ ...p, km: me ? haversine(me, [p.lat, p.lng]) : null }))
     .sort((a, b) => (me ? (a.km! - b.km!) : ((b.rev_n - a.rev_n) || (Number(b.rev_avg) - Number(a.rev_avg)))));
 
-  // draw markers
   useEffect(() => {
     const w = window as any; const L = w.L; const grp = layerRef.current;
     if (!ready || !L || !grp) return;
-    grp.clearLayers(); markerById.current = {};
+    grp.clearLayers();
     shown.forEach((p) => {
       const c = COLORS[p.category] || '#6B6862';
       const on = p.id === sel;
       const icon = L.divIcon({ className: 'pin-wrap', html: `<span class="pin${on ? ' on' : ''}" style="--c:${c}"></span>`, iconSize: [26, 34], iconAnchor: [13, 32] });
-      const mk = L.marker([p.lat, p.lng], { icon, zIndexOffset: on ? 1000 : 0 }).addTo(grp);
+      const mk = L.marker([p.lat, p.lng], { icon, zIndexOffset: on ? 1000 : 0 });
       mk.on('click', () => select(p.id, true));
-      markerById.current[p.id] = mk;
+      grp.addLayer(mk);
     });
   }, [ready, cat, sel, me]);
+
+  // deep-link focus (from /map?focus=id)
+  useEffect(() => {
+    if (!ready || focused.current || !focus) return;
+    if (places.some((p) => p.id === focus)) { focused.current = true; select(focus, true); }
+  }, [ready]);
 
   function select(id: string, fromPin: boolean) {
     setSel(id);
     const p = places.find((x) => x.id === id); const map = mapRef.current;
-    if (p && map) map.panTo([p.lat, p.lng]);
+    if (p && map) map.setView([p.lat, p.lng], Math.max(map.getZoom(), 16));
     if (fromPin) cardById.current[id]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }
 
@@ -115,9 +120,8 @@ export default function MapView({ places }: { places: Place[] }) {
       <div className="map-rail">
         {shown.map((p) => (
           <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}`}
-            className={`map-card ${p.id === sel ? 'on' : ''}`}
-            onMouseEnter={() => select(p.id, false)}>
-            <img src={cover(p.id)} alt="" loading="lazy" />
+            className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
+            <img src={cover(p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" />
             <div className="mc">
               <div className="mc-nm">{p.name}</div>
               <div className="mc-meta">

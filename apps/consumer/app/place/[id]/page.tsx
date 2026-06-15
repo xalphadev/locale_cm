@@ -52,7 +52,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   return (
     <>
       <div className="detail-hero">
-        <img src={cover(p.id, 760, 500)} alt="" />
+        <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />
         <div className="scrim" />
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
         <span className="bm" style={{ position: 'absolute', top: 16, right: 16 }}><Icon n="bookmark" size={18} /></span>
@@ -93,6 +93,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           {p.line_id && <div className="info-row"><Icon n="chat" size={18} className="flat-ico" /><span>LINE: {p.line_id}</span></div>}
           {p.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><a href={p.website}>{p.website}</a></div>}
           {pt && <div className="info-row"><Icon n="directions" size={18} className="flat-ico" /><a href={mapUrl} target="_blank">เปิดใน Google Maps</a></div>}
+          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><a href={`/map?focus=${p.id}`}>ดูบนแผนที่ในแอป</a></div>
         </div>
 
         {Object.keys(hours).length > 0 && (<>
