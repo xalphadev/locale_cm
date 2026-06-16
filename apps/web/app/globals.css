@@ -85,13 +85,17 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 
 /* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Inter+Noto) ============ */
 .merchant-root{
-  --m-bg:#F3F5F8; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
-  --m-accent:#1A73E8; --m-soft:#E8F0FE; --m-navy:#16284D; --m-gold:#F5B500;
-  --m-sh:0 4px 16px -8px rgba(16,20,12,.14); --m-shlg:0 16px 34px -16px rgba(16,20,12,.3);
-  font-family:'Inter','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
-  background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; letter-spacing:-.005em; min-height:100vh;
+  --m-bg:#F4F6FB; --m-surface:#fff; --m-text:#141A2E; --m-muted:#6B7385; --m-line:#ECEFF5; --m-sunk:#F1F4FA;
+  --m-accent:#2563EB; --m-accent-press:#1D4ED8; --m-soft:#E9F0FE; --m-navy:#1A2B52; --m-gold:#F5B500; --m-hint:#A6AEBE;
+  --r-card:20px; --r-md:16px; --r-sm:13px; --r-chip:999px;
+  /* soft, layered, diffuse shadows — the "airy" depth */
+  --m-sh:0 1px 2px rgba(20,26,46,.04), 0 10px 26px -14px rgba(20,26,46,.16);
+  --m-sh-soft:0 1px 2px rgba(20,26,46,.03), 0 6px 16px -10px rgba(20,26,46,.12);
+  --m-shlg:0 2px 6px rgba(20,26,46,.05), 0 26px 50px -22px rgba(20,26,46,.3);
+  font-family:'Plus Jakarta Sans','Anuphan',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; letter-spacing:-.012em; min-height:100vh;
 }
-.merchant-root :lang(th),.merchant-root [lang="th"]{line-height:1.55}
+.merchant-root :lang(th),.merchant-root [lang="th"]{font-family:'Anuphan','Plus Jakarta Sans',sans-serif;letter-spacing:0;line-height:1.55}
 .merchant-root .portal{min-height:100vh;background:var(--m-bg)}
 /* header band */
 .merchant-root .portal-top{background:linear-gradient(120deg,var(--m-accent),var(--m-navy));color:#fff;border:none;padding:18px 18px 20px;border-radius:0 0 22px 22px}
@@ -171,21 +175,27 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .geopick-row input{border:1.5px solid var(--m-line);border-radius:9px}
 
 /* ===== merchant portal: MOBILE APP SHELL (phone frame + bottom tab bar, responsive) ===== */
-.merchant-root{background:#E4E8EF}                       /* darker behind the shell so it pops on desktop */
-.mshell{max-width:480px;margin:0 auto;min-height:100vh;background:#F3F5F8;position:relative;padding-bottom:92px;box-shadow:0 0 60px rgba(0,0,0,.13);overflow-x:hidden}
-.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:linear-gradient(125deg,var(--m-accent),var(--m-navy));color:#fff;padding:16px 18px 18px;border-radius:0 0 22px 22px;box-shadow:0 8px 22px -12px rgba(16,40,77,.5)}
-.mtop-brand{font-size:.66rem;font-weight:800;letter-spacing:.09em;color:rgba(255,255,255,.78)}
-.mtop-shop{font-size:1.18rem;font-weight:800;margin-top:3px;letter-spacing:-.01em;line-height:1.2}
-.mtop-status{display:inline-block;margin-top:7px;font-size:.72rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border-radius:999px;padding:.18rem .62rem}
-.mtop-status.on{background:rgba(255,255,255,.24)}
-.mtop-out{flex:none;border:1px solid rgba(255,255,255,.42);background:rgba(255,255,255,.16);color:#fff;border-radius:999px;padding:.42rem .9rem;font:inherit;font-weight:800;font-size:.82rem;cursor:pointer}
+.merchant-root{background:#E7EBF3}                       /* soft tint behind the shell so it pops on desktop */
+.mshell{max-width:480px;margin:0 auto;min-height:100vh;background:var(--m-bg);position:relative;padding-bottom:100px;box-shadow:0 0 80px -20px rgba(20,26,46,.18);overflow-x:hidden}
+/* header — softer gradient, avatar, airy spacing */
+.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,#3B82F6 0%,var(--m-accent) 42%,var(--m-navy) 100%);color:#fff;padding:18px 18px 20px;border-radius:0 0 26px 26px;box-shadow:0 14px 30px -18px rgba(26,43,82,.7)}
+.mtop-ava{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.mtop-l{flex:1;min-width:0}
+.mtop-brand{font-size:.62rem;font-weight:800;letter-spacing:.12em;color:rgba(255,255,255,.7);text-transform:uppercase}
+.mtop-shop{font-size:1.22rem;font-weight:800;margin-top:2px;letter-spacing:-.02em;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtop-status{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.7rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border-radius:999px;padding:.2rem .64rem}
+.mtop-status.on{background:rgba(255,255,255,.22)}
+.mtop-out{flex:none;align-self:flex-start;border:1px solid rgba(255,255,255,.34);background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:.44rem .9rem;font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;backdrop-filter:blur(6px)}
 .mtop-out:active{transform:scale(.96)}
-.mbody{padding:1.1rem 1rem 1rem}
-.mbody h1{font-size:1.4rem;font-weight:800;margin:.2rem 0 .7rem;letter-spacing:-.02em}
-.mtab{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);width:calc(100% - 26px);max-width:454px;z-index:40;display:flex;background:var(--m-surface);border:1px solid var(--m-line);border-radius:20px;box-shadow:0 12px 34px -8px rgba(16,20,12,.26);padding:8px 4px}
-.mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--m-muted);font-size:.66rem;font-weight:700;padding:3px 2px;border-radius:13px;transition:transform .12s}
-.mtab-i:active{transform:scale(.92)}
-.mtab-i.on{color:var(--m-accent)}
+.mbody{padding:1.25rem 1.05rem 1rem}
+.mbody h1{font-size:1.5rem;font-weight:800;margin:.1rem 0 .7rem;letter-spacing:-.03em}
+/* bottom tabs — floating, soft, filled active pill */
+.mtab{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 28px);max-width:452px;z-index:40;display:flex;gap:2px;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(14px);border:1px solid rgba(236,239,245,.9);border-radius:22px;box-shadow:0 18px 40px -14px rgba(20,26,46,.32);padding:7px 6px}
+.mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--m-muted);font-size:.65rem;font-weight:700;padding:7px 2px 6px;border-radius:15px;transition:transform .12s,background .15s,color .15s}
+.mtab-i svg{transition:transform .15s}
+.mtab-i:active{transform:scale(.9)}
+.mtab-i.on{color:var(--m-accent);background:var(--m-soft)}
+.mtab-i.on svg{transform:translateY(-1px)}
 
 /* ===== merchant portal: LIST + ADD/EDIT split (thumbnails, rows, forms) ===== */
 .merchant-root .listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:.1rem 0 .5rem}
@@ -290,6 +300,40 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .dbtn.primary{background:var(--m-accent);color:#fff;border-color:var(--m-accent)}
 .merchant-root .dbtn.danger{color:#C0392B;border-color:#F2C9C4;box-shadow:none}
 .merchant-root .dbtn.sm{width:auto;padding:.55rem .9rem;font-size:.84rem;box-shadow:none;border-color:#BCD4F7;color:var(--m-accent)}
+
+/* ===== SOFT & AIRY refinements (bigger radii, airier spacing, borderless cards) ===== */
+.merchant-root .mbody h1,.merchant-root .listhead h1{letter-spacing:-.03em}
+.merchant-root .listhead{margin:.2rem 0 .9rem}
+.merchant-root .listhead h1{font-size:1.5rem}
+.merchant-root .listcount{background:var(--m-soft);color:var(--m-accent)}
+.merchant-root .addbtn{padding:.56rem 1rem .56rem .85rem;border-radius:var(--r-chip);box-shadow:0 8px 18px -8px var(--m-accent)}
+.merchant-root .addbtn:active{filter:brightness(.96)}
+/* cards: larger radius, soft shadow, hairline-light border */
+.merchant-root .mrow,.merchant-root .fsec,.merchant-root .info,.merchant-root .availcard,.merchant-root .pstat{border-radius:var(--r-card);border-color:var(--m-line);box-shadow:var(--m-sh)}
+.merchant-root .factitem,.merchant-root .dbtn,.merchant-root .filewrap{border-radius:var(--r-md)}
+.merchant-root .mlist{gap:11px}
+.merchant-root .mrow{gap:13px;padding:11px}
+.merchant-root .mrow-img{width:66px;height:66px;border-radius:14px}
+.merchant-root .mrow-nm{font-size:1rem}
+.merchant-root .dhero{border-radius:var(--r-card)}
+.merchant-root .rsec-ic,.merchant-root .pstat-ic,.merchant-root .fsec-ic,.merchant-root .factitem-ic{box-shadow:inset 0 0 0 1px rgba(37,99,235,.06)}
+.merchant-root .pstat .n{font-size:2.15rem;letter-spacing:-.02em}
+.merchant-root .btn:active,.merchant-root .dbtn:active,.merchant-root .fchip:active{transform:scale(.98)}
+
+/* ===== SEARCH + FILTER (instant client-side filtering on list pages) ===== */
+.merchant-root .lstools{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+.merchant-root .msearch{display:flex;align-items:center;gap:9px;background:var(--m-surface);border:1.5px solid var(--m-line);border-radius:var(--r-chip);padding:.6rem .95rem;box-shadow:var(--m-sh-soft);transition:border-color .15s,box-shadow .15s}
+.merchant-root .msearch:focus-within{border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-soft)}
+.merchant-root .msearch svg{color:var(--m-muted);flex:none}
+.merchant-root .msearch input{flex:1;min-width:0;border:none;outline:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text)}
+.merchant-root .msearch input::placeholder{color:var(--m-hint)}
+.merchant-root .msearch-x{flex:none;border:none;background:var(--m-sunk);color:var(--m-muted);width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:inherit}
+.merchant-root .fchips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:1px 2px}
+.merchant-root .fchips::-webkit-scrollbar{display:none}
+.merchant-root .fchip{flex:none;border:1.5px solid var(--m-line);background:var(--m-surface);color:var(--m-muted);font:inherit;font-weight:700;font-size:.82rem;border-radius:var(--r-chip);padding:.4rem .8rem;cursor:pointer;white-space:nowrap;transition:.12s;box-shadow:var(--m-sh-soft)}
+.merchant-root .fchip.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff;box-shadow:0 6px 14px -7px var(--m-accent)}
+.merchant-root .fcount{font-size:.62rem;font-weight:800;opacity:.7;margin-left:1px}
+.merchant-root .nomatch{text-align:center;color:var(--m-muted);font-size:.9rem;padding:2rem 1rem;background:var(--m-surface);border:1px dashed var(--m-line);border-radius:var(--r-card)}
 
 /* ===================================================================
    PLATFORM ADMIN CONSOLE — desktop staff back-office
