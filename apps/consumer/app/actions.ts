@@ -94,3 +94,15 @@ export async function stampCheckInAction(placeId: string, lng: number, lat: numb
   await q(`SELECT fn_shop_checkin($1,$2,$3,$4,'gps_dwell',NULL)`, [uid, placeId, lng, lat]);
   revalidatePath(`/place/${placeId}`); revalidatePath('/wallet');
 }
+
+/** Spend platform Sparks on a cosmetic from the Sparks store (floored, idempotent, non-transferable).
+ *  Stable idempotency key per (user,reward) so a double-tap can't double-charge a one-time cosmetic. */
+export async function spendSparksAction(rewardId: string) {
+  const uid = await demoUserId();
+  if (!uid) return;
+  const owned = await q(`SELECT 1 FROM user_cosmetics WHERE user_id=$1 AND reward_id=$2`, [uid, rewardId]);
+  if (owned.length) { revalidatePath('/sparks'); return; }                       // already owned
+  try { await q(`SELECT spend_sparks($1,$2,$3)`, [uid, rewardId, `cspark-${uid}-${rewardId}`]); }
+  catch { /* insufficient Sparks / out of stock — the UI already gates this; swallow for the demo */ }
+  revalidatePath('/sparks'); revalidatePath('/wallet');
+}

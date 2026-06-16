@@ -62,6 +62,12 @@ export default async function Wallet() {
           </div>
         </div>
 
+        <a className="sparkstore-cta" href="/sparks">
+          <Icon n="sparkles" size={16} style={{ verticalAlign: '-.18em' }} />
+          <span>ร้านค้า Sparks — เอาแต้มแอปแลกของแต่งโปรไฟล์</span>
+          <span className="cta-arrow">›</span>
+        </a>
+
         {stampCards.length > 0 && (
           <section>
             <h2 style={{ marginTop: 4 }}>สมุดแสตมป์ของฉัน</h2>

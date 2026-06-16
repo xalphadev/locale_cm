@@ -849,3 +849,22 @@ a.pcname{color:var(--text)}
 .pstamp-bal{font-weight:800;color:var(--accent)}
 .pstamp-checkin{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:800;font-size:.96rem;border-radius:13px;padding:.8rem;cursor:pointer}
 .pstamp-checkin:active{transform:scale(.99)}
+.pstamp-msg{margin-top:8px;text-align:center;font-size:.86rem;font-weight:700;border-radius:10px;padding:.5rem}
+.pstamp-msg.ok{background:#E4F6EC;color:#0F8E6F}
+.pstamp-msg.no{background:#FDECEC;color:#C0392B}
+/* Sparks store (platform-points sink) */
+.sparkstore-cta{display:flex;align-items:center;gap:9px;background:linear-gradient(120deg,#6C5CE7,#8A7BF0);color:#fff;border-radius:15px;padding:.85rem 1rem;font-weight:700;font-size:.9rem;box-shadow:0 12px 24px -14px #6C5CE7;margin-bottom:16px}
+.sparkstore-cta span{flex:1;min-width:0}
+.sparkstore-cta .cta-arrow{flex:none;font-size:1.3rem;opacity:.85}
+.sparkbal{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-weight:800;font-size:.92rem;color:#6C5CE7;background:#EFECFD;border-radius:999px;padding:.28rem .7rem}
+.cosgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.coscard{background:var(--surface);border:1px solid var(--hairline);border-radius:16px;box-shadow:var(--shadow-sm);padding:14px 12px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
+.coscard.owned{opacity:.7}
+.cosart{width:58px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#6C5CE7,#A29BFE);margin-bottom:4px}
+.cosnm{font-weight:700;font-size:.92rem;letter-spacing:-.01em;color:var(--text);line-height:1.25}
+.coscost{font-size:.8rem;font-weight:800;color:#6C5CE7;margin-bottom:6px}
+.cosbtn{display:inline-flex;align-items:center;justify-content:center;gap:5px;width:100%;border:none;background:#6C5CE7;color:#fff;font:inherit;font-weight:800;font-size:.86rem;border-radius:11px;padding:.5rem;cursor:pointer}
+.cosbtn:active{transform:scale(.97)}
+.cosbtn.owned{background:#E4F6EC;color:#0F8E6F;cursor:default}
+.cosbtn.off{background:var(--sunk);color:var(--muted);cursor:default}
+.coscard form{margin:0;width:100%}
