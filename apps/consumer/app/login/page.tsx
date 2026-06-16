@@ -1,5 +1,6 @@
 import { loginEmailAction } from '../auth/actions';
 import { OAuthButtons, AUTH_ERRORS } from '../auth/OAuthButtons';
+import { PasswordField } from '../auth/PasswordField';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,22 +8,28 @@ export default function Login({ searchParams }: { searchParams: { error?: string
   return (
     <div className="authpage">
       <div className="auth-card">
-        <a className="auth-back" href="/">←</a>
-        <div className="auth-brand">Locale</div>
-        <h1>เข้าสู่ระบบ</h1>
-        <p className="auth-sub">เข้าสู่ระบบเพื่อสะสมแต้มร้าน เก็บที่ชอบ และร่วมกิจกรรม</p>
+        <div className="auth-head">
+          <h1>เข้าสู่ระบบ</h1>
+          <p className="auth-sub">ยินดีต้อนรับกลับมา! เราคิดถึงคุณ</p>
+        </div>
         {searchParams.error && <div className="auth-err">{AUTH_ERRORS[searchParams.error] || 'เกิดข้อผิดพลาด'}</div>}
 
-        <OAuthButtons />
-
         <form className="auth-form" action={loginEmailAction}>
-          <input name="email" type="email" required placeholder="อีเมล" autoComplete="email" />
-          <input name="password" type="password" required placeholder="รหัสผ่าน" autoComplete="current-password" />
+          <div className="auth-field">
+            <label>อีเมล</label>
+            <input name="email" type="email" required placeholder="example@gmail.com" autoComplete="email" />
+          </div>
+          <div className="auth-field">
+            <label>รหัสผ่าน</label>
+            <PasswordField name="password" placeholder="••••••••" autoComplete="current-password" />
+            <a className="auth-forgot" href="#">ลืมรหัสผ่าน?</a>
+          </div>
           <button className="auth-submit" type="submit">เข้าสู่ระบบ</button>
         </form>
 
+        <OAuthButtons mode="signin" />
+
         <p className="auth-switch">ยังไม่มีบัญชี? <a href="/register">สมัครสมาชิก</a></p>
-        <p className="auth-skip"><a href="/">ข้ามไปก่อน — ดูแบบไม่ล็อกอิน</a></p>
       </div>
     </div>
   );
