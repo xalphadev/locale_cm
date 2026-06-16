@@ -26,12 +26,16 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
   ] },
 ];
 
-function FontHead() {
+function FontHead({ merchant }: { merchant?: boolean }) {
+  // Merchant portal uses Plus Jakarta Sans + Anuphan (modern, mobile-app feel); admin keeps Inter.
+  const href = merchant
+    ? 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Anuphan:wght@400;500;600;700&display=swap'
+    : 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap';
   return (
     <head>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+      <link href={href} rel="stylesheet" />
       <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     </head>
   );
@@ -43,7 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   if (path.startsWith('/merchant')) {
     return (
       <html lang="th">
-        <FontHead />
+        <FontHead merchant />
         <body className="merchant-root">{children}</body>
       </html>
     );

@@ -31,6 +31,8 @@ const G: Record<string, JSX.Element> = {
   bill: <><rect x="4" y="3" width="16" height="18" rx="1.5" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
   heart: <path d="M12 20s-7-4.6-7-9.6A3.9 3.9 0 0 1 12 7.7 3.9 3.9 0 0 1 19 10.4c0 5-7 9.6-7 9.6Z" />,
   chat: <path d="M21 11.5a7.5 7.5 0 0 1-11 6.6L4 20l1.9-5.5A7.5 7.5 0 1 1 21 11.5Z" />,
+  search: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
+  x: <path d="M18 6 6 18M6 6l12 12" />,
 };
 
 export function Icon({ n, size = 18, className, fill = 'none', style }: { n: string; size?: number; className?: string; fill?: string; style?: CSSProperties }) {

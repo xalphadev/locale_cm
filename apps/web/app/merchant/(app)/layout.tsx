@@ -35,6 +35,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   return (
     <div className="mshell">
       <header className="mtop">
+        <span className="mtop-ava">{(i18n(acc.place_name) || acc.display_name || 'ร').trim().charAt(0)}</span>
         <div className="mtop-l">
           <div className="mtop-brand">SOI HOP · ร้านค้า</div>
           <div className="mtop-shop">{i18n(acc.place_name) || acc.display_name}</div>
