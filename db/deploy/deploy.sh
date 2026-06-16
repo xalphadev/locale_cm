@@ -14,7 +14,12 @@ cd "$(cd "$(dirname "$0")/../.." && pwd)"   # repo root
 command -v docker >/dev/null || { echo "✗ docker not installed"; exit 1; }
 docker compose version >/dev/null 2>&1 || { echo "✗ docker compose plugin missing"; exit 1; }
 
-set -a; . ./.env.prod; set +a
+# Load .env.prod as LITERAL key=value (do NOT `source` it — values like the bcrypt basic-auth hash
+# contain `$...` which the shell would try to expand, breaking under `set -u`).
+while IFS='=' read -r k v; do
+  case "$k" in ''|'#'*) continue ;; esac
+  export "$k=$v"
+done < .env.prod
 : "${POSTGRES_PASSWORD:?}" "${MONEY_WRITER_PASSWORD:?}" "${APP_CONTENT_PASSWORD:?}" "${APP_CONSUMER_PASSWORD:?}"
 
 DC="docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml"
