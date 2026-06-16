@@ -1,0 +1,42 @@
+# Local Postgres + PostGIS via Docker — a real-PostGIS alternative to Supabase for dev.
+#
+# Unlike db/test/setup-dev-db.sh (which STUBS PostGIS on a homebrew Postgres), this runs the
+# migrations VERBATIM against a real PostGIS extension — so the geofence functions
+# (fn_shop_checkin / ST_DWithin) actually work, and you can test the real consumer check-in loop.
+#
+#   docker compose up -d        # start; the FIRST start applies all db/migrations/*.sql (real PostGIS)
+#   docker compose logs -f db   # watch the migration apply
+#   docker compose down         # stop, keep data in the named volume
+#   docker compose down -v      # stop + WIPE data (fresh DB + re-run migrations on next `up`)
+#
+# Apps use the unchanged URL:  postgres://postgres@127.0.0.1:54400/soihop
+# If the homebrew dev DB is on 54400, stop it first:  db/test/stop-dev-db.sh
+#
+# Seeding (after first `up`):  the demo shops/data are seeded from the host —
+#   cd apps/web && DATABASE_URL=postgres://postgres@127.0.0.1:54400/soihop node ../../db/test/seed-shops.mjs
+# (init applies the SCHEMA only; node-based seeds can't run inside the container.)
+#
+# NOTE: initdb scripts run only when the data volume is EMPTY. After adding a NEW migration, either
+# `docker compose down -v` for a clean rebuild, or apply just the new file by hand with psql.
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: soihop-db
+    environment:
+      POSTGRES_DB: soihop
+      POSTGRES_HOST_AUTH_METHOD: trust   # passwordless local connections (matches the app DATABASE_URL)
+    ports:
+      - "54400:5432"
+    volumes:
+      - soihop_pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/migrations:ro
+      - ./db/docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d soihop"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  soihop_pgdata:
