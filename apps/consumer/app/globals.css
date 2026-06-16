@@ -828,3 +828,24 @@ a.pcname{color:var(--text)}
 .lb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);border:none;padding:0;cursor:pointer;transition:width .2s ease}
 .lb-dot.on{background:#fff;width:20px;border-radius:3.5px}
 @media (prefers-reduced-motion: reduce){.gal-track,.lb,.lb-img,.gal-dot,.lb-dot{transition:none;animation:none}}
+
+/* ── loyalty: my shop stamp cards (wallet) + place-page check-in (0023) ── */
+.stampcard{background:var(--surface);border:1px solid var(--hairline);border-radius:16px;box-shadow:var(--shadow-sm);padding:13px 14px;margin-bottom:11px}
+.stampcard-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stampcard-nm{font-weight:800;font-size:1rem;letter-spacing:-.01em;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stampcard-bal{flex:none;font-weight:800;font-size:.92rem;color:var(--accent)}
+.stampbar{height:8px;border-radius:999px;background:var(--sunk);overflow:hidden;margin:9px 0 6px}
+.stampbar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),#5AA0F5)}
+.stampcard-next{font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.stampcard form{margin:0}
+.stampredeem{display:block;width:100%;text-align:center;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:800;font-size:.9rem;border-radius:12px;padding:.7rem;cursor:pointer;margin-top:7px;transition:transform .12s}
+.stampredeem:active{transform:scale(.98)}
+.stampredeem.pending{background:#E4F6EC;color:#0F8E6F;display:flex;align-items:center;justify-content:center;gap:6px;cursor:default}
+/* place-page stamp card */
+.pstamp{background:var(--surface);border:1px solid var(--hairline);border-radius:18px;box-shadow:var(--shadow-sm);padding:14px;margin:6px 0 4px}
+.pstamp-h{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;margin-bottom:4px}
+.pstamp-h .pstamp-ic{display:inline-flex;color:var(--gold)}
+.pstamp-sub{font-size:.86rem;color:var(--muted);margin-bottom:10px}
+.pstamp-bal{font-weight:800;color:var(--accent)}
+.pstamp-checkin{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;border:none;background:var(--accent);color:#fff;font:inherit;font-weight:800;font-size:.96rem;border-radius:13px;padding:.8rem;cursor:pointer}
+.pstamp-checkin:active{transform:scale(.99)}

@@ -1,10 +1,12 @@
-import { q, demoUserId, coins } from '@/lib/db';
+import { q, demoUserId, coins, i18n } from '@/lib/db';
 import { Icon } from '../icons';
+import { redeemStampRewardAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Wallet() {
   let sparks = 0, coinMinor = 0, expiry: string | null = null, readyReward = false;
+  let stampCards: any[] = [];
   let down = false;
   try {
     const uid = await demoUserId();
@@ -17,6 +19,26 @@ export default async function Wallet() {
       coinMinor = c ? Number(c.m) : 0; expiry = c?.exp ?? null;
       const [rr] = await q<any>(`SELECT 1 FROM quest_progress WHERE user_id=$1 AND status='completed' LIMIT 1`, [uid]);
       readyReward = !!rr;
+
+      // my shop stamp cards (per brand) + each brand's rewards + which are waiting at the counter
+      const cards = await q<any>(
+        `SELECT sb.brand_id, sb.balance, b.name_i18n brand_name, sp.points_name_i18n
+           FROM stamp_balances sb
+           JOIN brands b ON b.id = sb.brand_id
+           JOIN stamp_programs sp ON sp.brand_id = sb.brand_id AND sp.status='active'
+          WHERE sb.user_id=$1 AND sb.balance > 0 ORDER BY sb.updated_at DESC`, [uid]);
+      if (cards.length) {
+        const ids = cards.map((c: any) => c.brand_id);
+        const rewards = await q<any>(
+          `SELECT id, brand_id, title_i18n, cost_stamps FROM stamp_rewards
+            WHERE brand_id = ANY($1) AND status='active' ORDER BY cost_stamps`, [ids]);
+        const pend = await q<any>(`SELECT reward_id FROM shop_redemptions WHERE user_id=$1 AND status='pending'`, [uid]);
+        const pset = new Set(pend.map((p: any) => p.reward_id));
+        stampCards = cards.map((c: any) => ({
+          ...c,
+          rewards: rewards.filter((r: any) => r.brand_id === c.brand_id).map((r: any) => ({ ...r, pending: pset.has(r.id) })),
+        }));
+      }
     }
   } catch { down = true; }
 
@@ -39,6 +61,36 @@ export default async function Wallet() {
             <div className="note">แลกของจริงที่ร้าน · ถอนเป็นเงินสดไม่ได้{expiry ? ` · หมดอายุ ${expiry}` : ''}</div>
           </div>
         </div>
+
+        {stampCards.length > 0 && (
+          <section>
+            <h2 style={{ marginTop: 4 }}>สมุดแสตมป์ของฉัน</h2>
+            {stampCards.map((c: any) => {
+              const pn = i18n(c.points_name_i18n) || 'แต้ม';
+              const next = c.rewards.find((r: any) => r.cost_stamps > c.balance);
+              const target = (next ? next.cost_stamps : (c.rewards.length ? c.rewards[c.rewards.length - 1].cost_stamps : c.balance)) || 1;
+              const pct = Math.min(100, Math.round((c.balance / target) * 100));
+              const ready = c.rewards.filter((r: any) => r.cost_stamps <= c.balance);
+              return (
+                <div className="stampcard" key={c.brand_id}>
+                  <div className="stampcard-h">
+                    <span className="stampcard-nm">{i18n(c.brand_name)}</span>
+                    <span className="stampcard-bal">{c.balance} {pn}</span>
+                  </div>
+                  <div className="stampbar"><span style={{ width: `${pct}%` }} /></div>
+                  {next && <div className="stampcard-next">อีก {next.cost_stamps - c.balance} {pn} → {i18n(next.title_i18n)}</div>}
+                  {ready.map((r: any) => r.pending ? (
+                    <div className="stampredeem pending" key={r.id}><Icon n="check" size={14} /> รอพนักงานยืนยัน — โชว์หน้านี้ที่เคาน์เตอร์</div>
+                  ) : (
+                    <form action={redeemStampRewardAction.bind(null, r.id)} key={r.id}>
+                      <button className="stampredeem" type="submit">แลก {i18n(r.title_i18n)} · ใช้ {r.cost_stamps} {pn}</button>
+                    </form>
+                  ))}
+                </div>
+              );
+            })}
+          </section>
+        )}
 
         <div className="shield">
           <Icon n="check" size={18} />

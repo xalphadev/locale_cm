@@ -61,3 +61,36 @@ export async function redeemAction() {
   });
   revalidatePath('/passport'); revalidatePath('/wallet');
 }
+
+// ── Stamps (per-shop loyalty, 0023). Non-money; in-kind redemption confirmed by the shop. ──
+
+/** Redeem a shop reward with the brand's Stamps → create a PENDING redemption (single-use nonce)
+ *  that the shop confirms at the counter (/merchant/loyalty/redeem → fn_redeem_stamps). The customer
+ *  shows the code; the merchant-initiated confirm is what burns the stamps (no static customer QR). */
+export async function redeemStampRewardAction(rewardId: string) {
+  const uid = await demoUserId();
+  if (!uid) return;
+  const [rw] = await q<any>(
+    `SELECT id, brand_id, city_id, cost_stamps FROM stamp_rewards WHERE id=$1 AND status='active'`, [rewardId]);
+  if (!rw) return;
+  const [bal] = await q<any>(`SELECT balance FROM stamp_balances WHERE user_id=$1 AND brand_id=$2`, [uid, rw.brand_id]);
+  if (!bal || Number(bal.balance) < rw.cost_stamps) return;                       // not enough stamps
+  const [pend] = await q<any>(
+    `SELECT id FROM shop_redemptions WHERE user_id=$1 AND reward_id=$2 AND status='pending'`, [uid, rewardId]);
+  if (pend) { revalidatePath('/wallet'); return; }                                // already waiting at counter
+  const [pl] = await q<any>(`SELECT id FROM places WHERE brand_id=$1 LIMIT 1`, [rw.brand_id]);
+  await q(
+    `INSERT INTO shop_redemptions(user_id,brand_id,place_id,city_id,reward_id,cost_stamps,nonce,valid_until,idempotency_key)
+     VALUES($1,$2,$3,$4,$5,$6, gen_random_uuid()::text, now() + interval '15 minutes', $7)`,
+    [uid, rw.brand_id, pl?.id ?? null, rw.city_id, rewardId, rw.cost_stamps, `cstamp-${uid}-${rewardId}-${Date.now()}`]);
+  revalidatePath('/wallet');
+}
+
+/** Check in at a place to earn the brand's Stamp + platform Sparks (server-authoritative geofence).
+ *  Calls fn_shop_checkin (PostGIS ST_DWithin) — runs on a real PostGIS DB; the local stub can't. */
+export async function stampCheckInAction(placeId: string, lng: number, lat: number) {
+  const uid = await demoUserId();
+  if (!uid) return;
+  await q(`SELECT fn_shop_checkin($1,$2,$3,$4,'gps_dwell',NULL)`, [uid, placeId, lng, lat]);
+  revalidatePath(`/place/${placeId}`); revalidatePath('/wallet');
+}
