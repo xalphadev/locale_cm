@@ -33,7 +33,11 @@ for i in $(seq 1 30); do docker exec locale-db pg_isready -U postgres -d locale 
 docker exec locale-db pg_isready -U postgres -d locale
 
 echo "── 3/8  apply migrations (real PostGIS, verbatim) ──"
-for f in db/migrations/0*.sql; do printf '   %s\n' "$(basename "$f")"; psql_c < "$f"; done
+if psql_c -tAc "SELECT to_regclass('public.platform_config') IS NOT NULL" | grep -qx t; then
+  echo "   schema already present — skipping migration apply (CREATE TYPE etc. are not idempotent)"
+else
+  for f in db/migrations/0*.sql; do printf '   %s\n' "$(basename "$f")"; psql_c < "$f"; done
+fi
 
 echo "── 4/8  provision money_writer LOGIN (the money-plane api) ──"
 psql_c -c "ALTER ROLE money_writer WITH LOGIN PASSWORD '${MONEY_WRITER_PASSWORD}';"
