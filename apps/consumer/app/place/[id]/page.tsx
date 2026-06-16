@@ -2,9 +2,12 @@ import { q, i18n, cover, DEMO_USER } from '@/lib/db';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
-import { ProductCard } from '../../ProductCard';
+import { ProductCard, lineHref } from '../../ProductCard';
 import { RoomCard } from '../../RoomCard';
-import { HeroZoom } from '../../Lightbox';
+import { HeroZoom, HeroThumbs } from '../../Lightbox';
+import ShareButton from '../../ShareButton';
+import { ReviewList } from './ReviewList';
+import CheckInButton from './CheckInButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,12 +27,12 @@ function parsePoint(geo: string | null) {
 }
 
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = [];
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null;
   try {
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
-              p.offers_stay, p.stay_kind,
+              p.offers_stay, p.stay_kind, p.brand_id,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -38,11 +41,20 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
     if (p) {
       events = await q<any>(`SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m FROM events WHERE place_id=$1 AND status='published' ORDER BY starts_at`, [params.id]);
       quests = await q<any>(`SELECT DISTINCT q.id, q.title_i18n FROM quest_steps qs JOIN quests q ON q.id=qs.quest_id WHERE qs.place_id=$1 AND q.status IN ('active','draft')`, [params.id]);
+      if (p.brand_id) {
+        const [sprog] = await q<any>(`SELECT points_name_i18n FROM stamp_programs WHERE brand_id=$1 AND status='active'`, [p.brand_id]);
+        if (sprog) {
+          const [bal] = await q<any>(`SELECT balance FROM stamp_balances WHERE user_id=$1 AND brand_id=$2`, [DEMO_USER, p.brand_id]);
+          const srew = await q<any>(`SELECT title_i18n, cost_stamps FROM stamp_rewards WHERE brand_id=$1 AND status='active' ORDER BY cost_stamps LIMIT 3`, [p.brand_id]);
+          stamp = { pointsName: i18n(sprog.points_name_i18n) || 'แต้ม', balance: bal ? Number(bal.balance) : 0, rewards: srew };
+        }
+      }
       [rev] = await q<any>(`SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [params.id]);
       reviews = await q<any>(`SELECT r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 10`, [params.id]);
       dist = await q<any>(`SELECT rating, count(*)::int c FROM reviews WHERE place_id=$1 AND moderation_status='approved' GROUP BY rating`, [params.id]);
       const [vid] = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='video' AND moderation_status='approved' LIMIT 1`, [params.id]);
       videoUrl = vid?.storage_path ?? null;
+      mediaImgs = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='image' AND moderation_status='approved' LIMIT 12`, [params.id]);
       deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
       products = await q<any>(`SELECT id, name_i18n, subtype, price_minor, price_unit, price_text_i18n, image_urls, in_season, available_today, sold_out
         FROM shop_products WHERE place_id=$1 AND status='published' ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
@@ -72,6 +84,22 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   const total = (rev?.n ?? 0) || 1;
   const mapUrl = pt ? `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}` : '#';
 
+  // aggregate every photo we have for this place → hero zoom + thumbnail strip
+  const galleryImages: string[] = Array.from(new Set([
+    cover(p.id, p.subcategory, p.category, 1280, 860),
+    ...mediaImgs.map((m) => m.storage_path),
+    ...products.flatMap((pr) => pr.image_urls || []),
+    ...units.flatMap((u) => u.image_urls || []),
+  ].filter(Boolean)));
+
+  // sticky-bar primary CTA: LINE → call → directions (Soi Hop has no in-app booking)
+  const line = lineHref(p.line_id);
+  const primary = line
+    ? { kind: 'line' as const, href: line, label: 'ทักทาง LINE', icon: 'chat' as const, ext: true }
+    : p.phone
+      ? { kind: 'phone' as const, href: `tel:${p.phone}`, label: 'โทรหาร้าน', icon: 'phone' as const, ext: false }
+      : { kind: 'directions' as const, href: mapUrl, label: 'ดูเส้นทาง', icon: 'directions' as const, ext: true };
+
   return (
     <>
       <div className="detail-hero">
@@ -80,11 +108,14 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           : <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />}
         {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
         <div className="scrim" />
-        {!videoUrl && <HeroZoom images={[cover(p.id, p.subcategory, p.category, 1280, 860)]} />}
+        {!videoUrl && <HeroZoom images={galleryImages} />}
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
-        <form action={toggleSaveAction.bind(null, p.id)} style={{ position: 'absolute', top: 16, right: 16, zIndex: 3 }}>
-          <button className={`bm ${p.saved ? 'on' : ''}`} type="submit"><Icon n="bookmark" size={18} fill={p.saved ? 'currentColor' : 'none'} /></button>
-        </form>
+        <div className="dhero-fabs">
+          <form action={toggleSaveAction.bind(null, p.id)}>
+            <button className={`bm ${p.saved ? 'on' : ''}`} type="submit"><Icon n="bookmark" size={18} fill={p.saved ? 'currentColor' : 'none'} /></button>
+          </form>
+          <ShareButton href={`/place/${p.id}`} title={i18n(p.name_i18n)} variant="icon" />
+        </div>
         <div className="dtitle">
           <span className="frost" style={{ marginBottom: 8 }}><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={13} /> {catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</span>
           <h1>{i18n(p.name_i18n)}</h1>
@@ -94,12 +125,17 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         </div>
       </div>
 
+      <HeroThumbs images={galleryImages} />
+
       <div className="dbody">
-        <div className="dactions">
-          <a className="dact" href={mapUrl} target="_blank"><Icon n="directions" size={22} />เส้นทาง</a>
-          <span className="dact"><Icon n="bookmark" size={22} />บันทึก</span>
-          {p.phone ? <a className="dact" href={`tel:${p.phone}`}><Icon n="phone" size={22} />โทร</a> : <span className="dact" style={{ opacity: .5 }}><Icon n="phone" size={22} />โทร</span>}
-        </div>
+
+        {stamp && (
+          <section className="pstamp">
+            <div className="pstamp-h"><span className="pstamp-ic"><Icon n="sparkles" size={17} /></span> สะสม{stamp.pointsName}ที่ร้านนี้</div>
+            <div className="pstamp-sub">คุณมี <span className="pstamp-bal">{stamp.balance} {stamp.pointsName}</span>{stamp.rewards[0] ? ` · ครบ ${stamp.rewards[0].cost_stamps} แลก${i18n(stamp.rewards[0].title_i18n)}` : ''} — ดูบัตรทั้งหมดในกระเป๋า</div>
+            <CheckInButton placeId={p.id} pointsName={stamp.pointsName} />
+          </section>
+        )}
 
         {p.fresh && (
           <div className="trust">
@@ -211,17 +247,18 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           ) : (
             <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
           )}
-          {reviews.map((r, i) => (
-            <div className="review" key={i}>
-              <div className="review-top">
-                <span className="rname"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="review-name">{r.display_name || 'ผู้ใช้'}</span></span>
-                <span className="stars">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={13} />)}</span>
-              </div>
-              <div className="review-body">{i18n(r.body_i18n)}</div>
-              <div className="review-date">{r.d}</div>
-            </div>
-          ))}
+          <ReviewList reviews={reviews.map((r) => ({ rating: r.rating, body: i18n(r.body_i18n), name: r.display_name, d: r.d }))} />
         </>)}
+      </div>
+
+      <div className="detailbar">
+        <div className="db-ics">
+          {primary.kind !== 'directions' && <a className="db-ic" href={mapUrl} target="_blank" rel="noopener" aria-label="เส้นทาง"><Icon n="directions" size={22} /></a>}
+          {line && p.phone && <a className="db-ic" href={`tel:${p.phone}`} aria-label="โทร"><Icon n="phone" size={22} /></a>}
+        </div>
+        <a className={`db-primary ${primary.kind === 'line' ? 'line' : ''}`} href={primary.href} {...(primary.ext ? { target: '_blank', rel: 'noopener' } : {})}>
+          <Icon n={primary.icon} size={18} /> {primary.label}
+        </a>
       </div>
     </>
   );

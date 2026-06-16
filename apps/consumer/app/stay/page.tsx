@@ -49,7 +49,9 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
               su.available_units, su.available_from, su.daily_status, su.availability_updated_at,
               su.capacity, su.deposit_minor, su.min_stay, su.furnished,
               p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo, d.name_i18n district_name,
-              EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$${sIdx}) saved
+              EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$${sIdx}) saved,
+              (SELECT round(avg(rv.rating),1) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating,
+              (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating_n
          FROM stay_units su JOIN places p ON p.id=su.place_id LEFT JOIN districts d ON d.id=p.district_id
         WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 60`, params);
   } catch { /* db down */ }
@@ -65,6 +67,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         id: r.place_id, name: i18n(r.shop_name), district: i18n(r.district_name), kind: r.stay_kind,
         period: r.price_period, units: 0, vac: 0, priceMin: null as number | null, priceMax: null as number | null,
         saved: !!r.saved, img: roomImg(r), lat: pt?.lat ?? null, lng: pt?.lng ?? null,
+        rating: r.rating, ratingN: Number(r.rating_n ?? 0),
       };
       order.push(r.place_id);
     }

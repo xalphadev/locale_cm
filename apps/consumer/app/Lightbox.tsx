@@ -150,3 +150,27 @@ export function HeroZoom({ images }: { images: string[] }) {
     </>
   );
 }
+
+/** Thumbnail strip under the hero (booking-app style) — tap a thumb to open the zoom viewer at that index.
+ *  Last visible tile shows a "+N" overlay when there are more photos than fit. */
+export function HeroThumbs({ images, max = 5 }: { images: string[]; max?: number }) {
+  const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+  if (!images || images.length < 2) return null;
+  const shown = images.slice(0, max);
+  const extra = images.length - shown.length;
+  return (
+    <>
+      <div className="hthumbs">
+        {shown.map((src, i) => (
+          <button className="hthumb" key={i} onClick={() => { setIndex(() => i); setOpen(true); }} aria-label={`รูปที่ ${i + 1}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="" loading="lazy" draggable={false} />
+            {i === max - 1 && extra > 0 && <span className="hthumb-more">+{extra}</span>}
+          </button>
+        ))}
+      </div>
+      {open && <LightboxOverlay images={images} index={index} setIndex={setIndex} onClose={() => setOpen(false)} />}
+    </>
+  );
+}

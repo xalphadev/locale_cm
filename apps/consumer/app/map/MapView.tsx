@@ -28,6 +28,7 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
   const cardById = useRef<Record<string, HTMLAnchorElement | null>>({});
   const focused = useRef(false);
   const [cat, setCat] = useState('');
+  const [qtext, setQtext] = useState('');
   const [sel, setSel] = useState<string | null>(null);
   const [me, setMe] = useState<[number, number] | null>(null);
   const [ready, setReady] = useState(false);
@@ -56,8 +57,10 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
     return () => { dead = true; if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, []);
 
+  const ql = qtext.trim().toLowerCase();
   const shown = places
     .filter((p) => !cat || p.category === cat)
+    .filter((p) => !ql || p.name.toLowerCase().includes(ql))
     .map((p) => ({ ...p, km: me ? haversine(me, [p.lat, p.lng]) : null }))
     .sort((a, b) => (me ? (a.km! - b.km!) : ((b.rev_n - a.rev_n) || (Number(b.rev_avg) - Number(a.rev_avg)))));
 
@@ -68,12 +71,18 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
     shown.forEach((p) => {
       const c = COLORS[p.category] || '#6B6862';
       const on = p.id === sel;
-      const icon = L.divIcon({ className: 'pin-wrap', html: `<span class="pin${on ? ' on' : ''}" style="--c:${c}"></span>`, iconSize: [26, 34], iconAnchor: [13, 32] });
+      const img = cover(p.id, p.subcategory, p.category, 80, 80);
+      const kmText = p.km == null ? '' : p.km < 1 ? `${Math.round(p.km * 1000)} ม.` : `${p.km.toFixed(1)} กม.`;
+      const icon = L.divIcon({
+        className: 'pinx-wrap',
+        html: `<span class="pinx${on ? ' on' : ''}" style="--c:${c}"><span class="pinx-ph" style="background-image:url('${img}')"></span>${kmText ? `<span class="pinx-km">${kmText}</span>` : ''}</span>`,
+        iconSize: [56, 70], iconAnchor: [28, 47],
+      });
       const mk = L.marker([p.lat, p.lng], { icon, zIndexOffset: on ? 1000 : 0 });
       mk.on('click', () => select(p.id, true));
       grp.addLayer(mk);
     });
-  }, [ready, cat, sel, me]);
+  }, [ready, cat, sel, me, qtext]);
 
   // deep-link focus (from /map?focus=id)
   useEffect(() => {
@@ -104,7 +113,14 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
       <div ref={hostRef} className="leaflet-host" />
 
       <div className="map-top">
-        <a className="map-back" href="/"><Icon n="back" size={18} /></a>
+        <div className="map-searchrow">
+          <a className="map-back" href="/"><Icon n="back" size={18} /></a>
+          <div className="map-search">
+            <Icon n="search" size={17} />
+            <input value={qtext} onChange={(e) => { setQtext(e.target.value); setSel(null); }} placeholder="ค้นหาร้าน / สถานที่" inputMode="search" aria-label="ค้นหาร้าน / สถานที่" />
+            {qtext && <button type="button" className="map-search-x" onClick={() => setQtext('')} aria-label="ล้างคำค้น"><Icon n="x" size={14} /></button>}
+          </div>
+        </div>
         <div className="map-filters">
           {FILTERS.map((f) => (
             <button key={f.k} className={`fpill ${cat === f.k ? 'on' : ''}`} onClick={() => { setCat(f.k); setSel(null); }}>{f.l}</button>
