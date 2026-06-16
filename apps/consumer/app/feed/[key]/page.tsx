@@ -33,7 +33,7 @@ async function loadOne(kind: string, id: string): Promise<any | null> {
   }
   if (kind === 'post') {
     const [r] = await q<any>(`SELECT 'post' kind, fp.id pgid, fp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
-        fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id WHERE fp.id=$1 AND fp.status='published'`, [id]);
+        fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id WHERE fp.id=$1 AND fp.status='published' AND p.status='published' AND p.is_visible`, [id]);
     return r ?? null;
   }
   if (kind === 'product') {

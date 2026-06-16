@@ -27,7 +27,7 @@ export default async function Dashboard() {
         <a className="pstat" href="/merchant/post"><span className="pstat-ic"><Icon n="feed" size={18} /></span><div className="n">{stats?.posts ?? 0}</div><div className="l">โพสต์ในฟีด</div></a>
       </div>
       <div className="pquick">
-        <a className="btn btn-primary" href="/merchant/post"><Icon n="feed" size={17} /> โพสต์ลงฟีด</a>
+        <a className="btn btn-primary" href="/merchant/post/new"><Icon n="feed" size={17} /> โพสต์ลงฟีด</a>
         {sells && <a className="btn" href="/merchant/products/new"><Icon n="plus" size={17} /> เพิ่มสินค้า</a>}
         {stay && <a className="btn" href="/merchant/rooms/new"><Icon n="plus" size={17} /> เพิ่มห้องพัก</a>}
         <a className="btn" href="/merchant/shop"><Icon n="store" size={17} /> แก้ข้อมูลร้าน</a>

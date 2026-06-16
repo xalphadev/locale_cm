@@ -9,6 +9,7 @@ import crypto from 'crypto';
 export const UPLOAD_DIR = path.join(process.cwd(), '.uploads');
 const PUBLIC_BASE = process.env.WEB_PUBLIC_BASE || 'http://127.0.0.1:3002';
 const MAX_BYTES = 6 * 1024 * 1024;
+export const MAX_UPLOADS = 8; // saveUploads persists at most this many per call
 const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
 
 /** Persist one uploaded image; returns its public URL, or null if it's empty / not an allowed image / too big. */
@@ -25,7 +26,7 @@ export async function saveUpload(file: File): Promise<string | null> {
 /** Persist up to 8 uploaded images; returns the public URLs of the ones that saved. */
 export async function saveUploads(files: File[]): Promise<string[]> {
   const out: string[] = [];
-  for (const f of files.slice(0, 8)) {
+  for (const f of files.slice(0, MAX_UPLOADS)) {
     const url = await saveUpload(f);
     if (url) out.push(url);
   }

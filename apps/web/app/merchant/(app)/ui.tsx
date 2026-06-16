@@ -29,6 +29,8 @@ const G: Record<string, JSX.Element> = {
   ext: <><path d="M14 4h6v6M20 4l-9 9" /><path d="M19 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h6" /></>,
   spark: <path d="M12 3l1.8 4.7L18.5 9l-4.7 1.3L12 15l-1.8-4.7L5.5 9l4.7-1.3z" />,
   bill: <><rect x="4" y="3" width="16" height="18" rx="1.5" /><path d="M8 8h8M8 12h8M8 16h5" /></>,
+  heart: <path d="M12 20s-7-4.6-7-9.6A3.9 3.9 0 0 1 12 7.7 3.9 3.9 0 0 1 19 10.4c0 5-7 9.6-7 9.6Z" />,
+  chat: <path d="M21 11.5a7.5 7.5 0 0 1-11 6.6L4 20l1.9-5.5A7.5 7.5 0 1 1 21 11.5Z" />,
 };
 
 export function Icon({ n, size = 18, className, fill = 'none', style }: { n: string; size?: number; className?: string; fill?: string; style?: CSSProperties }) {
@@ -42,7 +44,7 @@ export function Icon({ n, size = 18, className, fill = 'none', style }: { n: str
 export const isUuid = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s || '');
 
 /** Uploaded image[0] when present, else a branded placeholder tile with a category glyph. */
-export function Thumb({ images, kind, alt = '' }: { images?: string[] | null; kind: 'product' | 'room'; alt?: string }) {
+export function Thumb({ images, kind, alt = '' }: { images?: string[] | null; kind: 'product' | 'room' | 'post'; alt?: string }) {
   if (images && images.length) return <img src={images[0]} alt={alt} loading="lazy" />;
-  return <span className="ph"><Icon n={kind === 'room' ? 'bed' : 'box'} size={26} /></span>;
+  return <span className="ph"><Icon n={kind === 'room' ? 'bed' : kind === 'post' ? 'feed' : 'box'} size={26} /></span>;
 }

@@ -1,26 +1,52 @@
-import { Icon } from '../ui';
-import { createMerchantPostAction } from '../../actions';
+import { redirect } from 'next/navigation';
+import { currentAccount } from '@/lib/auth';
+import { q, i18n } from '@/lib/db';
+import { Icon, Thumb } from '../ui';
 
 export const dynamic = 'force-dynamic';
+const fmtDate = (ts: any) => new Date(ts).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+const preview = (s: string, n = 90) => { const t = (s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n).trimEnd() + '…' : t; };
 
-export default function Post({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
+export default async function Posts({ searchParams }: { searchParams: { ok?: string } }) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const rows = await q<any>(
+    `SELECT fp.id, fp.body_i18n, fp.image_urls, fp.status, fp.created_at,
+            (SELECT count(*) FROM post_likes    WHERE post_key = 'post:' || fp.id)::int likes,
+            (SELECT count(*) FROM post_comments WHERE post_key = 'post:' || fp.id)::int comments
+       FROM feed_posts fp WHERE fp.place_id=$1 ORDER BY fp.created_at DESC`, [acc.place_id]);
   return (
     <>
-      <h1 className="phead"><span className="phead-ic"><Icon n="feed" size={18} /></span> โพสต์ลงฟีด</h1>
+      <div className="listhead">
+        <h1>โพสต์ <span className="listcount">{rows.length}</span></h1>
+        <a className="addbtn" href="/merchant/post/new"><Icon n="plus" size={17} /> เขียนโพสต์</a>
+      </div>
+      {searchParams?.ok === '1' && <div className="banner-ok">✓ โพสต์แล้ว — ลูกค้าเห็นในแท็บ “อัปเดต”</div>}
+      {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
+      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบโพสต์แล้ว</div>}
       <p className="note">โพสต์ข่าวสาร/โปรของร้านลงฟีดลูกค้า — กดถูกใจและคอมเมนต์ได้ทันที</p>
-      {searchParams?.ok && <div className="banner-ok">✓ โพสต์แล้ว — ไปดูในแอปลูกค้าแท็บ “อัปเดต”</div>}
-      {searchParams?.error === 'body' && <div className="banner-err">กรุณาพิมพ์ข้อความโพสต์</div>}
-      <form className="form" action={createMerchantPostAction}>
-        <div className="field"><label>ข้อความ *</label>
-          <textarea name="body" required style={{ minHeight: 90 }} placeholder="เช่น เมล็ดกาแฟล็อตใหม่มาแล้ว! วันนี้ดริปให้ลองฟรี" /></div>
-        <div className="grid2">
-          <div className="field"><label>จำนวนรูป (ไม่ใส่ลิงก์ = ใช้รูปตัวอย่าง)</label>
-            <select name="image_count" defaultValue="1"><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+
+      {rows.length === 0 ? (
+        <div className="mempty">
+          <span className="mempty-ic"><Icon n="feed" size={30} /></span>
+          <p>ยังไม่มีโพสต์ — เขียนโพสต์แรกเพื่อบอกข่าวสาร/โปรโมชันให้ลูกค้า</p>
+          <a className="btn btn-primary" href="/merchant/post/new">+ เขียนโพสต์แรก</a>
         </div>
-        <div className="field"><label>อัปโหลดรูป (เลือกได้หลายรูป)</label><input type="file" name="photos" accept="image/*" multiple /></div>
-        <div className="field"><label>หรือวางลิงก์รูป (ทีละบรรทัด)</label><textarea name="image_urls" style={{ minHeight: 44 }} placeholder="https://...jpg" /></div>
-        <button className="btn btn-primary" type="submit">โพสต์เลย →</button>
-      </form>
+      ) : (
+        <div className="mlist">
+          {rows.map((r) => (
+            <a className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/post/${r.id}`} key={r.id}>
+              <span className="mrow-img"><Thumb images={r.image_urls} kind="post" /></span>
+              <span className="mrow-body">
+                <span className="mrow-nm post">{preview(i18n(r.body_i18n))}</span>
+                <span className="mrow-meta">{fmtDate(r.created_at)} · <Icon n="heart" size={12} className="mi" /> {r.likes} · <Icon n="chat" size={12} className="mi" /> {r.comments}</span>
+                {r.status === 'hidden' && <span className="mrow-tags"><span className="t off">ซ่อนอยู่</span></span>}
+              </span>
+              <Icon n="chevR" size={20} className="mrow-go" />
+            </a>
+          ))}
+        </div>
+      )}
     </>
   );
 }

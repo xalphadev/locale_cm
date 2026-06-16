@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { q, withTx, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 import { hashPassword, verifyPassword, setSession, clearSession, currentAccount } from '@/lib/auth';
-import { saveUploads } from '@/lib/storage';
+import { saveUploads, MAX_UPLOADS } from '@/lib/storage';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: 98.967, lat: 18.796 };
@@ -158,8 +158,9 @@ export async function updateMerchantProductAction(productId: string, formData: F
   // rejected (bad type / >6MB) we'd otherwise silently overwrite the gallery with the survivors,
   // so abort and keep the existing images — the merchant retries with valid files.
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
   const saved = await saveUploads(photos);
-  if (photos.length && saved.length < photos.length) redirect(`/merchant/products/${productId}/edit?error=upload&rej=${photos.length - saved.length}`);
+  if (tried && saved.length < tried) redirect(`/merchant/products/${productId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
   await q(
     `UPDATE shop_products SET name_i18n=jsonb_build_object('th',$3::text), subtype=$4, price_minor=$5, price_unit=$6, in_season=$7,
@@ -184,16 +185,59 @@ export async function createMerchantPostAction(formData: FormData) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const body = s(formData, 'body').slice(0, 500);
-  if (!body) redirect('/merchant/post?error=body');
-  const n = Math.min(4, Math.max(1, Number(formData.get('image_count')) || 1));
+  if (!body) redirect('/merchant/post/new?error=body');
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
   await q(
     `INSERT INTO feed_posts(place_id, body_i18n, image_count, image_urls, status, author_kind)
      VALUES($1, jsonb_build_object('th',$2::text), $3, $4, 'published', 'merchant')`,
-    [acc.place_id, body, urls.length || n, urls.length ? urls : null]);
+    [acc.place_id, body, urls.length || 1, urls.length ? urls : null]);
   revalidatePath('/merchant/post');
   redirect('/merchant/post?ok=1');
+}
+
+/** Edit one of the merchant's OWN feed posts. New photos/urls replace image_urls; none → keep. */
+export async function updateMerchantPostAction(postId: string, formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const body = s(formData, 'body').slice(0, 500);
+  if (!body) redirect(`/merchant/post/${postId}/edit?error=body`);
+  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
+  const saved = await saveUploads(photos);
+  if (tried && saved.length < tried) redirect(`/merchant/post/${postId}/edit?error=upload&rej=${tried - saved.length}`);
+  const urls = [...saved, ...pasted];
+  await q(
+    `UPDATE feed_posts SET body_i18n=jsonb_build_object('th',$3::text),
+       image_urls = CASE WHEN $4::text[] IS NOT NULL THEN $4 ELSE image_urls END,
+       image_count = CASE WHEN $4::text[] IS NOT NULL THEN COALESCE(array_length($4,1),1) ELSE image_count END
+     WHERE id=$1 AND place_id=$2`,
+    [postId, acc.place_id, body, urls.length ? urls : null]);
+  revalidatePath('/merchant/post', 'layout');
+  redirect('/merchant/post?ok=updated');
+}
+
+/** Hide/show one of the merchant's OWN posts (hidden posts drop out of the customer feed). */
+export async function setPostFlagAction(postId: string, flag: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (flag === 'hide') await q(`UPDATE feed_posts SET status='hidden' WHERE id=$1 AND place_id=$2`, [postId, acc.place_id]);
+  else if (flag === 'show') await q(`UPDATE feed_posts SET status='published' WHERE id=$1 AND place_id=$2`, [postId, acc.place_id]);
+  revalidatePath('/merchant/post', 'layout');
+}
+
+export async function deletePostAction(postId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  // ownership-scoped delete; only purge engagement rows (keyed 'post:<id>') if we actually owned it
+  const del = await q<{ id: string }>(`DELETE FROM feed_posts WHERE id=$1 AND place_id=$2 RETURNING id`, [postId, acc.place_id]);
+  if (del.length) {
+    await q(`DELETE FROM post_likes WHERE post_key=$1`, [`post:${postId}`]);
+    await q(`DELETE FROM post_comments WHERE post_key=$1`, [`post:${postId}`]);
+  }
+  revalidatePath('/merchant/post');
+  redirect('/merchant/post?ok=deleted');
 }
 
 export async function updateShopAction(formData: FormData) {
@@ -307,8 +351,9 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   const amen = formData.getAll('amenity').map(String).filter(Boolean);
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
   const saved = await saveUploads(photos);
-  if (photos.length && saved.length < photos.length) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${photos.length - saved.length}`);
+  if (tried && saved.length < tried) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
   await q(
     // available_units/daily_status are written only for the row's ACTIVE mode, so toggling
