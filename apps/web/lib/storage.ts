@@ -15,6 +15,9 @@ const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', '
 
 const BUCKET = process.env.S3_BUCKET || 'media';
 const ASSET_BASE = (process.env.ASSET_PUBLIC_BASE || 'http://127.0.0.1:9000/media').replace(/\/+$/, '');
+// Environment folder so dev and prod uploads never mix in the same bucket: media/<env>/<kind>/...
+// Explicit ASSET_PREFIX wins; otherwise prod when built for production, dev locally.
+const ENV_PREFIX = process.env.ASSET_PREFIX || (process.env.NODE_ENV === 'production' ? 'prod' : 'dev');
 
 let _client: Client | null = null;
 function client(): Client {
@@ -29,11 +32,11 @@ function client(): Client {
   return _client;
 }
 
-/** key like products/2026/06/<24hex>.webp — typed + date-partitioned for easy browse/lifecycle. */
+/** key like prod/products/2026/06/<24hex>.webp — env + typed + date-partitioned for easy browse/lifecycle. */
 function objectKey(kind: UploadKind, ext: string): string {
   const d = new Date();
   const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-  return `${kind}/${d.getUTCFullYear()}/${mm}/${crypto.randomBytes(12).toString('hex')}.${ext}`;
+  return `${ENV_PREFIX}/${kind}/${d.getUTCFullYear()}/${mm}/${crypto.randomBytes(12).toString('hex')}.${ext}`;
 }
 
 /** Persist one uploaded image to object storage; returns its public URL, or null if it's empty /

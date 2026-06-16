@@ -38,6 +38,7 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:?}
       S3_BUCKET: ${S3_BUCKET:-media}
       ASSET_PUBLIC_BASE: https://${ASSETS_DOMAIN:?}
+      ASSET_PREFIX: prod
     depends_on:
       db:
         condition: service_healthy
@@ -104,6 +105,7 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:?}
       S3_BUCKET: ${S3_BUCKET:-media}
       ASSET_PUBLIC_BASE: https://${ASSETS_DOMAIN:?}
+      ASSET_PREFIX: prod
     volumes:
       - .:/repo
     command:

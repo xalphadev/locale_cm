@@ -24,6 +24,7 @@ const q = (t, p = []) => pool.query(t, p).then((r) => r.rows);
 
 const BUCKET = process.env.S3_BUCKET || 'media';
 const ASSET_BASE = (process.env.ASSET_PUBLIC_BASE || 'http://127.0.0.1:9000/media').replace(/\/+$/, '');
+const ENV_PREFIX = process.env.ASSET_PREFIX || 'dev';   // prod seeder sets ASSET_PREFIX=prod (compose)
 const mc = new Client({
   endPoint: process.env.S3_ENDPOINT || '127.0.0.1',
   port: Number(process.env.S3_PORT || 9000),
@@ -76,7 +77,7 @@ async function put(kind, seed, label, kindHint) {
   const { buf, ext, mime } = await coverImage(seed, label, kindHint);
   const d = new Date();
   const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const key = `${kind}/${d.getUTCFullYear()}/${mm}/${crypto.randomBytes(12).toString('hex')}.${ext}`;
+  const key = `${ENV_PREFIX}/${kind}/${d.getUTCFullYear()}/${mm}/${crypto.randomBytes(12).toString('hex')}.${ext}`;
   await mc.putObject(BUCKET, key, buf, buf.length, { 'Content-Type': mime });
   return `${ASSET_BASE}/${key}`;
 }
