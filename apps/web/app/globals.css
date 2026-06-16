@@ -85,17 +85,20 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 
 /* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Inter+Noto) ============ */
 .merchant-root{
-  --m-bg:#F4F6FB; --m-surface:#fff; --m-text:#141A2E; --m-muted:#6B7385; --m-line:#ECEFF5; --m-sunk:#F1F4FA;
-  --m-accent:#2563EB; --m-accent-press:#1D4ED8; --m-soft:#E9F0FE; --m-navy:#1A2B52; --m-gold:#F5B500; --m-hint:#A6AEBE;
-  --r-card:20px; --r-md:16px; --r-sm:13px; --r-chip:999px;
-  /* soft, layered, diffuse shadows — the "airy" depth */
-  --m-sh:0 1px 2px rgba(20,26,46,.04), 0 10px 26px -14px rgba(20,26,46,.16);
-  --m-sh-soft:0 1px 2px rgba(20,26,46,.03), 0 6px 16px -10px rgba(20,26,46,.12);
-  --m-shlg:0 2px 6px rgba(20,26,46,.05), 0 26px 50px -22px rgba(20,26,46,.3);
-  font-family:'Plus Jakarta Sans','Anuphan',ui-sans-serif,system-ui,-apple-system,sans-serif;
-  background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; letter-spacing:-.012em; min-height:100vh;
+  /* palette + type lifted straight from the consumer app so the two read as one product */
+  --m-bg:#F3F5F8; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
+  --m-accent:#1A73E8; --m-accent-press:#1559C7; --m-soft:#E8F0FE; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
+  --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
+  --r-card:22px; --r-md:18px; --r-sm:13px; --r-chip:999px;
+  /* soft, layered, diffuse shadows — the "airy" depth (consumer shadow scale) */
+  --m-sh:0 1px 2px rgba(16,20,12,.05), 0 10px 26px -10px rgba(16,20,12,.16);
+  --m-sh-soft:0 4px 16px -8px rgba(16,20,12,.14);
+  --m-shlg:0 2px 6px rgba(16,20,12,.06), 0 26px 50px -22px rgba(16,20,12,.30);
+  font-family:'Inter','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  font-feature-settings:"tnum" 1,"cv11" 1; letter-spacing:-.005em; min-height:100vh;
 }
-.merchant-root :lang(th),.merchant-root [lang="th"]{font-family:'Anuphan','Plus Jakarta Sans',sans-serif;letter-spacing:0;line-height:1.55}
+.merchant-root :lang(th),.merchant-root [lang="th"]{line-height:1.6;letter-spacing:0}
 .merchant-root .portal{min-height:100vh;background:var(--m-bg)}
 /* header band */
 .merchant-root .portal-top{background:linear-gradient(120deg,var(--m-accent),var(--m-navy));color:#fff;border:none;padding:18px 18px 20px;border-radius:0 0 22px 22px}
@@ -120,22 +123,28 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .pstat .n{color:var(--m-navy);font-size:2.1rem;font-weight:800;line-height:1}
 .merchant-root .pstat .l{color:var(--m-muted);margin-top:.15rem}
 .merchant-root .pquick .btn{display:inline-flex;align-items:center;gap:6px;background:var(--m-surface);border:1px solid var(--m-line);color:var(--m-text);border-radius:12px;box-shadow:var(--m-sh)}
-.merchant-root .pquick .btn.btn-primary{background:var(--m-accent);color:#fff;border-color:var(--m-accent)}
+.merchant-root .pquick .btn.btn-primary{background:var(--m-ink);color:#fff;border-color:var(--m-ink)}
 .merchant-root .pquick .btn.ghost{background:transparent;box-shadow:none}
 /* forms */
 .merchant-root .form{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.3rem 1.2rem;max-width:none}
-.merchant-root .field label{color:var(--m-muted);font-weight:700;font-size:.8rem}
-.merchant-root .field input,.merchant-root .field select,.merchant-root .field textarea{border:1.5px solid var(--m-line);border-radius:11px;background:var(--m-surface);padding:.66rem .8rem;font:inherit;color:var(--m-text)}
-.merchant-root .field input:focus,.merchant-root .field select:focus,.merchant-root .field textarea:focus{outline:none;border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-soft)}
+.merchant-root .field label{color:var(--m-muted);font-weight:600;font-size:.8rem;letter-spacing:0}
+/* soft "filled" fields — a gentle sunk fill + transparent border that lifts to white with an accent ring on focus.
+   Reads far less rigid than a hard-outlined white box, and 16px font stops iOS Safari zoom-on-focus. */
+.merchant-root .field input,.merchant-root .field select,.merchant-root .field textarea{width:100%;border:1.5px solid transparent;border-radius:14px;background:var(--m-sunk);padding:.85rem .95rem;font:inherit;font-size:1rem;color:var(--m-text);transition:background-color .16s,border-color .16s,box-shadow .16s;-webkit-appearance:none;appearance:none}
+.merchant-root .field textarea{line-height:1.5;min-height:104px}
+.merchant-root .field input:hover:not(:focus),.merchant-root .field select:hover:not(:focus),.merchant-root .field textarea:hover:not(:focus){background-color:#E6EAF1}
+.merchant-root .field input:focus,.merchant-root .field select:focus,.merchant-root .field textarea:focus{outline:none;background-color:var(--m-surface);border-color:var(--m-accent);box-shadow:0 0 0 4px var(--m-soft)}
 .merchant-root .field input::placeholder,.merchant-root .field textarea::placeholder{color:var(--m-hint,#aab2bf)}
-.merchant-root .btn{border-radius:11px;font-weight:800;padding:.64rem 1.2rem}
-.merchant-root .btn-primary,.merchant-root .btn-approve{background:var(--m-accent);color:#fff}
+/* custom chevron for selects (native arrow is removed by appearance:none) */
+.merchant-root .field select{background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2365656E' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .85rem center;background-size:18px;padding-right:2.6rem;cursor:pointer}
+.merchant-root .btn{border-radius:12px;font-weight:700;padding:.64rem 1.2rem}
+.merchant-root .btn-primary,.merchant-root .btn-approve{background:var(--m-ink);color:#fff}
 .merchant-root .btn:active{filter:brightness(.95)}
 
 /* ── form v2: sections, 2-col grid, hints, styled file + checkbox chips (all add/edit forms) ── */
 .merchant-root .mform{padding:0;background:none;border:none;box-shadow:none}
-.merchant-root .fsec{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.05rem 1.1rem;margin-bottom:12px}
-.merchant-root .fsec-h{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--m-navy);margin-bottom:.85rem}
+.merchant-root .fsec{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.15rem 1.2rem 1.25rem;margin-bottom:14px}
+.merchant-root .fsec-h{display:flex;align-items:center;gap:9px;font-size:.92rem;font-weight:700;color:var(--m-text);margin-bottom:.95rem;padding-bottom:.8rem;border-bottom:1px solid var(--m-line);letter-spacing:-.01em}
 .merchant-root .fsec-h .fsec-ic{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--m-soft);color:var(--m-accent);flex:none}
 .merchant-root .fsec .field{margin-bottom:.8rem}
 .merchant-root .fsec .field:last-child{margin-bottom:0}
@@ -175,33 +184,32 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .geopick-row input{border:1.5px solid var(--m-line);border-radius:9px}
 
 /* ===== merchant portal: MOBILE APP SHELL (phone frame + bottom tab bar, responsive) ===== */
-.merchant-root{background:#E7EBF3}                       /* soft tint behind the shell so it pops on desktop */
-.mshell{max-width:480px;margin:0 auto;min-height:100vh;background:var(--m-bg);position:relative;padding-bottom:100px;box-shadow:0 0 80px -20px rgba(20,26,46,.18);overflow-x:hidden}
-/* header — softer gradient, avatar, airy spacing */
-.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:13px;background:linear-gradient(135deg,#3B82F6 0%,var(--m-accent) 42%,var(--m-navy) 100%);color:#fff;padding:18px 18px 20px;border-radius:0 0 26px 26px;box-shadow:0 14px 30px -18px rgba(26,43,82,.7)}
-.mtop-ava{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+.merchant-root{background:#E4E8EF}                       /* soft tint behind the shell so it pops on desktop (matches consumer) */
+.mshell{max-width:440px;margin:0 auto;min-height:100vh;background:var(--m-bg);position:relative;padding-bottom:100px;box-shadow:0 0 60px rgba(16,20,12,.14);overflow-x:hidden}
+/* header — clean frosted-white app bar (consumer-style), accent avatar, no heavy banner */
+.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);color:var(--m-text);padding:13px 16px;border-bottom:1px solid var(--m-line)}
+.mtop-ava{flex:none;width:42px;height:42px;border-radius:13px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.18rem;box-shadow:inset 0 0 0 1px rgba(26,115,232,.12)}
 .mtop-l{flex:1;min-width:0}
-.mtop-brand{font-size:.62rem;font-weight:800;letter-spacing:.12em;color:rgba(255,255,255,.7);text-transform:uppercase}
-.mtop-shop{font-size:1.22rem;font-weight:800;margin-top:2px;letter-spacing:-.02em;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mtop-status{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:.7rem;font-weight:700;color:#fff;background:rgba(255,255,255,.16);border-radius:999px;padding:.2rem .64rem}
-.mtop-status.on{background:rgba(255,255,255,.22)}
-.mtop-out{flex:none;align-self:flex-start;border:1px solid rgba(255,255,255,.34);background:rgba(255,255,255,.14);color:#fff;border-radius:999px;padding:.44rem .9rem;font:inherit;font-weight:800;font-size:.8rem;cursor:pointer;backdrop-filter:blur(6px)}
+.mtop-brand{font-size:.6rem;font-weight:800;letter-spacing:.13em;color:var(--m-accent);text-transform:uppercase}
+.mtop-shop{font-size:1.12rem;font-weight:800;margin-top:1px;letter-spacing:-.02em;line-height:1.2;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mtop-status{display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:.7rem;font-weight:700;color:var(--m-muted);background:var(--m-sunk);border-radius:999px;padding:.16rem .58rem}
+.mtop-status.on{color:var(--m-jade);background:#E4F6EC}
+.mtop-out{flex:none;align-self:center;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-muted);border-radius:999px;padding:.42rem .9rem;font:inherit;font-weight:700;font-size:.8rem;cursor:pointer}
 .mtop-out:active{transform:scale(.96)}
 .mbody{padding:1.25rem 1.05rem 1rem}
-.mbody h1{font-size:1.5rem;font-weight:800;margin:.1rem 0 .7rem;letter-spacing:-.03em}
-/* bottom tabs — floating, soft, filled active pill */
-.mtab{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 28px);max-width:452px;z-index:40;display:flex;gap:2px;background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(14px);border:1px solid rgba(236,239,245,.9);border-radius:22px;box-shadow:0 18px 40px -14px rgba(20,26,46,.32);padding:7px 6px}
-.mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--m-muted);font-size:.65rem;font-weight:700;padding:7px 2px 6px;border-radius:15px;transition:transform .12s,background .15s,color .15s}
-.mtab-i svg{transition:transform .15s}
-.mtab-i:active{transform:scale(.9)}
-.mtab-i.on{color:var(--m-accent);background:var(--m-soft)}
-.mtab-i.on svg{transform:translateY(-1px)}
+.mbody h1{font-size:1.6rem;font-weight:800;margin:.1rem 0 .75rem;letter-spacing:-.03em}
+/* bottom tabs — airy frosted glass bar, color-only active (matches the consumer app's floating nav) */
+.mtab{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 36px);max-width:404px;height:64px;z-index:40;display:flex;align-items:center;justify-content:space-around;background:rgba(255,255,255,.82);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.65);border-radius:30px;box-shadow:0 10px 34px -8px rgba(16,20,12,.24)}
+.mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--m-muted);font-size:.68rem;font-weight:600;transition:transform .12s,color .15s}
+.mtab-i svg{width:23px;height:23px;stroke-width:2}
+.mtab-i:active{transform:scale(.92)}
+.mtab-i.on{color:var(--m-accent);font-weight:700}
 
 /* ===== merchant portal: LIST + ADD/EDIT split (thumbnails, rows, forms) ===== */
 .merchant-root .listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:.1rem 0 .5rem}
 .merchant-root .listhead h1{margin:0;font-size:1.4rem}
 .merchant-root .listcount{display:inline-block;min-width:1.4em;text-align:center;font-size:.8rem;font-weight:800;color:var(--m-muted);background:var(--m-soft);border-radius:999px;padding:.1rem .5rem;vertical-align:middle}
-.merchant-root .addbtn{flex:none;display:inline-flex;align-items:center;gap:4px;background:var(--m-accent);color:#fff;font-weight:800;font-size:.86rem;border-radius:999px;padding:.5rem .95rem .5rem .8rem;box-shadow:0 6px 16px -8px var(--m-accent)}
+.merchant-root .addbtn{flex:none;display:inline-flex;align-items:center;gap:4px;background:var(--m-ink);color:#fff;font-weight:700;font-size:.86rem;border-radius:999px;padding:.5rem .95rem .5rem .8rem;box-shadow:0 8px 18px -10px rgba(16,20,12,.55)}
 .merchant-root .addbtn:active{transform:scale(.96)}
 
 /* clean list rows — whole row taps through to the detail/view page */
@@ -232,10 +240,10 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .phead{display:flex;align-items:center;gap:10px}
 .merchant-root .phead-ic{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:var(--m-soft);color:var(--m-accent);flex:none}
 .merchant-root .mback{margin:.1rem 0 .6rem}
-.merchant-root .mback a{display:inline-flex;align-items:center;gap:2px;color:var(--m-muted);font-weight:700;font-size:.88rem}
+.merchant-root .mback a{display:inline-flex;align-items:center;gap:2px;color:var(--m-accent);font-weight:600;font-size:.9rem}
 .merchant-root .mback a:active{color:var(--m-accent)}
 .merchant-root .mform{margin-top:.3rem}
-.merchant-root .mform-save{width:100%;margin-top:.2rem;padding:.85rem}
+.merchant-root .mform-save{width:100%;margin-top:.5rem;padding:.98rem;border-radius:999px;font-size:1rem}
 .merchant-root .delwrap{margin-top:.9rem}
 @media(max-width:340px){.merchant-root .fgrid{grid-template-columns:1fr}}
 
@@ -297,7 +305,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .dbar form{margin:0}
 .merchant-root .dbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-text);font:inherit;font-weight:800;font-size:.92rem;border-radius:13px;padding:.82rem 1rem;box-shadow:var(--m-sh);cursor:pointer}
 .merchant-root .dbtn:active{transform:scale(.99)}
-.merchant-root .dbtn.primary{background:var(--m-accent);color:#fff;border-color:var(--m-accent)}
+.merchant-root .dbtn.primary{background:var(--m-ink);color:#fff;border-color:var(--m-ink)}
 .merchant-root .dbtn.danger{color:#C0392B;border-color:#F2C9C4;box-shadow:none}
 .merchant-root .dbtn.sm{width:auto;padding:.55rem .9rem;font-size:.84rem;box-shadow:none;border-color:#BCD4F7;color:var(--m-accent)}
 
@@ -306,7 +314,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .listhead{margin:.2rem 0 .9rem}
 .merchant-root .listhead h1{font-size:1.5rem}
 .merchant-root .listcount{background:var(--m-soft);color:var(--m-accent)}
-.merchant-root .addbtn{padding:.56rem 1rem .56rem .85rem;border-radius:var(--r-chip);box-shadow:0 8px 18px -8px var(--m-accent)}
+.merchant-root .addbtn{padding:.56rem 1rem .56rem .85rem;border-radius:var(--r-chip);box-shadow:0 8px 18px -10px rgba(16,20,12,.55)}
 .merchant-root .addbtn:active{filter:brightness(.96)}
 /* cards: larger radius, soft shadow, hairline-light border */
 .merchant-root .mrow,.merchant-root .fsec,.merchant-root .info,.merchant-root .availcard,.merchant-root .pstat{border-radius:var(--r-card);border-color:var(--m-line);box-shadow:var(--m-sh)}
@@ -315,23 +323,25 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mrow{gap:13px;padding:11px}
 .merchant-root .mrow-img{width:66px;height:66px;border-radius:14px}
 .merchant-root .mrow-nm{font-size:1rem}
+.merchant-root .mlist .mrow{box-shadow:var(--m-sh-soft)}   /* list rows sit flatter than floating cards */
 .merchant-root .dhero{border-radius:var(--r-card)}
-.merchant-root .rsec-ic,.merchant-root .pstat-ic,.merchant-root .fsec-ic,.merchant-root .factitem-ic{box-shadow:inset 0 0 0 1px rgba(37,99,235,.06)}
+.merchant-root .rsec-ic,.merchant-root .pstat-ic,.merchant-root .fsec-ic,.merchant-root .factitem-ic{box-shadow:inset 0 0 0 1px rgba(26,115,232,.07)}
 .merchant-root .pstat .n{font-size:2.15rem;letter-spacing:-.02em}
 .merchant-root .btn:active,.merchant-root .dbtn:active,.merchant-root .fchip:active{transform:scale(.98)}
 
 /* ===== SEARCH + FILTER (instant client-side filtering on list pages) ===== */
 .merchant-root .lstools{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
-.merchant-root .msearch{display:flex;align-items:center;gap:9px;background:var(--m-surface);border:1.5px solid var(--m-line);border-radius:var(--r-chip);padding:.6rem .95rem;box-shadow:var(--m-sh-soft);transition:border-color .15s,box-shadow .15s}
-.merchant-root .msearch:focus-within{border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-soft)}
+/* flattened chrome: search is a soft filled pill (no shadow), lifts to white on focus */
+.merchant-root .msearch{display:flex;align-items:center;gap:9px;background:#E6E9F0;border:1.5px solid transparent;border-radius:var(--r-chip);padding:.62rem .95rem;box-shadow:none;transition:background-color .15s,border-color .15s,box-shadow .15s}
+.merchant-root .msearch:focus-within{background:var(--m-surface);border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-soft)}
 .merchant-root .msearch svg{color:var(--m-muted);flex:none}
 .merchant-root .msearch input{flex:1;min-width:0;border:none;outline:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text)}
 .merchant-root .msearch input::placeholder{color:var(--m-hint)}
-.merchant-root .msearch-x{flex:none;border:none;background:var(--m-sunk);color:var(--m-muted);width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:inherit}
+.merchant-root .msearch-x{flex:none;border:none;background:rgba(20,28,46,.12);color:var(--m-muted);width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer;font:inherit}
 .merchant-root .fchips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:1px 2px}
 .merchant-root .fchips::-webkit-scrollbar{display:none}
-.merchant-root .fchip{flex:none;border:1.5px solid var(--m-line);background:var(--m-surface);color:var(--m-muted);font:inherit;font-weight:700;font-size:.82rem;border-radius:var(--r-chip);padding:.4rem .8rem;cursor:pointer;white-space:nowrap;transition:.12s;box-shadow:var(--m-sh-soft)}
-.merchant-root .fchip.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff;box-shadow:0 6px 14px -7px var(--m-accent)}
+.merchant-root .fchip{flex:none;border:1.5px solid transparent;background:#E6E9F0;color:var(--m-muted);font:inherit;font-weight:700;font-size:.82rem;border-radius:var(--r-chip);padding:.42rem .85rem;cursor:pointer;white-space:nowrap;transition:.12s;box-shadow:none}
+.merchant-root .fchip.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff;box-shadow:none}
 .merchant-root .fcount{font-size:.62rem;font-weight:800;opacity:.7;margin-left:1px}
 .merchant-root .nomatch{text-align:center;color:var(--m-muted);font-size:.9rem;padding:2rem 1rem;background:var(--m-surface);border:1px dashed var(--m-line);border-radius:var(--r-card)}
 
@@ -449,10 +459,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .adm .form{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh);
   padding:1.4rem;max-width:680px}
 .adm .field label{color:var(--muted);font-weight:700;font-size:.8rem}
-.adm .field input,.adm .field select,.adm .field textarea{border:1.5px solid var(--line);border-radius:10px;
-  background:var(--surface);padding:.6rem .75rem;color:var(--ink);font:inherit}
-.adm .field input:focus,.adm .field select:focus,.adm .field textarea:focus{outline:none;border-color:var(--jade);
+.adm .field input,.adm .field select,.adm .field textarea{width:100%;border:1.5px solid transparent;border-radius:11px;
+  background:var(--sunk);padding:.7rem .85rem;color:var(--ink);font:inherit;font-size:.95rem;
+  transition:background-color .16s,border-color .16s,box-shadow .16s;-webkit-appearance:none;appearance:none}
+.adm .field input:hover:not(:focus),.adm .field select:hover:not(:focus),.adm .field textarea:hover:not(:focus){background-color:#E7EBF2}
+.adm .field input:focus,.adm .field select:focus,.adm .field textarea:focus{outline:none;background-color:var(--surface);border-color:var(--jade);
   box-shadow:0 0 0 3px var(--jade-soft)}
+.adm .field select{background-image:url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2367718A' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .8rem center;background-size:17px;padding-right:2.4rem;cursor:pointer}
 
 /* ---- banners ----------------------------------------------------- */
 .adm .banner-ok{background:var(--jade-soft);color:var(--jade-d);border:1px solid #BFE6D8;border-radius:11px;
@@ -481,43 +494,75 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   .adm-head{margin-bottom:18px}
 }
 
-/* ── multi-entity: brand/branch switcher (header) + portfolio (0022) ── */
+/* ── multi-entity: brand/branch switcher (header) + portfolio (0022) — consumer-grade ── */
+/* header context switcher */
 .merchant-root .mswitch{position:relative}
-.merchant-root .mswitch>summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:1px}
+.merchant-root .mswitch>summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;width:fit-content;max-width:100%;transition:transform .12s}
 .merchant-root .mswitch>summary::-webkit-details-marker{display:none}
-.merchant-root .mswitch-names{min-width:0;display:flex;flex-direction:column;line-height:1.15}
-.merchant-root .mswitch-names b{font-size:1.12rem;font-weight:800;letter-spacing:-.02em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
-.merchant-root .mswitch-names i{font-style:normal;font-size:.74rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
-.merchant-root .mswitch-caret{flex:none;color:var(--m-hint);font-size:.8rem;transition:transform .15s}
+.merchant-root .mswitch>summary:active{transform:scale(.97)}
+.merchant-root .mswitch-names{min-width:0;display:flex;flex-direction:column;line-height:1.14}
+.merchant-root .mswitch-names b{font-size:1.12rem;font-weight:800;letter-spacing:-.02em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:54vw}
+.merchant-root .mswitch-names i{font-style:normal;font-size:.74rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:54vw}
+.merchant-root .mswitch-caret{flex:none;color:var(--m-hint);transition:transform .2s}
 .merchant-root .mswitch[open] .mswitch-caret{transform:rotate(180deg)}
-.merchant-root .mswitch-pop{position:absolute;top:calc(100% + 10px);left:0;z-index:60;width:min(86vw,360px);max-height:70vh;overflow:auto;background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-shlg);padding:8px}
+.merchant-root .mswitch-pop{position:absolute;top:calc(100% + 12px);left:0;z-index:60;width:min(88vw,372px);max-height:72vh;overflow:auto;background:var(--m-surface);border:1px solid var(--m-line);border-radius:18px;box-shadow:var(--m-shlg);padding:8px;animation:mswpop .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes mswpop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 .merchant-root .mswitch-grp{padding:4px 0}
-.merchant-root .mswitch-grp+.mswitch-grp{border-top:1px solid var(--m-line)}
-.merchant-root .mswitch-bh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px 2px}
-.merchant-root .mswitch-bhn{font-size:.72rem;font-weight:800;letter-spacing:.02em;color:var(--m-muted);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.merchant-root .mswitch-addbr{flex:none;font-size:.74rem;font-weight:700;color:var(--m-accent);text-decoration:none}
+.merchant-root .mswitch-grp+.mswitch-grp{border-top:1px solid var(--m-line);margin-top:2px;padding-top:8px}
+.merchant-root .mswitch-bh{display:flex;align-items:center;gap:8px;padding:2px 6px 6px}
+.merchant-root .mswitch-bav{flex:none;width:26px;height:26px;border-radius:8px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem}
+.merchant-root .mswitch-bhn{flex:1;min-width:0;font-size:.82rem;font-weight:800;letter-spacing:-.01em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .mswitch-addbr{flex:none;font-size:.74rem;font-weight:700;color:var(--m-accent);text-decoration:none;background:var(--m-soft);border-radius:999px;padding:.2rem .58rem}
 .merchant-root .mswitch form{margin:0}
-.merchant-root .mswitch-b{width:100%;display:flex;align-items:center;gap:8px;text-align:left;background:none;border:none;border-radius:11px;padding:.5rem .6rem;font:inherit;cursor:pointer;color:var(--m-text)}
+.merchant-root .mswitch-b{width:100%;display:flex;align-items:center;gap:8px;text-align:left;background:none;border:none;border-radius:12px;padding:.55rem .65rem;font:inherit;cursor:pointer;color:var(--m-text);transition:transform .12s,background .12s}
 .merchant-root .mswitch-b:hover{background:var(--m-sunk)}
+.merchant-root .mswitch-b:active{transform:scale(.98)}
 .merchant-root .mswitch-b.on{background:var(--m-soft)}
 .merchant-root .mswitch-bn{flex:1;min-width:0;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .mswitch-bt{flex:none;font-size:.68rem;color:var(--m-muted)}
+.merchant-root .mswitch-b.on .mswitch-bt{color:var(--m-accent)}
 .merchant-root .mswitch-ok{flex:none;color:var(--m-accent);font-weight:800}
-.merchant-root .mswitch-foot{display:flex;gap:8px;padding:8px 6px 4px;border-top:1px solid var(--m-line);margin-top:4px}
-.merchant-root .mswitch-add{flex:1;text-align:center;font-weight:800;font-size:.84rem;color:#fff;background:var(--m-ink);border-radius:999px;padding:.55rem;text-decoration:none}
-.merchant-root .mswitch-mng{flex:none;text-align:center;font-weight:700;font-size:.84rem;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.55rem .8rem;text-decoration:none}
-.merchant-root .btn.sm{padding:.5rem .85rem;font-size:.84rem;border-radius:999px;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-text)}
-.merchant-root .shopcard{background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--r-card);box-shadow:var(--m-sh-soft);padding:12px;margin-bottom:14px}
-.merchant-root .shopcard-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.merchant-root .shopcard-t{display:flex;align-items:center;gap:7px;font-weight:800;font-size:1.02rem;color:var(--m-text);min-width:0}
-.merchant-root .shopcard-add{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:.8rem;font-weight:700;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.34rem .7rem;text-decoration:none}
-.merchant-root .shopcard-empty{font-size:.84rem;color:var(--m-hint);padding:6px 2px}
-.merchant-root .branch{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:13px}
-.merchant-root .branch+.branch{border-top:1px solid var(--m-line)}
-.merchant-root .branch.on{background:var(--m-soft)}
-.merchant-root .branch-l{flex:1;min-width:0}
-.merchant-root .branch-n{font-weight:700;font-size:.95rem;color:var(--m-text);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.merchant-root .branch-cur{font-size:.66rem;font-weight:800;color:var(--m-accent);background:#fff;border:1px solid var(--m-soft);border-radius:999px;padding:.08rem .5rem}
-.merchant-root .branch-m{margin-top:3px;font-size:.74rem;color:var(--m-muted);display:flex;gap:5px;flex-wrap:wrap}
-.merchant-root .branch-st{font-weight:700;color:var(--m-muted)}
-.merchant-root .branch-st.on{color:var(--m-jade)}
+.merchant-root .mswitch-foot{display:flex;gap:8px;padding:8px 4px 2px;border-top:1px solid var(--m-line);margin-top:6px}
+.merchant-root .mswitch-add{flex:1;text-align:center;font-weight:800;font-size:.84rem;color:#fff;background:var(--m-ink);border-radius:999px;padding:.6rem;text-decoration:none;transition:transform .12s}
+.merchant-root .mswitch-add:active{transform:scale(.97)}
+.merchant-root .mswitch-mng{flex:none;text-align:center;font-weight:700;font-size:.84rem;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.6rem .9rem;text-decoration:none}
+/* portfolio: brand card → branch rows */
+.merchant-root .bcard{background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--r-card);box-shadow:var(--m-sh-soft);padding:12px;margin-bottom:13px}
+.merchant-root .bcard-h{display:flex;align-items:center;gap:11px;padding:2px 2px 11px;border-bottom:1px solid var(--m-line)}
+.merchant-root .bcard-av{flex:none;width:40px;height:40px;border-radius:12px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;box-shadow:inset 0 0 0 1px rgba(26,115,232,.1)}
+.merchant-root .bcard-tx{flex:1;min-width:0}
+.merchant-root .bcard-nm{font-weight:800;font-size:1.04rem;letter-spacing:-.01em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .bcard-sub{font-size:.76rem;color:var(--m-muted);margin-top:1px}
+.merchant-root .bcard-add{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);transition:transform .12s}
+.merchant-root .bcard-add:active{transform:scale(.9)}
+.merchant-root .bcard-branches{display:flex;flex-direction:column;gap:2px;margin-top:5px}
+.merchant-root .bcard-branches form{margin:0}
+.merchant-root .brow{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;font:inherit;color:inherit;padding:9px 6px;border-radius:13px;cursor:pointer;transition:transform .12s,background .12s}
+.merchant-root .brow:hover{background:var(--m-sunk)}
+.merchant-root .brow:active{transform:scale(.985)}
+.merchant-root .brow.on{background:var(--m-soft)}
+.merchant-root .brow-ic{flex:none;width:38px;height:38px;border-radius:11px;background:var(--m-sunk);color:var(--m-accent);display:flex;align-items:center;justify-content:center}
+.merchant-root .brow.on .brow-ic{background:#fff}
+.merchant-root .brow-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.merchant-root .brow-nm{font-weight:700;font-size:.96rem;color:var(--m-text);display:flex;align-items:center;gap:7px;overflow:hidden;white-space:nowrap}
+.merchant-root .brow-cur{flex:none;font-size:.62rem;font-weight:800;color:var(--m-accent);background:#fff;border:1px solid var(--m-soft);border-radius:999px;padding:.08rem .48rem}
+.merchant-root .brow-meta{display:flex;align-items:center;gap:6px;min-width:0}
+.merchant-root .brow-sub{font-size:.76rem;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .brow-go{flex:none;color:#C2C9D4}
+
+/* ── shopkeeper home: clean "banking-app" list menu (comfortable sizing) ── */
+.merchant-root .bigstatus{display:flex;align-items:center;gap:9px;background:var(--m-sunk);color:var(--m-muted);border-radius:13px;padding:.7rem .9rem;font-weight:700;font-size:.86rem;line-height:1.4;margin-bottom:14px}
+.merchant-root .bigstatus-dot{flex:none;width:9px;height:9px;border-radius:50%;background:#C2C9D4}
+.merchant-root .bigstatus.on{background:#E4F6EC;color:#0F8E6F}
+.merchant-root .bigstatus.on .bigstatus-dot{background:#16A06A;box-shadow:0 0 0 3px rgba(22,160,106,.16)}
+.merchant-root .bigcta{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;background:var(--m-accent);color:#fff;font-weight:800;font-size:1.02rem;border-radius:14px;padding:.88rem;box-shadow:0 12px 24px -13px var(--m-accent);transition:transform .12s;margin-bottom:18px}
+.merchant-root .bigcta:active{transform:scale(.985)}
+.merchant-root .menu-label{font-size:.8rem;font-weight:800;color:var(--m-muted);margin:.2rem .2rem .5rem}
+.merchant-root .menu{background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--r-card);box-shadow:var(--m-sh-soft);overflow:hidden;margin-bottom:15px}
+.merchant-root .menu-row{display:flex;align-items:center;gap:12px;padding:.78rem .9rem;color:var(--m-text);border-bottom:1px solid var(--m-line);transition:background .12s}
+.merchant-root .menu-row:last-child{border-bottom:none}
+.merchant-root .menu-row:active{background:var(--m-sunk)}
+.merchant-root .menu-ic{flex:none;width:40px;height:40px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(26,115,232,.08)}
+.merchant-root .menu-tx{flex:1;min-width:0;font-weight:700;font-size:.95rem;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .menu-val{flex:none;font-weight:800;font-size:.95rem;color:var(--m-navy)}
+.merchant-root .menu-go{flex:none;color:#C2C9D4}

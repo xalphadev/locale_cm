@@ -6,7 +6,7 @@ import { setActiveContextAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
-// Portfolio view: every brand ("ร้าน") this account owns + its branches/accommodations ("สาขา"/"ที่พัก").
+// Portfolio: every brand ("ร้าน") this account owns + its branches/accommodations ("สาขา"/"ที่พัก").
 export default async function ShopsPage() {
   const acc = await currentAccount();
   if (!acc) redirect('/merchant/login');
@@ -30,43 +30,56 @@ export default async function ShopsPage() {
 
   return (
     <>
-      <h1 className="phead"><span className="phead-ic"><Icon n="store" size={18} /></span> ร้านของฉัน</h1>
-      <p className="note">บัญชีเดียวดูแลได้หลายร้าน แต่ละร้านมีได้หลายสาขา/ที่พัก — เลือก “เปิดจัดการ” เพื่อสลับไปแก้ร้านนั้น</p>
-      <a className="btn btn-primary" href="/merchant/shops/new" style={{ marginBottom: 14 }}><Icon n="plus" size={17} /> เพิ่มร้านใหม่</a>
+      <div className="listhead">
+        <h1>ร้านของฉัน</h1>
+        <a className="addbtn" href="/merchant/shops/new"><Icon n="plus" size={15} /> เพิ่มร้าน</a>
+      </div>
+      <p className="note" style={{ margin: '-.3rem 0 .9rem' }}>บัญชีเดียวดูแลได้หลายร้าน แต่ละร้านมีหลายสาขา/ที่พักได้ — แตะสาขาเพื่อสลับไปจัดการ</p>
 
       {brands.map((br) => (
-        <section className="shopcard" key={br.id}>
-          <div className="shopcard-h">
-            <div className="shopcard-t"><Icon n="store" size={15} /> {br.name}</div>
-            <a className="shopcard-add" href={`/merchant/shops/${br.id}/new`}><Icon n="plus" size={14} /> สาขา</a>
+        <section className="bcard" key={br.id}>
+          <div className="bcard-h">
+            <span className="bcard-av">{(br.name || 'ร').trim().charAt(0)}</span>
+            <div className="bcard-tx">
+              <div className="bcard-nm">{br.name}</div>
+              <div className="bcard-sub">{br.branches.length ? `${br.branches.length} สาขา` : 'ยังไม่มีสาขา'}</div>
+            </div>
+            <a className="bcard-add" href={`/merchant/shops/${br.id}/new`} aria-label="เพิ่มสาขา"><Icon n="plus" size={16} /></a>
           </div>
-          {br.branches.length === 0 && <p className="shopcard-empty">ยังไม่มีสาขา</p>}
-          {br.branches.map((b) => {
-            const on = b.place_id === acc.place_id;
-            const live = b.place_status === 'published';
-            const kind = b.offers_stay ? 'ที่พัก' : b.sells_products ? 'ร้านขายของ' : 'ร้านทั่วไป';
-            return (
-              <div className={`branch ${on ? 'on' : ''}`} key={b.place_id}>
-                <div className="branch-l">
-                  <div className="branch-n">{i18n(b.place_name)} {on && <span className="branch-cur">กำลังจัดการ</span>}</div>
-                  <div className="branch-m">
-                    <span className={`branch-st ${live ? 'on' : ''}`}>{live ? '● เผยแพร่' : '○ รอตรวจ'}</span>
-                    <span>· {kind}</span>
-                    {b.sells_products ? <span>· {b.nprod} สินค้า</span> : null}
-                    {b.offers_stay ? <span>· {b.nroom} ห้อง</span> : null}
-                    <span>· {b.npost} โพสต์</span>
-                  </div>
-                </div>
-                {on ? (
-                  <a className="btn sm" href="/merchant"><Icon n="edit" size={14} /> จัดการ</a>
-                ) : (
-                  <form action={setActiveContextAction.bind(null, b.place_id)}>
-                    <button className="btn sm" type="submit">เปิดจัดการ →</button>
-                  </form>
-                )}
-              </div>
-            );
-          })}
+
+          <div className="bcard-branches">
+            {br.branches.map((b) => {
+              const on = b.place_id === acc.place_id;
+              const live = b.place_status === 'published';
+              const kind = b.offers_stay ? 'ที่พัก' : b.sells_products ? 'ร้านขายของ' : 'ร้านทั่วไป';
+              const icon = b.offers_stay ? 'bed' : b.sells_products ? 'tag' : 'store';
+              const counts = [
+                b.sells_products ? `${b.nprod} สินค้า` : null,
+                b.offers_stay ? `${b.nroom} ห้อง` : null,
+                `${b.npost} โพสต์`,
+              ].filter(Boolean).join(' · ');
+              const inner = (
+                <>
+                  <span className="brow-ic"><Icon n={icon} size={18} /></span>
+                  <span className="brow-tx">
+                    <span className="brow-nm">{i18n(b.place_name)}{on && <span className="brow-cur">กำลังจัดการ</span>}</span>
+                    <span className="brow-meta">
+                      <span className={`t ${live ? 'season' : 'off'}`}>{live ? 'เผยแพร่' : 'รอตรวจ'}</span>
+                      <span className="brow-sub">{kind} · {counts}</span>
+                    </span>
+                  </span>
+                  <Icon n="chevR" className="brow-go" size={18} />
+                </>
+              );
+              return on ? (
+                <a className="brow on" href="/merchant" key={b.place_id}>{inner}</a>
+              ) : (
+                <form action={setActiveContextAction.bind(null, b.place_id)} key={b.place_id}>
+                  <button className="brow" type="submit">{inner}</button>
+                </form>
+              );
+            })}
+          </div>
         </section>
       ))}
     </>

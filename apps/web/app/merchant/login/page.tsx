@@ -11,7 +11,7 @@ export default function Login({ searchParams }: { searchParams: { error?: string
       <form className="form" action={loginAction}>
         <div className="field"><label>อีเมล</label><input name="email" type="email" required autoComplete="email" /></div>
         <div className="field"><label>รหัสผ่าน</label><input name="password" type="password" required autoComplete="current-password" /></div>
-        <button className="btn btn-primary" type="submit">เข้าสู่ระบบ</button>
+        <button className="btn btn-primary mform-save" type="submit">เข้าสู่ระบบ</button>
       </form>
       <p className="note">ยังไม่มีบัญชี? <a href="/merchant/signup">สมัครร้านค้าใหม่</a></p>
     </div>

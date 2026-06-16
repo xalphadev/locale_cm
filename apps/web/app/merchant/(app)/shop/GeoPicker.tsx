@@ -52,9 +52,9 @@ export default function GeoPicker({ lat0, lng0 }: { lat0?: number | null; lng0?:
     <div className="geopick">
       <div ref={hostRef} className="geopick-map" />
       <div className="geopick-row">
-        <label>Lat<input name="lat" value={lat} inputMode="decimal" placeholder="18.7965"
+        <label>พิกัดเหนือ-ใต้<input name="lat" value={lat} inputMode="decimal" placeholder="18.7965"
           onChange={(e) => { setLat(e.target.value); moveTo(parseFloat(e.target.value), parseFloat(lng)); }} /></label>
-        <label>Lng<input name="lng" value={lng} inputMode="decimal" placeholder="98.9685"
+        <label>พิกัดออก-ตก<input name="lng" value={lng} inputMode="decimal" placeholder="98.9685"
           onChange={(e) => { setLng(e.target.value); moveTo(parseFloat(lat), parseFloat(e.target.value)); }} /></label>
         <button type="button" className="mini" onClick={locate}>ใช้ตำแหน่งปัจจุบัน</button>
       </div>

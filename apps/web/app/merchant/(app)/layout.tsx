@@ -23,7 +23,6 @@ const TABS = [
   { href: '/merchant', icon: 'home', label: 'ภาพรวม', cap: null, match: (p: string) => p === '/merchant' },
   { href: '/merchant/products', icon: 'tag', label: 'สินค้า', cap: 'sells_products', match: (p: string) => p.startsWith('/merchant/products') },
   { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: (p: string) => p.startsWith('/merchant/rooms') },
-  { href: '/merchant/post', icon: 'feed', label: 'โพสต์', cap: null, match: (p: string) => p.startsWith('/merchant/post') },
   { href: '/merchant/shop', icon: 'store', label: 'ร้าน', cap: null, match: (p: string) => p.startsWith('/merchant/shop') },
 ];
 

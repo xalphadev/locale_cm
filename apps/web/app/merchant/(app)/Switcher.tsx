@@ -29,7 +29,7 @@ export default async function Switcher({
     brands[at.get(r.brand_id)!].branches.push(r);
   }
   const multiBrand = brands.length > 1;
-  const showBranchLine = multiBrand && activePlaceName && activePlaceName !== activeBrandName;
+  const showBranchLine = (multiBrand || rows.length > 1) && activePlaceName && activePlaceName !== activeBrandName;
 
   return (
     <details className="mswitch">
@@ -38,12 +38,13 @@ export default async function Switcher({
           <b>{activeBrandName || activePlaceName || 'ร้านของฉัน'}</b>
           {showBranchLine ? <i>{activePlaceName}</i> : null}
         </span>
-        <span className="mswitch-caret" aria-hidden>▾</span>
+        <svg className="mswitch-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </summary>
       <div className="mswitch-pop">
         {brands.map((br) => (
           <div className="mswitch-grp" key={br.id}>
             <div className="mswitch-bh">
+              <span className="mswitch-bav">{(br.name || 'ร').trim().charAt(0)}</span>
               <span className="mswitch-bhn">{br.name}</span>
               <a className="mswitch-addbr" href={`/merchant/shops/${br.id}/new`}>+ สาขา</a>
             </div>

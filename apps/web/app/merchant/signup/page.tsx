@@ -39,7 +39,7 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
         <hr className="phr" />
         <div className="field"><label>อีเมล *</label><input name="email" type="email" required autoComplete="email" /></div>
         <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
-        <button className="btn btn-primary" type="submit">สมัครและเริ่มใช้งาน →</button>
+        <button className="btn btn-primary mform-save" type="submit">สมัครและเริ่มใช้งาน →</button>
       </form>
       <p className="note">มีบัญชีแล้ว? <a href="/merchant/login">เข้าสู่ระบบ</a></p>
     </div>

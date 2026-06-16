@@ -27,9 +27,9 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
 ];
 
 function FontHead({ merchant }: { merchant?: boolean }) {
-  // Merchant portal uses Plus Jakarta Sans + Anuphan (modern, mobile-app feel); admin keeps Inter.
+  // Merchant portal now shares the consumer app's typeface (Inter + Noto Sans Thai) so the two read as one product; admin keeps Inter.
   const href = merchant
-    ? 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Anuphan:wght@400;500;600;700&display=swap'
+    ? 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap'
     : 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap';
   return (
     <head>
