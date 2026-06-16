@@ -1,4 +1,5 @@
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
+import { sessionUserId } from './auth';
 
 const g = globalThis as unknown as { _pgPool?: Pool };
 const pool = g._pgPool ?? new Pool({ connectionString: process.env.DATABASE_URL, max: 5 });
@@ -9,9 +10,23 @@ export async function q<T = Record<string, unknown>>(text: string, params: unkno
   return res.rows as T[];
 }
 
+/** Run fn inside one transaction (signup = create users + profile + credentials atomically). */
+export async function withTx<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {
+  const client = await pool.connect();
+  try { await client.query('BEGIN'); const r = await fn(client); await client.query('COMMIT'); return r; }
+  catch (e) { try { await client.query('ROLLBACK'); } catch { /* ignore */ } throw e; }
+  finally { client.release(); }
+}
+
 /** The stable demo "logged-in" customer (seeded by seed-interactive.sql). Falls back if absent. */
 export const DEMO_USER = '00000000-0000-4000-8000-0000000000d0';
+
+/** The current customer's users.id. A REAL logged-in user (session cookie) takes precedence; with no
+ *  session it falls back to the demo persona so anonymous browsing/demo still works. (Name kept for
+ *  call-site compatibility — every page/action already calls this.) */
 export async function demoUserId(): Promise<string | null> {
+  const sid = sessionUserId();
+  if (sid) return sid;
   const a = await q<{ id: string }>(`SELECT id FROM users WHERE id=$1`, [DEMO_USER]);
   if (a[0]) return DEMO_USER;
   const b = await q<{ user_id: string }>(
