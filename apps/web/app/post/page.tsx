@@ -1,5 +1,6 @@
 import { q, i18n } from '@/lib/db';
 import { createPostAction } from '../actions';
+import { PageHead } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,8 @@ export default async function PostComposer({ searchParams }: { searchParams: { p
 
   return (
     <>
-      <h1>โพสต์ลงฟีด <span className="note">(ร้านค้า)</span></h1>
-      <p className="note">โพสต์รูป/ข่าวสารของร้านลงฟีดลูกค้าแบบเร็วๆ — ลูกค้าเห็น กดถูกใจ คอมเมนต์ได้ทันที (MVP: เผยแพร่เลย; โปรดักชันผ่านการกลั่นกรองรูป)</p>
+      <PageHead icon="feed" title="โพสต์ลงฟีด"
+        sub="โพสต์รูป/ข่าวสารของร้านลงฟีดลูกค้าแบบเร็วๆ — ลูกค้าเห็น กดถูกใจ คอมเมนต์ได้ทันที (MVP: เผยแพร่เลย; โปรดักชันผ่านการกลั่นกรองรูป)" />
       {searchParams?.posted && <div className="banner-ok">✓ โพสต์แล้ว — ไปดูในแอปลูกค้าแท็บ “อัปเดต” (http://127.0.0.1:3003/feed)</div>}
 
       <form className="form" action={createPostAction}>

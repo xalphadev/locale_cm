@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
+import { Icon } from '../ui';
 import { updateShopAction } from '../../actions';
 import GeoPicker from './GeoPicker';
 
@@ -22,7 +23,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   return (
     <>
-      <h1>ข้อมูลร้าน</h1>
+      <h1 className="phead"><span className="phead-ic"><Icon n="store" size={18} /></span> ข้อมูลร้าน</h1>
       {searchParams?.ok && <div className="banner-ok">✓ บันทึกแล้ว</div>}
       <form className="form" action={updateShopAction}>
         <div className="field"><label>ชื่อร้าน</label><input name="name_th" defaultValue={i18n(p?.name_i18n)} /></div>

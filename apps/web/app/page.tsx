@@ -1,4 +1,5 @@
 import { q, baht } from '@/lib/db';
+import { PageHead, H2, Icon } from './adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,9 +32,9 @@ export default async function Dashboard() {
   } catch (e: any) {
     return (
       <>
-        <h1>Dashboard</h1>
-        <p className="note">Could not reach the database. Set <code>DATABASE_URL</code> in <code>apps/web/.env</code>
-          {' '}(a read-only role), apply <code>db/migrations</code>, then reload.</p>
+        <PageHead icon="pulse" title="ภาพรวมระบบ" sub="สถานะความมั่นคงทางการเงินและตัวเลขหลักของแพลตฟอร์ม" />
+        <p className="note">ต่อฐานข้อมูลไม่ได้ — ตั้งค่า <code>DATABASE_URL</code> ใน <code>apps/web/.env</code>
+          {' '}(สิทธิ์อ่านอย่างเดียว), รัน <code>db/migrations</code> แล้วโหลดใหม่</p>
         <pre className="note">{String(e?.message ?? e)}</pre>
       </>
     );
@@ -41,28 +42,48 @@ export default async function Dashboard() {
   const reconOk = d.recon?.status === 'pass';
   return (
     <>
-      <h1>System health</h1>
-      <div className="cards">
-        <div className="stat"><div className="k">Solvency reconciliation</div>
-          <div className="v">{d.recon ? <span className={`pill ${reconOk ? 'ok' : 'bad'}`}>{d.recon.status}</span> : '—'}</div>
-          {d.recon && !reconOk && <div className="note mono">break {baht(d.recon.break_minor)}</div>}
+      <PageHead icon="pulse" title="ภาพรวมระบบ"
+        sub="อ่านอย่างเดียวจากบัญชีแยกประเภทกลาง — การเคลื่อนไหวเงินทุกรายการผ่าน money-plane เท่านั้น ไม่ใช่หน้านี้" />
+
+      <div className={`adm-hero ${reconOk ? '' : 'bad'}`}>
+        <div className="adm-hero-ic"><Icon n="shield" size={26} /></div>
+        <div>
+          <div className="adm-hero-k">การกระทบยอดความมั่นคง (solvency reconciliation)</div>
+          <div className="adm-hero-v">
+            {d.recon ? <span className={`pill ${reconOk ? 'ok' : 'bad'}`}>{d.recon.status}</span> : '—'}
+            {d.recon && !reconOk && <span className="note mono">break {baht(d.recon.break_minor)}</span>}
+            {d.recon && reconOk && <span className="note">หนี้เหรียญถูกหนุนหลังครบ 1:1</span>}
+          </div>
         </div>
-        <div className="stat"><div className="k">Outstanding Coin liability</div><div className="v mono">{baht(d.coin.outstanding)}</div>
-          <div className="note">backed 1:1 by escrow</div></div>
-        <div className="stat"><div className="k">Escrow settled-available</div><div className="v mono">{baht(d.esc.settled)}</div>
-          <div className="note">mintable now</div></div>
-        <div className="stat"><div className="k">Platform revenue (take-rate)</div><div className="v mono">{baht(d.rev.bal)}</div></div>
-        <div className="stat"><div className="k">Published places</div><div className="v mono">{d.places.published} / {d.places.total}</div></div>
-        <div className="stat"><div className="k">Active quests</div><div className="v mono">{d.quests.active}</div></div>
-        <div className="stat"><div className="k">Settled redemptions</div><div className="v mono">{d.redm.n}</div>
+        {d.recon && (
+          <div className="adm-hero-meta">coin_liability = backing
+            <b>{baht(d.recon.anchor_lhs_minor)} = {baht(d.recon.anchor_rhs_minor)}</b>
+          </div>
+        )}
+      </div>
+
+      <div className="cards">
+        <div className="stat"><span className="stat-ic"><Icon n="spark" size={17} /></span>
+          <div className="k">เหรียญคงค้าง (Coin liability)</div><div className="v mono">{baht(d.coin.outstanding)}</div>
+          <div className="note">หนุนหลัง 1:1 ด้วยเอสโครว์</div></div>
+        <div className="stat"><span className="stat-ic"><Icon n="wallet" size={17} /></span>
+          <div className="k">เอสโครว์พร้อมใช้</div><div className="v mono">{baht(d.esc.settled)}</div>
+          <div className="note">มินต์เหรียญได้ทันที</div></div>
+        <div className="stat"><span className="stat-ic"><Icon n="ledger" size={17} /></span>
+          <div className="k">รายได้แพลตฟอร์ม (take-rate)</div><div className="v mono">{baht(d.rev.bal)}</div></div>
+        <div className="stat"><span className="stat-ic"><Icon n="pin" size={17} /></span>
+          <div className="k">สถานที่เผยแพร่</div><div className="v mono">{d.places.published} / {d.places.total}</div></div>
+        <div className="stat"><span className="stat-ic"><Icon n="flag" size={17} /></span>
+          <div className="k">เควสต์ที่ใช้งาน</div><div className="v mono">{d.quests.active}</div></div>
+        <div className="stat"><span className="stat-ic"><Icon n="receipt" size={17} /></span>
+          <div className="k">การแลกที่ชำระแล้ว</div><div className="v mono">{d.redm.n}</div>
           <div className="note mono">{baht(d.redm.settled)}</div></div>
       </div>
 
-      <h2>Merchants by trust state</h2>
+      <H2 icon="users">ร้านค้าแยกตามระดับความน่าเชื่อถือ</H2>
       <table><thead><tr><th>trust_state</th><th>count</th></tr></thead><tbody>
         {d.merchants.map((m) => (<tr key={m.trust_state}><td>{m.trust_state}</td><td className="mono">{m.n}</td></tr>))}
       </tbody></table>
-      <p className="note">Read-only over the canonical ledger. All money mutations go through the NestJS money-plane (never this client).</p>
     </>
   );
 }

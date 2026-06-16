@@ -1,4 +1,5 @@
 import { q } from '@/lib/db';
+import { PageHead } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,10 +23,11 @@ export default async function Places() {
        ORDER BY p.updated_at DESC LIMIT 200`);
   } catch (e: any) { err = String(e?.message ?? e); }
 
-  if (err) return (<><h1>Places</h1><p className="note">DB error: {err}</p></>);
+  if (err) return (<><PageHead icon="pin" title="สถานที่" /><p className="note">DB error: {err}</p></>);
   return (
     <>
-      <h1>Places <span className="note">({rows.length})</span></h1>
+      <PageHead icon="pin" title="สถานที่" count={rows.length}
+        sub="รายการสถานที่ทั้งหมดในแคตตาล็อก (ล่าสุด 200 รายการ) — สถานะ เวอร์ชัน และความสดของข้อมูล" />
       <table>
         <thead><tr><th>Name</th><th>Category</th><th>District</th><th>Status</th><th>Ver</th><th>Freshness</th><th>Verified</th></tr></thead>
         <tbody>

@@ -1,5 +1,6 @@
 import { q, i18n } from '@/lib/db';
 import { approveProposalAction } from '../actions';
+import { PageHead } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,9 @@ export default async function ReviewQueue({ searchParams }: { searchParams: { cr
 
   return (
     <>
-      <h1>Review queue <span className="note">({rows.length} pending)</span></h1>
+      <PageHead icon="inbox" title="คิวรออนุมัติ" count={rows.length}
+        sub="change-proposal ที่ field agent เสนอเข้ามา — อนุมัติแล้วร้าน/กิจกรรมจึงขึ้นจริงใน Places และแอปลูกค้า (SoD: ผู้ตรวจ ≠ ผู้เสนอ)"
+        action={<a className="btn ghost" href="/agent">+ เสนอสถานที่</a>} />
       {searchParams?.created && <div className="banner-ok">✓ ส่ง proposal แล้ว — รออนุมัติด้านล่าง</div>}
       {searchParams?.approved && <div className="banner-ok">✓ อนุมัติแล้ว — ร้านขึ้นจริงใน Places + แอปลูกค้า</div>}
       {searchParams?.error && <p className="bad" style={{ padding: '.6rem .9rem', borderRadius: 8 }}>⚠ {searchParams.error}</p>}

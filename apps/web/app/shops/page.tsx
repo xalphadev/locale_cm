@@ -1,5 +1,6 @@
 import { q, i18n } from '@/lib/db';
 import { publishMerchantPlaceAction, unpublishMerchantPlaceAction } from '../actions';
+import { PageHead, H2 } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,12 +18,12 @@ export default async function Shops({ searchParams }: { searchParams: { ok?: str
 
   return (
     <>
-      <h1>ร้านค้าที่สมัครเข้ามา <span className="note">({rows.length})</span></h1>
+      <PageHead icon="store" title="ร้านค้าที่สมัครเข้ามา" count={rows.length}
+        sub="ร้านที่สมัครผ่านพอร์ทัลจะอยู่สถานะ “รอตรวจ” จนกว่าทีมงานจะกดเผยแพร่ — ป้องกันร้านสแปมขึ้นหน้าลูกค้าอัตโนมัติ" />
       {searchParams?.ok === 'published' && <div className="banner-ok">✓ เผยแพร่ร้านแล้ว — ลูกค้าเห็นได้</div>}
       {searchParams?.ok === 'hidden' && <div className="banner-ok">✓ ซ่อนร้านแล้ว</div>}
-      <p className="note">ร้านที่สมัครผ่านพอร์ทัลจะอยู่สถานะ “รอตรวจ” จนกว่าทีมงานจะกดเผยแพร่ — ป้องกันร้านสแปมขึ้นหน้าลูกค้าอัตโนมัติ</p>
 
-      <h2>รอตรวจสอบ ({pending.length})</h2>
+      <H2 icon="inbox">รอตรวจสอบ ({pending.length})</H2>
       {pending.length === 0 ? <p className="note">ไม่มีร้านรอตรวจ</p> : (
         <table><thead><tr><th>ร้าน</th><th>ประเภท</th><th>ติดต่อ</th><th>สินค้า</th><th /></tr></thead><tbody>
           {pending.map((r) => (
@@ -35,7 +36,7 @@ export default async function Shops({ searchParams }: { searchParams: { ok?: str
         </tbody></table>
       )}
 
-      <h2>เผยแพร่แล้ว ({live.length})</h2>
+      <H2 icon="store">เผยแพร่แล้ว ({live.length})</H2>
       {live.length === 0 ? <p className="note">ยังไม่มีร้านที่เผยแพร่</p> : (
         <table><thead><tr><th>ร้าน</th><th>ประเภท</th><th>สินค้า</th><th /></tr></thead><tbody>
           {live.map((r) => (

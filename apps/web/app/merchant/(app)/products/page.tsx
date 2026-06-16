@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
-import { thumb } from '@/lib/img';
-import { setProductFlagAction } from '../../actions';
+import { Icon, Thumb } from '../ui';
 import { SUBTYPES } from './ProductForm';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +18,7 @@ export default async function Products({ searchParams }: { searchParams: { ok?: 
     <>
       <div className="listhead">
         <h1>สินค้า <span className="listcount">{rows.length}</span></h1>
-        <a className="addbtn" href="/merchant/products/new">+ เพิ่มสินค้า</a>
+        <a className="addbtn" href="/merchant/products/new"><Icon n="plus" size={17} /> เพิ่มสินค้า</a>
       </div>
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มสินค้าแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
@@ -27,31 +26,26 @@ export default async function Products({ searchParams }: { searchParams: { ok?: 
 
       {rows.length === 0 ? (
         <div className="mempty">
+          <span className="mempty-ic"><Icon n="box" size={30} /></span>
           <p>ยังไม่มีสินค้า — เพิ่มชิ้นแรกเพื่อโชว์ให้ลูกค้าเห็น</p>
           <a className="btn btn-primary" href="/merchant/products/new">+ เพิ่มสินค้าชิ้นแรก</a>
         </div>
       ) : (
         <div className="mlist">
           {rows.map((r) => (
-            <div className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} key={r.id}>
-              <a className="mrow-img" href={`/merchant/products/${r.id}/edit`}>
-                <img src={thumb(r.image_urls, 'p' + r.id, r.subtype, 'eat')} alt="" loading="lazy" />
-              </a>
-              <a className="mrow-body" href={`/merchant/products/${r.id}/edit`}>
-                <div className="mrow-nm">{i18n(r.name_i18n)}</div>
-                <div className="mrow-meta">{subLabel(r.subtype)}{r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}${r.price_unit ? '/' + r.price_unit : ''}` : ' · สอบถามราคา'}</div>
-                <div className="mrow-tags">
+            <a className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/products/${r.id}`} key={r.id}>
+              <span className="mrow-img"><Thumb images={r.image_urls} kind="product" alt={i18n(r.name_i18n)} /></span>
+              <span className="mrow-body">
+                <span className="mrow-nm">{i18n(r.name_i18n)}</span>
+                <span className="mrow-meta">{subLabel(r.subtype)}{r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}${r.price_unit ? '/' + r.price_unit : ''}` : ' · สอบถามราคา'}</span>
+                <span className="mrow-tags">
                   {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
-                  {r.sold_out && <span className="t sold">หมด</span>}
-                  {r.in_season && <span className="t season">ในฤดู</span>}
-                </div>
-              </a>
-              <div className="mrow-acts">
-                <form action={setProductFlagAction.bind(null, r.id, 'sold_out')}><button className="mini" type="submit">{r.sold_out ? 'มีของ' : 'หมด'}</button></form>
-                <form action={setProductFlagAction.bind(null, r.id, r.status === 'hidden' ? 'show' : 'hide')}><button className="mini" type="submit">{r.status === 'hidden' ? 'แสดง' : 'ซ่อน'}</button></form>
-                <a className="mini edit" href={`/merchant/products/${r.id}/edit`}>แก้ไข</a>
-              </div>
-            </div>
+                  {r.status !== 'hidden' && r.sold_out && <span className="t sold">หมด</span>}
+                  {r.status !== 'hidden' && r.in_season && <span className="t season">ในฤดู</span>}
+                </span>
+              </span>
+              <Icon n="chevR" size={20} className="mrow-go" />
+            </a>
           ))}
         </div>
       )}

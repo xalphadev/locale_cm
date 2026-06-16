@@ -1,4 +1,5 @@
 import { q, baht } from '@/lib/db';
+import { PageHead, H2 } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,13 +19,14 @@ export default async function Money() {
               (SELECT COALESCE(SUM(amount_minor),0) FROM ledger_entries e WHERE e.txn_id=lt.id AND e.direction='DR' AND e.currency='THB') thb
        FROM ledger_transactions lt ORDER BY lt.created_at DESC LIMIT 25`);
   } catch (e: any) { err = String(e?.message ?? e); }
-  if (err) return (<><h1>Money &amp; Recon</h1><p className="note">DB error: {err}</p></>);
+  if (err) return (<><PageHead icon="wallet" title="การเงิน & กระทบยอด" /><p className="note">DB error: {err}</p></>);
 
   return (
     <>
-      <h1>Money &amp; Reconciliation</h1>
+      <PageHead icon="wallet" title="การเงิน & กระทบยอด"
+        sub="อ่านอย่างเดียวจากบัญชีแยกประเภทกลาง — รอบการกระทบยอดความมั่นคง, เอสโครว์ร้านค้า และรายการเคลื่อนไหวล่าสุด" />
 
-      <h2>Reconciliation runs (solvency anchor)</h2>
+      <H2 icon="shield">รอบการกระทบยอด (solvency anchor)</H2>
       <table>
         <thead><tr><th>When</th><th>Status</th><th>coin_liability (LHS)</th><th>backing (RHS)</th><th>break</th></tr></thead>
         <tbody>{recon.map((r, i) => (
@@ -36,7 +38,7 @@ export default async function Money() {
         </tbody>
       </table>
 
-      <h2>Escrow wallets</h2>
+      <H2 icon="store">เอสโครว์ร้านค้า (escrow wallets)</H2>
       <table>
         <thead><tr><th>Merchant</th><th>Total</th><th>Settled-available</th><th>Locked</th><th>Status</th></tr></thead>
         <tbody>{escrow.map((w, i) => (
@@ -47,7 +49,7 @@ export default async function Money() {
         </tbody>
       </table>
 
-      <h2>Recent ledger transactions</h2>
+      <H2 icon="ledger">รายการบัญชีล่าสุด (ledger transactions)</H2>
       <table>
         <thead><tr><th>When</th><th>Type</th><th>Currencies</th><th>THB moved</th></tr></thead>
         <tbody>{txns.map((t, i) => (

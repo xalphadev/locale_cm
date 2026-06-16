@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
-import { thumb } from '@/lib/img';
-import { updateVacancyAction, setStayUnitFlagAction } from '../../actions';
+import { Icon, Thumb } from '../ui';
 
 export const dynamic = 'force-dynamic';
 const DAILY_TH: Record<string, string> = { vacant: 'ว่างวันนี้', full: 'เต็มวันนี้', ask: 'สอบถามว่าง' };
@@ -19,7 +18,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
     <>
       <div className="listhead">
         <h1>ห้องพัก <span className="listcount">{rows.length}</span></h1>
-        <a className="addbtn" href="/merchant/rooms/new">+ เพิ่มห้อง</a>
+        <a className="addbtn" href="/merchant/rooms/new"><Icon n="plus" size={17} /> เพิ่มห้อง</a>
       </div>
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
@@ -28,6 +27,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
 
       {rows.length === 0 ? (
         <div className="mempty">
+          <span className="mempty-ic"><Icon n="bed" size={30} /></span>
           <p>ยังไม่มีห้อง — เพิ่มห้องแรกเพื่อให้ลูกค้าเห็นห้องว่าง</p>
           <a className="btn btn-primary" href="/merchant/rooms/new">+ เพิ่มห้องแรก</a>
         </div>
@@ -36,33 +36,20 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
           {rows.map((r) => {
             const monthly = r.rental_mode === 'monthly';
             return (
-              <div className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} key={r.id}>
-                <a className="mrow-img" href={`/merchant/rooms/${r.id}/edit`}>
-                  <img src={thumb(r.image_urls, 'r' + r.id, 'stay', 'see')} alt="" loading="lazy" />
-                </a>
-                <a className="mrow-body" href={`/merchant/rooms/${r.id}/edit`}>
-                  <div className="mrow-nm">{i18n(r.name_i18n)}</div>
-                  <div className="mrow-meta">{monthly ? 'รายเดือน' : 'รายวัน'}{r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}/${monthly ? 'เดือน' : 'คืน'}` : ''} · อัปเดต {daysAgo(r.availability_updated_at)}</div>
-                  <div className="mrow-tags">
+              <a className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/rooms/${r.id}`} key={r.id}>
+                <span className="mrow-img"><Thumb images={r.image_urls} kind="room" alt={i18n(r.name_i18n)} /></span>
+                <span className="mrow-body">
+                  <span className="mrow-nm">{i18n(r.name_i18n)}</span>
+                  <span className="mrow-meta">{monthly ? 'รายเดือน' : 'รายวัน'}{r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}/${monthly ? 'เดือน' : 'คืน'}` : ''} · อัปเดต {daysAgo(r.availability_updated_at)}</span>
+                  <span className="mrow-tags">
                     {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
                     {monthly
                       ? <span className={`t ${r.available_units > 0 ? 'season' : 'sold'}`}>{r.available_units > 0 ? `ว่าง ${r.available_units} ห้อง` : 'เต็ม'}</span>
                       : <span className={`t ${r.daily_status === 'vacant' ? 'season' : r.daily_status === 'full' ? 'sold' : 'off'}`}>{DAILY_TH[r.daily_status]}</span>}
-                  </div>
-                </a>
-                <div className="mrow-acts">
-                  {monthly ? (
-                    <div className="stepper">
-                      <form action={updateVacancyAction.bind(null, r.id, -1)}><button className="mini step" type="submit">−</button></form>
-                      <span className="step-n">{r.available_units}</span>
-                      <form action={updateVacancyAction.bind(null, r.id, 1)}><button className="mini step" type="submit">+</button></form>
-                    </div>
-                  ) : (
-                    <form action={setStayUnitFlagAction.bind(null, r.id, 'cycle_daily')}><button className="mini" type="submit">เปลี่ยนสถานะ</button></form>
-                  )}
-                  <a className="mini edit" href={`/merchant/rooms/${r.id}/edit`}>แก้ไข</a>
-                </div>
-              </div>
+                  </span>
+                </span>
+                <Icon n="chevR" size={20} className="mrow-go" />
+              </a>
             );
           })}
         </div>

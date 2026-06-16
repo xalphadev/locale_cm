@@ -1,12 +1,13 @@
 import { createEventAction } from '../actions';
+import { PageHead } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
 export default function ProposeEvent({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <>
-      <h1>เพิ่มกิจกรรม / เทศกาลใหม่ <span className="note">(field agent)</span></h1>
-      <p className="note">ส่งเป็น <b>change-proposal</b> ผ่านท่อเดียวกับร้าน → แอดมินอนุมัติ (คนละคน, SoD) → ขึ้นใน Discover</p>
+      <PageHead icon="calendar" title="เพิ่มกิจกรรม / เทศกาลใหม่"
+        sub="ส่งเป็น change-proposal ผ่านท่อเดียวกับร้าน → แอดมินอนุมัติ (คนละคน, SoD) → ขึ้นใน Discover" />
       {searchParams?.error && <p className="bad" style={{ padding: '.6rem .9rem', borderRadius: 8 }}>⚠ {searchParams.error}</p>}
 
       <form className="form" action={createEventAction}>

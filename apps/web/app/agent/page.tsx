@@ -1,4 +1,5 @@
 import { createPlaceAction } from '../actions';
+import { PageHead } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,8 @@ const SUBCATS: Record<string, string[]> = {
 export default function AgentNewPlace({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <>
-      <h1>เพิ่มร้าน / สถานที่ใหม่ <span className="note">(field agent)</span></h1>
-      <p className="note">ส่งเป็น <b>change-proposal</b> → ขึ้นคิวให้แอดมินตรวจ (คนละคนกับผู้เสนอ) แล้วค่อยขึ้นจริง</p>
+      <PageHead icon="plus" title="เพิ่มร้าน / สถานที่ใหม่"
+        sub="ส่งเป็น change-proposal → ขึ้นคิวให้แอดมินตรวจ (คนละคนกับผู้เสนอ) แล้วค่อยขึ้นจริงในแคตตาล็อก" />
       {searchParams?.error && <p className="bad" style={{ padding: '.6rem .9rem', borderRadius: 8 }}>⚠ {searchParams.error}</p>}
 
       <form className="form" action={createPlaceAction}>

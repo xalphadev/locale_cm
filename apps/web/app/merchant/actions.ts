@@ -140,7 +140,7 @@ export async function setProductFlagAction(productId: string, flag: string) {
   else if (flag === 'show') await q(`UPDATE shop_products SET status='published', updated_at=now() WHERE id=$1 AND place_id=$2`, [productId, acc.place_id]);
   else if (['sold_out', 'in_season', 'available_today'].includes(flag))
     await q(`UPDATE shop_products SET ${flag} = NOT ${flag}, updated_at=now() WHERE id=$1 AND place_id=$2`, [productId, acc.place_id]);
-  revalidatePath('/merchant/products');
+  revalidatePath('/merchant/products', 'layout'); // list + detail
 }
 
 /** Edit one of the merchant's OWN products. New photos/urls replace image_urls; none → keep existing. */
@@ -273,7 +273,7 @@ export async function updateVacancyAction(unitId: string, delta: number) {
   const step = Math.max(-1, Math.min(1, Math.trunc(Number(delta)) || 0));
   await q(`UPDATE stay_units SET available_units=GREATEST(0, available_units + $3), availability_updated_at=now(), updated_at=now()
            WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id, step]);
-  revalidatePath('/merchant/rooms');
+  revalidatePath('/merchant/rooms', 'layout'); // list + detail
 }
 
 /** Cycle daily availability vacant→full→ask→vacant, or hide/show — restamps freshness on cycle. */
@@ -285,7 +285,7 @@ export async function setStayUnitFlagAction(unitId: string, flag: string) {
   else if (flag === 'cycle_daily')
     await q(`UPDATE stay_units SET daily_status = CASE daily_status WHEN 'vacant' THEN 'full' WHEN 'full' THEN 'ask' ELSE 'vacant' END,
                availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
-  revalidatePath('/merchant/rooms');
+  revalidatePath('/merchant/rooms', 'layout'); // list + detail
 }
 
 /** Edit one of the merchant's OWN rooms. New photos/urls replace image_urls; none → keep existing. */

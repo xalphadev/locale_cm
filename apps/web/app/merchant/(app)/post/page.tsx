@@ -1,3 +1,4 @@
+import { Icon } from '../ui';
 import { createMerchantPostAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -5,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export default function Post({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
   return (
     <>
-      <h1>โพสต์ลงฟีด</h1>
+      <h1 className="phead"><span className="phead-ic"><Icon n="feed" size={18} /></span> โพสต์ลงฟีด</h1>
       <p className="note">โพสต์ข่าวสาร/โปรของร้านลงฟีดลูกค้า — กดถูกใจและคอมเมนต์ได้ทันที</p>
       {searchParams?.ok && <div className="banner-ok">✓ โพสต์แล้ว — ไปดูในแอปลูกค้าแท็บ “อัปเดต”</div>}
       {searchParams?.error === 'body' && <div className="banner-err">กรุณาพิมพ์ข้อความโพสต์</div>}
