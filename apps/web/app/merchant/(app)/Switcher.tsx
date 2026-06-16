@@ -18,7 +18,7 @@ export default async function Switcher({
     `SELECT b.id brand_id, b.name_i18n brand_name, p.id place_id, p.name_i18n place_name,
             p.status::text place_status, p.offers_stay, p.sells_products
        FROM brands b JOIN places p ON p.brand_id = b.id
-      WHERE b.owner_account_id = $1 AND b.status = 'active'
+      WHERE b.owner_account_id = $1 AND b.status = 'active' AND b.deleted_at IS NULL
       ORDER BY b.created_at, p.created_at`, [accountId]);
 
   // group branches under their brand, preserving query order

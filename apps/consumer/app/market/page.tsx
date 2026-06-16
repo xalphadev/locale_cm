@@ -14,7 +14,7 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
 
   let rows: any[] = [];
   try {
-    const where = [`sp.status='published'`, `p.status='published'`, `p.is_visible`, `NOT sp.sold_out`];
+    const where = [`sp.status='published'`, `sp.deleted_at IS NULL`, `p.status='published'`, `p.is_visible`, `NOT sp.sold_out`];
     const params: any[] = [];
     if (sub) { params.push(sub); where.push(`sp.subtype=$${params.length}`); }
     if (sort === 'today') where.push(`sp.available_today`);

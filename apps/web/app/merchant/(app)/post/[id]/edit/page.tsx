@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 export default async function EditPost({ params, searchParams }: { params: { id: string }; searchParams: { error?: string; rej?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM feed_posts WHERE id=$1 AND place_id=$2`, [params.id, acc.place_id]) : [];
+  const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM feed_posts WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!p) {
     return (<><div className="mback"><a href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</a></div><h1>ไม่พบโพสต์</h1></>);
   }

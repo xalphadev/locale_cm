@@ -14,11 +14,11 @@ export default async function ShopsPage() {
     `SELECT b.id brand_id, b.name_i18n brand_name,
             p.id place_id, p.name_i18n place_name, p.status::text place_status,
             p.offers_stay, p.sells_products,
-            (SELECT count(*) FROM shop_products sp WHERE sp.place_id=p.id AND sp.status='published') nprod,
-            (SELECT count(*) FROM stay_units    su WHERE su.place_id=p.id AND su.status='published') nroom,
-            (SELECT count(*) FROM feed_posts    fp WHERE fp.place_id=p.id AND fp.status='published') npost
+            (SELECT count(*) FROM shop_products sp WHERE sp.place_id=p.id AND sp.status='published' AND sp.deleted_at IS NULL) nprod,
+            (SELECT count(*) FROM stay_units    su WHERE su.place_id=p.id AND su.status='published' AND su.deleted_at IS NULL) nroom,
+            (SELECT count(*) FROM feed_posts    fp WHERE fp.place_id=p.id AND fp.status='published' AND fp.deleted_at IS NULL) npost
        FROM brands b LEFT JOIN places p ON p.brand_id = b.id
-      WHERE b.owner_account_id = $1 AND b.status = 'active'
+      WHERE b.owner_account_id = $1 AND b.status = 'active' AND b.deleted_at IS NULL
       ORDER BY b.created_at, p.created_at`, [acc.id]);
 
   const brands: { id: string; name: string; branches: any[] }[] = [];

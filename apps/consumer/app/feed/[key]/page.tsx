@@ -1,4 +1,4 @@
-import { q, DEMO_USER } from '@/lib/db';
+import { q, demoUserId } from '@/lib/db';
 import { Icon } from '../../icons';
 import { PostCard } from '../parts';
 
@@ -33,13 +33,13 @@ async function loadOne(kind: string, id: string): Promise<any | null> {
   }
   if (kind === 'post') {
     const [r] = await q<any>(`SELECT 'post' kind, fp.id pgid, fp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
-        fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id WHERE fp.id=$1 AND fp.status='published' AND p.status='published' AND p.is_visible`, [id]);
+        fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id WHERE fp.id=$1 AND fp.status='published' AND fp.deleted_at IS NULL AND p.status='published' AND p.is_visible`, [id]);
     return r ?? null;
   }
   if (kind === 'product') {
     const [r] = await q<any>(`SELECT 'product' kind, sp.id, sp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
         sp.name_i18n prod_name, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls, sp.image_count, sp.subtype
-      FROM shop_products sp JOIN places p ON p.id=sp.place_id WHERE sp.id=$1 AND sp.status='published' AND NOT sp.sold_out AND p.status='published' AND p.is_visible`, [id]);
+      FROM shop_products sp JOIN places p ON p.id=sp.place_id WHERE sp.id=$1 AND sp.status='published' AND sp.deleted_at IS NULL AND NOT sp.sold_out AND p.status='published' AND p.is_visible`, [id]);
     return r ?? null;
   }
   if (kind === 'verified') {
@@ -61,12 +61,13 @@ export default async function PostDetail({ params }: { params: { key: string } }
 
   let it: any = null; let lk = { c: 0, liked: false }; let comments: any[] = [];
   try {
+    const uid = await demoUserId();
     it = await loadOne(kind, id);
     if (it) {
-      const [l] = await q<any>(`SELECT count(*)::int c, bool_or(user_id=$2) liked FROM post_likes WHERE post_key=$1 GROUP BY post_key`, [rawKey, DEMO_USER]);
+      const [l] = await q<any>(`SELECT count(*)::int c, bool_or(user_id=$2) liked FROM post_likes WHERE post_key=$1 GROUP BY post_key`, [rawKey, uid]);
       if (l) lk = { c: l.c, liked: !!l.liked };
       comments = await q<any>(`SELECT pc.body, pc.created_at, pr.display_name FROM post_comments pc
-        LEFT JOIN profiles pr ON pr.user_id=pc.user_id WHERE pc.post_key=$1 ORDER BY pc.created_at ASC`, [rawKey]);
+        LEFT JOIN profiles pr ON pr.user_id=pc.user_id WHERE pc.post_key=$1 AND pc.deleted_at IS NULL ORDER BY pc.created_at ASC`, [rawKey]);
     }
   } catch { /* db down */ }
 

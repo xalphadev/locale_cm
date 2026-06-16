@@ -15,9 +15,17 @@ export default async function Dashboard() {
   const sells = !!acc.sells_products;
   const stay = !!acc.offers_stay;
   const [stats] = await q<any>(
-    `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND status='published') products,
-            (SELECT count(*) FROM stay_units    WHERE place_id=$1 AND status='published') rooms,
-            (SELECT count(*) FROM feed_posts    WHERE place_id=$1 AND status='published') posts`, [acc.place_id]);
+    `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) products,
+            (SELECT count(*) FROM stay_units    WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) rooms,
+            (SELECT count(*) FROM feed_posts    WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) posts`, [acc.place_id]);
+  // recycle-bin count: soft-deleted items for this branch (place) + brand (rewards) — drives the menu badge
+  const [trash] = await q<any>(
+    `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND deleted_at IS NOT NULL)
+          + (SELECT count(*) FROM stay_units    WHERE place_id=$1 AND deleted_at IS NOT NULL)
+          + (SELECT count(*) FROM feed_posts    WHERE place_id=$1 AND deleted_at IS NOT NULL)
+          + (SELECT count(*) FROM stamp_rewards WHERE brand_id=$2 AND deleted_at IS NOT NULL) n`,
+    [acc.place_id, acc.brand_id ?? null]);
+  const trashN = Number(trash?.n ?? 0);
   const live = acc.place_status === 'published';
 
   return (
@@ -69,6 +77,12 @@ export default async function Dashboard() {
           <span className="menu-ic"><Icon n="eye" size={19} /></span>
           <span className="menu-tx">ดูหน้าร้านที่ลูกค้าเห็น</span>
           <Icon n="ext" className="menu-go" size={16} />
+        </a>
+        <a className="menu-row" href="/merchant/trash">
+          <span className="menu-ic"><Icon n="trash" size={20} /></span>
+          <span className="menu-tx">ถังขยะ · รายการที่ลบ</span>
+          {trashN > 0 ? <span className="menu-val">{trashN}</span> : null}
+          <Icon n="chevR" className="menu-go" size={18} />
         </a>
       </div>
 

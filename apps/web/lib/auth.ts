@@ -69,15 +69,15 @@ export async function currentAccount(): Promise<any | null> {
   if (!id) return null;
   const [a] = await q<any>(
     `WITH acct AS (
-       SELECT * FROM merchant_accounts WHERE id = $1 AND status = 'active'
+       SELECT * FROM merchant_accounts WHERE id = $1 AND status = 'active' AND deleted_at IS NULL
      ),
      resolved AS (
        SELECT a.*, COALESCE(
-         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id
+         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id AND bx.deleted_at IS NULL
             WHERE bx.owner_account_id = a.id AND px.id = a.active_place_id),
-         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id
+         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id AND bx.deleted_at IS NULL
             WHERE bx.owner_account_id = a.id AND px.id = a.place_id),
-         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id
+         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id AND bx.deleted_at IS NULL
             WHERE bx.owner_account_id = a.id ORDER BY px.created_at LIMIT 1)
        ) AS eff_place_id
        FROM acct a
@@ -88,11 +88,11 @@ export async function currentAccount(): Promise<any | null> {
             p.sells_products, p.offers_stay, p.category::text category, p.subcategory,
             b.id AS brand_id, b.name_i18n AS brand_name,
             (SELECT count(*)::int FROM brands bb
-               WHERE bb.owner_account_id = r.id AND bb.status = 'active') AS brand_count,
-            (SELECT count(*)::int FROM places pp JOIN brands bb ON bb.id = pp.brand_id
+               WHERE bb.owner_account_id = r.id AND bb.status = 'active' AND bb.deleted_at IS NULL) AS brand_count,
+            (SELECT count(*)::int FROM places pp JOIN brands bb ON bb.id = pp.brand_id AND bb.deleted_at IS NULL
                WHERE bb.owner_account_id = r.id) AS branch_count
        FROM resolved r
        LEFT JOIN places p ON p.id = r.eff_place_id
-       LEFT JOIN brands b ON b.id = p.brand_id`, [id]);
+       LEFT JOIN brands b ON b.id = p.brand_id AND b.deleted_at IS NULL`, [id]);
   return a ?? null;
 }

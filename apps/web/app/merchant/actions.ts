@@ -133,7 +133,7 @@ export async function signupAction(formData: FormData) {
 export async function loginAction(formData: FormData) {
   const email = s(formData, 'email').toLowerCase();
   const pw = s(formData, 'password');
-  const [acc] = await q<any>(`SELECT id, password_hash FROM merchant_accounts WHERE email=$1 AND status='active'`, [email]);
+  const [acc] = await q<any>(`SELECT id, password_hash FROM merchant_accounts WHERE email=$1 AND status='active' AND deleted_at IS NULL`, [email]);
   if (!acc || !verifyPassword(pw, acc.password_hash)) redirect('/merchant/login?error=1');
   setSession(acc.id);
   redirect('/merchant');
@@ -209,9 +209,20 @@ export async function updateMerchantProductAction(productId: string, formData: F
 export async function deleteProductAction(productId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'sells_products');
-  await q(`DELETE FROM shop_products WHERE id=$1 AND place_id=$2`, [productId, acc.place_id]);
+  // Soft delete: keep the row (price/photos/history) — hidden from every read, restorable later.
+  await q(`UPDATE shop_products SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [productId, acc.place_id]);
   revalidatePath('/merchant/products');
   redirect('/merchant/products?ok=deleted');
+}
+
+/** Restore a soft-deleted product from the recycle bin (deleted_at → NULL). Ownership-scoped;
+ *  no capability gate so an item under a currently-off capability is still recoverable. */
+export async function restoreProductAction(productId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  await q(`UPDATE shop_products SET deleted_at=NULL, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NOT NULL`, [productId, acc.place_id]);
+  revalidatePath('/merchant/trash'); revalidatePath('/merchant/products', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/trash?ok=restored');
 }
 
 export async function createMerchantPostAction(formData: FormData) {
@@ -263,14 +274,25 @@ export async function setPostFlagAction(postId: string, flag: string) {
 export async function deletePostAction(postId: string) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  // ownership-scoped delete; only purge engagement rows (keyed 'post:<id>') if we actually owned it
-  const del = await q<{ id: string }>(`DELETE FROM feed_posts WHERE id=$1 AND place_id=$2 RETURNING id`, [postId, acc.place_id]);
+  // Soft delete (ownership-scoped): retire the post + its comments, but KEEP likes (toggle data).
+  // Everything stays for history/restore; the deleted_at IS NULL guard on reads hides it from the feed.
+  const del = await q<{ id: string }>(`UPDATE feed_posts SET deleted_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL RETURNING id`, [postId, acc.place_id]);
   if (del.length) {
-    await q(`DELETE FROM post_likes WHERE post_key=$1`, [`post:${postId}`]);
-    await q(`DELETE FROM post_comments WHERE post_key=$1`, [`post:${postId}`]);
+    await q(`UPDATE post_comments SET deleted_at=now() WHERE post_key=$1 AND deleted_at IS NULL`, [`post:${postId}`]);
   }
   revalidatePath('/merchant/post');
   redirect('/merchant/post?ok=deleted');
+}
+
+/** Restore a soft-deleted post from the recycle bin — symmetric to delete: brings back the post
+ *  AND the comments retired with it (likes were never removed). Ownership-scoped. */
+export async function restorePostAction(postId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const r = await q<{ id: string }>(`UPDATE feed_posts SET deleted_at=NULL WHERE id=$1 AND place_id=$2 AND deleted_at IS NOT NULL RETURNING id`, [postId, acc.place_id]);
+  if (r.length) await q(`UPDATE post_comments SET deleted_at=NULL WHERE post_key=$1 AND deleted_at IS NOT NULL`, [`post:${postId}`]);
+  revalidatePath('/merchant/trash'); revalidatePath('/merchant/post', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/trash?ok=restored');
 }
 
 export async function updateShopAction(formData: FormData) {
@@ -411,9 +433,19 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
 export async function deleteStayUnitAction(unitId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'offers_stay');
-  await q(`DELETE FROM stay_units WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+  // Soft delete: retain the unit + its history; hidden from reads, restorable later.
+  await q(`UPDATE stay_units SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [unitId, acc.place_id]);
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=deleted');
+}
+
+/** Restore a soft-deleted room/unit from the recycle bin (deleted_at → NULL). Ownership-scoped. */
+export async function restoreStayUnitAction(unitId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  await q(`UPDATE stay_units SET deleted_at=NULL, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NOT NULL`, [unitId, acc.place_id]);
+  revalidatePath('/merchant/trash'); revalidatePath('/merchant/rooms', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/trash?ok=restored');
 }
 
 // ── multi-entity navigation: switch active branch, add a brand ("ร้าน"), add a branch ("สาขา") ──
@@ -428,7 +460,7 @@ export async function setActiveContextAction(placeId: string) {
     `UPDATE merchant_accounts ma SET active_place_id = $2
        WHERE ma.id = $1
          AND EXISTS (SELECT 1 FROM places p JOIN brands b ON b.id = p.brand_id
-                      WHERE p.id = $2 AND b.owner_account_id = ma.id)`,
+                      WHERE p.id = $2 AND b.owner_account_id = ma.id AND b.deleted_at IS NULL)`,
     [acc.id, placeId]);
   revalidatePath('/merchant', 'layout');
   redirect('/merchant');
@@ -462,7 +494,7 @@ export async function addBranchAction(formData: FormData) {
   if (!acc) redirect('/merchant/login');
   const brandId = s(formData, 'brand_id');
   const [brand] = await q<{ id: string; city_id: string | null }>(
-    `SELECT id, city_id FROM brands WHERE id=$1 AND owner_account_id=$2 AND status='active'`, [brandId, acc.id]);
+    `SELECT id, city_id FROM brands WHERE id=$1 AND owner_account_id=$2 AND status='active' AND deleted_at IS NULL`, [brandId, acc.id]);
   if (!brand) redirect('/merchant/shops');                 // not yours / not found → fail closed
   const branchName = s(formData, 'shop_name');
   if (!branchName) redirect(`/merchant/shops/${brandId}/new?error=name`);
@@ -525,9 +557,19 @@ export async function createRewardAction(formData: FormData) {
 export async function deleteRewardAction(rewardId: string) {
   const acc = await currentAccount();
   if (!acc?.brand_id) redirect('/merchant/login');
-  await q(`DELETE FROM stamp_rewards WHERE id=$1 AND brand_id=$2`, [rewardId, acc.brand_id]);
+  // Soft delete: keep the reward (past redemptions reference it); hidden from catalog, restorable.
+  await q(`UPDATE stamp_rewards SET deleted_at=now() WHERE id=$1 AND brand_id=$2 AND deleted_at IS NULL`, [rewardId, acc.brand_id]);
   revalidatePath('/merchant/loyalty');
   redirect('/merchant/loyalty?ok=reward_deleted');
+}
+
+/** Restore a soft-deleted reward from the recycle bin (deleted_at → NULL). Brand-scoped. */
+export async function restoreRewardAction(rewardId: string) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  await q(`UPDATE stamp_rewards SET deleted_at=NULL WHERE id=$1 AND brand_id=$2 AND deleted_at IS NOT NULL`, [rewardId, acc.brand_id]);
+  revalidatePath('/merchant/trash'); revalidatePath('/merchant/loyalty', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/trash?ok=restored');
 }
 
 /** Counter: confirm a customer's pending redemption → fn_redeem_stamps (fail-closed, idempotent).

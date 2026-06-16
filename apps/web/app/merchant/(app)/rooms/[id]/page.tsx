@@ -14,7 +14,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay) redirect('/merchant');
-  const [u] = isUuid(params.id) ? await q<any>(`SELECT * FROM stay_units WHERE id=$1 AND place_id=$2`, [params.id, acc.place_id]) : [];
+  const [u] = isUuid(params.id) ? await q<any>(`SELECT * FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!u) return (<><div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div><h1>ไม่พบห้องพัก</h1></>);
 
   const imgs: string[] | null = u.image_urls;

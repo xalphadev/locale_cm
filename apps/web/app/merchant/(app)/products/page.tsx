@@ -13,7 +13,7 @@ export default async function Products({ searchParams }: { searchParams: { ok?: 
   if (!acc.sells_products) redirect('/merchant');
   const rows = await q<any>(
     `SELECT id, name_i18n, subtype, price_minor, price_unit, image_urls, status, sold_out, in_season
-       FROM shop_products WHERE place_id=$1 ORDER BY created_at DESC`, [acc.place_id]);
+       FROM shop_products WHERE place_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC`, [acc.place_id]);
   const items = rows.map((r) => ({
     id: r.id,
     name: i18n(r.name_i18n),

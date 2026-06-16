@@ -1,4 +1,4 @@
-import { q, DEMO_USER } from '@/lib/db';
+import { q, demoUserId } from '@/lib/db';
 import { PostCard, postKey } from './parts';
 
 export const dynamic = 'force-dynamic';
@@ -19,18 +19,19 @@ async function load() {
     FROM places WHERE status='published' AND source='agent_seed' ORDER BY created_at DESC LIMIT 5`);
   const posts = await q<any>(`SELECT 'post' kind, fp.id pgid, fp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
       fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id
-    WHERE fp.status='published' AND p.status='published' AND p.is_visible ORDER BY fp.created_at DESC LIMIT 8`);
+    WHERE fp.status='published' AND fp.deleted_at IS NULL AND p.status='published' AND p.is_visible ORDER BY fp.created_at DESC LIMIT 8`);
   const products = await q<any>(`SELECT 'product' kind, sp.id, sp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
       sp.name_i18n prod_name, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls, sp.image_count, sp.subtype
     FROM shop_products sp JOIN places p ON p.id=sp.place_id
-    WHERE sp.status='published' AND NOT sp.sold_out AND p.status='published' AND p.is_visible ORDER BY sp.created_at DESC LIMIT 8`);
+    WHERE sp.status='published' AND sp.deleted_at IS NULL AND NOT sp.sold_out AND p.status='published' AND p.is_visible ORDER BY sp.created_at DESC LIMIT 8`);
   const buckets = [posts, products, deals, events, reviews, verified, news].map((a) => a.slice());
   const feed: any[] = []; let added = true;
   while (feed.length < 24 && added) { added = false; for (const b of buckets) { if (b.length) { feed.push(b.shift()); added = true; } } }
 
   const keys = feed.map(postKey);
-  const likeRows = await q<any>(`SELECT post_key, count(*)::int c, bool_or(user_id=$2) liked FROM post_likes WHERE post_key = ANY($1) GROUP BY post_key`, [keys, DEMO_USER]);
-  const cmtRows = await q<any>(`SELECT post_key, count(*)::int c FROM post_comments WHERE post_key = ANY($1) GROUP BY post_key`, [keys]);
+  const uid = await demoUserId();
+  const likeRows = await q<any>(`SELECT post_key, count(*)::int c, bool_or(user_id=$2) liked FROM post_likes WHERE post_key = ANY($1) GROUP BY post_key`, [keys, uid]);
+  const cmtRows = await q<any>(`SELECT post_key, count(*)::int c FROM post_comments WHERE post_key = ANY($1) AND deleted_at IS NULL GROUP BY post_key`, [keys]);
   const likes: Record<string, any> = {}; likeRows.forEach((r) => (likes[r.post_key] = r));
   const cmtCount: Record<string, number> = {}; cmtRows.forEach((r) => (cmtCount[r.post_key] = r.c));
   return { feed, likes, cmtCount };

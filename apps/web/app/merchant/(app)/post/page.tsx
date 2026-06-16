@@ -13,8 +13,8 @@ export default async function Posts({ searchParams }: { searchParams: { ok?: str
   const rows = await q<any>(
     `SELECT fp.id, fp.body_i18n, fp.image_urls, fp.status, fp.created_at,
             (SELECT count(*) FROM post_likes    WHERE post_key = 'post:' || fp.id)::int likes,
-            (SELECT count(*) FROM post_comments WHERE post_key = 'post:' || fp.id)::int comments
-       FROM feed_posts fp WHERE fp.place_id=$1 ORDER BY fp.created_at DESC`, [acc.place_id]);
+            (SELECT count(*) FROM post_comments WHERE post_key = 'post:' || fp.id AND deleted_at IS NULL)::int comments
+       FROM feed_posts fp WHERE fp.place_id=$1 AND fp.deleted_at IS NULL ORDER BY fp.created_at DESC`, [acc.place_id]);
   const items = rows.map((r) => ({
     id: r.id, body: preview(i18n(r.body_i18n)), date: fmtDate(r.created_at),
     likes: r.likes, comments: r.comments, image_urls: r.image_urls, status: r.status,

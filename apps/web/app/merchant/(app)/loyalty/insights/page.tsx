@@ -35,7 +35,7 @@ export default async function Insights() {
     `SELECT (SELECT count(*) FROM stamp_balances WHERE brand_id=$1 AND balance>0)::int members,
             (SELECT COALESCE(sum(balance),0) FROM stamp_balances WHERE brand_id=$1)::int outstanding,
             (SELECT count(*) FROM stamp_events WHERE brand_id=$1 AND delta>0 AND created_at >= now()-interval '30 days')::int issued_30d,
-            (SELECT COALESCE(sum(redeemed_count),0) FROM stamp_rewards WHERE brand_id=$1)::int redeemed`, [acc.brand_id]);
+            (SELECT COALESCE(sum(redeemed_count),0) FROM stamp_rewards WHERE brand_id=$1 AND deleted_at IS NULL)::int redeemed`, [acc.brand_id]);
   const totalEarnRedeem = (p3?.redeemed ?? 0) + (p3?.outstanding ?? 0);
   const redeemRate = totalEarnRedeem > 0 ? Math.round((p3.redeemed / totalEarnRedeem) * 100) : null;
 

@@ -15,7 +15,7 @@ export default async function NewBranch({
   if (!acc) redirect('/merchant/login');
   if (!isUuid(params.brandId)) notFound();
   const [brand] = await q<any>(
-    `SELECT id, name_i18n FROM brands WHERE id=$1 AND owner_account_id=$2 AND status='active'`,
+    `SELECT id, name_i18n FROM brands WHERE id=$1 AND owner_account_id=$2 AND status='active' AND deleted_at IS NULL`,
     [params.brandId, acc.id]);
   if (!brand) notFound();   // not yours / not found → fail closed
   const brandName = i18n(brand.name_i18n);

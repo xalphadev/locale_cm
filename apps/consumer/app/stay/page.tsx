@@ -1,4 +1,4 @@
-import { q, i18n, DEMO_USER } from '@/lib/db';
+import { q, i18n, demoUserId } from '@/lib/db';
 import { Icon } from '../icons';
 import { roomVacancy, roomImg } from '../RoomCard';
 import { STAY_AMENITIES, STAY_KINDS } from '@/lib/facets';
@@ -31,7 +31,8 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
 
   let rows: any[] = [];
   try {
-    const where = [`su.status='published'`, `p.status='published'`, `p.is_visible`, `su.rental_mode=$1`];
+    const uid = await demoUserId();
+    const where = [`su.status='published'`, `su.deleted_at IS NULL`, `p.status='published'`, `p.is_visible`, `su.rental_mode=$1`];
     const params: any[] = [mode];
     where.push(mode === 'monthly' ? `su.available_units>0` : `su.daily_status<>'full'`);
     if (kind.length) { params.push(kind); where.push(`p.stay_kind = ANY($${params.length}::text[])`); }
@@ -43,7 +44,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     const order = mode === 'monthly'
       ? (sort === 'soon' ? 'su.available_from NULLS FIRST, su.created_at DESC' : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST' : 'su.created_at DESC')
       : (sort === 'vacant' ? `(su.daily_status='vacant') DESC, su.created_at DESC` : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST' : 'su.created_at DESC');
-    params.push(DEMO_USER); const sIdx = params.length;
+    params.push(uid); const sIdx = params.length;
     rows = await q<any>(
       `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n, su.image_urls,
               su.available_units, su.available_from, su.daily_status, su.availability_updated_at,

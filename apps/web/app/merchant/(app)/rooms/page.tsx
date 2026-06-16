@@ -13,7 +13,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
   if (!acc.offers_stay) redirect('/merchant');
   const rows = await q<any>(
     `SELECT id, name_i18n, rental_mode, price_minor, available_units, daily_status, availability_updated_at, image_urls, status
-       FROM stay_units WHERE place_id=$1 ORDER BY rental_mode, sort, created_at DESC`, [acc.place_id]);
+       FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at DESC`, [acc.place_id]);
   const items = rows.map((r) => {
     const monthly = r.rental_mode === 'monthly';
     const vacant = monthly ? r.available_units > 0 : r.daily_status === 'vacant';

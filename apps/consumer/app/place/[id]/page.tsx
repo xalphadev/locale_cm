@@ -1,4 +1,4 @@
-import { q, i18n, cover, DEMO_USER } from '@/lib/db';
+import { q, i18n, cover, demoUserId } from '@/lib/db';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
@@ -29,6 +29,7 @@ function parsePoint(geo: string | null) {
 export default async function PlaceDetail({ params }: { params: { id: string } }) {
   let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null;
   try {
+    const uid = await demoUserId();
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
@@ -37,15 +38,15 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
        FROM places p LEFT JOIN districts d ON d.id=p.district_id LEFT JOIN data_freshness f ON f.place_id=p.id
-       WHERE p.id=$1 AND p.status='published'`, [params.id, DEMO_USER]);
+       WHERE p.id=$1 AND p.status='published'`, [params.id, uid]);
     if (p) {
       events = await q<any>(`SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m FROM events WHERE place_id=$1 AND status='published' ORDER BY starts_at`, [params.id]);
       quests = await q<any>(`SELECT DISTINCT q.id, q.title_i18n FROM quest_steps qs JOIN quests q ON q.id=qs.quest_id WHERE qs.place_id=$1 AND q.status IN ('active','draft')`, [params.id]);
       if (p.brand_id) {
         const [sprog] = await q<any>(`SELECT points_name_i18n FROM stamp_programs WHERE brand_id=$1 AND status='active'`, [p.brand_id]);
         if (sprog) {
-          const [bal] = await q<any>(`SELECT balance FROM stamp_balances WHERE user_id=$1 AND brand_id=$2`, [DEMO_USER, p.brand_id]);
-          const srew = await q<any>(`SELECT title_i18n, cost_stamps FROM stamp_rewards WHERE brand_id=$1 AND status='active' ORDER BY cost_stamps LIMIT 3`, [p.brand_id]);
+          const [bal] = await q<any>(`SELECT balance FROM stamp_balances WHERE user_id=$1 AND brand_id=$2`, [uid, p.brand_id]);
+          const srew = await q<any>(`SELECT title_i18n, cost_stamps FROM stamp_rewards WHERE brand_id=$1 AND status='active' AND deleted_at IS NULL ORDER BY cost_stamps LIMIT 3`, [p.brand_id]);
           stamp = { pointsName: i18n(sprog.points_name_i18n) || 'แต้ม', balance: bal ? Number(bal.balance) : 0, rewards: srew };
         }
       }
@@ -57,10 +58,10 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       mediaImgs = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='image' AND moderation_status='approved' LIMIT 12`, [params.id]);
       deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
       products = await q<any>(`SELECT id, name_i18n, subtype, price_minor, price_unit, price_text_i18n, image_urls, in_season, available_today, sold_out
-        FROM shop_products WHERE place_id=$1 AND status='published' ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
+        FROM shop_products WHERE place_id=$1 AND status='published' AND deleted_at IS NULL ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
       units = await q<any>(`SELECT id, name_i18n, rental_mode, price_minor, price_period, price_text_i18n, image_urls,
           available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
-        FROM stay_units WHERE place_id=$1 AND status='published'
+        FROM stay_units WHERE place_id=$1 AND status='published' AND deleted_at IS NULL
         ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 20`, [params.id]);
     }
   } catch { /* db down */ }

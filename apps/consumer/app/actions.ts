@@ -1,7 +1,8 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { q, demoUserId, DEMO_USER } from '@/lib/db';
+import { redirect } from 'next/navigation';
+import { q, demoUserId } from '@/lib/db';
 
 /** Switch UI language (TH/EN/ZH) — sets a cookie; the cookie-aware i18n re-renders everything. */
 export async function setLangAction(lang: string) {
@@ -14,24 +15,30 @@ const API = process.env.MONEY_API ?? 'http://127.0.0.1:3001';
 
 /** Toggle a saved/bookmarked place for the demo user (the "เซฟที่ชอบ" feature). */
 export async function toggleSaveAction(placeId: string) {
-  const ex = await q(`SELECT 1 FROM saved_places WHERE user_id=$1 AND place_id=$2`, [DEMO_USER, placeId]);
-  if (ex.length) await q(`DELETE FROM saved_places WHERE user_id=$1 AND place_id=$2`, [DEMO_USER, placeId]);
-  else await q(`INSERT INTO saved_places(user_id,place_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [DEMO_USER, placeId]);
+  const uid = await demoUserId();
+  if (!uid) redirect('/login');
+  const ex = await q(`SELECT 1 FROM saved_places WHERE user_id=$1 AND place_id=$2`, [uid, placeId]);
+  if (ex.length) await q(`DELETE FROM saved_places WHERE user_id=$1 AND place_id=$2`, [uid, placeId]);
+  else await q(`INSERT INTO saved_places(user_id,place_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [uid, placeId]);
   revalidatePath(`/place/${placeId}`); revalidatePath('/profile');
 }
 
 /** Toggle a like on a feed post (keyed by post_key, e.g. "deal:<id>"). */
 export async function toggleLikeAction(postKey: string) {
-  const ex = await q(`SELECT 1 FROM post_likes WHERE post_key=$1 AND user_id=$2`, [postKey, DEMO_USER]);
-  if (ex.length) await q(`DELETE FROM post_likes WHERE post_key=$1 AND user_id=$2`, [postKey, DEMO_USER]);
-  else await q(`INSERT INTO post_likes(post_key,user_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [postKey, DEMO_USER]);
+  const uid = await demoUserId();
+  if (!uid) redirect('/login');
+  const ex = await q(`SELECT 1 FROM post_likes WHERE post_key=$1 AND user_id=$2`, [postKey, uid]);
+  if (ex.length) await q(`DELETE FROM post_likes WHERE post_key=$1 AND user_id=$2`, [postKey, uid]);
+  else await q(`INSERT INTO post_likes(post_key,user_id) VALUES($1,$2) ON CONFLICT DO NOTHING`, [postKey, uid]);
   revalidatePath('/feed'); revalidatePath('/feed/[key]', 'page');
 }
 
 /** Add a comment to a feed post. */
 export async function addCommentAction(postKey: string, formData: FormData) {
+  const uid = await demoUserId();
+  if (!uid) redirect('/login');
   const body = String(formData.get('body') ?? '').trim().slice(0, 300);
-  if (body) await q(`INSERT INTO post_comments(post_key,user_id,body) VALUES($1,$2,$3)`, [postKey, DEMO_USER, body]);
+  if (body) await q(`INSERT INTO post_comments(post_key,user_id,body) VALUES($1,$2,$3)`, [postKey, uid, body]);
   revalidatePath('/feed'); revalidatePath('/feed/[key]', 'page');
 }
 
@@ -71,7 +78,7 @@ export async function redeemStampRewardAction(rewardId: string) {
   const uid = await demoUserId();
   if (!uid) return;
   const [rw] = await q<any>(
-    `SELECT id, brand_id, city_id, cost_stamps FROM stamp_rewards WHERE id=$1 AND status='active'`, [rewardId]);
+    `SELECT id, brand_id, city_id, cost_stamps FROM stamp_rewards WHERE id=$1 AND status='active' AND deleted_at IS NULL`, [rewardId]);
   if (!rw) return;
   const [bal] = await q<any>(`SELECT balance FROM stamp_balances WHERE user_id=$1 AND brand_id=$2`, [uid, rw.brand_id]);
   if (!bal || Number(bal.balance) < rw.cost_stamps) return;                       // not enough stamps

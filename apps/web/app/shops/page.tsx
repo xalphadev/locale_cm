@@ -9,7 +9,7 @@ export default async function Shops({ searchParams }: { searchParams: { ok?: str
   try {
     rows = await q<any>(
       `SELECT p.id, p.name_i18n, p.status::text status, p.subcategory, p.phone, p.line_id,
-              (SELECT count(*)::int FROM shop_products sp WHERE sp.place_id=p.id) products
+              (SELECT count(*)::int FROM shop_products sp WHERE sp.place_id=p.id AND sp.deleted_at IS NULL) products
          FROM places p WHERE p.source='merchant'
         ORDER BY (p.status='draft') DESC, p.created_at DESC`);
   } catch { /* db down */ }

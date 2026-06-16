@@ -24,14 +24,14 @@ export default async function Wallet() {
       const cards = await q<any>(
         `SELECT sb.brand_id, sb.balance, b.name_i18n brand_name, sp.points_name_i18n
            FROM stamp_balances sb
-           JOIN brands b ON b.id = sb.brand_id
+           JOIN brands b ON b.id = sb.brand_id AND b.deleted_at IS NULL
            JOIN stamp_programs sp ON sp.brand_id = sb.brand_id AND sp.status='active'
           WHERE sb.user_id=$1 AND sb.balance > 0 ORDER BY sb.updated_at DESC`, [uid]);
       if (cards.length) {
         const ids = cards.map((c: any) => c.brand_id);
         const rewards = await q<any>(
           `SELECT id, brand_id, title_i18n, cost_stamps FROM stamp_rewards
-            WHERE brand_id = ANY($1) AND status='active' ORDER BY cost_stamps`, [ids]);
+            WHERE brand_id = ANY($1) AND status='active' AND deleted_at IS NULL ORDER BY cost_stamps`, [ids]);
         const pend = await q<any>(`SELECT reward_id FROM shop_redemptions WHERE user_id=$1 AND status='pending'`, [uid]);
         const pset = new Set(pend.map((p: any) => p.reward_id));
         stampCards = cards.map((c: any) => ({

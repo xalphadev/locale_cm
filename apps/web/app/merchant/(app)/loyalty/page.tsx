@@ -47,11 +47,11 @@ export default async function Loyalty({ searchParams }: { searchParams: { ok?: s
   const pointsName = i18n(prog.points_name_i18n) || 'แต้ม';
   const rewards = await q<any>(
     `SELECT id, title_i18n, kind, cost_stamps, redeemed_count
-       FROM stamp_rewards WHERE brand_id=$1 AND status='active' ORDER BY cost_stamps, sort`, [acc.brand_id]);
+       FROM stamp_rewards WHERE brand_id=$1 AND status='active' AND deleted_at IS NULL ORDER BY cost_stamps, sort`, [acc.brand_id]);
   const [stats] = await q<any>(
     `SELECT (SELECT count(*) FROM stamp_balances WHERE brand_id=$1 AND balance>0)        members,
             (SELECT COALESCE(sum(balance),0) FROM stamp_balances WHERE brand_id=$1)       outstanding,
-            (SELECT COALESCE(sum(redeemed_count),0) FROM stamp_rewards WHERE brand_id=$1) redeemed`, [acc.brand_id]);
+            (SELECT COALESCE(sum(redeemed_count),0) FROM stamp_rewards WHERE brand_id=$1 AND deleted_at IS NULL) redeemed`, [acc.brand_id]);
 
   return (
     <>

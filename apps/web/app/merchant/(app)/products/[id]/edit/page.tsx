@@ -11,7 +11,7 @@ export default async function EditProduct({ params, searchParams }: { params: { 
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.sells_products) redirect('/merchant');
-  const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM shop_products WHERE id=$1 AND place_id=$2`, [params.id, acc.place_id]) : [];
+  const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM shop_products WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!p) {
     return (<><div className="mback"><a href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</a></div><h1>ไม่พบสินค้า</h1></>);
   }

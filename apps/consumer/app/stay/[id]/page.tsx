@@ -1,4 +1,4 @@
-import { q, i18n, cover, DEMO_USER } from '@/lib/db';
+import { q, i18n, cover, demoUserId } from '@/lib/db';
 import { Icon, CAT_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
@@ -18,6 +18,7 @@ function Fact({ icon, label, value }: { icon: string; label: string; value: stri
 export default async function StayUnitDetail({ params }: { params: { id: string } }) {
   let u: any = null; let others: any[] = [];
   try {
+    const uid = await demoUserId();
     [u] = await q<any>(
       `SELECT su.id, su.name_i18n, su.description_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n,
               su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at,
@@ -28,12 +29,12 @@ export default async function StayUnitDetail({ params }: { params: { id: string 
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
          FROM stay_units su JOIN places p ON p.id=su.place_id
          LEFT JOIN districts d ON d.id=p.district_id LEFT JOIN data_freshness f ON f.place_id=p.id
-        WHERE su.id=$1 AND su.status='published' AND p.status='published' AND p.is_visible`, [params.id, DEMO_USER]);
+        WHERE su.id=$1 AND su.status='published' AND su.deleted_at IS NULL AND p.status='published' AND p.is_visible`, [params.id, uid]);
     if (u) {
       others = await q<any>(
         `SELECT id, name_i18n, rental_mode, price_minor, price_period, price_text_i18n, image_urls,
                 available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
-           FROM stay_units WHERE place_id=$1 AND id<>$2 AND status='published'
+           FROM stay_units WHERE place_id=$1 AND id<>$2 AND status='published' AND deleted_at IS NULL
           ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 8`,
         [u.place_id, u.id]);
     }
