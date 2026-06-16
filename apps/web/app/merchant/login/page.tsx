@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export default function Login({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <div className="portal-auth">
-      <div className="pa-brand">Soi Hop · ร้านค้า</div>
+      <div className="pa-brand">Locale · ร้านค้า</div>
       <h1>เข้าสู่ระบบร้านค้า</h1>
       {searchParams?.error && <div className="banner-err">อีเมลหรือรหัสผ่านไม่ถูกต้อง</div>}
       <form className="form" action={loginAction}>

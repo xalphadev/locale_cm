@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export default function Signup({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <div className="portal-auth">
-      <div className="pa-brand">Soi Hop · ร้านค้า</div>
+      <div className="pa-brand">Locale · ร้านค้า</div>
       <h1>สมัครร้านค้า</h1>
       <p className="note">สมัครเพื่อลงข้อมูลร้าน โพสต์ลงฟีด และโชว์สินค้าให้ลูกค้าเห็น — เราไม่ยุ่งเรื่องการขาย ลูกค้าติดต่อร้านโดยตรง</p>
       {searchParams?.error && <div className="banner-err">{searchParams.error}</div>}
@@ -41,7 +41,7 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
         <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
         <button className="btn btn-primary mform-save" type="submit">สมัครและเริ่มใช้งาน →</button>
       </form>
-      <p className="note">ร้านมีอยู่ใน Soi Hop แล้ว? <a href="/merchant/claim">เคลมร้านของคุณ</a></p>
+      <p className="note">ร้านมีอยู่ใน Locale แล้ว? <a href="/merchant/claim">เคลมร้านของคุณ</a></p>
       <p className="note">มีบัญชีแล้ว? <a href="/merchant/login">เข้าสู่ระบบ</a></p>
     </div>
   );

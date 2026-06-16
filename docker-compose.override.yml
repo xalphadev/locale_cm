@@ -1,0 +1,18 @@
+# DEV layer — auto-loaded by plain `docker compose up` (NOT loaded when prod passes -f explicitly).
+# Makes the shared data plane convenient locally: passwordless (trust) auth + auto-apply the full
+# migration set on first boot (real PostGIS). Apps still run on the host (cd apps/web && npm run dev).
+#
+#   docker compose up -d           # postgres (auto-migrated) + minio + media bucket
+#   docker compose down -v         # wipe + re-migrate on next up
+#   then seed:  cd apps/web && DATABASE_URL=postgres://postgres@127.0.0.1:54400/locale \
+#                 ASSET_PUBLIC_BASE=http://127.0.0.1:9000/media node ../../db/test/seed-shops.mjs
+#                 (then node ../../db/deploy/seed-media.mjs for MinIO-hosted cover images)
+
+services:
+  db:
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust   # dev only — passwordless local connections
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/migrations:ro
+      - ./db/docker/initdb:/docker-entrypoint-initdb.d:ro   # 99-migrate.sh applies all migrations on first init

@@ -7,7 +7,7 @@ set -uo pipefail
 PGBIN=/opt/homebrew/opt/postgresql@16/bin
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 MIG="$ROOT/db/migrations"
-TMP="$(mktemp -d)"; PGDATA="$TMP/data"; SOCK="$TMP/sock"; PORT=54399; DB=soihop_test
+TMP="$(mktemp -d)"; PGDATA="$TMP/data"; SOCK="$TMP/sock"; PORT=54399; DB=locale_test
 mkdir -p "$PGDATA" "$SOCK"
 cleanup(){ "$PGBIN/pg_ctl" -D "$PGDATA" -m immediate stop >/dev/null 2>&1; rm -rf "$TMP"; }
 trap cleanup EXIT

@@ -39,6 +39,6 @@ function hash(s: string): number {
 /** Cover photo for a venue/event. Pass subcategory + category for a relevant, high-quality image. */
 export function cover(seed: string, sub?: string | null, cat?: string | null, w = 640, h = 480): string {
   const pool = (sub && POOLS[sub]) || (cat && CPOOL[cat]) || POOLS.cafe;
-  const id = pool[hash(seed || 'soihop') % pool.length];
+  const id = pool[hash(seed || 'locale') % pool.length];
   return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&q=72&auto=format&fit=crop`;
 }

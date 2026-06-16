@@ -5,10 +5,15 @@ import crypto from 'crypto';
 // (no DB session table), scrypt passwords. The signed value IS the users.id — so sessionUserId()
 // trusts a validly-signed cookie without a DB round-trip. Self-contained (no db import) so lib/db
 // can read the session without a cycle.
-const SECRET = process.env.CONSUMER_SESSION_SECRET || (() => {
+// Resolved lazily (per use), NOT at module load: `next build` runs with NODE_ENV=production but no
+// secret in the build env — a top-level throw there would fail the build. Still fail-closed at
+// runtime: signing/verifying a cookie without the secret throws on the first request.
+function secret(): string {
+  const s = process.env.CONSUMER_SESSION_SECRET;
+  if (s) return s;
   if (process.env.NODE_ENV === 'production') throw new Error('CONSUMER_SESSION_SECRET is required in production');
-  return 'soihop-dev-consumer-secret-change-me';
-})();
+  return 'locale-dev-consumer-secret-change-me';
+}
 const COOKIE = 'u_session';
 
 export function hashPassword(pw: string): string {
@@ -23,13 +28,13 @@ export function verifyPassword(pw: string, stored: string): boolean {
   return want.length === got.length && crypto.timingSafeEqual(want, got);
 }
 
-function sign(id: string): string { return `${id}.${crypto.createHmac('sha256', SECRET).update(id).digest('hex')}`; }
+function sign(id: string): string { return `${id}.${crypto.createHmac('sha256', secret()).update(id).digest('hex')}`; }
 function unsign(token: string): string | null {
   const i = token.lastIndexOf('.');
   if (i < 0) return null;
   const id = token.slice(0, i);
   const sig = Buffer.from(token.slice(i + 1));
-  const exp = Buffer.from(crypto.createHmac('sha256', SECRET).update(id).digest('hex'));
+  const exp = Buffer.from(crypto.createHmac('sha256', secret()).update(id).digest('hex'));
   return sig.length === exp.length && crypto.timingSafeEqual(sig, exp) ? id : null;
 }
 

@@ -1,4 +1,4 @@
-# Soi Hop — Chiang Mai hyperlocal cross-merchant loyalty app
+# Locale — Chiang Mai hyperlocal cross-merchant loyalty app
 
 Monorepo. Build follows the design in [`docs/`](docs/README.md) (12 docs). Stack decision: **C2 Hybrid-TS** — Flutter (mobile) · Next.js+Refine (web) · **NestJS money-plane** (TS) · **PostgreSQL** (Supabase) with plpgsql gate functions + DB invariants. See [docs/05_stack_decision.md](docs/05_stack_decision.md).
 

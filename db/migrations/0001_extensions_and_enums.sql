@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Migration #1 — part 0001: Extensions & Enums
--- Soi Hop loyalty platform. Source of truth: docs/04_mvp_scope_and_data_model.md §2.2
+-- Locale loyalty platform. Source of truth: docs/04_mvp_scope_and_data_model.md §2.2
 -- All enums created with FULL canonical values even if MVP doesn't walk every path
 -- (avoids costly ALTER TYPE ADD VALUE later). Requires PostgreSQL 15+ (NULLS NOT DISTINCT).
 -- ============================================================================

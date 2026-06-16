@@ -1,4 +1,4 @@
-# Deploy — Soi Hop (Chiang Mai pilot)
+# Deploy — Locale (Chiang Mai pilot)
 
 Goes live on **Supabase** (Postgres + PostGIS, the canonical money store) + a host for the
 NestJS **money-plane** + Vercel/Netlify for the two Next.js web apps. The Flutter mobile app

@@ -3402,6 +3402,6 @@ chiangmai-platform/
 - Roam CNX — เน้น explore-and-earn, สั้น trilingual-friendly (CNX = รหัสสนามบินเชียงใหม่ ที่ทั้ง 3 กลุ่มจำได้)
 - Lanna Loop — Lanna สื่อถึงอัตลักษณ์เหนือ, Loop สื่อ cross-merchant quest trail (เดินครบวง)
 - Wandr / Wandr Chiang Mai — wander + reward, สะกดสั้นแบบ app brand, ออกเสียงง่ายทั้ง EN/TH/ZH
-- Soi Hop — Soi (ซอย) เป็นคำท้องถิ่นที่ tourist รู้จัก + hop สื่อ cafe-hop/quest; เล่นกับ Nimman soi 1-17 ได้ดี
+- Locale — Soi (ซอย) เป็นคำท้องถิ่นที่ tourist รู้จัก + hop สื่อ cafe-hop/quest; เล่นกับ Nimman soi 1-17 ได้ดี
 - PassportCM / Passport เชียงใหม่ — ตรงกับ Passport surface ของ quest, สื่อ collectible/สะสมแสตมป์, ขยาย Passport BKK/Phuket ได้
 - Doi Coin — Doi (ดอย/ภูเขา) เป็น Lanna identity + Coin สื่อ loyalty currency; จำง่าย แต่ต้องเช็คว่าไม่สื่อ crypto เกินไป

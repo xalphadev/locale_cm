@@ -3,15 +3,15 @@
 // HIDES the old agent_seed venues (is_visible=false) so the customer side shows only these 20 —
 // without deleting places (the money-plane check_ins/redemptions/tasks + quests FK them).
 //
-// Run:  cd apps/web && DATABASE_URL=postgres://postgres@127.0.0.1:54400/soihop node ../../db/test/seed-shops.mjs
-// All accounts log in with password:  soihop1234
+// Run:  cd apps/web && DATABASE_URL=postgres://postgres@127.0.0.1:54400/locale node ../../db/test/seed-shops.mjs
+// All accounts log in with password:  locale1234
 import { createRequire } from 'module';
 import crypto from 'crypto';
 // resolve 'pg' from apps/web's node_modules (this script lives in db/test/ which has none)
 const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
 const pg = require('pg');
 
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgres://postgres@127.0.0.1:54400/soihop' });
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgres://postgres@127.0.0.1:54400/locale' });
 const q = (t, p = []) => pool.query(t, p).then((r) => r.rows);
 const AGENT = '00000000-0000-4000-8000-00000000a6e7', ADMIN = '00000000-0000-4000-8000-00000000ad11';
 const hashPw = (pw) => { const s = crypto.randomBytes(16); return `scrypt:${s.toString('hex')}:${crypto.scryptSync(pw, s, 64).toString('hex')}`; };
@@ -46,7 +46,7 @@ const REV = {
 function build(i, type, th, en, desc) {
   const lng = +(98.962 + (i % 5) * 0.0045).toFixed(5);
   const lat = +(18.792 + Math.floor(i / 5) * 0.004).toFixed(5);
-  const base = { i, th, en, desc, lng, lat, phone: `053-${(200 + i)}-${1000 + i * 7}`, line: `@soihop_shop${i}`, posts: [], nrev: 0, products: [], rooms: [] };
+  const base = { i, th, en, desc, lng, lat, phone: `053-${(200 + i)}-${1000 + i * 7}`, line: `@locale_shop${i}`, posts: [], nrev: 0, products: [], rooms: [] };
   const accomKinds = { dorm: 'monthly', apartment: 'monthly', condo: 'daily-no', homestay: 'daily', hotel: 'daily', guesthouse: 'daily' };
   if (type === 'cafe') return { ...base, cat: 'eat', sub: 'cafe', sells: true, hours: HRS_CAFE, amen: ['wifi', 'work_friendly', 'power_outlet', 'outdoor_seating'], price_band: '2', products: PROD.cafe, posts: ['เมล็ดกาแฟล็อตใหม่มาแล้ว วันนี้ดริปให้ลองฟรี ☕'], nrev: 4, rev: REV.eat };
   if (type === 'restaurant') return { ...base, cat: 'eat', sub: 'restaurant', sells: true, hours: HRS_RES, amen: ['thai_food', 'northern_food', 'parking', 'kid_friendly'], price_band: '2', products: PROD.restaurant, posts: ['เปิดเมนูใหม่ แกงฮังเลสูตรโบราณ!'], nrev: 5, rev: REV.eat };
@@ -98,7 +98,7 @@ async function main() {
   await q(`UPDATE places SET is_visible=false, sells_products=false, offers_stay=false, stay_kind=NULL WHERE source='agent_seed'`);
   await q(`UPDATE reviews SET moderation_status='rejected' WHERE place_id IN (SELECT id FROM places WHERE source='agent_seed')`); // hide old reviews from new shops' surfaces
 
-  const pw = hashPw('soihop1234');
+  const pw = hashPw('locale1234');
   let n = 0;
   for (let idx = 0; idx < SPEC.length; idx++) {
     const [type, th, en, desc] = SPEC[idx];
@@ -106,7 +106,7 @@ async function main() {
     const payload = { name_i18n: { th, en }, description_i18n: { th: desc }, category: s.cat, subcategory: s.sub, status: 'published', lng: s.lng, lat: s.lat, phone: s.phone, line_id: s.line, opening_hours: s.hours, amenities: s.amen, price_band: s.price_band };
     const [{ id: pid }] = await q(`SELECT fn_create_place($1::jsonb,$2,$3,$4,$5) id`, [JSON.stringify(payload), city, dist, AGENT, ADMIN]);
     // account → brand ("ร้าน") → its first branch (this place). active_place_id opens the portal on it.
-    const [{ id: aid }] = await q(`INSERT INTO merchant_accounts(email,password_hash,display_name,phone,place_id,active_place_id) VALUES($1,$2,$3,$4,$5,$5) RETURNING id`, [`shop${idx + 1}@soihop.dev`, pw, th, s.phone, pid]);
+    const [{ id: aid }] = await q(`INSERT INTO merchant_accounts(email,password_hash,display_name,phone,place_id,active_place_id) VALUES($1,$2,$3,$4,$5,$5) RETURNING id`, [`shop${idx + 1}@locale.dev`, pw, th, s.phone, pid]);
     const brandKind = s.stay ? 'stay' : s.cat === 'eat' ? 'eat' : 'shop';
     const [{ id: bid }] = await q(`INSERT INTO brands(owner_account_id,city_id,name_i18n,brand_kind,status) VALUES($1,$2,jsonb_build_object('th',$3::text,'en',$4::text),$5,'active') RETURNING id`, [aid, city, th, en, brandKind]);
     await q(`UPDATE places SET source='merchant', is_visible=true, sells_products=$2, offers_stay=$3, stay_kind=$4, brand_id=$5 WHERE id=$1`, [pid, !!s.sells, !!s.stay, s.kind || null, bid]);
@@ -119,7 +119,7 @@ async function main() {
   }
   const [{ c: prods }] = await q(`SELECT count(*) c FROM shop_products`);
   const [{ c: rms }] = await q(`SELECT count(*) c FROM stay_units`);
-  console.log(`seeded ${n} shops · ${prods} products · ${rms} rooms · login pw=soihop1234 (shop1..20@soihop.dev)`);
+  console.log(`seeded ${n} shops · ${prods} products · ${rms} rooms · login pw=locale1234 (shop1..20@locale.dev)`);
   await pool.end();
 }
 main().catch((e) => { console.error(e); process.exit(1); });

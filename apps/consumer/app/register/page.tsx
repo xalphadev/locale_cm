@@ -8,7 +8,7 @@ export default function Register({ searchParams }: { searchParams: { error?: str
     <div className="authpage">
       <div className="auth-card">
         <a className="auth-back" href="/login">←</a>
-        <div className="auth-brand">Soi Hop</div>
+        <div className="auth-brand">Locale</div>
         <h1>สมัครสมาชิก</h1>
         <p className="auth-sub">สมัครฟรี — สะสมแต้มแต่ละร้าน เก็บที่ชอบ และร่วมกิจกรรมในแอป</p>
         {searchParams.error && <div className="auth-err">{AUTH_ERRORS[searchParams.error] || searchParams.error}</div>}

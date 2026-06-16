@@ -1,0 +1,36 @@
+# Locale — reverse proxy + automatic HTTPS (Let's Encrypt). All domains are env-driven (set in
+# .env.prod, injected by docker-compose.prod.yml). Caddy obtains/renews certs automatically once the
+# domains' DNS A records point at this server.
+
+{
+	email {$ACME_EMAIL}
+}
+
+# ── Consumer (customer) — public root ────────────────────────────────────────────────
+{$CONSUMER_DOMAIN} {
+	encode gzip zstd
+	reverse_proxy consumer:3003
+}
+
+# ── Merchant portal — opens on /merchant ─────────────────────────────────────────────
+{$MERCHANT_DOMAIN} {
+	encode gzip zstd
+	redir / /merchant 302
+	reverse_proxy web:3002
+}
+
+# ── Platform admin (back-office) — HTTP basic-auth gate (no app-level admin login yet) ─
+{$PLATFORM_DOMAIN} {
+	encode gzip zstd
+	basic_auth {
+		{$CADDY_BASICAUTH_USER} {$CADDY_BASICAUTH_HASH}
+	}
+	reverse_proxy web:3002
+}
+
+# ── Assets (MinIO, public-read) — hides the bucket name: /<key> → /<bucket>/<key> ──────
+{$ASSETS_DOMAIN} {
+	encode gzip zstd
+	rewrite * /{$S3_BUCKET}{uri}
+	reverse_proxy minio:9000
+}

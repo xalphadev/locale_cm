@@ -8,10 +8,16 @@ import { q } from './db';
 // Fail closed in production: a missing secret would make every m_session cookie forgeable
 // (anyone could sign a token for any account id → cross-tenant takeover). In dev we allow a
 // known default so localhost works without setup. Set MERCHANT_SESSION_SECRET in any real deploy.
-const SECRET = process.env.MERCHANT_SESSION_SECRET || (() => {
+// Resolved lazily (per use), NOT at module load: `next build` runs with NODE_ENV=production but no
+// secret in the build env — a top-level throw there would fail the build. Still fail-closed at
+// runtime: signing/verifying a cookie without the secret throws on the first request, so an
+// m_session can never run on a known/public key.
+function secret(): string {
+  const s = process.env.MERCHANT_SESSION_SECRET;
+  if (s) return s;
   if (process.env.NODE_ENV === 'production') throw new Error('MERCHANT_SESSION_SECRET is required in production');
-  return 'soihop-dev-merchant-secret-change-me';
-})();
+  return 'locale-dev-merchant-secret-change-me';
+}
 const COOKIE = 'm_session';
 
 export function hashPassword(pw: string): string {
@@ -28,14 +34,14 @@ export function verifyPassword(pw: string, stored: string): boolean {
 }
 
 function sign(id: string): string {
-  return `${id}.${crypto.createHmac('sha256', SECRET).update(id).digest('hex')}`;
+  return `${id}.${crypto.createHmac('sha256', secret()).update(id).digest('hex')}`;
 }
 function unsign(token: string): string | null {
   const i = token.lastIndexOf('.');
   if (i < 0) return null;
   const id = token.slice(0, i);
   const sig = Buffer.from(token.slice(i + 1));
-  const exp = Buffer.from(crypto.createHmac('sha256', SECRET).update(id).digest('hex'));
+  const exp = Buffer.from(crypto.createHmac('sha256', secret()).update(id).digest('hex'));
   return sig.length === exp.length && crypto.timingSafeEqual(sig, exp) ? id : null;
 }
 

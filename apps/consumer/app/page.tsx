@@ -133,7 +133,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
   let d: any;
   try { d = await load(tab, cat, sub, nameQ, facets, !!query); }
   catch {
-    return (<><div className="appbar"><div><div className="greet">Soi Hop</div><div className="loc">เชียงใหม่</div></div></div>
+    return (<><div className="appbar"><div><div className="greet">Locale</div><div className="loc">เชียงใหม่</div></div></div>
       <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code></p></div></>);
   }
 

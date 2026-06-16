@@ -23,7 +23,7 @@ BEGIN
     sells_products = true,
     shop_kind = CASE (c.rn % 6) WHEN 1 THEN 'produce' WHEN 2 THEN 'produce' WHEN 3 THEN 'bakery'
                                 WHEN 4 THEN 'crafts'  WHEN 5 THEN 'mixed'   ELSE 'grocery' END,
-    line_id = COALESCE(p.line_id, '@soihopshop' || c.rn),
+    line_id = COALESCE(p.line_id, '@localeshop' || c.rn),
     phone   = COALESCE(p.phone, '053-000' || lpad(c.rn::text, 3, '0'))
   FROM chosen c WHERE p.id = c.id;
 

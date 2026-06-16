@@ -1,7 +1,7 @@
 {
-  "name": "@soihop/consumer",
+  "name": "@locale/consumer",
   "version": "0.0.1",
-  "description": "Soi Hop consumer web (Nimman Cafe-Hop). Demo of the customer eat/see/do + quest experience. Production target is Flutter mobile (docs/05).",
+  "description": "Locale consumer web (Nimman Cafe-Hop). Demo of the customer eat/see/do + quest experience. Production target is Flutter mobile (docs/05).",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3003",

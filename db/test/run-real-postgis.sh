@@ -13,7 +13,7 @@ set -uo pipefail
 PGBIN=${PGBIN:-/opt/homebrew/opt/postgresql@17/bin}
 [ -x "$PGBIN/initdb" ] || { echo "FATAL: need pg17 — 'brew install postgresql@17 postgis'"; exit 1; }
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-PGDATA=/tmp/soihop_realpg; PORT=${PORT:-54401}; DB=soihop_real
+PGDATA=/tmp/locale_realpg; PORT=${PORT:-54401}; DB=locale_real
 PG() { "$PGBIN/psql" -h 127.0.0.1 -p "$PORT" -U postgres "$@"; }
 
 "$PGBIN/pg_ctl" -D "$PGDATA" -m immediate stop >/dev/null 2>&1 || true

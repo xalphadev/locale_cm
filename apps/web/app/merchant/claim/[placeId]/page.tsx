@@ -11,7 +11,7 @@ export default async function ClaimForm({
 
   return (
     <div className="portal-auth">
-      <div className="pa-brand">Soi Hop · ร้านค้า</div>
+      <div className="pa-brand">Locale · ร้านค้า</div>
       {!pl ? (
         <>
           <h1>เคลมไม่ได้</h1>

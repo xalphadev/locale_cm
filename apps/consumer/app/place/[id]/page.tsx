@@ -92,7 +92,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
     ...units.flatMap((u) => u.image_urls || []),
   ].filter(Boolean)));
 
-  // sticky-bar primary CTA: LINE → call → directions (Soi Hop has no in-app booking)
+  // sticky-bar primary CTA: LINE → call → directions (Locale has no in-app booking)
   const line = lineHref(p.line_id);
   const primary = line
     ? { kind: 'line' as const, href: line, label: 'ทักทาง LINE', icon: 'chat' as const, ext: true }
@@ -195,7 +195,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           <div className="prail">
             {units.map((u) => <RoomCard key={u.id} u={{ ...u, stay_kind: p.stay_kind }} line_id={p.line_id} phone={p.phone} />)}
           </div>
-          <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Soi Hop ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
+          <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
         </>)}
 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}

@@ -9,7 +9,7 @@
 --     its provider_user_id (the OAuth 'sub') to a users row. A user may have several.
 -- users.id stays the canonical app user id (self-generated uuid here, not Supabase auth.uid()).
 --
--- NOTE (deploy): the consumer prod role is read-only (soihop_readonly); creating users at signup
+-- NOTE (deploy): the consumer prod role is read-only (locale_readonly); creating users at signup
 -- needs a writer connection — either grant these to the consumer's role or route signup through the
 -- money-plane API. In dev the app connects as postgres so it just works.
 

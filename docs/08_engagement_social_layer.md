@@ -348,7 +348,7 @@
 **Add-friend ที่ ship จริง — 3 ช่องทาง (จับ 3 audiences):**
 - 🌍 **QR (My Soi Code)** — tourist: เจอกันที่ Ristr8to ยื่น QR ให้สแกน → เพื่อนทันที (ไม่ต้องแลกเบอร์). **rotating per-user token, ไม่ใช่ static** (กัน scrape/replay). ปลอดภัยสุด, default channel.
 - 🇹🇭 **LINE / username deep-link** — local/nomad + Chinese FIT (WeChat ในอนาคต): deep-link เปิดแอป, ต้อง mutual-accept. consent dialog ก่อนแชร์ identity.
-- 📇 **Contacts (hashed, ephemeral)** — "เพื่อนคุณกี่คนอยู่บน Soi Hop" — **client-side hash (SHA-256 + salt) → match บน server เป็น hash เท่านั้น**. ต้อง consent dialog แยกก่อนเข้าถึง contacts.
+- 📇 **Contacts (hashed, ephemeral)** — "เพื่อนคุณกี่คนอยู่บน Locale" — **client-side hash (SHA-256 + salt) → match บน server เป็น hash เท่านั้น**. ต้อง consent dialog แยกก่อนเข้าถึง contacts.
 
 **★ F1c Contacts hardening (critique major — hashed graph ยัง leak non-user social graph):**
 - **per-request ephemeral matching เท่านั้น** — server **ไม่ persist** contact-hash set ของใครเลย; compute match แล้ว **discard ทันที**, ไม่เก็บเป็น graph.

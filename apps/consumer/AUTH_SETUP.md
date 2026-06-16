@@ -16,7 +16,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 `CONSUMER_BASE` is the public origin used to build the OAuth redirect URI (e.g.
-`https://app.soihop.com`). In dev it defaults to the request origin.
+`https://app.locale.com`). In dev it defaults to the request origin.
 
 ---
 

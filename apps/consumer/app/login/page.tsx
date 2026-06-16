@@ -8,7 +8,7 @@ export default function Login({ searchParams }: { searchParams: { error?: string
     <div className="authpage">
       <div className="auth-card">
         <a className="auth-back" href="/">←</a>
-        <div className="auth-brand">Soi Hop</div>
+        <div className="auth-brand">Locale</div>
         <h1>เข้าสู่ระบบ</h1>
         <p className="auth-sub">เข้าสู่ระบบเพื่อสะสมแต้มร้าน เก็บที่ชอบ และร่วมกิจกรรม</p>
         {searchParams.error && <div className="auth-err">{AUTH_ERRORS[searchParams.error] || 'เกิดข้อผิดพลาด'}</div>}

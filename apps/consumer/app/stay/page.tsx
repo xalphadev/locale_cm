@@ -152,7 +152,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
           {placeList.length === 0 && <p className="empty">ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
         </>
       )}
-      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Soi Hop ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
+      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
     </>
   );
 }

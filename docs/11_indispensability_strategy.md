@@ -1,4 +1,4 @@
-# Soi Hop — Indispensability Strategy ("ขาดระบบนี้ไม่ได้")
+# Locale — Indispensability Strategy ("ขาดระบบนี้ไม่ได้")
 
 > From a 5-lens analysis (daily-habit · lock-in · network/social · merchant-lock-in · essential-utility)
 > synthesised against what's already built. Goal: make users **and** merchants dependent.

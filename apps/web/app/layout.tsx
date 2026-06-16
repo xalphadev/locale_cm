@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { headers } from 'next/headers';
 import { Icon } from './adm-ui';
 
-export const metadata = { title: 'Soi Hop · Admin', description: 'Back-office over the verified ledger' };
+export const metadata = { title: 'Locale · Admin', description: 'Back-office over the verified ledger' };
 
 // Sidebar IA, grouped by job-to-be-done. cap-free; staff see all sections.
 const NAV: { grp: string; items: { href: string; icon: string; label: string; match: (p: string) => boolean }[] }[] = [
@@ -60,7 +60,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <aside className="adm-side">
             <div className="adm-brand">
               <span className="adm-brand-mk">S</span>
-              <span className="adm-brand-tx"><b>Soi Hop</b><span>Admin console</span></span>
+              <span className="adm-brand-tx"><b>Locale</b><span>Admin console</span></span>
             </div>
             {NAV.map((g) => (
               <div key={g.grp}>

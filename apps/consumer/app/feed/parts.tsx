@@ -31,7 +31,7 @@ export function detailHref(it: any) {
 }
 function poster(it: any): { name: string; sub: string; av: string; color: string; verified: boolean } {
   if (it.kind === 'review') return { name: it.display_name || 'ผู้ใช้', sub: `รีวิว ${i18n(it.pname)}`, av: (it.display_name || 'ผ')[0], color: 'var(--spark)', verified: false };
-  if (it.kind === 'verified') return { name: 'ทีมงาน Soi Hop', sub: 'ตรวจสอบข้อมูลแล้ว', av: 'S', color: 'var(--navy)', verified: true };
+  if (it.kind === 'verified') return { name: 'ทีมงาน Locale', sub: 'ตรวจสอบข้อมูลแล้ว', av: 'S', color: 'var(--navy)', verified: true };
   if (it.kind === 'event') return { name: i18n(it.title_i18n), sub: 'กิจกรรม · นิมมาน', av: (i18n(it.title_i18n) || 'อ')[0], color: 'var(--accent)', verified: true };
   if (it.kind === 'product') return { name: i18n(it.pname), sub: 'สินค้าใหม่ · นิมมาน', av: (i18n(it.pname) || 'ร')[0], color: 'var(--score)', verified: true };
   const role = it.kind === 'deal' ? 'โปรโมชั่น' : it.kind === 'new' ? 'เปิดใหม่' : (it.psub || catTH(it.pcat));

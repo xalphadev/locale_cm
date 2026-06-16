@@ -1,11 +1,11 @@
-# Soi Hop — Competitive Advantage & Positioning
+# Locale — Competitive Advantage & Positioning
 
 > Derived from a 5-agent competitive analysis (vs Google Maps/TripAdvisor, Wongnai,
 > Grab/LINE MAN/foodpanda, Beli/Foursquare) cross-checked against what is already built.
 
 ## Positioning
 
-**EN —** Soi Hop is the only hyperlocal *eat / see / do* app where every listing is **verified-fresh by a paid local on the ground**, every reward is **real baht held in merchant escrow** (not points), and the whole thing is **trilingual TH/EN/ZH** for all three audiences. *The company is the indie-merchant network — not a listings directory or an ad auction.*
+**EN —** Locale is the only hyperlocal *eat / see / do* app where every listing is **verified-fresh by a paid local on the ground**, every reward is **real baht held in merchant escrow** (not points), and the whole thing is **trilingual TH/EN/ZH** for all three audiences. *The company is the indie-merchant network — not a listings directory or an ad auction.*
 
 **TH —** ซอยฮ็อป คือแอปค้นพบ *กิน/เที่ยว/ทำกิจกรรม* ไฮเปอร์โลคัลเจ้าเดียวที่ **ข้อมูลถูกตรวจสอบความสดโดยคนท้องถิ่นที่ลงพื้นที่จริง**, **ทุกรางวัลคือเงินบาทจริงที่ร้านฝากค้ำไว้** (ไม่ใช่แต้มลอยๆ), และ **สามภาษา TH/EN/ZH** เสิร์ฟครบสามกลุ่ม — *เราคือเครือข่ายร้านอิสระ ไม่ใช่ไดเรกทอรีหรือระบบประมูลโฆษณา*
 

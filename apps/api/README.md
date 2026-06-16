@@ -1,4 +1,4 @@
-# @soihop/api — money-plane (NestJS)
+# @locale/api — money-plane (NestJS)
 
 The typed RPC layer over the canonical plpgsql money functions (`db/migrations/0005`). Per the [stack decision](../../docs/05_stack_decision.md) (C2 Hybrid-TS): **money-critical logic lives in the DB functions**; this service validates input, supplies the idempotency key, calls one gate+post fn per txn, and maps DB errors to HTTP. It does **no** money arithmetic and posts **no** ledger legs itself — the DB (append-only + sum-to-zero + clearing-flat + `money_writer`) is the referee.
 

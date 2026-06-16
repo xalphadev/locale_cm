@@ -1,0 +1,124 @@
+# PROD layer — adds the app containers + Caddy on top of the shared data plane (docker-compose.yml).
+# Run:  docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# (the dev override is NOT loaded because -f is explicit, so prod gets password auth, no trust.)
+#
+# All inter-service traffic is on the internal compose network: web/consumer/api reach the DB at
+# `db:5432`, the money-plane at `api:3001`, MinIO at `minio:9000`. Only Caddy publishes 80/443.
+
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.prod}
+
+  api:
+    build: ./apps/api
+    container_name: locale-api
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      DATABASE_URL: ${API_DATABASE_URL:?money_writer connection string}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build: ./apps/web
+    container_name: locale-web
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${WEB_DATABASE_URL:?app_content connection string}
+      MONEY_API: http://api:3001
+      MERCHANT_SESSION_SECRET: ${MERCHANT_SESSION_SECRET:?32-byte hex}
+      CONSUMER_BASE: https://${CONSUMER_DOMAIN:?}
+      S3_ENDPOINT: minio
+      S3_PORT: "9000"
+      S3_USE_SSL: "false"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?}
+      S3_BUCKET: ${S3_BUCKET:-media}
+      ASSET_PUBLIC_BASE: https://${ASSETS_DOMAIN:?}
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  consumer:
+    build: ./apps/consumer
+    container_name: locale-consumer
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${CONSUMER_DATABASE_URL:?app_consumer connection string}
+      MONEY_API: http://api:3001
+      CONSUMER_SESSION_SECRET: ${CONSUMER_SESSION_SECRET:?32-byte hex}
+      CONSUMER_BASE: https://${CONSUMER_DOMAIN:?}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      LINE_CHANNEL_ID: ${LINE_CHANNEL_ID:-}
+      LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: locale-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CONSUMER_DOMAIN: ${CONSUMER_DOMAIN:?}
+      MERCHANT_DOMAIN: ${MERCHANT_DOMAIN:?}
+      PLATFORM_DOMAIN: ${PLATFORM_DOMAIN:?}
+      ASSETS_DOMAIN: ${ASSETS_DOMAIN:?}
+      ACME_EMAIL: ${ACME_EMAIL:?email for Let's Encrypt}
+      CADDY_BASICAUTH_USER: ${CADDY_BASICAUTH_USER:?platform login user}
+      CADDY_BASICAUTH_HASH: ${CADDY_BASICAUTH_HASH:?bcrypt hash from `caddy hash-password`}
+      S3_BUCKET: ${S3_BUCKET:-media}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - web
+      - consumer
+      - minio
+    restart: unless-stopped
+
+  # one-off seeder (profile "tools" → never starts on `up`; deploy.sh runs it once on a fresh DB).
+  # Runs on the internal network so it reaches db + minio by service name. Uploads cover images to
+  # MinIO but stores their PUBLIC (locale-assets) URLs in the DB.
+  seed:
+    image: node:20-alpine
+    profiles: ["tools"]
+    working_dir: /repo/apps/web
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?}@db:5432/locale
+      S3_ENDPOINT: minio
+      S3_PORT: "9000"
+      S3_USE_SSL: "false"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?}
+      S3_BUCKET: ${S3_BUCKET:-media}
+      ASSET_PUBLIC_BASE: https://${ASSETS_DOMAIN:?}
+    volumes:
+      - .:/repo
+    command:
+      - /bin/sh
+      - -c
+      - |
+        npm ci --no-audit --no-fund
+        node ../../db/test/seed-shops.mjs
+        node ../../db/deploy/seed-media.mjs
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+volumes:
+  caddydata:
+  caddyconfig:

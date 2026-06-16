@@ -27,6 +27,10 @@ export const DEMO_USER = '00000000-0000-4000-8000-0000000000d0';
 export async function demoUserId(): Promise<string | null> {
   const sid = sessionUserId();
   if (sid) return sid;
+  // Prod: NO shared demo persona. Anonymous visitors resolve to null, so write actions (check-in,
+  // save, redeem, spend) no-op until they log in — otherwise every logged-out visitor would share
+  // one identity and see/mutate each other's stamps & saves. The fallback below is dev/demo-only.
+  if (process.env.NODE_ENV === 'production') return null;
   const a = await q<{ id: string }>(`SELECT id FROM users WHERE id=$1`, [DEMO_USER]);
   if (a[0]) return DEMO_USER;
   const b = await q<{ user_id: string }>(

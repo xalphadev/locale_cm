@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import Nav from './Nav';
 import { getLocale } from '@/lib/i18n';
 
-export const metadata = { title: 'Soi Hop — เดินซอย เก็บแสตมป์', description: 'Nimman Cafe-Hop' };
+export const metadata = { title: 'Locale — เดินซอย เก็บแสตมป์', description: 'Nimman Cafe-Hop' };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

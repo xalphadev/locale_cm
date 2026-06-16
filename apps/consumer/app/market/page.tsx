@@ -55,7 +55,7 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
         {rows.map((r) => <ProductCard key={r.id} pr={r} line_id={r.line_id} phone={r.phone} shopName={i18n(r.shop_name)} shopHref={`/place/${r.place_id}`} />)}
       </div>
       {rows.length === 0 && <p className="empty">{qtext ? `ไม่พบสินค้าที่ตรงกับ “${qtext}”` : 'ยังไม่มีสินค้าในหมวดนี้'}</p>}
-      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ทุกสินค้าติดต่อซื้อกับร้านโดยตรง — Soi Hop ไม่รับชำระเงินในแอป</p>
+      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ทุกสินค้าติดต่อซื้อกับร้านโดยตรง — Locale ไม่รับชำระเงินในแอป</p>
     </>
   );
 }

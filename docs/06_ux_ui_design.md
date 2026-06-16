@@ -1,7 +1,7 @@
 # UX/UI Design Blueprint (MVP — Nimman Cafe-Hop)
 
 > **เวอร์ชัน:** v1 (ผ่าน UX heuristic + flow-completeness review) · **วันที่:** 2026-06-14
-> blueprint สำหรับ build/ลง Figma: design system + IA + ASCII wireframes + hero flows. โฟกัส MVP loop. working app name = **Soi Hop** (ปรับได้)
+> blueprint สำหรับ build/ลง Figma: design system + IA + ASCII wireframes + hero flows. โฟกัส MVP loop. working app name = **Locale** (ปรับได้)
 > สอดคล้องกับ feature scope ใน doc 04, money model doc 02/02b, stack doc 05
 
 **สารบัญ:** Design System & Brand · Consumer App (IA+Wireframes) · Merchant Web + Counter PWA · Field Agent Mode · Hero Flow Storyboards
@@ -21,19 +21,19 @@
 
 ### 1.1 Brand Direction — "Lanna-modern"
 
-**ชื่อแอปที่เลือก (working name, ADJUSTABLE):** **`Soi Hop`** — สะกด/แสดงผลเป็น **ซอยฮ็อป / Soi Hop / 巷跳 (xiàng tiào)**
+**ชื่อแอปที่เลือก (working name, ADJUSTABLE):** **`Locale`** — สะกด/แสดงผลเป็น **ซอยฮ็อป / Locale / 巷跳 (xiàng tiào)**
 
-**เหตุผลที่เลือก `Soi Hop` เหนือผู้เข้าชิงอื่น:**
+**เหตุผลที่เลือก `Locale` เหนือผู้เข้าชิงอื่น:**
 
 | ผู้เข้าชิง | ข้อดี | ทำไมไม่เลือก (MVP) |
 |---|---|---|
-| **Soi Hop** ✅ | "ซอย" = ถนนเล็กในเมืองที่ฝรั่ง/nomad รู้จักแล้ว (Soi 1–17 ของนิมมานคือสนามจริง §1.4); "Hop" สื่อ cafe-hop / cross-merchant loop ตรงตัว north-star = Nimman Cafe-Hop; สั้น 2 พยางค์ ออกเสียงได้ทั้ง 3 ภาษา; เป็นกริยาได้ ("ไป hop กัน") | — (เลือกอันนี้) |
+| **Locale** ✅ | "ซอย" = ถนนเล็กในเมืองที่ฝรั่ง/nomad รู้จักแล้ว (Soi 1–17 ของนิมมานคือสนามจริง §1.4); "Hop" สื่อ cafe-hop / cross-merchant loop ตรงตัว north-star = Nimman Cafe-Hop; สั้น 2 พยางค์ ออกเสียงได้ทั้ง 3 ภาษา; เป็นกริยาได้ ("ไป hop กัน") | — (เลือกอันนี้) |
 | Lanna Loop | บอกพื้นที่ + loyalty loop ชัด, alliteration ดี | ผูกกับ "Lanna/เชียงใหม่" แน่นไป — ขัดวิสัยทัศน์ multi-city; rename ตอนขยายเมือง |
 | Roam CNX | ดูสากล, "CNX" = รหัสสนามบินที่ทัวริสต์รู้จัก | "Roam" generic + ชน roaming/SIM; CNX ผูกเชียงใหม่อีก |
 | Passport CM | สื่อ metaphor passport/stamp ตรง | "CM" ผูกเมือง; "Passport" ทำให้สับสนกับเอกสารเดินทางจริง (เสี่ยงตอน onboarding ทัวริสต์) |
 | Wandr | เท่, สั้น | generic เกินไป, ไม่สื่อ loyalty/loop, ชนแอปท่องเที่ยวจำนวนมาก |
 
-> **หมายเหตุ:** `Soi Hop` = working name; brand metaphor (passport/stamp) เป็นแกนภาพไม่ขึ้นกับชื่อ → เปลี่ยนชื่อภายหลังไม่กระทบ design system. คำว่า **"Passport"** = *ชื่อฟีเจอร์* (สมุดสะสมแสตมป์ quest) ไม่ใช่ชื่อแอป — แยกบทบาทชัด.
+> **หมายเหตุ:** `Locale` = working name; brand metaphor (passport/stamp) เป็นแกนภาพไม่ขึ้นกับชื่อ → เปลี่ยนชื่อภายหลังไม่กระทบ design system. คำว่า **"Passport"** = *ชื่อฟีเจอร์* (สมุดสะสมแสตมป์ quest) ไม่ใช่ชื่อแอป — แยกบทบาทชัด.
 
 **Tagline 3 ภาษา:**
 - 🇹🇭 **"เดินซอย เก็บแสตมป์ แลกของจริง"** (เดินซอย = สำรวจ, เก็บแสตมป์ = quest progress, แลกของจริง = Coins redeem ของจริง ไม่ใช่เงิน)
@@ -446,7 +446,7 @@ COUNTER: scanner states = warming / denied→OTP-primary / LINE-blocked / VALIDA
 MOTION : first-stamp PROVISIONAL ก่อน confirm → stamp-collect(thud, ฉลองหลังยืนยันเท่านั้น)
          coin-mint(>sparks-gain, count-up=ink, +expiry copy) · redeem-burn · reduced-motion safe
 PRIVACY: location copy = "ใช้เฉพาะตอนเช็คอิน/แลก, ไม่สร้างแผนที่เดินทางต่อเนื่อง" (ตรง PDPA consent คำต่อคำ)
-META   : app name "Soi Hop" (ADJUSTABLE) · passport = feature ไม่ใช่ชื่อแอป
+META   : app name "Locale" (ADJUSTABLE) · passport = feature ไม่ใช่ชื่อแอป
 ```
 
 ---

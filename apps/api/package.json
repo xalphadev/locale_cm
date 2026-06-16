@@ -1,7 +1,7 @@
 {
-  "name": "@soihop/api",
+  "name": "@locale/api",
   "version": "0.0.1",
-  "description": "Soi Hop money-plane (NestJS). Typed RPC over the plpgsql ledger functions; connects as money_writer.",
+  "description": "Locale money-plane (NestJS). Typed RPC over the plpgsql ledger functions; connects as money_writer.",
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",

@@ -1,42 +1,72 @@
-# Local Postgres + PostGIS via Docker — a real-PostGIS alternative to Supabase for dev.
+# Locale — shared DATA plane (Postgres+PostGIS + MinIO). Base for BOTH dev and prod, so localhost
+# mirrors the server: same images, same bucket, same key layout. The two layers on top:
+#   • docker-compose.override.yml  (auto-loaded on plain `docker compose up`) — DEV: trust auth +
+#       auto-applies migrations on first boot. Apps run on the host (npm run dev) for fast HMR.
+#   • docker-compose.prod.yml      (explicit -f)                              — PROD: adds Caddy +
+#       the web/consumer/api containers; db uses a password (no trust); migrations applied by deploy.sh.
 #
-# Unlike db/test/setup-dev-db.sh (which STUBS PostGIS on a homebrew Postgres), this runs the
-# migrations VERBATIM against a real PostGIS extension — so the geofence functions
-# (fn_shop_checkin / ST_DWithin) actually work, and you can test the real consumer check-in loop.
+# Ports are bound to 127.0.0.1 only (never 0.0.0.0): safe to keep on the server (the host can seed +
+# psql), and the public path to MinIO in prod is Caddy → minio over the internal network, not this port.
 #
-#   docker compose up -d        # start; the FIRST start applies all db/migrations/*.sql (real PostGIS)
-#   docker compose logs -f db   # watch the migration apply
-#   docker compose down         # stop, keep data in the named volume
-#   docker compose down -v      # stop + WIPE data (fresh DB + re-run migrations on next `up`)
-#
-# Apps use the unchanged URL:  postgres://postgres@127.0.0.1:54400/soihop
-# If the homebrew dev DB is on 54400, stop it first:  db/test/stop-dev-db.sh
-#
-# Seeding (after first `up`):  the demo shops/data are seeded from the host —
-#   cd apps/web && DATABASE_URL=postgres://postgres@127.0.0.1:54400/soihop node ../../db/test/seed-shops.mjs
-# (init applies the SCHEMA only; node-based seeds can't run inside the container.)
-#
-# NOTE: initdb scripts run only when the data volume is EMPTY. After adding a NEW migration, either
-# `docker compose down -v` for a clean rebuild, or apply just the new file by hand with psql.
+#   dev:   docker compose up -d
+#   prod:  docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 
 services:
   db:
     image: postgis/postgis:16-3.4
-    container_name: soihop-db
+    container_name: locale-db
     environment:
-      POSTGRES_DB: soihop
-      POSTGRES_HOST_AUTH_METHOD: trust   # passwordless local connections (matches the app DATABASE_URL)
+      POSTGRES_DB: locale
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}   # required in prod (.env.prod); dev override uses trust
+      TZ: Asia/Bangkok                            # local-midnight resets for daily check-in caps / first-of-day jackpot
+      PGTZ: Asia/Bangkok
     ports:
-      - "54400:5432"
+      - "127.0.0.1:54400:5432"
     volumes:
-      - soihop_pgdata:/var/lib/postgresql/data
-      - ./db/migrations:/migrations:ro
-      - ./db/docker/initdb:/docker-entrypoint-initdb.d:ro
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d soihop"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d locale"]
       interval: 5s
       timeout: 5s
       retries: 12
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: locale-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-minioadmin}
+      TZ: Asia/Bangkok
+    ports:
+      - "127.0.0.1:9000:9000"   # S3 API  (host-only: seed uploads + prod path is Caddy→internal)
+      - "127.0.0.1:9001:9001"   # console
+    volumes:
+      - miniodata:/data
+    restart: unless-stopped
+
+  # one-shot: create the public-read `media` bucket once MinIO is reachable, then exit
+  createbuckets:
+    image: minio/mc:latest
+    container_name: locale-createbuckets
+    depends_on:
+      - minio
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-minioadmin}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-media}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        until mc alias set local http://minio:9000 "$${S3_ACCESS_KEY}" "$${S3_SECRET_KEY}"; do
+          echo 'waiting for minio...'; sleep 1;
+        done
+        mc mb -p "local/$${S3_BUCKET}"
+        mc anonymous set download "local/$${S3_BUCKET}"
+        echo "bucket $${S3_BUCKET} ready (public download)"
 
 volumes:
-  soihop_pgdata:
+  pgdata:
+  miniodata:

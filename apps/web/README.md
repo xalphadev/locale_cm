@@ -1,4 +1,4 @@
-# @soihop/web — admin / merchant back-office (Next.js)
+# @locale/web — admin / merchant back-office (Next.js)
 
 Read-only back-office over the **verified ledger** (App Router, server components query Postgres directly). It connects as a **read-only** role (NOT `money_writer`) — all money mutations go through the [NestJS money-plane](../api/), never this client. Design: [docs/07_admin_console_and_missing_screens.md](../../docs/07_admin_console_and_missing_screens.md).
 
@@ -6,7 +6,7 @@ Read-only back-office over the **verified ledger** (App Router, server component
 
 ```bash
 cd apps/web
-cp .env.example .env        # DATABASE_URL → a SELECT-only role on the soihop DB
+cp .env.example .env        # DATABASE_URL → a SELECT-only role on the locale DB
 pnpm install                # or npm install
 pnpm dev                    # http://localhost:3002
 ```

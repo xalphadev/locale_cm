@@ -5,7 +5,7 @@
 set -uo pipefail
 PGBIN=/opt/homebrew/opt/postgresql@16/bin
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"; MIG="$ROOT/db/migrations"
-PGDATA=/tmp/soihop_devdb; PORT=54400; DB=soihop
+PGDATA=/tmp/locale_devdb; PORT=54400; DB=locale
 "$PGBIN/pg_ctl" -D "$PGDATA" -m immediate stop >/dev/null 2>&1 || true
 rm -rf "$PGDATA"; mkdir -p "$PGDATA"
 "$PGBIN/initdb" -D "$PGDATA" -U postgres --auth-local=trust --auth-host=trust >/dev/null
@@ -13,7 +13,7 @@ rm -rf "$PGDATA"; mkdir -p "$PGDATA"
 PSQL="$PGBIN/psql -h 127.0.0.1 -p $PORT -U postgres"
 $PSQL -d postgres -c "CREATE DATABASE $DB;" >/dev/null
 
-STUB=/tmp/soihop_mig; rm -rf "$STUB"; mkdir -p "$STUB"
+STUB=/tmp/locale_mig; rm -rf "$STUB"; mkdir -p "$STUB"
 sed -e 's/CREATE EXTENSION IF NOT EXISTS postgis;/-- postgis stub/' \
     -e 's/CREATE EXTENSION IF NOT EXISTS pgcrypto;/-- pgcrypto stub/' \
     "$MIG/0001_extensions_and_enums.sql" > "$STUB/0001.sql"

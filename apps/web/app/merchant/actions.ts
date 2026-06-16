@@ -155,7 +155,7 @@ export async function createMerchantProductAction(formData: FormData) {
   const priceMinor = bahtToMinor(s(formData, 'price'));
   const unit = s(formData, 'price_unit') || null;
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
-  const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
+  const urls = [...await saveUploads(formData.getAll('photos') as File[], 'products'), ...pasted];
   const inSeason = !!formData.get('in_season');
   await q(
     `INSERT INTO shop_products(place_id, name_i18n, subtype, price_minor, price_unit, image_urls, image_count, in_season, status, author_kind)
@@ -192,7 +192,7 @@ export async function updateMerchantProductAction(productId: string, formData: F
   // so abort and keep the existing images — the merchant retries with valid files.
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
   const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
-  const saved = await saveUploads(photos);
+  const saved = await saveUploads(photos, 'products');
   if (tried && saved.length < tried) redirect(`/merchant/products/${productId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
   await q(
@@ -220,7 +220,7 @@ export async function createMerchantPostAction(formData: FormData) {
   const body = s(formData, 'body').slice(0, 500);
   if (!body) redirect('/merchant/post/new?error=body');
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
-  const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
+  const urls = [...await saveUploads(formData.getAll('photos') as File[], 'posts'), ...pasted];
   await q(
     `INSERT INTO feed_posts(place_id, body_i18n, image_count, image_urls, status, author_kind)
      VALUES($1, jsonb_build_object('th',$2::text), $3, $4, 'published', 'merchant')`,
@@ -238,7 +238,7 @@ export async function updateMerchantPostAction(postId: string, formData: FormDat
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
   const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
-  const saved = await saveUploads(photos);
+  const saved = await saveUploads(photos, 'posts');
   if (tried && saved.length < tried) redirect(`/merchant/post/${postId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
   await q(
@@ -328,7 +328,7 @@ export async function createStayUnitAction(formData: FormData) {
   const bills = formData.getAll('bills').map(String).filter(Boolean);
   const amen = formData.getAll('amenity').map(String).filter(Boolean);
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
-  const urls = [...await saveUploads(formData.getAll('photos') as File[]), ...pasted];
+  const urls = [...await saveUploads(formData.getAll('photos') as File[], 'rooms'), ...pasted];
   await q(
     `INSERT INTO stay_units(place_id, name_i18n, rental_mode, price_minor, price_period, available_units, daily_status,
         capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
@@ -385,7 +385,7 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
   const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
-  const saved = await saveUploads(photos);
+  const saved = await saveUploads(photos, 'rooms');
   if (tried && saved.length < tried) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
   await q(

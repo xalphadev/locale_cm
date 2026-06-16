@@ -15,9 +15,9 @@ export default async function Claim({ searchParams }: { searchParams: { q?: stri
   }
   return (
     <div className="portal-auth" style={{ maxWidth: 480 }}>
-      <div className="pa-brand">Soi Hop · ร้านค้า</div>
+      <div className="pa-brand">Locale · ร้านค้า</div>
       <h1>เคลมร้านของคุณ</h1>
-      <p className="note">ร้านคุณอยู่ใน Soi Hop อยู่แล้ว? ค้นหาแล้วเคลมเพื่อเข้ามาดูแลเอง — ลงสินค้า โพสต์ และเปิดแต้มสะสม</p>
+      <p className="note">ร้านคุณอยู่ใน Locale อยู่แล้ว? ค้นหาแล้วเคลมเพื่อเข้ามาดูแลเอง — ลงสินค้า โพสต์ และเปิดแต้มสะสม</p>
       <form className="form" method="get" style={{ margin: '14px 0' }}>
         <div className="field"><label>ชื่อร้าน</label><input name="q" defaultValue={qq} placeholder="พิมพ์ชื่อร้าน เช่น บ้านกาแฟ" autoFocus /></div>
         <button className="btn btn-primary mform-save" type="submit">ค้นหา</button>
