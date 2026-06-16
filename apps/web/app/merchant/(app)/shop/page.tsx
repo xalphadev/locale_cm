@@ -25,21 +25,37 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
     <>
       <h1 className="phead"><span className="phead-ic"><Icon n="store" size={18} /></span> ข้อมูลร้าน</h1>
       {searchParams?.ok && <div className="banner-ok">✓ บันทึกแล้ว</div>}
-      <form className="form" action={updateShopAction}>
-        <div className="field"><label>ชื่อร้าน</label><input name="name_th" defaultValue={i18n(p?.name_i18n)} /></div>
-        <div className="field"><label>รายละเอียดร้าน</label><textarea name="desc_th" defaultValue={i18n(p?.description_i18n)} style={{ minHeight: 80 }} placeholder="เล่าเรื่องร้าน จุดเด่น เมนู/สินค้าแนะนำ" /></div>
-        <div className="grid2">
-          <div className="field"><label>เบอร์โทร</label><input name="phone" defaultValue={p?.phone || ''} placeholder="08x-xxx-xxxx" /></div>
-          <div className="field"><label>LINE ID</label><input name="line_id" defaultValue={p?.line_id || ''} placeholder="@yourshop" /></div>
-        </div>
-        <div className="field"><label>เว็บไซต์</label><input name="website" defaultValue={p?.website || ''} placeholder="https://..." /></div>
-        <label className="check"><input type="checkbox" name="sells_products" defaultChecked={!!p?.sells_products} /> ร้านมีสินค้าขาย (แสดงแถบ “สินค้าในร้าน” ให้ลูกค้า)</label>
-        <label className="check"><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า (แสดงแถบ “ห้องว่าง” + ขึ้นในหน้า “ที่พัก” — จัดการห้องที่เมนู “ห้องพัก”)</label>
-        <div className="field"><label>ตำแหน่งร้านบนแผนที่</label>
+      <form className="form mform" action={updateShopAction}>
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูลร้าน</div>
+          <div className="field"><label>ชื่อร้าน</label><input name="name_th" defaultValue={i18n(p?.name_i18n)} /></div>
+          <div className="field"><label>รายละเอียดร้าน</label><textarea name="desc_th" defaultValue={i18n(p?.description_i18n)} style={{ minHeight: 84 }} placeholder="เล่าเรื่องร้าน จุดเด่น เมนู/สินค้าแนะนำ" /></div>
+        </section>
+
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="pin" size={15} /></span> ช่องทางติดต่อ</div>
+          <div className="fgrid">
+            <div className="field"><label>เบอร์โทร</label><input name="phone" defaultValue={p?.phone || ''} placeholder="08x-xxx-xxxx" /></div>
+            <div className="field"><label>LINE ID</label><input name="line_id" defaultValue={p?.line_id || ''} placeholder="@yourshop" /></div>
+          </div>
+          <div className="field"><label>เว็บไซต์</label><input name="website" defaultValue={p?.website || ''} placeholder="https://..." /></div>
+          <p className="fhint">LINE / เบอร์โทรคือช่องทางที่ลูกค้าใช้ติดต่อสั่งซื้อหรือจองโดยตรง</p>
+        </section>
+
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> ร้านนี้มีอะไรบ้าง</div>
+          <label className="check"><input type="checkbox" name="sells_products" defaultChecked={!!p?.sells_products} /> ร้านมีสินค้าขาย — เปิดเมนู “สินค้า” + แสดงแถบสินค้าให้ลูกค้า</label>
+          <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — เปิดเมนู “ห้องพัก” + ขึ้นในหน้า “ที่พัก” ของลูกค้า</label>
+          <p className="fhint">ปิดอันไหน เมนูนั้นจะถูกซ่อน และรายการที่เผยแพร่ไว้จะถูกซ่อนจากลูกค้า</p>
+        </section>
+
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="pin" size={15} /></span> ตำแหน่งร้านบนแผนที่</div>
           {unpinned && <div className="banner-err" style={{ marginBottom: 8 }}>ยังไม่ได้ปักหมุด — ลูกค้าจะหาคุณบนแผนที่ “ที่พัก” ไม่เจอ</div>}
           <GeoPicker lat0={pt?.lat ?? null} lng0={pt?.lng ?? null} />
-        </div>
-        <button className="btn btn-primary" type="submit">บันทึก</button>
+        </section>
+
+        <button className="btn btn-primary mform-save" type="submit">บันทึก</button>
       </form>
       <p className="note">ในเวอร์ชันนี้การแก้ข้อมูลมีผลทันที — โปรดักชันจะให้ทีมงานตรวจก่อนเผยแพร่ (ข้อมูล LINE/เบอร์โทรคือช่องทางที่ลูกค้าใช้ติดต่อสั่งซื้อ)</p>
     </>

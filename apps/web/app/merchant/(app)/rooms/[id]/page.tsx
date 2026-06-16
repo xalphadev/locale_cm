@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
-import { BILLS, AMEN, FURNISHED_TH } from '../RoomForm';
+import { BILLS, AMEN, FURNISHED_TH } from '../constants';
 import { updateVacancyAction, setStayUnitFlagAction, deleteStayUnitAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';

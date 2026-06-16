@@ -363,7 +363,7 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
        available_units = CASE WHEN $4='monthly' THEN COALESCE($7, available_units) ELSE available_units END,
        daily_status    = CASE WHEN $4='daily'   THEN $8 ELSE daily_status END,
        capacity=$9, deposit_minor=$10, min_stay=$11, room_size_sqm=$12, furnished=$13,
-       bills_included=$14, unit_amenities=$15,
+       bills_included = CASE WHEN $4='monthly' THEN $14 ELSE bills_included END, unit_amenities=$15,
        image_urls = CASE WHEN $16::text[] IS NOT NULL THEN $16 ELSE image_urls END,
        image_count = CASE WHEN $16::text[] IS NOT NULL THEN COALESCE(array_length($16,1),1) ELSE image_count END,
        availability_updated_at=now(), updated_at=now()
