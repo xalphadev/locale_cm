@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
+import { Icon } from '../../ui';
 import { RoomForm } from '../RoomForm';
 import { createStayUnitAction } from '../../../actions';
 
@@ -11,7 +12,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
   if (!acc.offers_stay) redirect('/merchant');
   return (
     <>
-      <div className="mback"><a href="/merchant/rooms">← ห้องพัก</a></div>
+      <div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div>
       <h1>เพิ่มห้องพัก</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อห้อง</div>}
       <RoomForm action={createStayUnitAction} submitLabel="เพิ่มห้อง" />

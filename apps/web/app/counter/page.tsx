@@ -1,5 +1,6 @@
 import { q, i18n } from '@/lib/db';
 import { confirmRedeemAction } from '../actions';
+import { PageHead, H2 } from '../adm-ui';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,29 +26,28 @@ export default async function Counter({ searchParams }: { searchParams: { m?: st
 
   return (
     <>
-      <h1>เคาน์เตอร์ร้านค้า <span className="note">· ยืนยันการแลกรางวัล</span></h1>
-      <p className="note">การแลกเป็น <b>merchant-initiated</b> (ร้านกดยืนยัน ไม่ใช่ลูกค้ากดเอง) — money-plane เผาเหรียญฝั่งเซิร์ฟเวอร์ และบล็อกถ้าร้านนี้เป็นผู้สนับสนุนเหรียญ (anti-self-redemption).</p>
+      <PageHead icon="receipt" title="เคาน์เตอร์แลกรางวัล"
+        sub="การแลกเป็น merchant-initiated (ร้านกดยืนยัน ไม่ใช่ลูกค้ากดเอง) — money-plane เผาเหรียญฝั่งเซิร์ฟเวอร์ และบล็อกถ้าร้านนี้เป็นผู้สนับสนุนเหรียญ (anti-self-redemption)" />
 
-      {searchParams?.redeemed && <div className="banner-ok">✓ แลกสำเร็จ — เหรียญถูกเผา ร้านได้รับยอดตั้งพัก (ดูใน Money &amp; Recon)</div>}
+      {searchParams?.redeemed && <div className="banner-ok">✓ แลกสำเร็จ — เหรียญถูกเผา ร้านได้รับยอดตั้งพัก (ดูใน การเงิน &amp; กระทบยอด)</div>}
       {searchParams?.error && <p className="bad" style={{ padding: '.6rem .9rem', borderRadius: 8 }}>⚠ {searchParams.error}</p>}
       {err && <p className="note">DB error: {err}</p>}
 
-      <h2>กำลังเปิดเคาน์เตอร์เป็น: <span className="pill ok">{activeName}</span></h2>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', margin: '.4rem 0 1rem' }}>
+      <H2 icon="store">กำลังเปิดเคาน์เตอร์เป็น: <span className="pill ok">{activeName}</span></H2>
+      <div className="adm-seg">
         {merchants.map((m) => (
-          <a key={m.id} href={`/counter?m=${m.id}`}
-             className="pill" style={{ background: m.id === active ? '#1E8E7E' : '#F2EADD', color: m.id === active ? '#fff' : '#5C5346' }}>
+          <a key={m.id} href={`/counter?m=${m.id}`} className={m.id === active ? 'on' : ''}>
             {i18n(m.name) || m.id.slice(0, 8)}
           </a>
         ))}
       </div>
 
-      <h2>ลูกค้าที่มีเหรียญพร้อมแลก</h2>
+      <H2 icon="spark">ลูกค้าที่มีเหรียญพร้อมแลก</H2>
       <table>
         <thead><tr><th>ลูกค้า</th><th>เหรียญ</th><th>รางวัล</th><th>ผู้สนับสนุนเหรียญ</th><th>ยืนยัน</th></tr></thead>
         <tbody>
           {customers.map((c) => {
-            const isFunder = active && c.funder_key === `merchant:${active}`;
+            const isFunder = !!active && c.funder_key === `merchant:${active}`;
             return (
               <tr key={c.user_id}>
                 <td className="mono">{c.user_id.slice(0, 8)}</td>

@@ -1,7 +1,8 @@
 import { i18n } from '@/lib/db';
 
-const BILLS: [string, string][] = [['water', 'น้ำ'], ['electricity', 'ไฟ'], ['wifi', 'เน็ต'], ['common_fee', 'ส่วนกลาง']];
-const AMEN: [string, string][] = [['aircon', 'แอร์'], ['private_bath', 'ห้องน้ำในตัว'], ['balcony', 'ระเบียง'], ['kitchen', 'ครัว'], ['washing_machine', 'เครื่องซักผ้า'], ['parking', 'ที่จอดรถ'], ['pets_ok', 'เลี้ยงสัตว์ได้'], ['fiber_wifi', 'เน็ตไฟเบอร์']];
+export const BILLS: [string, string][] = [['water', 'น้ำ'], ['electricity', 'ไฟ'], ['wifi', 'เน็ต'], ['common_fee', 'ส่วนกลาง']];
+export const AMEN: [string, string][] = [['aircon', 'แอร์'], ['private_bath', 'ห้องน้ำในตัว'], ['balcony', 'ระเบียง'], ['kitchen', 'ครัว'], ['washing_machine', 'เครื่องซักผ้า'], ['parking', 'ที่จอดรถ'], ['pets_ok', 'เลี้ยงสัตว์ได้'], ['fiber_wifi', 'เน็ตไฟเบอร์']];
+export const FURNISHED_TH: Record<string, string> = { furnished: 'เฟอร์ครบ', partial: 'เฟอร์บางส่วน', unfurnished: 'ไม่มีเฟอร์' };
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id). */
 export function RoomForm({ action, u, submitLabel }: { action: (fd: FormData) => void; u?: any; submitLabel: string }) {
