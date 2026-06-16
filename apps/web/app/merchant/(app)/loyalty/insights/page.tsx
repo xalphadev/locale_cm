@@ -54,6 +54,29 @@ export default async function Insights() {
   for (const d of days) dayN[d.dow] = d.n;
   const dayMax = Math.max(1, ...dayN.slice(1));
 
+  // P2 — new vs returning among last-30d visitors (Growth). Suppressed at small N.
+  const [p2] = enoughData ? await q<any>(
+    `WITH visitors30 AS (
+       SELECT DISTINCT ci.user_id FROM check_ins ci JOIN places p ON p.id = ci.place_id
+        WHERE p.brand_id=$1 AND ci.trust_tier <> 'gps_dwell' AND ci.created_at >= now()-interval '30 days'),
+     firsts AS (
+       SELECT ci.user_id, min(ci.created_at) f FROM check_ins ci JOIN places p ON p.id = ci.place_id
+        WHERE p.brand_id=$1 AND ci.trust_tier <> 'gps_dwell' GROUP BY ci.user_id)
+     SELECT count(*) FILTER (WHERE f.f >= now()-interval '30 days')::int new_u,
+            count(*) FILTER (WHERE f.f <  now()-interval '30 days')::int ret_u
+       FROM visitors30 v JOIN firsts f ON f.user_id = v.user_id`, [acc.brand_id]) : [null];
+  const p2total = p2 ? p2.new_u + p2.ret_u : 0;
+  const retPct = p2total > 0 ? Math.round((p2.ret_u / p2total) * 100) : null;
+
+  // P7 — audience mix (Growth). Per-segment distinct visitors; each cell suppressed at n<K.
+  const SEGLABEL: Record<string, string> = { local: 'คนท้องถิ่น', nomad_expat: 'โนแมด/ต่างชาติพำนัก', tourist_west: 'นักท่องเที่ยวต่างชาติ', tourist_cn: 'นักท่องเที่ยวจีน' };
+  const segs = enoughData ? (await q<any>(
+    `SELECT u.audience_segment::text seg, count(DISTINCT ci.user_id)::int n
+       FROM check_ins ci JOIN places p ON p.id = ci.place_id JOIN users u ON u.id = ci.user_id
+      WHERE p.brand_id=$1 AND ci.trust_tier <> 'gps_dwell' AND u.audience_segment IS NOT NULL
+      GROUP BY seg ORDER BY n DESC`, [acc.brand_id])).filter((r: any) => r.n >= K) : [];
+  const segTotal = segs.reduce((a: number, s: any) => a + s.n, 0) || 1;
+
   return (
     <>
       <div className="mback"><a href="/merchant/loyalty"><Icon n="chevL" size={17} /> แต้มสะสม</a></div>
@@ -100,7 +123,39 @@ export default async function Insights() {
         <div className="nomatch">ข้อมูลยังน้อย — ดูช่วงเวลา/กลุ่มลูกค้าได้เมื่อมีลูกค้าเช็คอินครบ {K} คนขึ้นไป</div>
       )}
 
-      <p className="note" style={{ marginTop: 14 }}>สถิติเชิงลึก (ลูกค้าเก่า-ใหม่, นักท่องเที่ยว vs คนท้องถิ่น, ROI) จะเปิดในแพ็ก Growth/Pro เมื่อข้อมูลพอ</p>
+      {/* P2 — new vs returning (Growth) */}
+      {enoughData && retPct !== null && (
+        <>
+          <div className="menu-label">ลูกค้าเก่า–ใหม่ (30 วัน) <span className="tierbadge">Growth</span></div>
+          <div className="lstats">
+            <div className="lstat"><div className="v">{p2.new_u}</div><div className="l">หน้าใหม่</div></div>
+            <div className="lstat"><div className="v">{p2.ret_u}</div><div className="l">กลับมาซ้ำ</div></div>
+            <div className="lstat"><div className="v">{retPct}%</div><div className="l">สัดส่วนลูกค้าประจำ</div></div>
+          </div>
+        </>
+      )}
+
+      {/* P7 — audience mix (Growth) */}
+      {enoughData && segs.length > 0 && (
+        <>
+          <div className="menu-label">กลุ่มลูกค้า <span className="tierbadge">Growth</span></div>
+          <div className="fsec" style={{ padding: '12px 14px' }}>
+            {segs.map((s: any) => {
+              const pct = Math.round((s.n / segTotal) * 100);
+              return (
+                <div className="segrow" key={s.seg}>
+                  <span className="segrow-l">{SEGLABEL[s.seg] || s.seg}</span>
+                  <span className="segbar"><span style={{ width: `${pct}%` }} /></span>
+                  <span className="segrow-v">{pct}%</span>
+                </div>
+              );
+            })}
+            <p className="fhint" style={{ marginTop: 8 }}>ปรับเมนู/ป้าย/ภาษา/ช่องทางชำระเงินตามกลุ่มลูกค้าหลักของร้าน</p>
+          </div>
+        </>
+      )}
+
+      <p className="note" style={{ marginTop: 14 }}>ROI ของรางวัล + ส่งออกข้อมูล เปิดในแพ็ก Pro · ทุกตัวเลขเป็นภาพรวม ปิดบังถ้ากลุ่มน้อยกว่า {K} คน</p>
     </>
   );
 }

@@ -541,3 +541,48 @@ export async function confirmRedemptionAction(redemptionId: string) {
   revalidatePath('/merchant/loyalty/redeem');
   redirect('/merchant/loyalty/redeem?ok=1');
 }
+
+// ── claim/onboard: take over an existing (agent-seeded, unclaimed) place → account + brand + link ──
+
+/** Claim an EXISTING place that has no brand yet: create the login account + a brand, attach the place
+ *  (sets brand_id + source='merchant'), and log in. MVP has no KYC gate — real claim needs verification
+ *  (agent code / proof); this is the onboarding skeleton. */
+export async function claimPlaceAction(formData: FormData) {
+  const placeId = s(formData, 'place_id');
+  const email = s(formData, 'email').toLowerCase();
+  const pw = s(formData, 'password');
+  const err = (m: string) => redirect(`/merchant/claim/${placeId}?error=${encodeURIComponent(m)}`);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) err('อีเมลไม่ถูกต้อง');
+  if (pw.length < 8) err('รหัสผ่านอย่างน้อย 8 ตัวอักษร');
+
+  // re-check the place is real AND still unclaimed (brand_id IS NULL) — fail closed on a race
+  const [pl] = await q<any>(`SELECT id, name_i18n, city_id FROM places WHERE id=$1 AND brand_id IS NULL`, [placeId]);
+  if (!pl) err('ร้านนี้ถูกเคลมไปแล้ว หรือไม่พบ');
+  const displayName = (pl.name_i18n && (pl.name_i18n.th || pl.name_i18n.en)) || 'ร้านค้า';
+
+  let accId = '';
+  try {
+    accId = await withTx(async (c) => {
+      const acc = (await c.query<{ id: string }>(
+        `INSERT INTO merchant_accounts(email, password_hash, display_name) VALUES($1,$2,$3) RETURNING id`,
+        [email, hashPassword(pw), displayName])).rows[0];
+      const brand = (await c.query<{ id: string }>(
+        `INSERT INTO brands(owner_account_id, city_id, name_i18n, status) VALUES($1,$2,$3,'active') RETURNING id`,
+        [acc.id, pl.city_id, pl.name_i18n])).rows[0];
+      // attach the place only if STILL unclaimed (guards a concurrent claim)
+      const upd = await c.query(
+        `UPDATE places SET brand_id=$2, source='merchant', is_visible=true WHERE id=$1 AND brand_id IS NULL RETURNING id`,
+        [placeId, brand.id]);
+      if (!upd.rows.length) throw new Error('claim_race');
+      await c.query(`UPDATE merchant_accounts SET place_id=$2, active_place_id=$2 WHERE id=$1`, [acc.id, placeId]);
+      return acc.id;
+    });
+  } catch (e: any) {
+    if (e?.code === '23505') err('อีเมลนี้ถูกใช้แล้ว');
+    if (e?.message === 'claim_race') err('ร้านนี้เพิ่งถูกเคลมไป');
+    throw e;
+  }
+  setSession(accId);
+  revalidatePath('/'); // staff dashboard counts
+  redirect('/merchant');
+}

@@ -13,7 +13,7 @@ export default function Login({ searchParams }: { searchParams: { error?: string
         <div className="field"><label>รหัสผ่าน</label><input name="password" type="password" required autoComplete="current-password" /></div>
         <button className="btn btn-primary mform-save" type="submit">เข้าสู่ระบบ</button>
       </form>
-      <p className="note">ยังไม่มีบัญชี? <a href="/merchant/signup">สมัครร้านค้าใหม่</a></p>
+      <p className="note">ยังไม่มีบัญชี? <a href="/merchant/signup">สมัครร้านใหม่</a> · <a href="/merchant/claim">เคลมร้านที่มีในระบบ</a></p>
     </div>
   );
 }
