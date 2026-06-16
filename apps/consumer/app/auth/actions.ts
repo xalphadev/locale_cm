@@ -13,7 +13,7 @@ export async function signupEmailAction(formData: FormData) {
   const email = s(formData, 'email').toLowerCase();
   const pw = s(formData, 'password');
   const name = s(formData, 'name') || email.split('@')[0];
-  const err = (m: string) => redirect(`/login?mode=signup&error=${encodeURIComponent(m)}`);
+  const err = (m: string) => redirect(`/register?error=${encodeURIComponent(m)}`);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) err('อีเมลไม่ถูกต้อง');
   if (pw.length < 8) err('รหัสผ่านอย่างน้อย 8 ตัวอักษร');
 
