@@ -19,10 +19,12 @@ sed -e 's/CREATE EXTENSION IF NOT EXISTS postgis;/-- postgis stub/' \
     "$MIG/0001_extensions_and_enums.sql" > "$STUB/0001.sql"
 sed -e 's/geography([A-Z]*,4326)/text/g' -e '/USING GIST/ s/^/-- /' "$MIG/0002_tables.sql" > "$STUB/0002.sql"
 ( printf 'SET check_function_bodies = off;\n'; cat "$MIG/0006_supply_and_earn.sql" ) > "$STUB/0006.sql"
+# 0023 (dual-points) has fn_shop_checkin → PostGIS ST_DWithin; bodies-off so it CREATEs on the stub
+( printf 'SET check_function_bodies = off;\n'; cat "$MIG/0023_dual_points.sql" ) > "$STUB/0023.sql"
 # 0012 (remaining txns), 0013 (geo via format() strings), 0014 (events), 0015 (event supply) have no compile-time PostGIS dep → copy as-is
 for n in 0003 0004 0005 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022; do cp "$MIG/${n}"*.sql "$STUB/$n.sql"; done
 
-for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022; do
+for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022 0023; do
   $PSQL -d $DB -v ON_ERROR_STOP=1 -q -f "$STUB/$n.sql" || { echo "APPLY FAIL $n"; exit 1; }
 done
 echo "tables: $($PSQL -d $DB -tA -c "SELECT count(*) FROM information_schema.tables WHERE table_schema='public'")"

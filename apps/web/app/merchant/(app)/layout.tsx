@@ -14,6 +14,7 @@ const GLYPH: Record<string, JSX.Element> = {
   bed: <><path d="M3 7v11M3 12h18M21 18v-6a2 2 0 0 0-2-2H9v4" /><circle cx="6.5" cy="9.5" r="1.2" /></>,
   feed: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M7 9h10M7 13h6" /></>,
   store: <><path d="M4 9 5.2 4.2A1.5 1.5 0 0 1 6.7 3h10.6a1.5 1.5 0 0 1 1.5 1.2L20 9" /><path d="M4 9h16v1.5a2.7 2.7 0 0 1-5.3 0 2.7 2.7 0 0 1-5.4 0 2.7 2.7 0 0 1-5.3 0Z" /><path d="M5.5 13v7h13v-7" /></>,
+  spark: <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />,
 };
 function MIcon({ n }: { n: string }) {
   return <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{GLYPH[n]}</svg>;
@@ -23,6 +24,7 @@ const TABS = [
   { href: '/merchant', icon: 'home', label: 'ภาพรวม', cap: null, match: (p: string) => p === '/merchant' },
   { href: '/merchant/products', icon: 'tag', label: 'สินค้า', cap: 'sells_products', match: (p: string) => p.startsWith('/merchant/products') },
   { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: (p: string) => p.startsWith('/merchant/rooms') },
+  { href: '/merchant/loyalty', icon: 'spark', label: 'แต้ม', cap: null, match: (p: string) => p.startsWith('/merchant/loyalty') },
   { href: '/merchant/shop', icon: 'store', label: 'ร้าน', cap: null, match: (p: string) => p.startsWith('/merchant/shop') },
 ];
 

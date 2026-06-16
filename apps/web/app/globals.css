@@ -566,3 +566,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .menu-tx{flex:1;min-width:0;font-weight:700;font-size:.95rem;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .menu-val{flex:none;font-weight:800;font-size:.95rem;color:var(--m-navy)}
 .merchant-root .menu-go{flex:none;color:#C2C9D4}
+
+/* ── loyalty (Stamps): one-decision setup sentence + stat tiles ── */
+.merchant-root .lset{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:1rem;font-weight:600;color:var(--m-text);line-height:2.1}
+.merchant-root .lset input{flex:none;width:auto;font-size:1rem;padding:.5rem .7rem;border-radius:11px}
+.merchant-root .lset input[name=reward_name]{flex:1;min-width:150px}
+.merchant-root .lset input[name=visits]{width:66px;text-align:center;font-weight:800}
+.merchant-root .lstats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:15px}
+.merchant-root .lstat{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh-soft);padding:13px 8px;text-align:center}
+.merchant-root .lstat .v{font-size:1.5rem;font-weight:800;color:var(--m-navy);line-height:1;letter-spacing:-.02em}
+.merchant-root .lstat .l{font-size:.7rem;color:var(--m-muted);margin-top:5px;line-height:1.25}

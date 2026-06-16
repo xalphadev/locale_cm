@@ -476,3 +476,68 @@ export async function addBranchAction(formData: FormData) {
   revalidatePath('/merchant', 'layout');
   redirect('/merchant');
 }
+
+// ── loyalty: per-brand Stamp program (0023). Non-money, in-kind. Scoped to the account's active brand. ──
+
+/** "เริ่มโปรแกรมสะสมแต้ม" — the one-decision setup: create the brand's program + its first reward. */
+export async function createLoyaltyProgramAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  const rewardName = s(formData, 'reward_name');
+  if (!rewardName) redirect('/merchant/loyalty?error=reward');
+  const visits = Math.max(1, Math.min(99, parseInt(s(formData, 'visits'), 10) || 6));
+  const pointsName = s(formData, 'points_name') || 'แต้ม';
+  await withTx(async (c) => {
+    const exists = (await c.query(`SELECT id FROM stamp_programs WHERE brand_id=$1`, [acc.brand_id])).rows[0];
+    if (exists) return;  // one program per brand (idempotent)
+    const prog = (await c.query(
+      `INSERT INTO stamp_programs(brand_id, city_id, points_name_i18n)
+       VALUES($1, (SELECT city_id FROM places WHERE id=$2), jsonb_build_object('th',$3::text)) RETURNING id`,
+      [acc.brand_id, acc.place_id, pointsName])).rows[0];
+    await c.query(
+      `INSERT INTO stamp_rewards(program_id, brand_id, city_id, title_i18n, kind, cost_stamps)
+       VALUES($1, $2, (SELECT city_id FROM places WHERE id=$3), jsonb_build_object('th',$4::text), 'free_item', $5)`,
+      [prog.id, acc.brand_id, acc.place_id, rewardName, visits]);  // 1 stamp/visit → cost_stamps = visits
+  });
+  revalidatePath('/merchant/loyalty'); revalidatePath('/merchant', 'layout');
+  redirect('/merchant/loyalty?ok=created');
+}
+
+/** Add a reward / privilege to the brand's catalog (denominated in the brand's own Stamps). */
+export async function createRewardAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  const [prog] = await q<{ id: string }>(`SELECT id FROM stamp_programs WHERE brand_id=$1`, [acc.brand_id]);
+  if (!prog) redirect('/merchant/loyalty');
+  const title = s(formData, 'title');
+  if (!title) redirect('/merchant/loyalty/rewards/new?error=name');
+  const cost = Math.max(1, Math.min(9999, parseInt(s(formData, 'cost'), 10) || 1));
+  const kind = ['free_item', 'discount', 'privilege'].includes(s(formData, 'kind')) ? s(formData, 'kind') : 'free_item';
+  await q(
+    `INSERT INTO stamp_rewards(program_id, brand_id, city_id, title_i18n, kind, cost_stamps)
+     VALUES($1, $2, (SELECT city_id FROM places WHERE id=$3), jsonb_build_object('th',$4::text), $5, $6)`,
+    [prog.id, acc.brand_id, acc.place_id, title, kind, cost]);
+  revalidatePath('/merchant/loyalty');
+  redirect('/merchant/loyalty?ok=reward');
+}
+
+/** Delete one of the brand's OWN rewards. */
+export async function deleteRewardAction(rewardId: string) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  await q(`DELETE FROM stamp_rewards WHERE id=$1 AND brand_id=$2`, [rewardId, acc.brand_id]);
+  revalidatePath('/merchant/loyalty');
+  redirect('/merchant/loyalty?ok=reward_deleted');
+}
+
+/** Counter: confirm a customer's pending redemption → fn_redeem_stamps (fail-closed, idempotent).
+ *  Ownership re-checked: the redemption must belong to this account's active brand. */
+export async function confirmRedemptionAction(redemptionId: string) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  const [r] = await q<{ id: string }>(
+    `SELECT id FROM shop_redemptions WHERE id=$1 AND brand_id=$2 AND status='pending'`, [redemptionId, acc.brand_id]);
+  if (r) await q(`SELECT fn_redeem_stamps($1)`, [redemptionId]);
+  revalidatePath('/merchant/loyalty/redeem');
+  redirect('/merchant/loyalty/redeem?ok=1');
+}

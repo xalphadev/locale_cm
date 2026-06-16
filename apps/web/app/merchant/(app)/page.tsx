@@ -45,6 +45,11 @@ export default async function Dashboard() {
             <Icon n="chevR" className="menu-go" size={18} />
           </a>
         )}
+        <a className="menu-row" href="/merchant/loyalty">
+          <span className="menu-ic"><Icon n="spark" size={21} /></span>
+          <span className="menu-tx">แต้มสะสม · ของรางวัล</span>
+          <Icon n="chevR" className="menu-go" size={18} />
+        </a>
         <a className="menu-row" href="/merchant/shop">
           <span className="menu-ic"><Icon n="store" size={20} /></span>
           <span className="menu-tx">ข้อมูลร้าน · ที่อยู่ · เบอร์</span>
