@@ -68,8 +68,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .pquick .btn.btn-primary{background:var(--amber);color:#fff;border-color:var(--amber)}
 .pquick .btn.ghost{background:transparent}
 
-.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.9rem}
-.pform{margin-bottom:1.4rem}
 .t.off{background:#ECECEC;color:#777}
 .t.sold{background:#FDECEC;color:#C0392B}
 .t.season{background:#EAF7F1;color:var(--jade)}
@@ -121,14 +119,43 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .pquick .btn.btn-primary{background:var(--m-accent);color:#fff;border-color:var(--m-accent)}
 .merchant-root .pquick .btn.ghost{background:transparent;box-shadow:none}
 /* forms */
-.merchant-root .form{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.3rem;max-width:none}
+.merchant-root .form{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.3rem 1.2rem;max-width:none}
 .merchant-root .field label{color:var(--m-muted);font-weight:700;font-size:.8rem}
-.merchant-root .field input,.merchant-root .field select,.merchant-root .field textarea{border:1.5px solid var(--m-line);border-radius:11px;background:var(--m-surface);padding:.62rem .8rem;font:inherit;color:var(--m-text)}
+.merchant-root .field input,.merchant-root .field select,.merchant-root .field textarea{border:1.5px solid var(--m-line);border-radius:11px;background:var(--m-surface);padding:.66rem .8rem;font:inherit;color:var(--m-text)}
 .merchant-root .field input:focus,.merchant-root .field select:focus,.merchant-root .field textarea:focus{outline:none;border-color:var(--m-accent);box-shadow:0 0 0 3px var(--m-soft)}
+.merchant-root .field input::placeholder,.merchant-root .field textarea::placeholder{color:var(--m-hint,#aab2bf)}
 .merchant-root .btn{border-radius:11px;font-weight:800;padding:.64rem 1.2rem}
 .merchant-root .btn-primary,.merchant-root .btn-approve{background:var(--m-accent);color:#fff}
 .merchant-root .btn:active{filter:brightness(.95)}
-.merchant-root .check{font-size:.88rem;color:var(--m-text)}
+
+/* ── form v2: sections, 2-col grid, hints, styled file + checkbox chips (all add/edit forms) ── */
+.merchant-root .mform{padding:0;background:none;border:none;box-shadow:none}
+.merchant-root .fsec{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.05rem 1.1rem;margin-bottom:12px}
+.merchant-root .fsec-h{display:flex;align-items:center;gap:8px;font-size:.92rem;font-weight:800;color:var(--m-navy);margin-bottom:.85rem}
+.merchant-root .fsec-h .fsec-ic{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;background:var(--m-soft);color:var(--m-accent);flex:none}
+.merchant-root .fsec .field{margin-bottom:.8rem}
+.merchant-root .fsec .field:last-child{margin-bottom:0}
+.merchant-root .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem .7rem}
+.merchant-root .fgrid .field{margin-bottom:0}
+.merchant-root .fhint{margin:.35rem 0 0;font-size:.74rem;color:var(--m-muted);line-height:1.4}
+
+/* styled native file input (keeps filename display; just prettifies the button) */
+.merchant-root .filewrap{display:flex;align-items:center;gap:10px;border:1.5px dashed var(--m-line);border-radius:12px;background:var(--m-sunk);padding:.7rem .8rem}
+.merchant-root .filewrap .fw-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:9px;background:var(--m-soft);color:var(--m-accent);flex:none}
+.merchant-root .filewrap input[type=file]{flex:1;min-width:0;font:inherit;font-size:.82rem;color:var(--m-muted)}
+.merchant-root .filewrap input[type=file]::file-selector-button{font:inherit;font-weight:800;font-size:.82rem;border:1px solid #BCD4F7;background:var(--m-soft);color:var(--m-accent);border-radius:9px;padding:.45rem .8rem;margin-right:10px;cursor:pointer;transition:.12s}
+.merchant-root .filewrap input[type=file]::file-selector-button:hover{background:var(--m-accent);color:#fff;border-color:var(--m-accent)}
+
+/* checkbox chips (bills / amenities) */
+.merchant-root .checkrow{display:flex;flex-wrap:wrap;gap:8px}
+.merchant-root .cbox{display:inline-flex;align-items:center;gap:7px;font-size:.86rem;font-weight:700;color:var(--m-text);background:var(--m-surface);border:1.5px solid var(--m-line);border-radius:999px;padding:.42rem .8rem;cursor:pointer;user-select:none;transition:background .12s,border-color .12s,color .12s}
+.merchant-root .cbox input{width:15px;height:15px;accent-color:var(--m-accent);margin:0;flex:none}
+.merchant-root .cbox:has(input:checked){background:var(--m-soft);border-color:var(--m-accent);color:var(--m-accent)}
+
+/* single full-width checkbox row (in_season / capability toggles) */
+.merchant-root .check{display:flex;align-items:flex-start;gap:10px;background:var(--m-sunk);border:1px solid var(--m-line);border-radius:12px;padding:.72rem .85rem;font-size:.88rem;font-weight:600;color:var(--m-text);line-height:1.45;cursor:pointer}
+.merchant-root .check input{margin-top:1px;width:17px;height:17px;accent-color:var(--m-accent);flex:none}
+.merchant-root .check:has(input:checked){background:var(--m-soft);border-color:#BCD4F7}
 /* banners */
 .merchant-root .banner-ok{background:var(--m-soft);color:var(--m-accent);border-radius:11px;font-weight:600}
 .merchant-root .banner-err{background:#FDECEC;color:#C0392B;border-radius:11px}
@@ -198,10 +225,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mback a{display:inline-flex;align-items:center;gap:2px;color:var(--m-muted);font-weight:700;font-size:.88rem}
 .merchant-root .mback a:active{color:var(--m-accent)}
 .merchant-root .mform{margin-top:.3rem}
-.merchant-root .mform .grid3{gap:.7rem}
-.merchant-root .mform-save{width:100%;margin-top:.4rem}
+.merchant-root .mform-save{width:100%;margin-top:.2rem;padding:.85rem}
 .merchant-root .delwrap{margin-top:.9rem}
-@media(max-width:380px){.merchant-root .mform .grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:340px){.merchant-root .fgrid{grid-template-columns:1fr}}
 
 /* ===== merchant portal: DETAIL / VIEW pages (mirror the consumer detail design) ===== */
 .merchant-root .dhero{position:relative;border-radius:18px;overflow:hidden;background:var(--m-sunk);margin-bottom:1rem;box-shadow:var(--m-sh)}
