@@ -91,7 +91,7 @@ async function main() {
   const products = await q(
     `SELECT sp.id, sp.name_i18n->>'th' AS name, p.category::text AS cat
        FROM shop_products sp JOIN places p ON p.id = sp.place_id
-      WHERE sp.${empty}`);
+      WHERE ${empty}`);
   for (const r of products) {
     const url = await put('products', `prod-${r.id}`, r.name, r.cat === 'eat' ? 'eat' : 'shop');
     await q(`UPDATE shop_products SET image_urls = ARRAY[$2], image_count = 1 WHERE id = $1`, [r.id, url]);
@@ -102,7 +102,7 @@ async function main() {
   const posts = await q(
     `SELECT fp.id, p.name_i18n->>'th' AS name, p.category::text AS cat
        FROM feed_posts fp JOIN places p ON p.id = fp.place_id
-      WHERE fp.${empty}`);
+      WHERE ${empty}`);
   for (const r of posts) {
     const url = await put('posts', `post-${r.id}`, r.name, r.cat === 'eat' ? 'eat' : 'shop');
     await q(`UPDATE feed_posts SET image_urls = ARRAY[$2], image_count = 1 WHERE id = $1`, [r.id, url]);
@@ -110,7 +110,7 @@ async function main() {
   }
 
   // stay units → 'rooms'
-  const rooms = await q(`SELECT su.id, su.name_i18n->>'th' AS name FROM stay_units su WHERE su.${empty}`);
+  const rooms = await q(`SELECT su.id, su.name_i18n->>'th' AS name FROM stay_units su WHERE ${empty}`);
   for (const r of rooms) {
     const url = await put('rooms', `room-${r.id}`, r.name, 'stay');
     await q(`UPDATE stay_units SET image_urls = ARRAY[$2], image_count = 1 WHERE id = $1`, [r.id, url]);
