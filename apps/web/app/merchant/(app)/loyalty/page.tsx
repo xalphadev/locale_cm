@@ -70,6 +70,14 @@ export default async function Loyalty({ searchParams }: { searchParams: { ok?: s
 
       <a className="bigcta" href="/merchant/loyalty/redeem"><Icon n="check" size={19} /> แลกแต้มที่เคาน์เตอร์</a>
 
+      <div className="menu" style={{ marginTop: 2 }}>
+        <a className="menu-row" href="/merchant/loyalty/insights">
+          <span className="menu-ic"><Icon n="spark" size={20} /></span>
+          <span className="menu-tx">สถิติร้าน · คนเข้าร้าน · ช่วงเวลาพีค</span>
+          <Icon n="chevR" className="menu-go" size={18} />
+        </a>
+      </div>
+
       <div className="menu-label">ของรางวัล ({pointsName})</div>
       <div className="mlist">
         {rewards.map((r) => (
