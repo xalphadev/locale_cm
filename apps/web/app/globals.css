@@ -180,6 +180,8 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mrow-meta{font-size:.79rem;color:var(--m-muted);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .mrow-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
 .merchant-root .mrow-go{flex:none;color:#B4BCC8;margin-right:2px}
+.merchant-root .mrow-nm.post{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700;font-size:.92rem;line-height:1.35}
+.merchant-root .mrow-meta .mi{vertical-align:-2px;color:var(--m-muted)}
 .merchant-root .t{display:inline-flex;align-items:center;gap:3px;font-size:.67rem;font-weight:800;padding:.12rem .46rem;border-radius:6px;line-height:1.5}
 .merchant-root .t.season{background:var(--m-soft);color:var(--m-accent)}
 .merchant-root .t.sold{background:#FDECEC;color:#C0392B}
@@ -216,6 +218,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .dtitle h1{margin:.15rem 0 .35rem;font-size:1.5rem;line-height:1.2}
 .merchant-root .dprice{font-size:1.32rem;font-weight:800;color:var(--m-navy)}
 .merchant-root .dprice span{font-size:.86rem;font-weight:700;color:var(--m-muted)}
+.merchant-root .dpost-body{white-space:pre-wrap;font-size:1.02rem;line-height:1.6;color:var(--m-text);margin:.1rem 0 .85rem}
+.merchant-root .dpost-meta{display:flex;flex-wrap:wrap;gap:8px 16px;color:var(--m-muted);font-size:.84rem;font-weight:600}
+.merchant-root .dpost-meta span{display:inline-flex;align-items:center;gap:5px}
 
 .merchant-root .info{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:0 1rem;margin-bottom:.4rem}
 .merchant-root .info-row{display:flex;align-items:center;gap:11px;padding:.72rem 0;border-bottom:1px solid var(--m-line);font-size:.9rem}

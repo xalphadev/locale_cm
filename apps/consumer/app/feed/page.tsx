@@ -19,7 +19,7 @@ async function load() {
     FROM places WHERE status='published' AND source='agent_seed' ORDER BY created_at DESC LIMIT 5`);
   const posts = await q<any>(`SELECT 'post' kind, fp.id pgid, fp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
       fp.body_i18n, fp.image_count, fp.image_urls FROM feed_posts fp JOIN places p ON p.id=fp.place_id
-    WHERE fp.status='published' ORDER BY fp.created_at DESC LIMIT 8`);
+    WHERE fp.status='published' AND p.status='published' AND p.is_visible ORDER BY fp.created_at DESC LIMIT 8`);
   const products = await q<any>(`SELECT 'product' kind, sp.id, sp.created_at ts, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
       sp.name_i18n prod_name, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls, sp.image_count, sp.subtype
     FROM shop_products sp JOIN places p ON p.id=sp.place_id
