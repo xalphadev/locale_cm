@@ -36,6 +36,12 @@ function hash(s: string): number {
   return h;
 }
 
+/** Thumbnail variant of an uploaded image (…/<hash>.webp → …/<hash>_thumb.webp). Only our processed
+ *  WebP uploads have a _thumb sibling; stock/external URLs are returned unchanged. */
+export function thumb(url: string): string {
+  return /\.webp$/i.test(url) && !/_thumb\.webp$/i.test(url) ? url.replace(/\.webp$/i, '_thumb.webp') : url;
+}
+
 /** Cover photo for a venue/event. Pass subcategory + category for a relevant, high-quality image. */
 export function cover(seed: string, sub?: string | null, cat?: string | null, w = 640, h = 480): string {
   const pool = (sub && POOLS[sub]) || (cat && CPOOL[cat]) || POOLS.cafe;

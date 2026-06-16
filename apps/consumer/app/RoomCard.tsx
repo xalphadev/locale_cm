@@ -1,4 +1,4 @@
-import { i18n, cover } from '@/lib/db';
+import { i18n, cover, thumb } from '@/lib/db';
 import { Icon } from './icons';
 import { lineHref } from './ProductCard';
 import { toggleSaveAction } from './actions';
@@ -16,7 +16,7 @@ export function rentText(u: any): string {
   return `฿${Math.round(Number(u.price_minor) / 100).toLocaleString()}/${PERIOD_TH[u.price_period] || u.price_period}`;
 }
 export function roomImg(u: any): string {
-  if (u.image_urls && u.image_urls.length) return u.image_urls[0];
+  if (u.image_urls && u.image_urls.length) return thumb(u.image_urls[0]);
   return cover(`stay-${u.id}`, u.stay_kind || 'stay', 'see', 360, 360);
 }
 export function roomImages(u: any): string[] {

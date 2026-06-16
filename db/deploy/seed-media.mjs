@@ -18,6 +18,7 @@ import crypto from 'crypto';
 const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
 const pg = require('pg');
 const { Client } = require('minio');
+const sharp = require('sharp');
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL || 'postgres://postgres@127.0.0.1:54400/locale' });
 const q = (t, p = []) => pool.query(t, p).then((r) => r.rows);
@@ -74,12 +75,18 @@ async function coverImage(seed, label, kindHint) {
 }
 
 async function put(kind, seed, label, kindHint) {
-  const { buf, ext, mime } = await coverImage(seed, label, kindHint);
+  const { buf } = await coverImage(seed, label, kindHint);
   const d = new Date();
   const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const key = `${ENV_PREFIX}/${kind}/${d.getUTCFullYear()}/${mm}/${crypto.randomBytes(12).toString('hex')}.${ext}`;
-  await mc.putObject(BUCKET, key, buf, buf.length, { 'Content-Type': mime });
-  return `${ASSET_BASE}/${key}`;
+  const base = `${ENV_PREFIX}/${kind}/${d.getUTCFullYear()}/${mm}/${crypto.randomBytes(12).toString('hex')}`;
+  // mirror apps/web/lib/storage.ts: WebP display (≤1280w) + thumbnail (≤400w)
+  const [display, thumb] = await Promise.all([
+    sharp(buf).rotate().resize({ width: 1280, withoutEnlargement: true }).webp({ quality: 80 }).toBuffer(),
+    sharp(buf).rotate().resize({ width: 400, withoutEnlargement: true }).webp({ quality: 70 }).toBuffer(),
+  ]);
+  await mc.putObject(BUCKET, `${base}.webp`, display, display.length, { 'Content-Type': 'image/webp' });
+  await mc.putObject(BUCKET, `${base}_thumb.webp`, thumb, thumb.length, { 'Content-Type': 'image/webp' });
+  return `${ASSET_BASE}/${base}.webp`;
 }
 
 const empty = `(image_urls IS NULL OR array_length(image_urls,1) IS NULL)`;

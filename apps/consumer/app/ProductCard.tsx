@@ -1,4 +1,4 @@
-import { i18n, cover } from '@/lib/db';
+import { i18n, cover, thumb } from '@/lib/db';
 import { Icon } from './icons';
 
 const SUB2POOL: Record<string, string> = {
@@ -25,7 +25,7 @@ export function lineHref(lineId?: string | null): string | null {
   return /^[a-zA-Z0-9._-]+$/.test(h) ? `https://line.me/R/ti/p/~${h}` : null;
 }
 export function productImg(pr: any): string {
-  if (pr.image_urls && pr.image_urls.length) return pr.image_urls[0];
+  if (pr.image_urls && pr.image_urls.length) return thumb(pr.image_urls[0]);
   return cover(`prod-${pr.id}`, SUB2POOL[pr.subtype] || 'market', 'eat', 360, 360);
 }
 
