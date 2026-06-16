@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { currentAccount } from '@/lib/auth';
 import { i18n } from '@/lib/db';
 import { logoutAction } from '../actions';
+import Switcher from './Switcher';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +36,15 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   return (
     <div className="mshell">
       <header className="mtop">
-        <span className="mtop-ava">{(i18n(acc.place_name) || acc.display_name || 'ร').trim().charAt(0)}</span>
+        <span className="mtop-ava">{(i18n(acc.brand_name) || i18n(acc.place_name) || acc.display_name || 'ร').trim().charAt(0)}</span>
         <div className="mtop-l">
           <div className="mtop-brand">SOI HOP · ร้านค้า</div>
-          <div className="mtop-shop">{i18n(acc.place_name) || acc.display_name}</div>
+          <Switcher
+            accountId={acc.id}
+            activePlaceId={acc.place_id}
+            activeBrandName={i18n(acc.brand_name)}
+            activePlaceName={i18n(acc.place_name) || acc.display_name}
+          />
           <div className={`mtop-status ${live ? 'on' : ''}`}>{live ? '● เผยแพร่อยู่' : '○ รอตรวจสอบ'}</div>
         </div>
         <form action={logoutAction}><button className="mtop-out" type="submit">ออก</button></form>

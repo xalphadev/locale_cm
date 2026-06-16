@@ -31,6 +31,7 @@ export default async function Dashboard() {
         {sells && <a className="btn" href="/merchant/products/new"><Icon n="plus" size={17} /> เพิ่มสินค้า</a>}
         {stay && <a className="btn" href="/merchant/rooms/new"><Icon n="plus" size={17} /> เพิ่มห้องพัก</a>}
         <a className="btn" href="/merchant/shop"><Icon n="store" size={17} /> แก้ข้อมูลร้าน</a>
+        <a className="btn" href="/merchant/shops"><Icon n="store" size={17} /> ร้าน/สาขาทั้งหมด{acc.branch_count > 1 ? ` (${acc.branch_count})` : ''}</a>
         {acc.place_id && <a className="btn ghost" href={`${CONSUMER}/place/${acc.place_id}`} target="_blank"><Icon n="ext" size={16} /> ดูหน้าร้านที่ลูกค้าเห็น</a>}
       </div>
       {!sells && !stay && (

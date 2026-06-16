@@ -47,16 +47,46 @@ export function setSession(accountId: string) {
 }
 export function clearSession() { cookies().delete(COOKIE); }
 
-/** The logged-in merchant account joined to its single managed place, or null. Tenancy anchor. */
+/** The logged-in merchant account joined to its ACTIVE branch, or null. Tenancy anchor.
+ *
+ * Multi-entity (0022): one account owns N brands ("ร้าน"), each owning N places ("สาขา"/"ที่พัก").
+ * The cookie still signs ONLY the account id — the trust boundary is brand-ownership, re-proven
+ * here every request: the active branch is resolved as the FIRST of {active_place_id, the legacy
+ * home place_id, the oldest owned place} that is actually owned (its brand.owner_account_id = me).
+ * A forged active_place_id therefore can never resolve to a place the account doesn't own; it just
+ * falls through to a place it does. `acc.place_id` (returned) = the active branch, so every page /
+ * Server Action that scopes on `acc.place_id` stays correct and ownership-proven, unchanged. */
 export async function currentAccount(): Promise<any | null> {
   const tok = cookies().get(COOKIE)?.value;
   if (!tok) return null;
   const id = unsign(tok);
   if (!id) return null;
   const [a] = await q<any>(
-    `SELECT ma.id, ma.email, ma.display_name, ma.phone, ma.place_id, ma.status,
-            p.name_i18n place_name, p.status::text place_status, p.sells_products, p.offers_stay, p.category::text category, p.subcategory
-       FROM merchant_accounts ma LEFT JOIN places p ON p.id = ma.place_id
-      WHERE ma.id = $1 AND ma.status = 'active'`, [id]);
+    `WITH acct AS (
+       SELECT * FROM merchant_accounts WHERE id = $1 AND status = 'active'
+     ),
+     resolved AS (
+       SELECT a.*, COALESCE(
+         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id
+            WHERE bx.owner_account_id = a.id AND px.id = a.active_place_id),
+         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id
+            WHERE bx.owner_account_id = a.id AND px.id = a.place_id),
+         (SELECT px.id FROM places px JOIN brands bx ON bx.id = px.brand_id
+            WHERE bx.owner_account_id = a.id ORDER BY px.created_at LIMIT 1)
+       ) AS eff_place_id
+       FROM acct a
+     )
+     SELECT r.id, r.email, r.display_name, r.phone, r.status,
+            r.eff_place_id AS place_id,
+            p.name_i18n place_name, p.status::text place_status,
+            p.sells_products, p.offers_stay, p.category::text category, p.subcategory,
+            b.id AS brand_id, b.name_i18n AS brand_name,
+            (SELECT count(*)::int FROM brands bb
+               WHERE bb.owner_account_id = r.id AND bb.status = 'active') AS brand_count,
+            (SELECT count(*)::int FROM places pp JOIN brands bb ON bb.id = pp.brand_id
+               WHERE bb.owner_account_id = r.id) AS branch_count
+       FROM resolved r
+       LEFT JOIN places p ON p.id = r.eff_place_id
+       LEFT JOIN brands b ON b.id = p.brand_id`, [id]);
   return a ?? null;
 }

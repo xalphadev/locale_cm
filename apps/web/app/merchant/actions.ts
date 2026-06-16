@@ -40,6 +40,49 @@ function requireCap(acc: any, cap: 'sells_products' | 'offers_stay') {
   if (!acc[cap]) redirect('/merchant');
 }
 
+// ── multi-entity helpers (0022): one account → many brands ("ร้าน") → many branches/places ("สาขา"/"ที่พัก") ──
+// A signup shop_type → a coarse brand_kind (display hint only; the per-branch sells_products/offers_stay
+// flags stay authoritative for what the customer actually sees).
+function brandKindOf(type: string): string {
+  const t = SHOP_TYPES[type];
+  if (!t) return 'shop';
+  if (t.stay) return 'stay';
+  return t.category === 'eat' ? 'eat' : 'shop';
+}
+
+/** Create a brand ("ร้าน") owned by an account (portal plane; merchant_id stays NULL until it transacts). */
+async function createBrand(c: any, opts: { ownerAccountId: string; cityId: string; name: string; type: string }): Promise<string> {
+  const r = await c.query(
+    `INSERT INTO brands(owner_account_id, city_id, name_i18n, brand_kind, status)
+     VALUES($1,$2,jsonb_build_object('th',$3::text),$4,'active') RETURNING id`,
+    [opts.ownerAccountId, opts.cityId, opts.name, brandKindOf(opts.type)]);
+  return r.rows[0].id as string;
+}
+
+/** Create a branch/accommodation place ("สาขา"/"ที่พัก") under a brand. Same SoD-guarded writer
+ *  (fn_create_place) + capability flags as signup; the pin defaults to Nimman (editable in /merchant/shop).
+ *  Created as DRAFT — manageable immediately, public only after staff review. */
+async function createBranchPlace(c: any, opts: {
+  cityId: string; distId: string | null; brandId: string; shopName: string; type: string;
+  phone?: string; lineId?: string;
+}): Promise<string> {
+  const spec = SHOP_TYPES[opts.type] ?? SHOP_TYPES.cafe;
+  const payload = {
+    name_i18n: { th: opts.shopName },
+    category: spec.category, subcategory: spec.subcategory, status: 'draft',
+    lng: NIMMAN.lng, lat: NIMMAN.lat,
+    ...(opts.phone ? { phone: opts.phone } : {}),
+    ...(opts.lineId ? { line_id: opts.lineId } : {}),
+  };
+  const pl = (await c.query(
+    `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
+    [JSON.stringify(payload), opts.cityId, opts.distId, DEMO_AGENT, DEMO_ADMIN])).rows[0];
+  await c.query(
+    `UPDATE places SET sells_products=$2, offers_stay=$3, stay_kind=$4, source='merchant', brand_id=$5 WHERE id=$1`,
+    [pl.id, !!spec.sells, !!spec.stay, spec.stay ? spec.subcategory : null, opts.brandId]);
+  return pl.id as string;
+}
+
 /** Self-service signup → creates the shop (published via fn_create_place) + the login account, then logs in. */
 export async function signupAction(formData: FormData) {
   const email = s(formData, 'email').toLowerCase();
@@ -57,34 +100,24 @@ export async function signupAction(formData: FormData) {
   const [city] = await q<{ id: string }>(`SELECT id FROM cities WHERE code='CNX'`);
   if (!city) err('ระบบยังไม่พร้อมในเมืองนี้ กรุณาติดต่อทีมงาน');
   const [dist] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
-  const { category, subcategory, sells: isSells, stay: isStay } = SHOP_TYPES[type];
 
-  // Create as DRAFT — the shop is fully manageable in the portal immediately, but only goes
-  // public to customers after staff review (apps/web /shops). This avoids anonymous signups
-  // pushing live spam venues onto the consumer surfaces.
-  const payload = {
-    name_i18n: { th: shopName },
-    category, subcategory, status: 'draft',
-    lng: NIMMAN.lng, lat: NIMMAN.lat,
-    ...(phone ? { phone } : {}),
-    ...(lineId ? { line_id: lineId } : {}),
-  };
-
-  // Atomic: place-create + flags + account INSERT in one transaction so a failed signup (e.g. the
-  // email-unique race) never leaves an orphaned place behind. fn_create_place is the portable,
-  // SoD-guarded place writer (geo + freshness + history).
+  // Atomic signup = account → brand → first branch, in one transaction. The account is INSERTed FIRST
+  // so the email-unique race (23505) aborts BEFORE any brand/place row exists (no orphans). The first
+  // shop is its own brand ("ร้าน"); the owner adds more brands/branches later from the portal. The place
+  // is DRAFT — fully manageable immediately, public only after staff review (avoids signup spam going live).
   let accId = '';
   try {
     accId = await withTx(async (c) => {
-      const pl = (await c.query<{ id: string }>(
-        `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
-        [JSON.stringify(payload), city.id, dist?.id ?? null, DEMO_AGENT, DEMO_ADMIN])).rows[0];
-      await c.query(`UPDATE places SET sells_products=$2, offers_stay=$3, stay_kind=$4, source='merchant' WHERE id=$1`,
-        [pl.id, !!isSells, !!isStay, isStay ? subcategory : null]);
       const acc = (await c.query<{ id: string }>(
-        `INSERT INTO merchant_accounts(email, password_hash, display_name, phone, place_id)
-         VALUES($1,$2,$3,$4,$5) RETURNING id`,
-        [email, hashPassword(pw), shopName, phone || null, pl.id])).rows[0];
+        `INSERT INTO merchant_accounts(email, password_hash, display_name, phone)
+         VALUES($1,$2,$3,$4) RETURNING id`,
+        [email, hashPassword(pw), shopName, phone || null])).rows[0];
+      const brandId = await createBrand(c, { ownerAccountId: acc.id, cityId: city.id, name: shopName, type });
+      const placeId = await createBranchPlace(c, {
+        cityId: city.id, distId: dist?.id ?? null, brandId, shopName, type, phone, lineId,
+      });
+      // place_id = the legacy "home" mirror; active_place_id = the branch the portal opens on.
+      await c.query(`UPDATE merchant_accounts SET place_id=$2, active_place_id=$2 WHERE id=$1`, [acc.id, placeId]);
       return acc.id;
     });
   } catch (e: any) {
@@ -381,4 +414,65 @@ export async function deleteStayUnitAction(unitId: string) {
   await q(`DELETE FROM stay_units WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=deleted');
+}
+
+// ── multi-entity navigation: switch active branch, add a brand ("ร้าน"), add a branch ("สาขา") ──
+
+/** Switch the portal's ACTIVE branch. Trust boundary: the UPDATE only lands when the target place
+ *  sits under a brand THIS account owns, so a forged placeId no-ops (you can't switch into a branch
+ *  you don't own). The signed cookie is untouched — only this advisory pointer moves. */
+export async function setActiveContextAction(placeId: string) {
+  const acc = await currentAccount();
+  if (!acc) redirect('/merchant/login');
+  await q(
+    `UPDATE merchant_accounts ma SET active_place_id = $2
+       WHERE ma.id = $1
+         AND EXISTS (SELECT 1 FROM places p JOIN brands b ON b.id = p.brand_id
+                      WHERE p.id = $2 AND b.owner_account_id = ma.id)`,
+    [acc.id, placeId]);
+  revalidatePath('/merchant', 'layout');
+  redirect('/merchant');
+}
+
+/** "เพิ่มร้าน" — add a NEW shop/brand to the logged-in account: a fresh brand + its first branch,
+ *  then open it as the active context. Same shop_type → capability mapping as signup. */
+export async function addShopAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc) redirect('/merchant/login');
+  const shopName = s(formData, 'shop_name');
+  if (!shopName) redirect('/merchant/shops/new?error=name');
+  const type = SHOP_TYPES[s(formData, 'shop_type')] ? s(formData, 'shop_type') : 'cafe';
+  const phone = s(formData, 'phone'), lineId = s(formData, 'line_id');
+  const [city] = await q<{ id: string }>(`SELECT id FROM cities WHERE code='CNX'`);
+  if (!city) redirect('/merchant/shops/new?error=city');
+  const [dist] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
+  const placeId = await withTx(async (c) => {
+    const brandId = await createBrand(c, { ownerAccountId: acc.id, cityId: city.id, name: shopName, type });
+    return createBranchPlace(c, { cityId: city.id, distId: dist?.id ?? null, brandId, shopName, type, phone, lineId });
+  });
+  await q(`UPDATE merchant_accounts SET active_place_id=$2 WHERE id=$1`, [acc.id, placeId]);
+  revalidatePath('/merchant', 'layout');
+  redirect('/merchant');
+}
+
+/** "เพิ่มสาขา" — add a NEW branch to an EXISTING brand the account owns, then switch to it.
+ *  brand_id arrives from the form but is re-proven against ownership before any write. */
+export async function addBranchAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc) redirect('/merchant/login');
+  const brandId = s(formData, 'brand_id');
+  const [brand] = await q<{ id: string; city_id: string | null }>(
+    `SELECT id, city_id FROM brands WHERE id=$1 AND owner_account_id=$2 AND status='active'`, [brandId, acc.id]);
+  if (!brand) redirect('/merchant/shops');                 // not yours / not found → fail closed
+  const branchName = s(formData, 'shop_name');
+  if (!branchName) redirect(`/merchant/shops/${brandId}/new?error=name`);
+  const type = SHOP_TYPES[s(formData, 'shop_type')] ? s(formData, 'shop_type') : 'cafe';
+  const phone = s(formData, 'phone'), lineId = s(formData, 'line_id');
+  const cityId = brand.city_id ?? (await q<{ id: string }>(`SELECT id FROM cities WHERE code='CNX'`))[0]?.id;
+  const [dist] = await q<{ id: string }>(`SELECT id FROM districts WHERE slug='nimman'`);
+  const placeId = await withTx(async (c) =>
+    createBranchPlace(c, { cityId, distId: dist?.id ?? null, brandId, shopName: branchName, type, phone, lineId }));
+  await q(`UPDATE merchant_accounts SET active_place_id=$2 WHERE id=$1`, [acc.id, placeId]);
+  revalidatePath('/merchant', 'layout');
+  redirect('/merchant');
 }

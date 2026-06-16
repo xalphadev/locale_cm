@@ -480,3 +480,44 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   .adm-content{padding:18px 16px 54px}
   .adm-head{margin-bottom:18px}
 }
+
+/* ── multi-entity: brand/branch switcher (header) + portfolio (0022) ── */
+.merchant-root .mswitch{position:relative}
+.merchant-root .mswitch>summary{list-style:none;display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:1px}
+.merchant-root .mswitch>summary::-webkit-details-marker{display:none}
+.merchant-root .mswitch-names{min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.merchant-root .mswitch-names b{font-size:1.12rem;font-weight:800;letter-spacing:-.02em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
+.merchant-root .mswitch-names i{font-style:normal;font-size:.74rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:56vw}
+.merchant-root .mswitch-caret{flex:none;color:var(--m-hint);font-size:.8rem;transition:transform .15s}
+.merchant-root .mswitch[open] .mswitch-caret{transform:rotate(180deg)}
+.merchant-root .mswitch-pop{position:absolute;top:calc(100% + 10px);left:0;z-index:60;width:min(86vw,360px);max-height:70vh;overflow:auto;background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-shlg);padding:8px}
+.merchant-root .mswitch-grp{padding:4px 0}
+.merchant-root .mswitch-grp+.mswitch-grp{border-top:1px solid var(--m-line)}
+.merchant-root .mswitch-bh{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px 2px}
+.merchant-root .mswitch-bhn{font-size:.72rem;font-weight:800;letter-spacing:.02em;color:var(--m-muted);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .mswitch-addbr{flex:none;font-size:.74rem;font-weight:700;color:var(--m-accent);text-decoration:none}
+.merchant-root .mswitch form{margin:0}
+.merchant-root .mswitch-b{width:100%;display:flex;align-items:center;gap:8px;text-align:left;background:none;border:none;border-radius:11px;padding:.5rem .6rem;font:inherit;cursor:pointer;color:var(--m-text)}
+.merchant-root .mswitch-b:hover{background:var(--m-sunk)}
+.merchant-root .mswitch-b.on{background:var(--m-soft)}
+.merchant-root .mswitch-bn{flex:1;min-width:0;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .mswitch-bt{flex:none;font-size:.68rem;color:var(--m-muted)}
+.merchant-root .mswitch-ok{flex:none;color:var(--m-accent);font-weight:800}
+.merchant-root .mswitch-foot{display:flex;gap:8px;padding:8px 6px 4px;border-top:1px solid var(--m-line);margin-top:4px}
+.merchant-root .mswitch-add{flex:1;text-align:center;font-weight:800;font-size:.84rem;color:#fff;background:var(--m-ink);border-radius:999px;padding:.55rem;text-decoration:none}
+.merchant-root .mswitch-mng{flex:none;text-align:center;font-weight:700;font-size:.84rem;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.55rem .8rem;text-decoration:none}
+.merchant-root .btn.sm{padding:.5rem .85rem;font-size:.84rem;border-radius:999px;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-text)}
+.merchant-root .shopcard{background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--r-card);box-shadow:var(--m-sh-soft);padding:12px;margin-bottom:14px}
+.merchant-root .shopcard-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.merchant-root .shopcard-t{display:flex;align-items:center;gap:7px;font-weight:800;font-size:1.02rem;color:var(--m-text);min-width:0}
+.merchant-root .shopcard-add{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:.8rem;font-weight:700;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.34rem .7rem;text-decoration:none}
+.merchant-root .shopcard-empty{font-size:.84rem;color:var(--m-hint);padding:6px 2px}
+.merchant-root .branch{display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:13px}
+.merchant-root .branch+.branch{border-top:1px solid var(--m-line)}
+.merchant-root .branch.on{background:var(--m-soft)}
+.merchant-root .branch-l{flex:1;min-width:0}
+.merchant-root .branch-n{font-weight:700;font-size:.95rem;color:var(--m-text);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.merchant-root .branch-cur{font-size:.66rem;font-weight:800;color:var(--m-accent);background:#fff;border:1px solid var(--m-soft);border-radius:999px;padding:.08rem .5rem}
+.merchant-root .branch-m{margin-top:3px;font-size:.74rem;color:var(--m-muted);display:flex;gap:5px;flex-wrap:wrap}
+.merchant-root .branch-st{font-weight:700;color:var(--m-muted)}
+.merchant-root .branch-st.on{color:var(--m-jade)}
