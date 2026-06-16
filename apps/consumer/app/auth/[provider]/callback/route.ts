@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 // GET /auth/google/callback?code&state → exchange code, find/create the user, set the session.
 export async function GET(req: NextRequest, { params }: { params: { provider: string } }) {
-  const origin = req.nextUrl.origin;
+  const origin = process.env.CONSUMER_BASE?.replace(/\/+$/, '') || req.nextUrl.origin;
   const p = params.provider;
   const fail = (e: string) => NextResponse.redirect(new URL(`/login?error=${e}`, origin));
   if (!isProvider(p)) return fail('provider');

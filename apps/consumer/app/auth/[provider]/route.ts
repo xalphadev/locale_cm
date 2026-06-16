@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 // GET /auth/google | /auth/line → redirect to the provider's consent screen (with a CSRF state cookie).
 export async function GET(req: NextRequest, { params }: { params: { provider: string } }) {
-  const origin = req.nextUrl.origin;
+  const origin = process.env.CONSUMER_BASE?.replace(/\/+$/, '') || req.nextUrl.origin;
   const p = params.provider;
   if (!isProvider(p) || !providerEnabled(p)) return NextResponse.redirect(new URL('/login?error=provider', origin));
   const state = crypto.randomBytes(16).toString('hex');

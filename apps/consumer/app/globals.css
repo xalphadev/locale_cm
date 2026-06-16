@@ -925,7 +925,7 @@ a.pcname{color:var(--text)}
 /* ── consumer auth (login / signup) ── */
 .authpage{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 18px;background:var(--bg)}
 .auth-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--hairline);border-radius:22px;box-shadow:var(--shadow-card);padding:26px 22px}
-.auth-brand{font-weight:900;letter-spacing:-.02em;color:var(--accent);font-size:1.05rem}
+.auth-brand{font-weight:900;letter-spacing:-.02em;color:var(--accent);font-size:1.05rem;padding-left:42px}
 .auth-card h1{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;margin:.4rem 0 .2rem}
 .auth-sub{color:var(--muted);font-size:.9rem;line-height:1.5;margin-bottom:16px}
 .auth-err{background:#FDECEC;color:#C0392B;border-radius:11px;padding:.65rem .9rem;font-size:.88rem;font-weight:600;margin-bottom:14px}
