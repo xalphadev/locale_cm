@@ -21,7 +21,7 @@ export default async function ClaimForm({
       ) : (
         <>
           <h1>เคลม “{i18n(pl.name_i18n)}”</h1>
-          <p className="note">สร้างบัญชีเพื่อดูแลร้านนี้ — หลังเคลมจะลงสินค้า โพสต์ และเปิดแต้มสะสมได้ทันที</p>
+          <p className="note">สร้างบัญชีเพื่อดูแลร้านนี้ — หลังเคลมจะแก้ข้อมูล ลงสินค้า และโพสต์ได้ทันที ส่วนแต้มสะสม + ตรา “ยืนยันโดยเจ้าของร้าน” จะปลดล็อกเมื่อยืนยันความเป็นเจ้าของ (รหัส OTP ทางเบอร์ร้าน หรือให้ทีมงานตรวจสอบ)</p>
           {searchParams?.error && <div className="banner-err">{searchParams.error}</div>}
           <form className="form" action={claimPlaceAction}>
             <input type="hidden" name="place_id" value={pl.id} />

@@ -18,6 +18,7 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
   ] },
   { grp: 'ปฏิบัติการ', items: [
     { href: '/proposals', icon: 'inbox', label: 'คิวรออนุมัติ', match: (p) => p.startsWith('/proposals') },
+    { href: '/claims', icon: 'shield', label: 'ยืนยันเจ้าของร้าน', match: (p) => p.startsWith('/claims') },
     { href: '/shops', icon: 'store', label: 'ร้านสมัคร', match: (p) => p.startsWith('/shops') },
     { href: '/counter', icon: 'receipt', label: 'เคาน์เตอร์แลกรางวัล', match: (p) => p.startsWith('/counter') },
   ] },

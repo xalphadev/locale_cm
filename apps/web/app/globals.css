@@ -172,6 +172,12 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* banners */
 .merchant-root .banner-ok{background:var(--m-soft);color:var(--m-accent);border-radius:11px;font-weight:600}
 .merchant-root .banner-err{background:#FDECEC;color:#C0392B;border-radius:11px}
+/* ownership-verification banner + locked menu chip (0027) */
+.merchant-root .verifybanner{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:.85rem .95rem;border-radius:14px;background:#FBF1D8;border:1px solid #F0D89B;color:#7A5A00;text-decoration:none}
+.merchant-root .verifybanner .vb-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#F5B500;color:#fff;flex:none}
+.merchant-root .verifybanner .vb-tx{flex:1;font-size:.86rem;line-height:1.4}
+.merchant-root .verifybanner .vb-go{color:#B98900;flex:none}
+.merchant-root .menu-lock{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:800;color:#9A6A00;background:#FBF1D8;border-radius:999px;padding:.18rem .5rem;margin-left:auto}
 /* .mini — used by the shop-page geo picker */
 .merchant-root .mini{border:1px solid var(--m-line);border-radius:9px;background:var(--m-surface);font-weight:700;color:var(--m-text)}
 /* auth pages */

@@ -39,6 +39,22 @@ function requireCap(acc: any, cap: 'sells_products' | 'offers_stay') {
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc[cap]) redirect('/merchant');
 }
+// Ownership-verification gate. Claiming/creating a place grants management, but full privileges
+// (loyalty/Stamps + the consumer "verified by owner" badge) stay locked until the active branch
+// is proven owned (phone OTP or staff review → places.claim_verified_at). Fail-closed: send the
+// owner to the verify flow rather than letting an unverified branch open a points program.
+function requireVerified(acc: any) {
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (!acc.verified) redirect('/merchant/verify?need=loyalty');
+}
+// '+66 81 472 6145' → '+66 8x-xxx-6145' (reveal only last 4 + the leading group, dev-safe to show)
+function maskPhone(raw: string | null | undefined): string {
+  const digits = String(raw ?? '').replace(/[^\d+]/g, '');
+  if (digits.replace(/\D/g, '').length < 6) return 'เบอร์ในระบบ';
+  const last4 = digits.slice(-4);
+  const head = digits.startsWith('+') ? digits.slice(0, 3) : digits.slice(0, 2);
+  return `${head} ${digits.startsWith('+') ? digits[3] : digits[2]}x-xxx-${last4}`;
+}
 
 // ── multi-entity helpers (0022): one account → many brands ("ร้าน") → many branches/places ("สาขา"/"ที่พัก") ──
 // A signup shop_type → a coarse brand_kind (display hint only; the per-branch sells_products/offers_stay
@@ -515,6 +531,7 @@ export async function addBranchAction(formData: FormData) {
 export async function createLoyaltyProgramAction(formData: FormData) {
   const acc = await currentAccount();
   if (!acc?.brand_id) redirect('/merchant/login');
+  requireVerified(acc);   // points programs require a verified (owner-proven) branch
   const rewardName = s(formData, 'reward_name');
   if (!rewardName) redirect('/merchant/loyalty?error=reward');
   const visits = Math.max(1, Math.min(99, parseInt(s(formData, 'visits'), 10) || 6));
@@ -539,6 +556,7 @@ export async function createLoyaltyProgramAction(formData: FormData) {
 export async function createRewardAction(formData: FormData) {
   const acc = await currentAccount();
   if (!acc?.brand_id) redirect('/merchant/login');
+  requireVerified(acc);
   const [prog] = await q<{ id: string }>(`SELECT id FROM stamp_programs WHERE brand_id=$1`, [acc.brand_id]);
   if (!prog) redirect('/merchant/loyalty');
   const title = s(formData, 'title');
@@ -626,5 +644,73 @@ export async function claimPlaceAction(formData: FormData) {
   }
   setSession(accId);
   revalidatePath('/'); // staff dashboard counts
-  redirect('/merchant');
+  redirect('/merchant/verify?claimed=1');  // claimed → now prove ownership to unlock full privileges
+}
+
+// ── ownership verification (0027): prove control of a claimed/created branch ──────────────────────
+
+/** Self-serve: issue a one-time code to the branch's listed phone. Dev surfaces the code in the URL
+ *  (no SMS gateway); production wires an SMS send here and never returns the code. */
+export async function startClaimOtpAction() {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (acc.verified) redirect('/merchant/verify?ok=already');
+  if (!acc.place_phone) redirect('/merchant/verify?error=nophone');
+  // 6-digit code, deterministic-free. crypto-grade not required for a dev OTP; avoid 0-padding loss.
+  const code = String(100000 + Math.floor(Math.random() * 900000));
+  const masked = maskPhone(acc.place_phone);
+  await q(
+    `INSERT INTO place_claims(place_id, account_id, method, status, otp_code, otp_expires_at, attempts, contact_masked)
+     VALUES($1,$2,'phone_otp','pending',$3, now()+interval '10 minutes', 0, $4)`,
+    [acc.place_id, acc.id, code, masked]);
+  revalidatePath('/merchant/verify');
+  // DEV: pass the code so the demo can complete without SMS. Remove the `dev` param once SMS is wired.
+  const devParam = process.env.NODE_ENV === 'production' ? '' : `&dev=${code}`;
+  redirect(`/merchant/verify?sent=1${devParam}`);
+}
+
+/** Confirm the OTP → flip the branch to verified. Fail-closed: latest pending code, not expired,
+ *  <5 attempts, exact match. Wrong codes increment attempts; expiry/lockout force a resend. */
+export async function confirmClaimOtpAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (acc.verified) redirect('/merchant/verify?ok=already');
+  const entered = s(formData, 'code').replace(/\D/g, '');
+  const [c] = await q<any>(
+    `SELECT id, otp_code, attempts, (otp_expires_at < now()) AS expired
+       FROM place_claims
+      WHERE place_id=$1 AND account_id=$2 AND method='phone_otp' AND status='pending'
+      ORDER BY created_at DESC LIMIT 1`, [acc.place_id, acc.id]);
+  if (!c) redirect('/merchant/verify?error=nocode');
+  if (c.expired) redirect('/merchant/verify?error=expired');
+  if (c.attempts >= 5) redirect('/merchant/verify?error=locked');
+  if (entered !== c.otp_code) {
+    await q(`UPDATE place_claims SET attempts=attempts+1 WHERE id=$1`, [c.id]);
+    redirect('/merchant/verify?error=badcode');
+  }
+  await withTx(async (cx) => {
+    await cx.query(`UPDATE place_claims SET status='verified', otp_code=NULL, resolved_at=now() WHERE id=$1`, [c.id]);
+    await cx.query(`UPDATE places SET claim_verified_at=now() WHERE id=$1`, [acc.place_id]);
+  });
+  revalidatePath('/merchant', 'layout'); revalidatePath('/merchant/verify');
+  redirect('/merchant/verify?ok=verified');
+}
+
+/** Fallback: request a manual ownership review (staff approve via doc / field check). Records a
+ *  pending claim; does NOT grant verification — staff resolution flips places.claim_verified_at. */
+export async function requestClaimReviewAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (acc.verified) redirect('/merchant/verify?ok=already');
+  const note = s(formData, 'note').slice(0, 500);
+  // one open manual request per branch (idempotent-ish): skip if already pending
+  const [open] = await q<{ id: string }>(
+    `SELECT id FROM place_claims WHERE place_id=$1 AND method='manual_review' AND status='pending'`, [acc.place_id]);
+  if (!open) {
+    await q(
+      `INSERT INTO place_claims(place_id, account_id, method, status, note) VALUES($1,$2,'manual_review','pending',$3)`,
+      [acc.place_id, acc.id, note || null]);
+  }
+  revalidatePath('/merchant/verify');
+  redirect('/merchant/verify?ok=submitted');
 }

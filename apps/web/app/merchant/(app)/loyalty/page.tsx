@@ -12,6 +12,21 @@ const KIND_LABEL: Record<string, string> = { free_item: 'ของแถม', di
 export default async function Loyalty({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.brand_id) redirect('/merchant/login');
+
+  // gated: a points program requires a verified (owner-proven) branch
+  if (!acc.verified) {
+    return (
+      <>
+        <h1 className="phead"><span className="phead-ic"><Icon n="lock" size={17} /></span> แต้มสะสมของร้าน</h1>
+        <div className="banner-err">ฟีเจอร์นี้ล็อกอยู่ — ต้องยืนยันความเป็นเจ้าของร้านก่อน</div>
+        <p className="note" style={{ margin: '.4rem 0 1rem' }}>
+          แต้มสะสมเป็นสิทธิ์ของเจ้าของร้านตัวจริง เพื่อกันการสวมสิทธิ์ — ยืนยันความเป็นเจ้าของ (รหัส OTP ทางเบอร์ร้าน หรือให้ทีมงานตรวจสอบ) แล้วเปิดใช้ได้ทันที
+        </p>
+        <a className="bigcta" href="/merchant/verify?need=loyalty"><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</a>
+      </>
+    );
+  }
+
   const [prog] = await q<any>(
     `SELECT id, points_name_i18n FROM stamp_programs WHERE brand_id=$1 AND status='active'`, [acc.brand_id]);
 

@@ -35,6 +35,14 @@ export default async function Dashboard() {
         <span>{live ? 'ร้านเผยแพร่แล้ว ลูกค้าเห็นร้านคุณได้' : 'รอทีมงานตรวจ — ร้านยังไม่ขึ้นให้ลูกค้าเห็น'}</span>
       </div>
 
+      {!acc.verified && (
+        <a className="verifybanner" href="/merchant/verify">
+          <span className="vb-ic"><Icon n="lock" size={18} /></span>
+          <span className="vb-tx"><b>ยืนยันความเป็นเจ้าของร้าน</b><br />ปลดล็อกแต้มสะสม + ตรา “ยืนยันโดยเจ้าของร้าน” ที่ลูกค้าเห็น</span>
+          <Icon n="chevR" className="vb-go" size={18} />
+        </a>
+      )}
+
       <div className="menu-label">จัดการร้านนี้</div>
       <div className="menu">
         {sells && (
@@ -53,9 +61,10 @@ export default async function Dashboard() {
             <Icon n="chevR" className="menu-go" size={18} />
           </a>
         )}
-        <a className="menu-row" href="/merchant/loyalty">
+        <a className="menu-row" href={acc.verified ? '/merchant/loyalty' : '/merchant/verify?need=loyalty'}>
           <span className="menu-ic"><Icon n="spark" size={21} /></span>
           <span className="menu-tx">แต้มสะสม · ของรางวัล</span>
+          {!acc.verified && <span className="menu-lock"><Icon n="lock" size={14} /> ล็อก</span>}
           <Icon n="chevR" className="menu-go" size={18} />
         </a>
         <a className="menu-row" href="/merchant/shop">

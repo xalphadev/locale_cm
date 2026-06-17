@@ -134,3 +134,26 @@ export async function approveProposalAction(proposalId: string) {
   }
   redirect('/proposals?approved=1');
 }
+
+// ── ownership-claim review (0027): staff resolve a manual_review request ──────────────────────────
+// Content-plane writes (places.claim_verified_at + place_claims), same DB role the portal uses for
+// content. Approving flips the branch to verified → unlocks loyalty + the consumer "verified" badge.
+
+/** Approve a pending manual ownership review → mark verified. */
+export async function approveClaimAction(claimId: string) {
+  const [c] = await q<{ place_id: string }>(
+    `SELECT place_id FROM place_claims WHERE id=$1 AND method='manual_review' AND status='pending'`, [claimId]);
+  if (c) {
+    await q(`UPDATE place_claims SET status='verified', reviewer_id=$2, resolved_at=now() WHERE id=$1`, [claimId, DEMO_ADMIN]);
+    await q(`UPDATE places SET claim_verified_at=now() WHERE id=$1 AND claim_verified_at IS NULL`, [c.place_id]);
+  }
+  revalidatePath('/claims');
+  redirect('/claims?approved=1');
+}
+
+/** Reject a pending manual ownership review (no verification granted). */
+export async function rejectClaimAction(claimId: string) {
+  await q(`UPDATE place_claims SET status='rejected', reviewer_id=$2, resolved_at=now() WHERE id=$1 AND method='manual_review' AND status='pending'`, [claimId, DEMO_ADMIN]);
+  revalidatePath('/claims');
+  redirect('/claims?rejected=1');
+}
