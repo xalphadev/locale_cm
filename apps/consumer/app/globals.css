@@ -129,6 +129,9 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .claimcta-go{color:var(--muted);flex:none}
 .dbody{padding:16px 18px 96px}
 .desc{font-size:.97rem;line-height:1.62;color:var(--text);margin:.1rem 0 1.1rem}
+/* reviews: "see all" link / "load more" button (no search; lazy-loaded) */
+.rvmore{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin:10px 0 4px;padding:.7rem;border:1px solid var(--hairline);border-radius:12px;background:var(--surface);color:var(--accent);font-weight:800;font-size:.9rem;text-decoration:none;cursor:pointer}
+.rvmore:disabled{color:var(--muted);cursor:default}
 .rating-row{display:flex;align-items:center;gap:.6rem;margin:.3rem 0 .2rem}
 .stars{color:var(--gold);font-weight:800;font-size:1.05rem}
 .info{background:var(--surface);border-radius:var(--r-sm);padding:4px 16px;box-shadow:var(--shadow-sm)}

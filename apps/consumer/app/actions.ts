@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { q, demoUserId } from '@/lib/db';
+import { q, demoUserId, i18n } from '@/lib/db';
 
 /** Switch UI language (TH/EN/ZH) — sets a cookie; the cookie-aware i18n re-renders everything. */
 export async function setLangAction(lang: string) {
@@ -112,6 +112,17 @@ export async function spendSparksAction(rewardId: string) {
   try { await q(`SELECT spend_sparks($1,$2,$3)`, [uid, rewardId, `cspark-${uid}-${rewardId}`]); }
   catch { /* insufficient Sparks / out of stock — the UI already gates this; swallow for the demo */ }
   revalidatePath('/sparks'); revalidatePath('/wallet');
+}
+
+/** Lazy-load a page of approved reviews (8 at a time) for the dedicated reviews page / "load more". */
+export async function fetchReviewsAction(placeId: string, offset: number) {
+  const off = Math.max(0, Math.min(2000, Math.floor(Number(offset) || 0)));
+  const rows = await q<any>(
+    `SELECT r.id, r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d
+       FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id
+      WHERE r.place_id=$1 AND r.moderation_status='approved'
+      ORDER BY r.created_at DESC, r.rating DESC OFFSET $2 LIMIT 8`, [placeId, off]);
+  return rows.map((r) => ({ id: r.id as string, rating: r.rating as number, body: i18n(r.body_i18n), name: r.display_name as string, d: r.d as string }));
 }
 
 /** Report a review for moderation → opens a content_reports row for staff (one per user per review). */
