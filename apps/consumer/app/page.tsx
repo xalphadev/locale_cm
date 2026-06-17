@@ -162,7 +162,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       <div className="appbar">
         <div><div className="greet">สำรวจรอบตัวคุณ</div>
           <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> เชียงใหม่ <Icon n="chevD" size={15} /></div></div>
-        <div className="acts"><LangSwitch cur={getLocale()} /><a className="avatar-btn" href="/profile">ก</a></div>
+        <div className="acts"><LangSwitch cur={getLocale()} /><a className="iconbtn" href="/inbox" aria-label="การแจ้งเตือน"><Icon n="bell" size={20} /></a><a className="avatar-btn" href="/profile">ก</a></div>
       </div>
       <form className="searchbar" action="/"><Icon n="search" size={20} />
         <input name="q" defaultValue={query} placeholder="ลองพิมพ์: คืนนี้มีแฟน งบ 1,000 แถวนิมมาน" /></form>

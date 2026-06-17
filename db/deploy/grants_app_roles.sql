@@ -44,7 +44,8 @@ GRANT INSERT, UPDATE, DELETE ON
   shop_redemptions, check_ins, checkin_daily_caps,
   stamp_events, stamp_balances,
   spark_events, spark_balances, spark_redemptions,
-  user_cosmetics
+  user_cosmetics,
+  content_reports                               -- consumers report reviews/photos (moderation)
   TO app_consumer;
 GRANT UPDATE ON platform_rewards TO app_consumer;   -- spend_sparks bumps claimed_count
 
@@ -55,7 +56,10 @@ GRANT INSERT, UPDATE, DELETE ON
   merchant_accounts, brands, places, shop_products, feed_posts, stay_units,
   stamp_programs, stamp_rewards, stamp_promotions,
   shop_redemptions, stamp_events, stamp_balances,
-  place_claims                                  -- 0027: ownership-claim verification (OTP + staff review)
+  place_claims,                                 -- 0027: ownership-claim verification (OTP + staff review)
+  deals,                                        -- merchant self-serve promotions
+  notif_outbox,                                 -- enqueue notifications (deal → savers)
+  reviews, content_reports, fraud_cases         -- back-office moderation + fraud handling
   TO app_content;
 
 -- 5) Report what was provisioned --------------------------------------------------------------

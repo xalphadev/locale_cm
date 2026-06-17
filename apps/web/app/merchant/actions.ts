@@ -747,13 +747,23 @@ export async function createMerchantDealAction(formData: FormData) {
   const days = Math.min(60, Math.max(1, parseInt(s(formData, 'days'), 10) || 7));
   await withTx(async (c) => {
     const mid = await ensureMerchant(c, acc);
-    await c.query(
+    const dl = (await c.query(
       `INSERT INTO deals(place_id, merchant_id, city_id, title_i18n, terms_i18n, deal_type, value_pct, value_minor,
                          starts_at, ends_at, quota_total, status)
        VALUES($1, $2, (SELECT city_id FROM places WHERE id=$1), jsonb_build_object('th',$3::text),
               CASE WHEN $4 <> '' THEN jsonb_build_object('th',$4::text) END,
-              $5::deal_type, $6, $7, now(), now() + ($8 || ' days')::interval, $9, 'active'::deal_status)`,
-      [acc.place_id, mid, title, terms, type, pct, minor, String(days), quotaTotal]);
+              $5::deal_type, $6, $7, now(), now() + ($8 || ' days')::interval, $9, 'active'::deal_status)
+       RETURNING id`,
+      [acc.place_id, mid, title, terms, type, pct, minor, String(days), quotaTotal])).rows[0];
+    // notify everyone who saved this place (deal → savers). dedup per (deal,user) so re-runs don't double.
+    await c.query(
+      `INSERT INTO notif_outbox(event_type, event_class, audience_user_id, merchant_id, city_id,
+                                entity_type, entity_id, dedup_key, payload)
+       SELECT 'deal_published', 'marketing', sp.user_id, $2, (SELECT city_id FROM places WHERE id=$1),
+              'place', $1, 'deal:'||$3||':'||sp.user_id,
+              jsonb_build_object('place_id', $1, 'title', $4::text)
+         FROM saved_places sp WHERE sp.place_id=$1`,
+      [acc.place_id, mid, dl.id, title]);
   });
   revalidatePath('/merchant/deals'); revalidatePath('/');  // home deal rail
   redirect('/merchant/deals?ok=created');
