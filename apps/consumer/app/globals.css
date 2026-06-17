@@ -521,12 +521,18 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .dhead-top{display:flex;align-items:center;gap:10px;margin-bottom:7px}
 .dhead-deal{background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:.84rem;padding:.24rem .62rem;border-radius:9px}
 .dhead-rate{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:.95rem;color:var(--text)}
+.dhead-main{display:flex;align-items:center;gap:12px}
+.dhead-tx{flex:1;min-width:0}
 .dhead-name{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin:.1rem 0 .35rem}
 .dhead-name .verifychip{display:inline-flex;align-items:center;gap:4px;vertical-align:middle;margin-left:8px;font-size:.68rem;font-weight:800;color:#fff;background:#1E8E7E;border-radius:999px;padding:.18em .6em}
 .dhead-sub{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:.92rem}
-.ptabs{display:flex;gap:4px;padding:0 16px;margin-top:12px;border-bottom:1px solid var(--hairline);position:sticky;top:0;z-index:5;background:var(--surface,#fff)}
-.ptab{flex:1;background:none;border:none;padding:.85rem 0;font-size:.96rem;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px}
-.ptab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.dhead-nav{flex:none;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(26,115,232,.36)}
+.dhead-nav:active{transform:scale(.95)}
+/* tabs — ref-style: dark inactive, blue active with a short centered underline */
+.ptabs{display:flex;padding:0 8px;margin-top:14px;border-bottom:1px solid var(--hairline);position:sticky;top:0;z-index:5;background:var(--surface,#fff)}
+.ptab{flex:1;background:none;border:none;padding:.95rem 0;font-size:1rem;font-weight:600;color:var(--text);cursor:pointer;position:relative}
+.ptab.on{color:var(--accent);font-weight:700}
+.ptab.on::after{content:'';position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:46px;height:3px;border-radius:3px 3px 0 0;background:var(--accent)}
 .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 0 2px}
 .gtile{aspect-ratio:1;border:none;padding:0;border-radius:13px;overflow:hidden;background:var(--sunk);cursor:pointer}
 .gtile img{width:100%;height:100%;object-fit:cover}

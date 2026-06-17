@@ -184,10 +184,15 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             ? <><Icon n="star" fill="#FFC95A" size={16} style={{ color: '#FFC95A', verticalAlign: '-.16em' }} /> {rev.avg} ({rev.n} รีวิว)</>
             : <span className="muted">{noun}ใหม่{(rev?.n ?? 0) > 0 ? ` · ${rev.n} รีวิว` : ''}</span>}</span>
         </div>
-        <h1 className="dhead-name">{i18n(p.name_i18n)}{p.owner_verified && (
-          <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
-        )}</h1>
-        <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
+        <div className="dhead-main">
+          <div className="dhead-tx">
+            <h1 className="dhead-name">{i18n(p.name_i18n)}{p.owner_verified && (
+              <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
+            )}</h1>
+            <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
+          </div>
+          <a className="dhead-nav" href={pt ? mapUrl : primary.href} target="_blank" rel="noopener" aria-label="นำทาง"><Icon n="send" size={20} /></a>
+        </div>
       </div>
 
       <PlaceTabs
