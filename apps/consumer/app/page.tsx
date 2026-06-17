@@ -3,7 +3,10 @@ import { Icon, CAT_ICON } from './icons';
 import MapPeek from './MapPeek';
 import LangSwitch from './LangSwitch';
 import { facetsFor, facetLabel } from '@/lib/facets';
-import { parse as parseIntent } from '@/lib/intent';
+import { parse as parseIntent, parsePlan } from '@/lib/intent';
+import { redirect } from 'next/navigation';
+import { daypart, bkkNow, openNow, freshLabel } from '@/lib/local';
+import { COLLECTIONS } from '@/lib/collections';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,13 +31,11 @@ const CATS = [
 ];
 const SEGS = [{ k: '', l: 'แนะนำ' }, { k: 'near', l: 'ใกล้ฉัน' }, { k: 'hot', l: 'ฮิตตอนนี้' }, { k: 'new', l: 'มาใหม่' }];
 const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: 'กิน' }, { k: 'see', l: 'เที่ยว' }, { k: 'do', l: 'ทำกิจกรรม' }];
-// Fair-ranking: discovery sorts by freshness/relevance, NOT by descending stars (don't bury
-// good small/new venues). "ฮิต" is the only popularity sort, and it's by review COUNT, not avg.
 const ORDER: Record<string, string> = {
   '': 'p.verified_at DESC NULLS LAST', near: 'p.verified_at DESC NULLS LAST',
   hot: 'rv.n DESC NULLS LAST', new: 'p.created_at DESC',
 };
-const MIN_REVIEWS = 5; // below this we don't show a numeric score (anti-volatility for small shops)
+const MIN_REVIEWS = 5;
 function venueBadge(n: number, avg: number): { l: string; c: string } | null {
   if (n < MIN_REVIEWS) return null;
   if (n >= 10) return { l: 'ยอดนิยม', c: 'pop' };
@@ -43,8 +44,11 @@ function venueBadge(n: number, avg: number): { l: string; c: string } | null {
   return null;
 }
 const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band,
+  p.opening_hours, fr.last_verified_at, dist.slug area_slug,
   rv.n::int rev_n, rv.avg::text rev_avg, dl.deal_type::text deal_type, dl.value_pct, dl.value_minor, (vid.x IS NOT NULL) has_video`;
 const PJOIN = `FROM places p
+  LEFT JOIN districts dist ON dist.id=p.district_id
+  LEFT JOIN data_freshness fr ON fr.place_id=p.id
   LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
     WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
   LEFT JOIN LATERAL (SELECT deal_type, value_pct, value_minor FROM deals d2
@@ -52,18 +56,23 @@ const PJOIN = `FROM places p
   LEFT JOIN LATERAL (SELECT 1 x FROM media mv
     WHERE mv.owner_type='place' AND mv.owner_id=p.id AND mv.kind='video' AND mv.moderation_status='approved' LIMIT 1) vid ON true`;
 
-async function load(tab: string, cat: string, sub: string, query: string, facets: string[], wantResults = false) {
+async function load(tab: string, cat: string, sub: string, query: string, facets: string[], area: string, wantResults = false) {
   const uid = await demoUserId();
-  const isFilter = !!(cat || sub || query || facets.length || wantResults);
+  const isFilter = !!(cat || sub || query || facets.length || area || wantResults);
   const order = isFilter ? 'p.verified_at DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
+  const areas = await q<any>(
+    `SELECT dist.slug, dist.name_i18n, count(*)::int n FROM places p JOIN districts dist ON dist.id=p.district_id
+      WHERE p.status='published' AND p.is_visible AND NOT p.offers_stay
+      GROUP BY dist.slug, dist.name_i18n ORDER BY n DESC`);
   const places = await q<any>(
     `SELECT ${PCOLS} ${PJOIN}
-     WHERE p.status='published' AND p.is_visible
+     WHERE p.status='published' AND p.is_visible AND NOT p.offers_stay
        AND ($1='' OR p.category::text=$1) AND ($2='' OR p.subcategory=$2)
        AND ($3='' OR p.name_i18n->>'th' ILIKE '%'||$3||'%' OR p.name_i18n->>'en' ILIKE '%'||$3||'%')
        AND (cardinality($4::text[])=0 OR p.amenities @> $4::text[])
-     ORDER BY ${order} LIMIT 40`, [cat, sub, query, facets]);
-  if (isFilter) return { mode: 'filter' as const, places };
+       AND ($5='' OR dist.slug=$5)
+     ORDER BY ${order} LIMIT 40`, [cat, sub, query, facets, area]);
+  if (isFilter) return { mode: 'filter' as const, places, areas };
   const community = await q<any>(
     `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname
      FROM reviews r JOIN profiles pr ON pr.user_id=r.user_id JOIN places p ON p.id=r.place_id
@@ -72,14 +81,14 @@ async function load(tab: string, cat: string, sub: string, query: string, facets
   let stamps = 0;
   if (quest && uid) { const [qp] = await q<any>(`SELECT COALESCE(jsonb_array_length(steps_completed),0) n FROM quest_progress WHERE user_id=$1 AND quest_id=$2`, [uid, quest.id]); stamps = qp ? Number(qp.n) : 0; }
   const events = await q<any>(`SELECT id, title_i18n, kind, EXTRACT(DAY FROM starts_at)::int d, EXTRACT(MONTH FROM starts_at)::int m FROM events WHERE status='published' AND (ends_at IS NULL OR ends_at >= now()) ORDER BY starts_at LIMIT 6`);
-  const pinRows = await q<any>(`SELECT geo::text geo, category::text cat FROM places WHERE status='published' AND is_visible`);
+  const pinRows = await q<any>(`SELECT geo::text geo, category::text cat FROM places WHERE status='published' AND is_visible AND NOT offers_stay`);
   const pins = pinRows.map((r) => { const pt = parsePoint(r.geo); return pt ? { lat: pt.lat, lng: pt.lng, cat: r.cat } : null; }).filter(Boolean);
   const deals = await q<any>(
     `SELECT d.id, d.place_id, d.deal_type::text deal_type, d.value_pct, d.value_minor, d.title_i18n,
             d.ends_at, d.quota_total, d.quota_used, p.name_i18n pname, p.subcategory psub, p.category::text pcat
      FROM deals d JOIN places p ON p.id=d.place_id
      WHERE d.status='active' AND (d.ends_at IS NULL OR d.ends_at>=now()) ORDER BY d.ends_at NULLS LAST LIMIT 8`);
-  return { mode: 'home' as const, places, community, quest, stamps, events, pins, deals };
+  return { mode: 'home' as const, places, areas, community, quest, stamps, events, pins, deals };
 }
 
 function LRow({ p, rank }: { p: any; rank?: number }) {
@@ -88,6 +97,8 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
   const scored = n >= MIN_REVIEWS;
   const cls = avg >= 4.5 ? 'hi' : avg >= 3.8 ? 'mid' : 'lo';
   const vb = venueBadge(n, avg);
+  const open = openNow(p.opening_hours);
+  const fresh = freshLabel(p.last_verified_at);
   return (
     <a className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
       {rank != null && <span className="rank">{rank}</span>}
@@ -98,12 +109,15 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
       <div className="lc">
         <div className="lname">{i18n(p.name_i18n)}</div>
         <div className="lmeta">
+          {open.open ? <span className={`openpip ${open.closesSoon ? 'soon' : ''}`}><i /> {open.label}</span>
+            : open.label ? <span className="openpip closed"><i /> {open.label}</span> : null}
           {p.deal_type && <span className="promopill"><Icon n="tag" size={10} /> {dealLabel(p.deal_type, p.value_pct, p.value_minor)}</span>}
           {vb && <span className={`btag ${vb.c}`}>{vb.l}</span>}
           <span>{p.subcategory || catTH(p.category)}</span>
           {p.price_band && <><span className="mdot">·</span><span>{'฿'.repeat(Number(p.price_band))}</span></>}
           {scored && <><span className="mdot">·</span><span>{n} รีวิว</span></>}
         </div>
+        {fresh && <div className="lfresh"><Icon n="check" size={11} /> {fresh}</div>}
       </div>
       {scored
         ? <span className={`score ${cls}`}>{p.rev_avg}</span>
@@ -112,14 +126,17 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
   );
 }
 
-export default async function Discover({ searchParams }: { searchParams: { tab?: string; cat?: string; sub?: string; q?: string; f?: string } }) {
+export default async function Discover({ searchParams }: { searchParams: { tab?: string; cat?: string; sub?: string; q?: string; f?: string; area?: string } }) {
   const tab = ['near', 'hot', 'new'].includes(searchParams?.tab ?? '') ? searchParams!.tab! : '';
   let cat = ['eat', 'see', 'do'].includes(searchParams?.cat ?? '') ? searchParams!.cat! : '';
   let sub = (searchParams?.sub ?? '').replace(/[^a-z_]/g, '');
   const query = (searchParams?.q ?? '').trim().slice(0, 80);
+  const area = (searchParams?.area ?? '').replace(/[^a-z_]/g, '').slice(0, 24);
   let facets = (searchParams?.f ?? '').split(',').map((s) => s.replace(/[^a-z_]/g, '')).filter(Boolean).slice(0, 8);
 
-  // natural-language search: "คาเฟ่ใกล้ๆ มี wifi" → structured filters
+  // a planning sentence ("คืนนี้มีแฟน งบ 1,000 แถวนิมมาน") → hand off to the local planner
+  if (query && parsePlan(query).isPlan) redirect(`/plan?q=${encodeURIComponent(query)}`);
+
   let nameQ = '', nearMe = false; let interpChips: string[] = [];
   if (query) {
     const it = parseIntent(query);
@@ -131,21 +148,24 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
   }
 
   let d: any;
-  try { d = await load(tab, cat, sub, nameQ, facets, !!query); }
+  try { d = await load(tab, cat, sub, nameQ, facets, area, !!query); }
   catch {
     return (<><div className="appbar"><div><div className="greet">Locale</div><div className="loc">เชียงใหม่</div></div></div>
       <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code></p></div></>);
   }
 
+  const dp = daypart(bkkNow());
+  const areaName = (slug: string) => { const a = (d.areas || []).find((x: any) => x.slug === slug); return a ? i18n(a.name_i18n) : slug; };
+
   const header = (
     <>
       <div className="appbar">
         <div><div className="greet">สำรวจรอบตัวคุณ</div>
-          <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> นิมมาน, เชียงใหม่ <Icon n="chevD" size={15} /></div></div>
+          <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> เชียงใหม่ <Icon n="chevD" size={15} /></div></div>
         <div className="acts"><LangSwitch cur={getLocale()} /><a className="avatar-btn" href="/profile">ก</a></div>
       </div>
       <form className="searchbar" action="/"><Icon n="search" size={20} />
-        <input name="q" defaultValue={query} placeholder="ลองพิมพ์: คาเฟ่ใกล้ๆ มี wifi" /></form>
+        <input name="q" defaultValue={query} placeholder="ลองพิมพ์: คืนนี้มีแฟน งบ 1,000 แถวนิมมาน" /></form>
     </>
   );
 
@@ -154,12 +174,15 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
     const baseParams: string[] = [];
     if (nameQ) baseParams.push(`q=${encodeURIComponent(nameQ)}`);
     else { if (cat) baseParams.push(`cat=${cat}`); if (sub) baseParams.push(`sub=${sub}`); }
+    if (area) baseParams.push(`area=${area}`);
     const facetHref = (tok: string | null) => {
       const n = new Set(fset); if (tok) (n.has(tok) ? n.delete(tok) : n.add(tok));
       const ps = [...baseParams]; if (tok && n.size) ps.push(`f=${[...n].join(',')}`);
       return ps.length ? `/?${ps.join('&')}` : '/';
     };
     const offered = facetsFor(cat, sub);
+    const heading = area && !cat && !sub && !nameQ ? `ย่าน${areaName(area)} (${d.places.length})`
+      : interpChips.length ? `พบ ${d.places.length} ที่ตรงใจ` : nameQ ? `“${nameQ}” (${d.places.length})` : `${sub ? facetLabel(sub) : catTH(cat)}${area ? ' · ' + areaName(area) : ''} (${d.places.length})`;
     return (
       <>
         {header}
@@ -170,14 +193,14 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
           </div>
         )}
         {nearMe && <a className="nearcta" href="/map"><Icon n="locate" size={16} /> เรียงตามระยะใกล้ฉันบนแผนที่ →</a>}
-        <div className="segmented">{FILTERS.map((f) => <a key={f.k} href={f.k ? `/?cat=${f.k}` : '/'} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</a>)}</div>
+        <div className="segmented">{FILTERS.map((f) => <a key={f.k} href={f.k ? `/?cat=${f.k}${area ? '&area=' + area : ''}` : (area ? `/?area=${area}` : '/')} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</a>)}</div>
         {offered.length > 0 && (
           <div className="facetbar">
             {offered.map((tok) => <a key={tok} href={facetHref(tok)} className={`facet ${fset.has(tok) ? 'on' : ''}`}>{facetLabel(tok)}</a>)}
             {facets.length > 0 && <a className="facet-clear" href={facetHref(null)}>ล้าง</a>}
           </div>
         )}
-        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{interpChips.length ? `พบ ${d.places.length} ที่ตรงใจ` : nameQ ? `“${nameQ}” (${d.places.length})` : `${sub ? facetLabel(sub) : catTH(cat)} (${d.places.length})`}</h2>
+        <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{heading}</h2>
         <div className="llist">{d.places.map((p: any) => <LRow key={p.id} p={p} />)}</div>
         {d.places.length === 0 && <p className="empty">ไม่พบร้านที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
       </>
@@ -185,15 +208,58 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
   }
 
   const need = d.quest?.min_steps_required ?? 3;
+  const openList = d.places.filter((p: any) => openNow(p.opening_hours).open).slice(0, 10);
+
   return (
     <>
       {header}
+
+      {/* time-aware hero — the "what now" moment + local planner entry */}
+      <a className={`lhero dp-${dp.key}`} href="/plan">
+        <div className="lhero-tx">
+          <div className="lhero-g"><Icon n={dp.icon} size={16} /> {dp.greet}</div>
+          <div className="lhero-t">{dp.tagline}</div>
+          <div className="lhero-s">{openList.length > 0 ? `${openList.length} ที่ใกล้คุณเปิดอยู่ตอนนี้ · แตะให้ช่วยวางแผน` : dp.sub}</div>
+        </div>
+        <span className="lhero-cta"><Icon n="sparkles" size={15} /> วางแผนให้</span>
+      </a>
 
       <div className="cats">
         {CATS.map((c) => <a className="cat" key={c.l} href={(c as any).to || `/?${(c as any).qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></a>)}
       </div>
 
+      {/* areas — browse by neighbourhood */}
+      {d.areas?.length > 0 && (
+        <div className="arearail">
+          {d.areas.map((a: any) => (
+            <a className="areachip" key={a.slug} href={`/?area=${a.slug}`}>
+              <Icon n="pin" size={13} /> {i18n(a.name_i18n)} <span className="arean">{a.n}</span>
+            </a>
+          ))}
+        </div>
+      )}
+
       <MapPeek pins={d.pins} />
+
+      {/* open right now */}
+      {openList.length > 0 && (
+        <>
+          <div className="sec"><h2><Icon n="clock2" size={17} className="flat-ico" style={{ color: 'var(--accent)', verticalAlign: '-.18em' }} /> เปิดอยู่ตอนนี้</h2><span className="more" style={{ color: 'var(--muted)' }}>{dp.sub}</span></div>
+          <div className="openrail">
+            {openList.map((p: any) => {
+              const o = openNow(p.opening_hours);
+              return (
+                <a className="openc" key={p.id} href={`/place/${p.id}`}>
+                  <div className="op"><img src={cover(p.id, p.subcategory, p.category, 300, 200)} alt="" loading="lazy" />
+                    <span className={`opb ${o.closesSoon ? 'soon' : ''}`}>{o.label}</span></div>
+                  <div className="onm">{i18n(p.name_i18n)}</div>
+                  <div className="ometa">{p.subcategory || catTH(p.category)}{p.rev_avg ? ` · ★ ${p.rev_avg}` : ''}</div>
+                </a>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {d.quest && (
         <a className="qbanner" href="/passport" style={{ margin: '10px 16px 0' }}>
@@ -230,6 +296,19 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
           </div>
         </>
       )}
+
+      {/* local guide collections */}
+      <div className="sec"><h2>ไกด์ท้องถิ่น</h2><span className="more" style={{ color: 'var(--muted)' }}>คัดให้แล้ว</span></div>
+      <div className="collrail">
+        {COLLECTIONS.map((c) => (
+          <a className="collc" key={c.key} href={`/collection/${c.key}`}>
+            <img src={cover('coll-' + c.key, c.repSub, 'eat', 320, 220)} alt="" loading="lazy" />
+            <span className="collgr" />
+            <span className="collic"><Icon n={c.icon} size={16} /></span>
+            <span className="colltx"><span className="collt">{c.th}</span><span className="colls">{c.sub}</span></span>
+          </a>
+        ))}
+      </div>
 
       <div className="segmented">{SEGS.map((s) => <a key={s.k} href={s.k ? `/?tab=${s.k}` : '/'} className={`seg ${tab === s.k ? 'on' : ''}`}>{s.l}</a>)}</div>
       <div className="llist">{d.places.map((p: any, i: number) => <LRow key={p.id} p={p} rank={i + 1} />)}</div>

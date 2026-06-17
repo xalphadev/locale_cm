@@ -24,6 +24,8 @@ export default function Welcome() {
   const [i, setI] = useState(0);
 
   useEffect(() => {
+    // seen the intro → the first-run middleware won't redirect here again (home loads directly next time)
+    document.cookie = 'seen_welcome=1; path=/; max-age=31536000; samesite=lax';
     const t = setTimeout(() => setPhase('tour'), 1600);
     return () => clearTimeout(t);
   }, []);
@@ -70,9 +72,8 @@ export default function Welcome() {
       <h1>เที่ยว กิน พัก <b>ในเชียงใหม่</b><br />ครบ จบ ในแอปเดียว</h1>
       <p className="welcome-sub">รวมคาเฟ่ ร้านอาหาร ที่เที่ยว และที่พัก — สะสมแต้มร้าน เก็บที่ชอบ และร่วมกิจกรรมในแอป</p>
 
-      <a className="welcome-cta" href="/register">เริ่มใช้งาน</a>
-      <p className="welcome-signin">มีบัญชีอยู่แล้ว? <a href="/login">เข้าสู่ระบบ</a></p>
-      <p className="welcome-skip"><a href="/">ข้ามไปก่อน — เข้าหน้าหลัก</a></p>
+      <a className="welcome-cta" href="/">เริ่มใช้งาน</a>
+      <p className="welcome-signin">อยากสะสมแต้ม เก็บที่ชอบ? <a href="/register">สมัครสมาชิก</a> · <a href="/login">เข้าสู่ระบบ</a></p>
     </div>
   );
 }

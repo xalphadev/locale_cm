@@ -19,6 +19,7 @@ const daysLeft = (e: any) => (e ? Math.max(0, Math.ceil((new Date(e).getTime() -
 const DAYS: [string, string][] = [['mon', 'จันทร์'], ['tue', 'อังคาร'], ['wed', 'พุธ'], ['thu', 'พฤหัส'], ['fri', 'ศุกร์'], ['sat', 'เสาร์'], ['sun', 'อาทิตย์']];
 const DKEY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const STAY_TH: Record<string, string> = { dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', condo: 'คอนโด', mansion: 'แมนชั่น', house: 'บ้าน', homestay: 'โฮมสเตย์', hotel: 'โรงแรม', guesthouse: 'เกสต์เฮาส์' };
 
 function parsePoint(geo: string | null) {
   if (!geo) return null;
@@ -26,14 +27,14 @@ function parsePoint(geo: string | null) {
   return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
 }
 
-export default async function PlaceDetail({ params }: { params: { id: string } }) {
+export default async function PlaceDetail({ params, searchParams }: { params: { id: string }; searchParams: { view?: string } }) {
   let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null;
   try {
     const uid = await demoUserId();
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
-              p.offers_stay, p.stay_kind, p.brand_id,
+              p.offers_stay, p.stay_kind, p.brand_id, (p.claim_verified_at IS NOT NULL) AS owner_verified,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -71,6 +72,20 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
       <div className="body"><p className="empty">สถานที่นี้อาจยังไม่เผยแพร่</p></div></>);
   }
   const pt = parsePoint(p.geo);
+  // type-driven detail: a place is shown as EITHER a place-to-visit (menu/products) OR a place-to-stay
+  // (rooms) — never mixed. `?view` lets a place that offers BOTH be opened in the other mode (cross-ref),
+  // each in its own clearly-separated page. Default = stay for accommodations, shop for everything else.
+  const offersStay = !!p.offers_stay;
+  const view = searchParams?.view === 'shop' ? 'shop'
+    : searchParams?.view === 'stay' && offersStay ? 'stay'
+      : (offersStay ? 'stay' : 'shop');
+  const isStay = view === 'stay';
+  const noun = isStay ? 'ที่พัก' : 'ร้าน';
+  const typeLabel = isStay ? (STAY_TH[p.stay_kind] || 'ที่พัก') : (p.subcategory || catTH(p.category));
+  // cross-ref: surface the OTHER service this place offers (only when it has real content there)
+  const cross = isStay
+    ? (products.length > 0 ? { to: 'shop', icon: 'coffee', t: 'ที่นี่มีร้าน / คาเฟ่ด้วย', s: 'ดูเมนูและสินค้าของร้าน' } : null)
+    : (offersStay && units.length > 0 ? { to: 'stay', icon: 'bed', t: 'ที่นี่มีที่พักด้วย', s: 'ดูห้องพักและราคาที่พัก' } : null);
   const hours = p.opening_hours ?? {};
   const amen: string[] = p.amenities ?? [];
   const now = new Date();
@@ -98,7 +113,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
   const primary = line
     ? { kind: 'line' as const, href: line, label: 'ทักทาง LINE', icon: 'chat' as const, ext: true }
     : p.phone
-      ? { kind: 'phone' as const, href: `tel:${p.phone}`, label: 'โทรหาร้าน', icon: 'phone' as const, ext: false }
+      ? { kind: 'phone' as const, href: `tel:${p.phone}`, label: isStay ? 'โทรหาที่พัก' : 'โทรหาร้าน', icon: 'phone' as const, ext: false }
       : { kind: 'directions' as const, href: mapUrl, label: 'ดูเส้นทาง', icon: 'directions' as const, ext: true };
 
   return (
@@ -118,11 +133,13 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           <ShareButton href={`/place/${p.id}`} title={i18n(p.name_i18n)} variant="icon" />
         </div>
         <div className="dtitle">
-          <span className="frost" style={{ marginBottom: 8 }}><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={13} /> {catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</span>
-          <h1>{i18n(p.name_i18n)}</h1>
+          <span className="frost" style={{ marginBottom: 8 }}><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={13} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}</span>
+          <h1>{i18n(p.name_i18n)}{p.owner_verified && (
+            <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
+          )}</h1>
           <div className="dmeta">{scoredP
             ? <><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A', verticalAlign: '-.18em' }} /> {rev.avg} · {rev.n} รีวิว</>
-            : (rev?.n ?? 0) > 0 ? `ร้านใหม่ · ${rev.n} รีวิว` : 'ร้านใหม่ · ยังไม่มีรีวิว'}</div>
+            : (rev?.n ?? 0) > 0 ? `${noun}ใหม่ · ${rev.n} รีวิว` : `${noun}ใหม่ · ยังไม่มีรีวิว`}</div>
         </div>
       </div>
 
@@ -150,17 +167,25 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         {Object.keys(hours).length > 0 && (
           <div className="openpill" style={{ marginBottom: 12 }}>
             <Icon n="clock" size={16} className={openNow ? 'is-open' : 'is-closed'} />
-            <span className={openNow ? 'is-open' : 'is-closed'}>{openNow ? 'เปิดอยู่ตอนนี้' : 'ปิดอยู่'}</span>
+            <span className={openNow ? 'is-open' : 'is-closed'}>{isStay ? (openNow ? 'เปิดรับติดต่อ' : 'นอกเวลาทำการ') : (openNow ? 'เปิดอยู่ตอนนี้' : 'ปิดอยู่')}</span>
             {th && th !== 'closed' && <span className="muted" style={{ fontWeight: 500 }}>· วันนี้ {th}</span>}
           </div>
         )}
 
         <div className="facts">
-          {p.price_band && <span className="fact"><Icon n="wallet" size={15} /> {'฿'.repeat(Number(p.price_band))}</span>}
-          <span className="fact"><Icon n={CAT_ICON[p.subcategory] || CAT_ICON[p.category]} size={15} /> {p.subcategory || catTH(p.category)}</span>
+          {!isStay && p.price_band && <span className="fact"><Icon n="wallet" size={15} /> {'฿'.repeat(Number(p.price_band))}</span>}
+          <span className="fact"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={15} /> {typeLabel}</span>
           {p.district_name && <span className="fact"><Icon n="pin" size={15} /> {i18n(p.district_name)}</span>}
           {p.fresh === 'fresh' && <span className="fact"><Icon n="check" size={15} /> ตรวจสอบแล้ว</span>}
         </div>
+
+        {cross && (
+          <a className="crossref" href={`/place/${p.id}?view=${cross.to}`}>
+            <span className="crossref-ic"><Icon n={cross.icon} size={20} /></span>
+            <div className="crossref-tx"><div className="crossref-t">{cross.t}</div><div className="crossref-s">{cross.s}</div></div>
+            <span className="crossref-go"><Icon n="chevR" size={18} /></span>
+          </a>
+        )}
 
         {deals.length > 0 && (
           <>
@@ -183,15 +208,15 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
           </>
         )}
 
-        {products.length > 0 && (<>
-          <h2>สินค้าในร้าน</h2>
+        {!isStay && products.length > 0 && (<>
+          <h2>{p.category === 'eat' ? 'เมนูแนะนำ' : 'สินค้าในร้าน'}</h2>
           <div className="prail">
             {products.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
           </div>
           <p className="shopnote"><Icon n="chat" size={13} /> สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ</p>
         </>)}
 
-        {units.length > 0 && (<>
+        {isStay && units.length > 0 && (<>
           <h2>ห้องพัก / ห้องว่าง</h2>
           <div className="prail">
             {units.map((u) => <RoomCard key={u.id} u={{ ...u, stay_kind: p.stay_kind }} line_id={p.line_id} phone={p.phone} />)}
@@ -211,7 +236,7 @@ export default async function PlaceDetail({ params }: { params: { id: string } }
         </div>
 
         {Object.keys(hours).length > 0 && (<>
-          <h2>เวลาเปิด-ปิด</h2>
+          <h2>{isStay ? 'เวลาทำการ / ติดต่อ' : 'เวลาเปิด-ปิด'}</h2>
           <div className="hours">
             {DAYS.map(([k, label]) => (
               <div className="hour-row" key={k} style={k === dkey ? { fontWeight: 700 } : undefined}>
