@@ -56,7 +56,7 @@ export function Icon({ n, size = 22, fill = 'none', style, className }:
   { n: string; size?: number; fill?: string; style?: CSSProperties; className?: string }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill={fill} stroke="currentColor"
-      strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}
+      strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={style} className={className}
       aria-hidden="true">{P[n] ?? P.compass}</svg>
   );
 }

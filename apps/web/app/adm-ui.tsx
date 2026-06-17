@@ -23,7 +23,7 @@ const G: Record<string, JSX.Element> = {
 
 export function Icon({ n, size = 18, style }: { n: string; size?: number; style?: CSSProperties }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden="true">{G[n]}</svg>
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden="true">{G[n]}</svg>
   );
 }
 
