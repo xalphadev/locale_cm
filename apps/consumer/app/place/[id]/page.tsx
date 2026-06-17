@@ -213,7 +213,6 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           {!isStay && p.price_band && <span className="fact"><Icon n="wallet" size={15} /> {'฿'.repeat(Number(p.price_band))}</span>}
           <span className="fact"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={15} /> {typeLabel}</span>
           {p.district_name && <span className="fact"><Icon n="pin" size={15} /> {i18n(p.district_name)}</span>}
-          {p.fresh === 'fresh' && <span className="fact"><Icon n="check" size={15} /> ตรวจสอบแล้ว</span>}
         </div>
 
         {goodfor.length > 0 && (
@@ -279,17 +278,24 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><a href={`/map?focus=${p.id}`}>ดูบนแผนที่ในแอป</a></div>
         </div>
 
-        {Object.keys(hours).length > 0 && (<>
-          <h2>{isStay ? 'เวลาทำการ / ติดต่อ' : 'เวลาเปิด-ปิด'}</h2>
-          <div className="hours">
-            {DAYS.map(([k, label]) => (
-              <div className="hour-row" key={k} style={k === dkey ? { fontWeight: 700 } : undefined}>
-                <span>{label}{k === dkey ? ' · วันนี้' : ''}</span>
-                <span style={{ color: !hours[k] || hours[k] === 'closed' ? 'var(--muted)' : 'var(--text)', fontWeight: 600 }}>{!hours[k] || hours[k] === 'closed' ? 'ปิด' : hours[k]}</span>
-              </div>
-            ))}
-          </div>
-        </>)}
+        {Object.keys(hours).length > 0 && (
+          <details className="hoursbox">
+            <summary>
+              <Icon n="clock" size={16} className="flat-ico" />
+              <span className="hb-label">{isStay ? 'เวลาทำการ' : 'เวลาเปิด-ปิด'}</span>
+              <span className="hb-today">{!th || th === 'closed' ? 'วันนี้ปิด' : `วันนี้ ${th}`}</span>
+              <Icon n="chevD" size={16} className="hb-caret" />
+            </summary>
+            <div className="hours">
+              {DAYS.map(([k, label]) => (
+                <div className="hour-row" key={k} style={k === dkey ? { fontWeight: 700 } : undefined}>
+                  <span>{label}{k === dkey ? ' · วันนี้' : ''}</span>
+                  <span style={{ color: !hours[k] || hours[k] === 'closed' ? 'var(--muted)' : 'var(--text)', fontWeight: 600 }}>{!hours[k] || hours[k] === 'closed' ? 'ปิด' : hours[k]}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
 
         {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{facetLabel(a)}</span>)}</div></>)}
 

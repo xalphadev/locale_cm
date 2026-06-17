@@ -112,6 +112,14 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .goodfor{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:2px 0 14px}
 .goodfor .goodfor-h{display:inline-flex;align-items:center;gap:4px;font-size:.82rem;font-weight:800;color:var(--accent)}
 .goodfor .gfpill{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:.28rem .7rem;font-size:.82rem;font-weight:700}
+/* collapsible opening hours (today shown; tap to expand the week) */
+.hoursbox{border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
+.hoursbox>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:13px 0;cursor:pointer;font-size:1.02rem;font-weight:800;color:var(--text)}
+.hoursbox>summary::-webkit-details-marker{display:none}
+.hoursbox .hb-today{margin-left:auto;color:var(--muted);font-weight:600;font-size:.9rem}
+.hoursbox .hb-caret{color:var(--muted);flex:none;transition:transform .15s}
+.hoursbox[open] .hb-caret{transform:rotate(180deg)}
+.hoursbox .hours{padding-bottom:10px}
 .dbody{padding:16px 18px 96px}
 .desc{font-size:.97rem;line-height:1.62;color:var(--text);margin:.1rem 0 1.1rem}
 .rating-row{display:flex;align-items:center;gap:.6rem;margin:.3rem 0 .2rem}
