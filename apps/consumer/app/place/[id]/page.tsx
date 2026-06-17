@@ -21,6 +21,21 @@ const DAYS: [string, string][] = [['mon', 'จันทร์'], ['tue', 'อั
 const DKEY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const THM = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const STAY_TH: Record<string, string> = { dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', condo: 'คอนโด', mansion: 'แมนชั่น', house: 'บ้าน', homestay: 'โฮมสเตย์', hotel: 'โรงแรม', guesthouse: 'เกสต์เฮาส์' };
+// human "good for" highlights derived from raw amenities — a quick-scan summary above the full list
+const GOODFOR: { keys: string[]; label: string }[] = [
+  { keys: ['wifi', 'work_friendly', 'power_outlet'], label: 'นั่งทำงาน' },
+  { keys: ['outdoor_seating', 'garden_seating'], label: 'นั่งกลางแจ้ง' },
+  { keys: ['kid_friendly'], label: 'พาเด็ก/ครอบครัว' },
+  { keys: ['pet_friendly'], label: 'พาสัตว์เลี้ยง' },
+  { keys: ['parking', 'street_parking'], label: 'มีที่จอดรถ' },
+  { keys: ['vegan', 'vegan_options', 'vegetarian', 'vegetarian_options'], label: 'มังสวิรัติ/วีแกน' },
+  { keys: ['live_music'], label: 'ดนตรีสด' },
+  { keys: ['aircon', 'air_conditioning'], label: 'ห้องแอร์เย็น' },
+  { keys: ['photo_spot'], label: 'ถ่ายรูปสวย' },
+  { keys: ['group_friendly'], label: 'มาเป็นกลุ่ม' },
+  { keys: ['halal', 'halal_options'], label: 'ฮาลาล' },
+  { keys: ['late_night'], label: 'เปิดดึก' },
+];
 
 function parsePoint(geo: string | null) {
   if (!geo) return null;
@@ -29,13 +44,13 @@ function parsePoint(geo: string | null) {
 }
 
 export default async function PlaceDetail({ params, searchParams }: { params: { id: string }; searchParams: { view?: string } }) {
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null;
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = [];
   try {
     const uid = await demoUserId();
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
-              p.offers_stay, p.stay_kind, p.brand_id, (p.claim_verified_at IS NOT NULL) AS owner_verified,
+              p.offers_stay, p.stay_kind, p.brand_id, p.district_id, (p.claim_verified_at IS NOT NULL) AS owner_verified,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -65,6 +80,17 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
         FROM stay_units WHERE place_id=$1 AND status='published' AND deleted_at IS NULL
         ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 20`, [params.id]);
+      // similar places: same category + nature (shop vs stay), same area first, then by popularity
+      similar = await q<any>(
+        `SELECT p.id, p.name_i18n, p.subcategory, p.category::text cat, p.price_band::text price_band, p.offers_stay,
+                rv.n::int rev_n, rv.avg::text rev_avg
+           FROM places p
+           LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
+             WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
+          WHERE p.status='published' AND p.is_visible AND p.id <> $1
+            AND p.category=$2 AND p.offers_stay=$3
+          ORDER BY (p.district_id IS NOT DISTINCT FROM $4::uuid) DESC, rv.n DESC NULLS LAST, p.verified_at DESC NULLS LAST
+          LIMIT 8`, [params.id, p.category, p.offers_stay, p.district_id]);
     }
   } catch { /* db down */ }
 
@@ -89,6 +115,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     : (offersStay && units.length > 0 ? { to: 'stay', icon: 'bed', t: 'ที่นี่มีที่พักด้วย', s: 'ดูห้องพักและราคาที่พัก' } : null);
   const hours = p.opening_hours ?? {};
   const amen: string[] = p.amenities ?? [];
+  const goodfor = GOODFOR.filter((g) => g.keys.some((k) => amen.includes(k))).map((g) => g.label).slice(0, 6);
   // open-now computed in Chiang Mai time (Asia/Bangkok), independent of the server's timezone,
   // and tolerant of multi-range / 24h / "closed" days — was previously wrong on a non-TH host.
   const bk = bkkNow();
@@ -189,6 +216,13 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           {p.fresh === 'fresh' && <span className="fact"><Icon n="check" size={15} /> ตรวจสอบแล้ว</span>}
         </div>
 
+        {goodfor.length > 0 && (
+          <div className="goodfor">
+            <span className="goodfor-h"><Icon n="sparkles" size={14} /> เหมาะสำหรับ</span>
+            {goodfor.map((g) => <span className="gfpill" key={g}>{g}</span>)}
+          </div>
+        )}
+
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 
         {cross && (
@@ -284,6 +318,22 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
           )}
           <ReviewList reviews={reviews.map((r) => ({ id: r.id, rating: r.rating, body: i18n(r.body_i18n), name: r.display_name, d: r.d }))} />
+        </>)}
+
+        {similar.length > 0 && (<>
+          <h2>{isStay ? 'ที่พักใกล้เคียง' : 'ร้านใกล้เคียง'}</h2>
+          <div className="openrail">
+            {similar.map((s) => {
+              const sc = (s.rev_n || 0) >= 5;
+              return (
+                <a className="openc" key={s.id} href={`/place/${s.id}`}>
+                  <div className="op"><img src={cover(s.id, s.subcategory, s.cat, 300, 200)} alt="" loading="lazy" /></div>
+                  <div className="onm">{i18n(s.name_i18n)}</div>
+                  <div className="ometa">{s.subcategory || catTH(s.cat)}{sc ? ` · ★ ${s.rev_avg}` : ''}{s.price_band ? ` · ${'฿'.repeat(Number(s.price_band))}` : ''}</div>
+                </a>
+              );
+            })}
+          </div>
         </>)}
       </div>
 
