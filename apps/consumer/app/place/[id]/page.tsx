@@ -12,6 +12,9 @@ import CheckInButton from './CheckInButton';
 
 export const dynamic = 'force-dynamic';
 
+// merchant portal base (claim flow lives there) — same convention as the portal's CONSUMER_BASE
+const MERCHANT_BASE = process.env.MERCHANT_BASE ?? 'http://127.0.0.1:3002';
+
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
 const dealLabel = (t: string, pct: any, minor: any) =>
   t === 'percent_off' ? `ลด ${Math.round(Number(pct))}%` : t === 'fixed_off' ? `ลด ฿${Math.round(Number(minor) / 100)}`
@@ -341,6 +344,14 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             })}
           </div>
         </>)}
+
+        {!p.brand_id && (
+          <a className="claimcta" href={`${MERCHANT_BASE}/merchant/claim/${p.id}`} target="_blank" rel="noopener">
+            <span className="claimcta-ic"><Icon n="store" size={19} /></span>
+            <div className="claimcta-tx"><b>เป็นเจ้าของ{noun}นี้?</b><span>เคลมเพื่อแก้ข้อมูล เพิ่มรูป/เมนู และเปิดแต้มสะสม</span></div>
+            <Icon n="chevR" size={18} className="claimcta-go" />
+          </a>
+        )}
       </div>
 
       <div className="detailbar">

@@ -5,6 +5,7 @@ const P: Record<string, JSX.Element> = {
   search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></>,
   bell: <><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7 2.5 7h-17S6 15 6 9Z" /><path d="M10.3 20.5a2 2 0 0 0 3.4 0" /></>,
   flag: <><path d="M5 21V4" /><path d="M5 4h11l-2 3 2 3H5" /></>,
+  store: <><path d="M4 9.5 5.5 4h13L20 9.5" /><path d="M4 9.5h16v1.7a2.4 2.4 0 0 1-4.8 0 2.4 2.4 0 0 1-4.8 0 2.4 2.4 0 0 1-4.8 0Z" /><path d="M5.5 12v8h13v-8" /></>,
   user: <><circle cx="12" cy="8" r="3.6" /><path d="M5 20a7 7 0 0 1 14 0" /></>,
   pin: <><path d="M19 10c0 5.5-7 11-7 11s-7-5.5-7-11a7 7 0 0 1 14 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
   chevR: <path d="m9 6 6 6-6 6" />,

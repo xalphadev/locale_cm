@@ -120,6 +120,13 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .hoursbox .hb-caret{color:var(--muted);flex:none;transition:transform .15s}
 .hoursbox[open] .hb-caret{transform:rotate(180deg)}
 .hoursbox .hours{padding-bottom:10px}
+/* subtle "claim this place" CTA for unclaimed (agent-seeded) venues */
+.claimcta{display:flex;align-items:center;gap:12px;margin:18px 0 4px;padding:13px 14px;border:1px dashed #C9D2DE;border-radius:14px;background:#F6F8FB;text-decoration:none;color:var(--text)}
+.claimcta-ic{flex:none;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid var(--hairline);color:var(--muted)}
+.claimcta-tx{flex:1;min-width:0;display:flex;flex-direction:column}
+.claimcta-tx b{font-size:.92rem}
+.claimcta-tx span{font-size:.8rem;color:var(--muted);margin-top:1px}
+.claimcta-go{color:var(--muted);flex:none}
 .dbody{padding:16px 18px 96px}
 .desc{font-size:.97rem;line-height:1.62;color:var(--text);margin:.1rem 0 1.1rem}
 .rating-row{display:flex;align-items:center;gap:.6rem;margin:.3rem 0 .2rem}
