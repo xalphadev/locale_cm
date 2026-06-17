@@ -1,4 +1,5 @@
-import { q, i18n, cover, demoUserId } from '@/lib/db';
+import { q, i18n, cover, coverSet, demoUserId } from '@/lib/db';
+import { openNow as computeOpen, bkkNow } from '@/lib/local';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
@@ -88,11 +89,13 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     : (offersStay && units.length > 0 ? { to: 'stay', icon: 'bed', t: 'ที่นี่มีที่พักด้วย', s: 'ดูห้องพักและราคาที่พัก' } : null);
   const hours = p.opening_hours ?? {};
   const amen: string[] = p.amenities ?? [];
-  const now = new Date();
-  const dkey = DKEY[now.getDay()];
-  const hhmm = now.toTimeString().slice(0, 5);
+  // open-now computed in Chiang Mai time (Asia/Bangkok), independent of the server's timezone,
+  // and tolerant of multi-range / 24h / "closed" days — was previously wrong on a non-TH host.
+  const bk = bkkNow();
+  const dkey = bk.dow;
   const th = hours[dkey];
-  const openNow = !!(th && th !== 'closed' && hhmm >= th.split('-')[0] && hhmm <= th.split('-')[1]);
+  const oState = computeOpen(hours, bk);
+  const openNow = oState.open;
   const vDays = p.last_verified_at ? Math.floor((Date.now() - new Date(p.last_verified_at).getTime()) / 86400000) : null;
   const vText = vDays == null ? '' : vDays <= 0 ? 'วันนี้' : vDays === 1 ? 'เมื่อวาน' : `${vDays} วันก่อน`;
   const scoredP = (rev?.n ?? 0) >= 5; // show a numeric score only with enough verified reviews
@@ -100,13 +103,19 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   const total = (rev?.n ?? 0) || 1;
   const mapUrl = pt ? `https://www.google.com/maps/search/?api=1&query=${pt.lat},${pt.lng}` : '#';
 
-  // aggregate every photo we have for this place → hero zoom + thumbnail strip
-  const galleryImages: string[] = Array.from(new Set([
-    cover(p.id, p.subcategory, p.category, 1280, 860),
+  // aggregate every photo for this place → hero zoom + thumbnail strip. REAL photos first (uploaded
+  // media + menu/room shots), then themed atmosphere fillers so even an un-photographed place shows
+  // a proper multi-image gallery (atmosphere + a hint of the menu) instead of a lone cover.
+  const realPhotos: string[] = [
     ...mediaImgs.map((m) => m.storage_path),
     ...products.flatMap((pr) => pr.image_urls || []),
     ...units.flatMap((u) => u.image_urls || []),
-  ].filter(Boolean)));
+  ].filter(Boolean);
+  const galleryImages: string[] = Array.from(new Set([
+    ...realPhotos,
+    ...coverSet(p.id, p.subcategory, p.category, 6),
+  ])).slice(0, 8);
+  const heroImg = galleryImages[0] || cover(p.id, p.subcategory, p.category, 1280, 860);
 
   // sticky-bar primary CTA: LINE → call → directions (Locale has no in-app booking)
   const line = lineHref(p.line_id);
@@ -120,9 +129,10 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     <>
       <div className="detail-hero">
         {videoUrl
-          ? <video src={videoUrl} poster={cover(p.id, p.subcategory, p.category, 760, 500)} muted loop autoPlay playsInline />
-          : <img src={cover(p.id, p.subcategory, p.category, 760, 500)} alt="" />}
+          ? <video src={videoUrl} poster={heroImg} muted loop autoPlay playsInline />
+          : <img src={heroImg} alt="" />}
         {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
+        {!videoUrl && galleryImages.length > 1 && <span className="photocount frost"><Icon n="search" size={11} /> {galleryImages.length} รูป</span>}
         <div className="scrim" />
         {!videoUrl && <HeroZoom images={galleryImages} />}
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
@@ -179,6 +189,8 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           {p.fresh === 'fresh' && <span className="fact"><Icon n="check" size={15} /> ตรวจสอบแล้ว</span>}
         </div>
 
+        {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
+
         {cross && (
           <a className="crossref" href={`/place/${p.id}?view=${cross.to}`}>
             <span className="crossref-ic"><Icon n={cross.icon} size={20} /></span>
@@ -223,8 +235,6 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           </div>
           <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
         </>)}
-
-        {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 
         <div className="info">
           {(i18n(p.address_i18n) || p.district_name) && <div className="info-row"><Icon n="pin" size={18} className="flat-ico" /><span>{i18n(p.address_i18n) || `${i18n(p.district_name)} · เชียงใหม่`}</span></div>}

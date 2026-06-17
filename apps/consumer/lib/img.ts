@@ -42,9 +42,31 @@ export function thumb(url: string): string {
   return /\.webp$/i.test(url) && !/_thumb\.webp$/i.test(url) ? url.replace(/\.webp$/i, '_thumb.webp') : url;
 }
 
+function unsplash(id: string, w: number, h: number): string {
+  return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&q=72&auto=format&fit=crop`;
+}
+
 /** Cover photo for a venue/event. Pass subcategory + category for a relevant, high-quality image. */
 export function cover(seed: string, sub?: string | null, cat?: string | null, w = 640, h = 480): string {
   const pool = (sub && POOLS[sub]) || (cat && CPOOL[cat]) || POOLS.cafe;
   const id = pool[hash(seed || 'locale') % pool.length];
-  return `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&q=72&auto=format&fit=crop`;
+  return unsplash(id, w, h);
+}
+
+/** A SET of distinct cover photos for a venue's gallery (atmosphere + theme variety), so a place
+ *  with no uploaded media still shows several relevant images. Deterministic per seed. */
+export function coverSet(seed: string, sub?: string | null, cat?: string | null, count = 5, w = 1280, h = 860): string[] {
+  const ids: string[] = [];
+  const add = (arr?: string[]) => { for (const id of arr || []) if (!ids.includes(id)) ids.push(id); };
+  const subPool = sub ? POOLS[sub] : undefined;
+  if (subPool && subPool.length) {              // lead with the venue's own type, rotated per place
+    const off = hash(seed || 'x') % subPool.length;
+    for (let i = 0; i < subPool.length; i++) add([subPool[(off + i) % subPool.length]]);
+  }
+  add(cat ? CPOOL[cat] : undefined);
+  if (cat === 'eat') { add(POOLS.dessert); add(POOLS.restaurant); add(POOLS.street_food); } // imply menu variety
+  else if (cat === 'see') { add(POOLS.viewpoint); add(POOLS.market); add(POOLS.temple); }
+  else if (cat === 'do') { add(POOLS.cooking_class); add(POOLS.spa); }
+  add(POOLS.cafe);                              // last-resort fillers
+  return ids.slice(0, count).map((id) => unsplash(id, w, h));
 }
