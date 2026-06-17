@@ -54,7 +54,8 @@ GRANT UPDATE ON platform_rewards TO app_consumer;   -- spend_sparks bumps claime
 GRANT INSERT, UPDATE, DELETE ON
   merchant_accounts, brands, places, shop_products, feed_posts, stay_units,
   stamp_programs, stamp_rewards, stamp_promotions,
-  shop_redemptions, stamp_events, stamp_balances
+  shop_redemptions, stamp_events, stamp_balances,
+  place_claims                                  -- 0027: ownership-claim verification (OTP + staff review)
   TO app_content;
 
 -- 5) Report what was provisioned --------------------------------------------------------------
