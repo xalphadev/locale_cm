@@ -25,6 +25,7 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
   ] },
   { grp: 'การเงิน', items: [
     { href: '/money', icon: 'wallet', label: 'การเงิน & กระทบยอด', match: (p) => p.startsWith('/money') },
+    { href: '/payouts', icon: 'wallet', label: 'คำขอถอนเงิน', match: (p) => p.startsWith('/payouts') },
   ] },
 ];
 

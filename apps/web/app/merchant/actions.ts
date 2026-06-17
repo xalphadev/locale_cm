@@ -778,3 +778,38 @@ export async function setDealStatusAction(dealId: string, status: string) {
   revalidatePath('/merchant/deals'); revalidatePath('/');
   redirect('/merchant/deals?ok=updated');
 }
+
+// ── payouts: merchant requests a withdrawal of settled earnings (intent only) ─────────────────────
+// The actual money move happens money-plane on staff approval (fn_payout_merchant via the API).
+// app_content can NEVER post the ledger; here it only checks the balance and records the request.
+export async function createPayoutRequestAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  requireVerified(acc);
+  const amountMinor = bahtToMinor(s(formData, 'amount'));
+  if (!amountMinor) redirect('/merchant/payouts?error=amount');
+  let err = '';
+  try {
+    await withTx(async (c) => {
+      const mid = await ensureMerchant(c, acc);
+      const [bal] = (await c.query(
+        `SELECT COALESCE(SUM(CASE WHEN e.direction='CR' THEN e.amount_minor ELSE -e.amount_minor END),0)::bigint payable
+           FROM ledger_entries e JOIN accounts a ON a.id=e.account_id
+          WHERE a.account_type='merchant_payable' AND a.owner_type='merchant' AND a.owner_id=$1`, [mid])).rows;
+      if (Number(amountMinor) > Number(bal?.payable || 0)) throw new Error('over_balance');
+      const open = (await c.query(`SELECT 1 FROM payout_requests WHERE merchant_id=$1 AND status='requested'`, [mid])).rows;
+      if (open.length) throw new Error('pending_exists');
+      await c.query(
+        `INSERT INTO payout_requests(merchant_id, account_id, city_id, amount_minor, status)
+         VALUES($1, $2, (SELECT city_id FROM places WHERE id=$3), $4, 'requested')`,
+        [mid, acc.id, acc.place_id, amountMinor]);
+    });
+  } catch (e: any) {
+    if (e?.message === 'over_balance') err = 'balance';
+    else if (e?.message === 'pending_exists') err = 'pending';
+    else throw e;
+  }
+  if (err) redirect(`/merchant/payouts?error=${err}`);
+  revalidatePath('/merchant/payouts');
+  redirect('/merchant/payouts?ok=requested');
+}

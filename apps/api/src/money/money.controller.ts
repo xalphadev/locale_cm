@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Body, Controller, Headers, Post } from '@nestjs/common';
 import { MoneyService } from './money.service';
-import { FundQuestDto, GrantDto, PrefundDto, PspSettleDto, RedeemDto } from './dto';
+import { FundQuestDto, GrantDto, PayoutDto, PrefundDto, PspSettleDto, RedeemDto } from './dto';
 
 /**
  * Money-plane HTTP surface. Every write requires an Idempotency-Key header (replayed key =
@@ -39,5 +39,10 @@ export class MoneyController {
   @Post('redeem')
   redeem(@Body() d: RedeemDto, @Headers('idempotency-key') k?: string) {
     return this.money.redeem(d, this.idem(k));
+  }
+
+  @Post('payout')
+  payout(@Body() d: PayoutDto, @Headers('idempotency-key') k?: string) {
+    return this.money.payout(d, this.idem(k));
   }
 }

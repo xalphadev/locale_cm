@@ -59,7 +59,8 @@ GRANT INSERT, UPDATE, DELETE ON
   place_claims,                                 -- 0027: ownership-claim verification (OTP + staff review)
   deals,                                        -- merchant self-serve promotions
   notif_outbox,                                 -- enqueue notifications (deal → savers)
-  reviews, content_reports, fraud_cases         -- back-office moderation + fraud handling
+  reviews, content_reports, fraud_cases,        -- back-office moderation + fraud handling
+  payout_requests                               -- 0030: merchant withdrawal requests (intent only; ledger via money_writer)
   TO app_content;
 
 -- 5) Report what was provisioned --------------------------------------------------------------

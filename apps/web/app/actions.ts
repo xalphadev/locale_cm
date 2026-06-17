@@ -179,3 +179,33 @@ export async function setFraudStateAction(caseId: string, state: string) {
   await q(`UPDATE fraud_cases SET state=$2::fraud_state, resolved_at=now(), assigned_to=$3 WHERE id=$1`, [caseId, st, DEMO_ADMIN]);
   revalidatePath('/reports'); redirect('/reports?ok=fraud');
 }
+
+// ── payouts: approve a merchant withdrawal → settle via the money-plane API (money_writer) ─────────
+/** Approve + settle: calls fn_payout_merchant through the API (SoD creator<>approver, idempotent,
+ *  balance-checked). The web role can't post the ledger — only the money API can. */
+export async function approvePayoutAction(reqId: string) {
+  const [r] = await q<{ merchant_id: string; amount_minor: string; status: string }>(
+    `SELECT merchant_id, amount_minor, status FROM payout_requests WHERE id=$1`, [reqId]);
+  if (!r || r.status !== 'requested') redirect('/payouts?error=' + encodeURIComponent('คำขอนี้ถูกจัดการไปแล้ว'));
+  const idem = `payout-req:${reqId}`;
+  const res = await fetch(`${API_BASE}/money/payout`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'idempotency-key': idem },
+    body: JSON.stringify({ merchantId: r.merchant_id, amountMinor: Number(r.amount_minor), createdBy: DEMO_AGENT, approvedBy: DEMO_ADMIN }),
+    cache: 'no-store',
+  }).catch(() => null);
+  if (!res || !res.ok) {
+    const t = res ? await res.text() : 'ต่อ money API ไม่ได้ (เปิดบริการที่พอร์ต 3001)';
+    redirect(`/payouts?error=${encodeURIComponent(t.slice(0, 160))}`);
+  }
+  const { id: txn } = await res.json();
+  await q(`UPDATE payout_requests SET status='paid', ledger_txn_id=$2, idempotency_key=$3, resolved_by=$4, resolved_at=now() WHERE id=$1`,
+    [reqId, txn, idem, DEMO_ADMIN]);
+  revalidatePath('/payouts'); redirect('/payouts?ok=paid');
+}
+
+/** Reject a withdrawal request (no money moves). */
+export async function rejectPayoutAction(reqId: string) {
+  await q(`UPDATE payout_requests SET status='rejected', resolved_by=$2, resolved_at=now() WHERE id=$1 AND status='requested'`, [reqId, DEMO_ADMIN]);
+  revalidatePath('/payouts'); redirect('/payouts?ok=rejected');
+}

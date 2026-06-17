@@ -33,6 +33,14 @@ export class RedeemDto {
   @IsInt() @Min(1) coinMinor!: number;
 }
 
+/** Merchant payout (withdrawal). SoD enforced in the DB: createdBy <> approvedBy. */
+export class PayoutDto {
+  @IsUUID() merchantId!: string;
+  @IsInt() @Min(1) amountMinor!: number;
+  @IsUUID() createdBy!: string;
+  @IsUUID() approvedBy!: string;
+}
+
 /** Idempotency key is required on every money write (maps to ledger_transactions.idempotency_key). */
 export class WithIdem {
   @IsString() @IsOptional() idempotencyKey?: string;

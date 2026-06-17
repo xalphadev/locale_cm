@@ -73,6 +73,12 @@ export default async function Dashboard() {
           {!acc.verified && <span className="menu-lock"><Icon n="lock" size={14} /> ล็อก</span>}
           <Icon n="chevR" className="menu-go" size={18} />
         </a>
+        <a className="menu-row" href={acc.verified ? '/merchant/payouts' : '/merchant/verify?need=payouts'}>
+          <span className="menu-ic"><Icon n="wallet" size={20} /></span>
+          <span className="menu-tx">ถอนเงิน · รายได้</span>
+          {!acc.verified && <span className="menu-lock"><Icon n="lock" size={14} /> ล็อก</span>}
+          <Icon n="chevR" className="menu-go" size={18} />
+        </a>
         <a className="menu-row" href="/merchant/shop">
           <span className="menu-ic"><Icon n="store" size={20} /></span>
           <span className="menu-tx">ข้อมูลร้าน · ที่อยู่ · เบอร์</span>

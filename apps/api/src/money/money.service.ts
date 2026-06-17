@@ -5,7 +5,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { DbService } from '../db/db.service';
-import { FundQuestDto, GrantDto, PrefundDto, PspSettleDto, RedeemDto } from './dto';
+import { FundQuestDto, GrantDto, PayoutDto, PrefundDto, PspSettleDto, RedeemDto } from './dto';
 
 /**
  * Typed RPC over the canonical plpgsql money functions (db/migrations/0005). NestJS does NO
@@ -31,6 +31,9 @@ export class MoneyService {
   }
   redeem(d: RedeemDto, idem: string) {
     return this.call('fn_redeem', [d.userId, d.redeemMerchantId, d.coinMinor, idem]);
+  }
+  payout(d: PayoutDto, idem: string) {
+    return this.call('fn_payout_merchant', [d.merchantId, d.amountMinor, d.createdBy, d.approvedBy, idem]);
   }
 
   private async call(fn: string, args: unknown[]): Promise<{ id: string }> {
