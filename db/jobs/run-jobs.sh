@@ -20,6 +20,7 @@ dpsql() { docker exec -i "$DB_CONTAINER" psql -v ON_ERROR_STOP=1 -tA -U "$DB_USE
 
 echo "[$(date '+%F %T')] maintenance:"
 dpsql -c "SELECT fn_run_maintenance();"
+dpsql -c "SELECT fn_scan_fraud();"
 
 if [ "$RECONCILE" = "1" ]; then
   echo "[$(date '+%F %T')] reconcile solvency per city:"

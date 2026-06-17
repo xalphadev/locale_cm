@@ -113,3 +113,21 @@ export async function spendSparksAction(rewardId: string) {
   catch { /* insufficient Sparks / out of stock — the UI already gates this; swallow for the demo */ }
   revalidatePath('/sparks'); revalidatePath('/wallet');
 }
+
+/** Report a review for moderation → opens a content_reports row for staff (one per user per review). */
+export async function reportReviewAction(reviewId: string) {
+  const uid = await demoUserId();
+  if (!uid) redirect('/login');
+  const [r] = await q<any>(
+    `SELECT r.place_id, p.city_id FROM reviews r JOIN places p ON p.id=r.place_id WHERE r.id=$1`, [reviewId]);
+  if (!r) return;
+  const dup = await q(
+    `SELECT 1 FROM content_reports WHERE target_type='review' AND target_id=$1 AND reported_by=$2 AND status NOT IN ('resolved','rejected')`,
+    [reviewId, uid]);
+  if (!dup.length) {
+    await q(
+      `INSERT INTO content_reports(city_id, target_type, target_id, reported_by, reporter_role, reason_code, status)
+       VALUES($1,'review',$2,$3,'consumer','inappropriate','open')`, [r.city_id, reviewId, uid]);
+  }
+  revalidatePath(`/place/${r.place_id}`);
+}

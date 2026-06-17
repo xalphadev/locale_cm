@@ -157,3 +157,25 @@ export async function rejectClaimAction(claimId: string) {
   revalidatePath('/claims');
   redirect('/claims?rejected=1');
 }
+
+// ── moderation + fraud (back-office trust & safety) ──────────────────────────────────────────────
+
+/** Hide a reported review (moderation_status=rejected) and resolve the report. */
+export async function hideReviewAction(reviewId: string, reportId: string) {
+  await q(`UPDATE reviews SET moderation_status='rejected' WHERE id=$1`, [reviewId]);
+  await q(`UPDATE content_reports SET status='resolved', resolution='review hidden', handled_by=$2, resolved_at=now() WHERE id=$1`, [reportId, DEMO_ADMIN]);
+  revalidatePath('/reports'); redirect('/reports?ok=hidden');
+}
+
+/** Dismiss a report — the review stays live. */
+export async function dismissReportAction(reportId: string) {
+  await q(`UPDATE content_reports SET status='rejected', resolution='dismissed', handled_by=$2, resolved_at=now() WHERE id=$1`, [reportId, DEMO_ADMIN]);
+  revalidatePath('/reports'); redirect('/reports?ok=dismissed');
+}
+
+/** Resolve a fraud case: confirm (fraud) or clear (false positive). */
+export async function setFraudStateAction(caseId: string, state: string) {
+  const st = ['confirmed_fraud', 'cleared'].includes(state) ? state : 'cleared';
+  await q(`UPDATE fraud_cases SET state=$2::fraud_state, resolved_at=now(), assigned_to=$3 WHERE id=$1`, [caseId, st, DEMO_ADMIN]);
+  revalidatePath('/reports'); redirect('/reports?ok=fraud');
+}

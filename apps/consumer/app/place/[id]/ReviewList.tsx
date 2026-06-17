@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '../../icons';
+import { reportReviewAction } from '../../actions';
 
-export type Review = { rating: number; body: string; name: string; d: string };
+export type Review = { id?: string; rating: number; body: string; name: string; d: string };
 type Sort = 'latest' | 'top' | 'detailed';
 const SORTS: [Sort, string][] = [['latest', 'ล่าสุด'], ['top', 'คะแนนสูง'], ['detailed', 'ละเอียด']];
 
@@ -44,7 +45,11 @@ export function ReviewList({ reviews }: { reviews: Review[] }) {
             <span className="stars">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={13} />)}</span>
           </div>
           <div className="review-body">{r.body}</div>
-          <div className="review-date">{r.d}</div>
+          <div className="review-date">{r.d}{r.id && (
+            <form action={reportReviewAction.bind(null, r.id)} style={{ display: 'inline' }}>
+              <button className="rvreport" type="submit" title="รายงานรีวิวนี้"><Icon n="flag" size={12} /> รายงาน</button>
+            </form>
+          )}</div>
         </div>
       ))}
     </>
