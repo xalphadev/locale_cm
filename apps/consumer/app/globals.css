@@ -145,7 +145,7 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .chip{background:var(--sunk);color:var(--text);font-size:.82rem;font-weight:500;padding:.4rem .8rem;border-radius:999px}
 
 /* reviews */
-.review{background:var(--surface);border-radius:var(--r-sm);padding:13px 15px;margin-bottom:11px;box-shadow:var(--shadow-sm)}
+.review{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-sm);padding:13px 15px;margin-bottom:11px;box-shadow:var(--shadow-sm)}
 .review-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .review-name{font-weight:700;font-size:.92rem}
 .review .stars{font-size:.85rem;letter-spacing:1px}
@@ -536,6 +536,10 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .ggrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 0 2px}
 .gtile{aspect-ratio:1;border:none;padding:0;border-radius:13px;overflow:hidden;background:var(--sunk);cursor:pointer}
 .gtile img{width:100%;height:100%;object-fit:cover}
+/* place detail: crisp white page (ref-style) — cards keep definition via borders/shadow */
+.phone:has(.detail-hero){background:var(--surface)}
+.phone:has(.detail-hero) .info,
+.phone:has(.detail-hero) .rdist{border:1px solid var(--hairline)}
 
 /* sticky bottom action bar — contact the place directly (LINE / call / directions) */
 .detailbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:440px;z-index:50;
