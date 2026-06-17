@@ -51,7 +51,7 @@ export default async function Verify({ searchParams }: {
       </p>
 
       {searchParams?.claimed === '1' && <div className="banner-ok">✓ เคลมร้านสำเร็จ — อีกขั้นเดียวเพื่อปลดล็อกเต็ม</div>}
-      {searchParams?.need === 'loyalty' && <div className="banner-err">ต้องยืนยันความเป็นเจ้าของก่อน จึงจะเปิดแต้มสะสมได้</div>}
+      {searchParams?.need && <div className="banner-err">ต้องยืนยันความเป็นเจ้าของก่อน จึงจะเปิด{searchParams.need === 'deals' ? 'ดีล/โปรโมชั่น' : 'แต้มสะสม'}ได้</div>}
       {searchParams?.ok === 'submitted' && <div className="banner-ok">✓ ส่งคำขอแล้ว — ทีมงานจะตรวจสอบและยืนยันให้</div>}
       {searchParams?.error && OTP_ERR[searchParams.error] && <div className="banner-err">{OTP_ERR[searchParams.error]}</div>}
 

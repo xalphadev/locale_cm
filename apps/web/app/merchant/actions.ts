@@ -714,3 +714,57 @@ export async function requestClaimReviewAction(formData: FormData) {
   revalidatePath('/merchant/verify');
   redirect('/merchant/verify?ok=submitted');
 }
+
+// ── deals / promotions (merchant self-serve) ─────────────────────────────────────────────────────
+// deals.merchant_id is the money-plane id; a self-signup brand may not have one yet, so create it
+// lazily and link brands.merchant_id (also the anchor for future payouts).
+async function ensureMerchant(c: any, acc: any): Promise<string> {
+  const [b] = (await c.query(`SELECT merchant_id FROM brands WHERE id=$1`, [acc.brand_id])).rows;
+  if (b?.merchant_id) return b.merchant_id;
+  const m = (await c.query(
+    `INSERT INTO merchants(city_id, display_name_i18n, trust_state)
+     VALUES((SELECT city_id FROM places WHERE id=$1), jsonb_build_object('th',$2::text), 'claimed_unverified')
+     RETURNING id`, [acc.place_id, acc.display_name || 'ร้านค้า'])).rows[0];
+  await c.query(`UPDATE brands SET merchant_id=$2 WHERE id=$1`, [acc.brand_id, m.id]);
+  return m.id;
+}
+
+/** Create a promotion on the active branch. Verified branches only (same gate as loyalty). */
+export async function createMerchantDealAction(formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.brand_id) redirect('/merchant/login');
+  requireVerified(acc);
+  const title = s(formData, 'title');
+  if (!title) redirect('/merchant/deals/new?error=title');
+  const type = ['percent_off', 'fixed_off', 'bogo', 'freebie'].includes(s(formData, 'deal_type')) ? s(formData, 'deal_type') : 'percent_off';
+  const pct = type === 'percent_off' ? Math.min(90, Math.max(1, parseInt(s(formData, 'value_pct'), 10) || 0)) : null;
+  const minor = type === 'fixed_off' ? bahtToMinor(s(formData, 'value_baht')) : null;
+  if (type === 'percent_off' && !pct) redirect('/merchant/deals/new?error=value');
+  if (type === 'fixed_off' && !minor) redirect('/merchant/deals/new?error=value');
+  const terms = s(formData, 'terms');
+  const quotaN = parseInt(s(formData, 'quota'), 10);
+  const quotaTotal = quotaN > 0 ? Math.min(99999, quotaN) : null;
+  const days = Math.min(60, Math.max(1, parseInt(s(formData, 'days'), 10) || 7));
+  await withTx(async (c) => {
+    const mid = await ensureMerchant(c, acc);
+    await c.query(
+      `INSERT INTO deals(place_id, merchant_id, city_id, title_i18n, terms_i18n, deal_type, value_pct, value_minor,
+                         starts_at, ends_at, quota_total, status)
+       VALUES($1, $2, (SELECT city_id FROM places WHERE id=$1), jsonb_build_object('th',$3::text),
+              CASE WHEN $4 <> '' THEN jsonb_build_object('th',$4::text) END,
+              $5::deal_type, $6, $7, now(), now() + ($8 || ' days')::interval, $9, 'active'::deal_status)`,
+      [acc.place_id, mid, title, terms, type, pct, minor, String(days), quotaTotal]);
+  });
+  revalidatePath('/merchant/deals'); revalidatePath('/');  // home deal rail
+  redirect('/merchant/deals?ok=created');
+}
+
+/** Pause / resume / end one of the active branch's own deals. */
+export async function setDealStatusAction(dealId: string, status: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const st = ['active', 'paused', 'expired'].includes(status) ? status : 'paused';
+  await q(`UPDATE deals SET status=$3::deal_status WHERE id=$1 AND place_id=$2`, [dealId, acc.place_id, st]);
+  revalidatePath('/merchant/deals'); revalidatePath('/');
+  redirect('/merchant/deals?ok=updated');
+}
