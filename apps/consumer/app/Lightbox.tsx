@@ -151,6 +151,26 @@ export function HeroZoom({ images }: { images: string[] }) {
   );
 }
 
+/** Full photo grid (the "Gallery" tab) — every photo as a tile; tap to open the zoom viewer. */
+export function GalleryGrid({ images }: { images: string[] }) {
+  const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+  if (!images || images.length === 0) return null;
+  return (
+    <>
+      <div className="ggrid">
+        {images.map((src, i) => (
+          <button className="gtile" key={i} onClick={() => { setIndex(() => i); setOpen(true); }} aria-label={`รูปที่ ${i + 1}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="" loading="lazy" draggable={false} />
+          </button>
+        ))}
+      </div>
+      {open && <LightboxOverlay images={images} index={index} setIndex={setIndex} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 /** Thumbnail strip under the hero (booking-app style) — tap a thumb to open the zoom viewer at that index.
  *  Last visible tile shows a "+N" overlay when there are more photos than fit. */
 export function HeroThumbs({ images, max = 5 }: { images: string[]; max?: number }) {

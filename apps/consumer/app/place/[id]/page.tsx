@@ -5,9 +5,10 @@ import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
 import { ProductCard, lineHref } from '../../ProductCard';
 import { RoomCard } from '../../RoomCard';
-import { HeroZoom, HeroThumbs } from '../../Lightbox';
+import { HeroZoom, HeroThumbs, GalleryGrid } from '../../Lightbox';
 import ShareButton from '../../ShareButton';
 import { ReviewsFeed } from './ReviewsFeed';
+import { PlaceTabs } from './PlaceTabs';
 import CheckInButton from './CheckInButton';
 
 export const dynamic = 'force-dynamic';
@@ -71,7 +72,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         }
       }
       [rev] = await q<any>(`SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [params.id]);
-      reviews = await q<any>(`SELECT r.id, r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 3`, [params.id]);
+      reviews = await q<any>(`SELECT r.id, r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 8`, [params.id]);
       dist = await q<any>(`SELECT rating, count(*)::int c FROM reviews WHERE place_id=$1 AND moderation_status='approved' GROUP BY rating`, [params.id]);
       const [vid] = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='video' AND moderation_status='approved' LIMIT 1`, [params.id]);
       videoUrl = vid?.storage_path ?? null;
@@ -146,6 +147,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     ...coverSet(p.id, p.subcategory, p.category, 6),
   ])).slice(0, 8);
   const heroImg = galleryImages[0] || cover(p.id, p.subcategory, p.category, 1280, 860);
+  const topDeal = deals[0] ? dealLabel(deals[0].deal_type, deals[0].value_pct, deals[0].value_minor) : null;
 
   // sticky-bar primary CTA: LINE → call → directions (Locale has no in-app booking)
   const line = lineHref(p.line_id);
@@ -162,7 +164,6 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           ? <video src={videoUrl} poster={heroImg} muted loop autoPlay playsInline />
           : <img src={heroImg} alt="" />}
         {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
-        {!videoUrl && galleryImages.length > 1 && <span className="photocount frost"><Icon n="search" size={11} /> {galleryImages.length} รูป</span>}
         <div className="scrim" />
         {!videoUrl && <HeroZoom images={galleryImages} />}
         <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
@@ -172,20 +173,48 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           </form>
           <ShareButton href={`/place/${p.id}`} title={i18n(p.name_i18n)} variant="icon" />
         </div>
-        <div className="dtitle">
-          <span className="frost" style={{ marginBottom: 8 }}><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={13} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}</span>
-          <h1>{i18n(p.name_i18n)}{p.owner_verified && (
-            <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
-          )}</h1>
-          <div className="dmeta">{scoredP
-            ? <><Icon n="star" fill="#FFC95A" size={15} style={{ color: '#FFC95A', verticalAlign: '-.18em' }} /> {rev.avg} · {rev.n} รีวิว</>
-            : (rev?.n ?? 0) > 0 ? `${noun}ใหม่ · ${rev.n} รีวิว` : `${noun}ใหม่ · ยังไม่มีรีวิว`}</div>
-        </div>
+        {!videoUrl && <div className="hthumb-overlay"><HeroThumbs images={galleryImages} max={6} /></div>}
       </div>
 
-      <HeroThumbs images={galleryImages} />
+      {/* header block (ref-style, below the hero) */}
+      <div className="dhead">
+        <div className="dhead-top">
+          {topDeal && <span className="dhead-deal">{topDeal}</span>}
+          <span className="dhead-rate">{scoredP
+            ? <><Icon n="star" fill="#FFC95A" size={16} style={{ color: '#FFC95A', verticalAlign: '-.16em' }} /> {rev.avg} ({rev.n} รีวิว)</>
+            : <span className="muted">{noun}ใหม่{(rev?.n ?? 0) > 0 ? ` · ${rev.n} รีวิว` : ''}</span>}</span>
+        </div>
+        <h1 className="dhead-name">{i18n(p.name_i18n)}{p.owner_verified && (
+          <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
+        )}</h1>
+        <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
+      </div>
 
-      <div className="dbody">
+      <PlaceTabs
+        reviewCount={rev?.n ?? 0}
+        gallery={<div className="dbody"><GalleryGrid images={galleryImages} /></div>}
+        review={(
+          <div className="dbody">
+            {(rev?.n ?? 0) === 0 ? (
+              <p className="empty">ยังไม่มีรีวิว</p>
+            ) : (<>
+              {scoredP ? (
+                <div className="rdist">
+                  <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
+                  <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
+                    <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / total) * 100)}%` }} /></span></div>
+                  ))}</div>
+                </div>
+              ) : (
+                <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
+              )}
+              <ReviewsFeed placeId={p.id} total={rev?.n ?? 0}
+                initial={reviews.map((r) => ({ id: r.id, rating: r.rating, body: i18n(r.body_i18n), name: r.display_name, d: r.d }))} />
+            </>)}
+          </div>
+        )}
+        about={(
+          <div className="dbody">
 
         {stamp && (
           <section className="pstamp">
@@ -314,22 +343,6 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta"><Icon n="calendar" size={13} className="flat-ico" style={{ color: 'var(--muted)' }} /> {e.d} {THM[e.m - 1]}</div></div><span className="chev"><Icon n="chevR" size={18} /></span></a>)}
         </>)}
 
-        {reviews.length > 0 && (<>
-          <h2>รีวิว{scoredP ? ` (${rev?.n})` : ''}</h2>
-          {scoredP ? (
-            <div className="rdist">
-              <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
-              <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
-                <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / total) * 100)}%` }} /></span></div>
-              ))}</div>
-            </div>
-          ) : (
-            <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
-          )}
-          <ReviewsFeed placeId={p.id} total={rev?.n ?? 0} preview reviewsHref={`/place/${p.id}/reviews`}
-            initial={reviews.map((r) => ({ id: r.id, rating: r.rating, body: i18n(r.body_i18n), name: r.display_name, d: r.d }))} />
-        </>)}
-
         {similar.length > 0 && (<>
           <h2>{isStay ? 'ที่พักใกล้เคียง' : 'ร้านใกล้เคียง'}</h2>
           <div className="openrail">
@@ -353,7 +366,9 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             <Icon n="chevR" size={18} className="claimcta-go" />
           </a>
         )}
-      </div>
+          </div>
+        )}
+      />
 
       <div className="detailbar">
         <div className="db-ics">
