@@ -285,7 +285,7 @@ FROM (VALUES
 ) AS u(pname, nm, ds, mode, pm, per, avail, cap, sqm, furn, so)
 JOIN places p ON p.name_i18n->>'en' = u.pname;
 
--- ── 12. Real Chiang Mai areas (districts) + assign every place to the nearest one ──────────────
+-- ── 12. Real Chiang Mai areas (districts) + assign every place to its area ──────────────────────
 INSERT INTO districts(city_id, name_i18n, slug, rollout_status)
 SELECT (SELECT id FROM cities WHERE code='CNX'), x.nm::jsonb, x.slug, 'live'::rollout_status
 FROM (VALUES
@@ -299,16 +299,29 @@ FROM (VALUES
 ) AS x(slug, nm)
 WHERE NOT EXISTS (SELECT 1 FROM districts d WHERE d.slug=x.slug);
 
-WITH areas(slug, lng, lat) AS (VALUES
-  ('nimman',98.967,18.797),('old_city',98.986,18.788),('chang_klan',98.999,18.785),
-  ('santitham',98.978,18.802),('wualai',98.984,18.780),('riverside',99.003,18.790),
-  ('suthep',98.930,18.805),('maerim',98.940,18.910))
-UPDATE places p SET district_id = (
-  SELECT d.id FROM districts d JOIN areas a ON a.slug=d.slug
-  ORDER BY power(a.lng - (regexp_match(p.geo,'POINT\(([-0-9.]+) ([-0-9.]+)\)'))[1]::float, 2)
-         + power(a.lat - (regexp_match(p.geo,'POINT\(([-0-9.]+) ([-0-9.]+)\)'))[2]::float, 2)
-  LIMIT 1)
-WHERE p.geo ~ 'POINT';
+-- assign by venue name (PostGIS-portable: NO geo-text parsing → works on the dev stub AND on a real
+-- geography column, where geo::text is WKB hex and the old regex approach silently matched nothing)
+UPDATE places p SET district_id = d.id
+FROM (VALUES
+  ('Ristr8to','nimman'),('Roast8ery Cafe','nimman'),('Tong Tem Toh','nimman'),
+  ('Cherng Doi Roast Chicken','nimman'),('Guu Fusion Roti & Tea','nimman'),
+  ('Mango Tango','nimman'),('iberry Garden','nimman'),('Nimman Co-Living Hostel','nimman'),
+  ('Graph Cafe','old_city'),('Huen Phen','old_city'),('SP Chicken','old_city'),
+  ('Zoe in Yellow','old_city'),('Wat Phra Singh','old_city'),('Wat Chedi Luang','old_city'),
+  ('Chiang Mai City Arts and Cultural Centre','old_city'),('Sunday Walking Street (Ratchadamnoen)','old_city'),
+  ('Tha Phae Gate','old_city'),('Fah Lanna Spa','old_city'),
+  ('Tamarind Village','old_city'),('Green Tiger Vegetarian House','old_city'),
+  ('Akha Ama Coffee La Lanna','santitham'),('Cowboy Hat Khao Kha Moo (Chang Phueak)','santitham'),
+  ('Khao Soi Lung Prakit Kad Kom','santitham'),
+  ('Wat Sri Suphan (Silver Temple)','wualai'),('Saturday Walking Street (Wualai)','wualai'),
+  ('The Baristro at the River','riverside'),('Khao Soi Khun Yai','riverside'),
+  ('The Riverside Bar & Restaurant','riverside'),('Warorot Market (Kad Luang)','riverside'),
+  ('Wat Phra That Doi Suthep','suthep'),('Doi Suthep Viewpoint (Pha Dudao)','suthep'),
+  ('Santai Muay Thai Gym','suthep'),
+  ('Thai Farm Cooking School','maerim'),('Mae Rim Pottery & Ceramics Workshop','maerim')
+) AS m(name, slug)
+JOIN districts d ON d.slug = m.slug
+WHERE p.name_i18n->>'en' = m.name;
 
 -- ── Summary ─────────────────────────────────────────────────────────────────
 SELECT 'places='||(SELECT count(*) FROM places)
