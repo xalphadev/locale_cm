@@ -142,3 +142,37 @@ export async function reportReviewAction(reviewId: string) {
   }
   revalidatePath(`/place/${r.place_id}`);
 }
+
+/** Submit a booking/viewing request from a stay listing → a lead in the owner's inbox (0034).
+ *  NO money: this is a request to be contacted, never a confirmed/paid reservation. Stores minimal
+ *  PII (name + a contact channel + optional dates) with a consent line shown at the form; a 60-day
+ *  expiry bounds retention. Anonymous visitors may submit (they provide their own contact). */
+export async function submitBookingRequestAction(placeId: string, stayUnitId: string, formData: FormData) {
+  const uid = await demoUserId();
+  const g = (k: string) => String(formData.get(k) ?? '').trim();
+  const name = g('contact_name').slice(0, 80);
+  const phone = g('contact_phone').slice(0, 40);
+  const line = g('contact_line').slice(0, 80);
+  const message = g('message').slice(0, 500);
+  const kind = ['viewing', 'booking', 'enquiry'].includes(g('request_kind')) ? g('request_kind') : 'enquiry';
+  const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const from = isDate(g('desired_from')) ? g('desired_from') : null;
+  const to = isDate(g('desired_to')) ? g('desired_to') : null;
+  const back = `/stay/${stayUnitId}`;
+  if (!name || (!phone && !line)) redirect(`${back}?err=contact`);              // need a name + one way to reach them
+
+  // re-prove the place is a published, publicly-listed accommodation; resolve the listing it belongs to
+  const [pl] = await q<any>(`SELECT id, offers_stay FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
+  if (!pl || !pl.offers_stay) redirect('/stay');
+  let unitId: string | null = null; let mode: string | null = null;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId)) {
+    const [su] = await q<any>(`SELECT id, rental_mode FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]);
+    if (su) { unitId = su.id; mode = su.rental_mode; }
+  }
+  await q(
+    `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to,
+        requester_user_id, contact_name, contact_phone, contact_line, message, channel, status, expires_at)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'app','new', now() + interval '60 days')`,
+    [placeId, unitId, kind, mode, from, to, uid, name, phone || null, line || null, message || null]);
+  redirect(`${back}?sent=1`);
+}

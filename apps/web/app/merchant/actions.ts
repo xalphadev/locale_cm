@@ -35,7 +35,7 @@ const bahtToMinor = (raw: string) => (raw && Number.isFinite(Number(raw)) ? Math
 // Capability guard. The bottom-tab UI only HIDES products/rooms for a shop that lacks the flag;
 // this enforces it at the trust boundary so a shop can't publish rows its type says it has none of
 // by hitting the route/Server Action directly. (place_id scoping already blocks cross-tenant writes.)
-function requireCap(acc: any, cap: 'sells_products' | 'offers_stay') {
+function requireCap(acc: any, cap: 'sells_products' | 'offers_stay' | 'manages_stay') {
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc[cap]) redirect('/merchant');
 }
@@ -93,9 +93,12 @@ async function createBranchPlace(c: any, opts: {
   const pl = (await c.query(
     `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
     [JSON.stringify(payload), opts.cityId, opts.distId, DEMO_AGENT, DEMO_ADMIN])).rows[0];
+  // An accommodation manages its rooms by default (manages_stay = the SaaS product) AND is published
+  // to the marketplace (offers_stay); the owner can turn publishing off in /merchant/shop to run the
+  // place privately. Both flags start equal to spec.stay; they diverge only when the owner toggles.
   await c.query(
-    `UPDATE places SET sells_products=$2, offers_stay=$3, stay_kind=$4, source='merchant', brand_id=$5 WHERE id=$1`,
-    [pl.id, !!spec.sells, !!spec.stay, spec.stay ? spec.subcategory : null, opts.brandId]);
+    `UPDATE places SET sells_products=$2, offers_stay=$3, manages_stay=$4, stay_kind=$5, source='merchant', brand_id=$6 WHERE id=$1`,
+    [pl.id, !!spec.sells, !!spec.stay, !!spec.stay, spec.stay ? spec.subcategory : null, opts.brandId]);
   return pl.id as string;
 }
 
@@ -321,14 +324,15 @@ export async function updateShopAction(formData: FormData) {
   const website = s(formData, 'website');
   const sells = !!formData.get('sells_products');
   const offersStay = !!formData.get('offers_stay');
+  const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing
   await q(
     `UPDATE places SET
        name_i18n = CASE WHEN $2<>'' THEN jsonb_set(COALESCE(name_i18n,'{}'),'{th}',to_jsonb($2::text)) ELSE name_i18n END,
        description_i18n = CASE WHEN $3<>'' THEN jsonb_set(COALESCE(description_i18n,'{}'),'{th}',to_jsonb($3::text)) ELSE description_i18n END,
        phone = NULLIF($4,''), line_id = NULLIF($5,''), website = NULLIF($6,''),
-       sells_products = $7, offers_stay = $8, updated_at = now()
+       sells_products = $7, offers_stay = $8, manages_stay = $9, updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay]);
 
   // Clearing a capability also hides its now-unreachable child rows: the portal tab disappears,
   // so without this the published products/rooms would linger on the consumer side with no way to
@@ -812,4 +816,226 @@ export async function createPayoutRequestAction(formData: FormData) {
   if (err) redirect(`/merchant/payouts?error=${err}`);
   revalidatePath('/merchant/payouts');
   redirect('/merchant/payouts?ok=requested');
+}
+
+// ── room management (0031-0035): PHYSICAL rooms + occupancy + nightly date-blocks. NO money — these
+//    are display/ops state, never joined to the ledger. Tenancy: every write scopes on acc.place_id
+//    (rooms) or re-proves the room's place ownership (blocks). Gated by the manages_stay capability. ──
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+/** Recompute a managed listing's marketplace vacancy from its physical rooms (projection, 0033). No-op for unmanaged. */
+async function refreshUnitVacancy(stayUnitId: string | null | undefined) {
+  if (stayUnitId) await q(`SELECT fn_stay_refresh_vacancy($1)`, [stayUnitId]);
+}
+
+/** Add a physical room to the active branch (optionally tied to a listing/type for vacancy rollup). */
+export async function createRoomAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const code = s(formData, 'code');
+  if (!code) redirect('/merchant/units?error=code');
+  const floor = s(formData, 'floor') || null;
+  const kind = s(formData, 'room_kind') === 'bed' ? 'bed' : 'room';
+  const capV = s(formData, 'capacity');
+  const capacity = capV && Number.isFinite(Number(capV)) ? Math.max(0, Math.trunc(Number(capV))) : null;
+  // the linked listing must be the account's own (re-prove ownership); a forged stay_unit_id → null
+  const wantUnit = s(formData, 'stay_unit_id');
+  let okUnit: string | null = null;
+  if (UUID_RE.test(wantUnit)) {
+    const [u] = await q<{ id: string }>(`SELECT id FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [wantUnit, acc.place_id]);
+    okUnit = u?.id ?? null;
+  }
+  try {
+    await q(`INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind, capacity) VALUES($1,$2,$3,$4,$5,$6)`,
+      [acc.place_id, okUnit, code, floor, kind, capacity]);
+  } catch (e: any) {
+    if (e?.code === '23505') redirect('/merchant/units?error=dupe'); // unique (place_id, code)
+    throw e;
+  }
+  await refreshUnitVacancy(okUnit);
+  revalidatePath('/merchant/units'); revalidatePath('/merchant');
+  redirect('/merchant/units?ok=added');
+}
+
+/** Set one room's current occupancy (monthly fast-path). Restamps the listing's vacancy projection. */
+export async function setRoomOccupancyAction(roomId: string, status: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const st = ['vacant', 'occupied', 'reserved', 'maintenance'].includes(status) ? status : 'vacant';
+  const [r] = await q<{ stay_unit_id: string | null }>(
+    `UPDATE stay_room SET occupancy_status=$3, occupied_until = CASE WHEN $3='vacant' THEN NULL ELSE occupied_until END, updated_at=now()
+       WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL RETURNING stay_unit_id`, [roomId, acc.place_id, st]);
+  if (r) {
+    await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta) VALUES($1,$2,'status_change',jsonb_build_object('to',$3::text))`, [roomId, acc.place_id, st]);
+    await refreshUnitVacancy(r.stay_unit_id);
+  }
+  revalidatePath('/merchant/units', 'layout');
+}
+
+/** Edit a room's details (code / floor / capacity / private note / expected free date). */
+export async function updateRoomAction(roomId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const code = s(formData, 'code');
+  if (!code) redirect(`/merchant/units/${roomId}?error=code`);
+  const floor = s(formData, 'floor') || null;
+  const note = s(formData, 'note') || null;     // owner's private memo (may contain a tenant name; not used elsewhere)
+  const ou = s(formData, 'occupied_until');
+  const occUntil = isDate(ou) ? ou : null;
+  const capV = s(formData, 'capacity');
+  const capacity = capV && Number.isFinite(Number(capV)) ? Math.max(0, Math.trunc(Number(capV))) : null;
+  const [r] = await q<{ stay_unit_id: string | null }>(
+    `UPDATE stay_room SET code=$3, floor=$4, note=$5, occupied_until=$6, capacity=$7, updated_at=now()
+       WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL RETURNING stay_unit_id`,
+    [roomId, acc.place_id, code, floor, note, occUntil, capacity]);
+  if (r) await refreshUnitVacancy(r.stay_unit_id);
+  revalidatePath('/merchant/units', 'layout');
+  redirect(`/merchant/units/${roomId}?ok=updated`);
+}
+
+/** Soft-delete a room (kept for history; drops out of every read + the vacancy rollup). */
+export async function deleteRoomAction(roomId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [r] = await q<{ stay_unit_id: string | null }>(
+    `UPDATE stay_room SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL RETURNING stay_unit_id`, [roomId, acc.place_id]);
+  if (r) await refreshUnitVacancy(r.stay_unit_id);
+  revalidatePath('/merchant/units'); revalidatePath('/merchant');
+  redirect('/merchant/units?ok=deleted');
+}
+
+/** Toggle whether a listing's marketplace vacancy is SYSTEM-computed from rooms (managed) or hand-typed. */
+export async function setStayUnitManagedAction(unitId: string, on: boolean) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (on) {
+    // cutover safety (docs/13 §5): don't let system-computed vacancy take over until physical rooms
+    // exist — else the listing would flip to "0 ว่าง" mid-backfill while the owner is still adding rooms.
+    const [c] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_room WHERE stay_unit_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [unitId, acc.place_id]);
+    if (!c || c.n === 0) { revalidatePath('/merchant/units'); redirect('/merchant/units?error=norooms'); }
+  }
+  await q(`UPDATE stay_units SET managed=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [unitId, acc.place_id, !!on]);
+  if (on) await refreshUnitVacancy(unitId);
+  revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant/rooms', 'layout');
+}
+
+/** Nightly: block a date range on a room (anonymous — no occupant, no money). DB rejects overlaps. */
+export async function addRoomBlockAction(roomId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const from = s(formData, 'start_date');
+  const to = s(formData, 'end_date');
+  if (!isDate(from)) redirect(`/merchant/units/${roomId}?error=date`);
+  const end = isDate(to) ? to : null;
+  const note = s(formData, 'note') || null;
+  const [r] = await q<{ stay_unit_id: string | null }>(`SELECT stay_unit_id FROM stay_room WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [roomId, acc.place_id]);
+  if (!r) redirect('/merchant/units');
+  try {
+    await q(`INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,'stay',$3,$4,$5)`,
+      [roomId, acc.place_id, from, end, note]);
+  } catch (e: any) {
+    if (e?.code === '23P01') redirect(`/merchant/units/${roomId}?error=overlap`); // exclusion_violation (double-book)
+    throw e;
+  }
+  await refreshUnitVacancy(r.stay_unit_id);
+  revalidatePath(`/merchant/units/${roomId}`); revalidatePath('/merchant/units');
+  redirect(`/merchant/units/${roomId}?ok=blocked`);
+}
+
+/** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
+export async function cancelRoomBlockAction(blockId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<{ room_id: string; stay_unit_id: string | null }>(
+    `UPDATE stay_occupancy_block b SET status='cancelled', deleted_at=now(), updated_at=now()
+       FROM stay_room r WHERE b.id=$1 AND b.room_id=r.id AND r.place_id=$2 AND b.deleted_at IS NULL
+       RETURNING b.room_id, r.stay_unit_id`, [blockId, acc.place_id]);
+  if (b) await refreshUnitVacancy(b.stay_unit_id);
+  revalidatePath('/merchant/units', 'layout');
+}
+
+// ── booking / viewing leads (0034): the marketplace "ขอให้ติดต่อกลับ" inbox. Minimal PII (contact +
+//    desired dates), NEVER a money flow — a lead, not a paid reservation. Owner-side status workflow;
+//    the consumer-side submit lives in the consumer app. Place-scoped (the lead row is the owner's). ──
+export async function setLeadStatusAction(leadId: string, status: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const st = ['new', 'contacted', 'scheduled', 'confirmed', 'declined'].includes(status) ? status : 'contacted';
+  await q(`UPDATE stay_booking_request SET status=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id, st]);
+  revalidatePath('/merchant/leads'); revalidatePath('/merchant');
+}
+
+export async function deleteLeadAction(leadId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  await q(`UPDATE stay_booking_request SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  revalidatePath('/merchant/leads'); revalidatePath('/merchant');
+}
+
+// ── seasonal pricing (0035): DISPLAY-only rates per room-TYPE, by season window. NEVER joined to the
+//    ledger / coin_lots — these are numbers SHOWN to customers, no payment. A season is place-level;
+//    a rate overrides a type's base price (stay_units.price_minor) for that window. Place-scoped. ──
+function requireStayOwner(acc: any) {
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
+}
+
+export async function createSeasonAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireStayOwner(acc);
+  const label = s(formData, 'label');
+  const from = s(formData, 'start_date'); const to = s(formData, 'end_date');
+  if (!label) redirect('/merchant/pricing?error=label');
+  if (!isDate(from) || !isDate(to)) redirect('/merchant/pricing?error=date');
+  const recurs = formData.get('recurs_yearly') != null;
+  await q(`INSERT INTO stay_season(place_id, label_i18n, start_date, end_date, recurs_yearly)
+           VALUES($1, jsonb_build_object('th',$2::text), $3, $4, $5)`, [acc.place_id, label, from, to, recurs]);
+  revalidatePath('/merchant/pricing');
+  redirect('/merchant/pricing?ok=season');
+}
+
+export async function deleteSeasonAction(seasonId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  // soft-delete the season AND any rates that referenced it (both place-scoped)
+  await q(`UPDATE stay_season SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [seasonId, acc.place_id]);
+  await q(`UPDATE stay_rate   SET deleted_at=now(), updated_at=now() WHERE season_id=$1 AND place_id=$2 AND deleted_at IS NULL`, [seasonId, acc.place_id]);
+  revalidatePath('/merchant/pricing');
+  redirect('/merchant/pricing?ok=season_deleted');
+}
+
+export async function createRateAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireStayOwner(acc);
+  const wantUnit = s(formData, 'stay_unit_id');
+  const [su] = UUID_RE.test(wantUnit)
+    ? await q<{ id: string; rental_mode: string }>(`SELECT id, rental_mode FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [wantUnit, acc.place_id])
+    : [];
+  if (!su) redirect('/merchant/pricing?error=unit');
+  const priceMinor = bahtToMinor(s(formData, 'price'));
+  if (priceMinor == null) redirect('/merchant/pricing?error=price');
+  const period = su.rental_mode === 'monthly' ? 'month' : 'night';
+  // prefer a named season; only fall back to an ad-hoc window when no (owned) season is chosen
+  const wantSeason = s(formData, 'season_id');
+  let okSeason: string | null = null;
+  if (UUID_RE.test(wantSeason)) {
+    const [se] = await q<{ id: string }>(`SELECT id FROM stay_season WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [wantSeason, acc.place_id]);
+    okSeason = se?.id ?? null;
+  }
+  const from = s(formData, 'start_date'); const to = s(formData, 'end_date');
+  const adFrom = !okSeason && isDate(from) ? from : null;
+  const adTo = !okSeason && isDate(to) ? to : null;
+  await q(`INSERT INTO stay_rate(stay_unit_id, season_id, place_id, start_date, end_date, price_minor, price_period)
+           VALUES($1,$2,$3,$4,$5,$6,$7)`, [su.id, okSeason, acc.place_id, adFrom, adTo, priceMinor, period]);
+  revalidatePath('/merchant/pricing');
+  redirect('/merchant/pricing?ok=rate');
+}
+
+export async function deleteRateAction(rateId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  await q(`UPDATE stay_rate SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [rateId, acc.place_id]);
+  revalidatePath('/merchant/pricing');
+  redirect('/merchant/pricing?ok=rate_deleted');
 }

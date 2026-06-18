@@ -32,7 +32,10 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   let rows: any[] = [];
   try {
     const uid = await demoUserId();
-    const where = [`su.status='published'`, `su.deleted_at IS NULL`, `p.status='published'`, `p.is_visible`, `su.rental_mode=$1`];
+    // Marketplace gate: a listing shows ONLY when its place publishes (offers_stay) AND the listing
+    // itself is published_to_marketplace (0031). A manages_stay && !offers_stay tenant (private SaaS)
+    // is therefore structurally invisible here — isolation by flag, not by a separate DB.
+    const where = [`su.status='published'`, `su.deleted_at IS NULL`, `su.published_to_marketplace`, `p.status='published'`, `p.is_visible`, `p.offers_stay`, `su.rental_mode=$1`];
     const params: any[] = [mode];
     where.push(mode === 'monthly' ? `su.available_units>0` : `su.daily_status<>'full'`);
     if (kind.length) { params.push(kind); where.push(`p.stay_kind = ANY($${params.length}::text[])`); }
@@ -47,7 +50,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     params.push(uid); const sIdx = params.length;
     rows = await q<any>(
       `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n, su.image_urls,
-              su.available_units, su.available_from, su.daily_status, su.availability_updated_at,
+              su.available_units, su.available_from, su.daily_status, su.availability_updated_at, su.managed,
               su.capacity, su.deposit_minor, su.min_stay, su.furnished,
               p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo, d.name_i18n district_name,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$${sIdx}) saved,

@@ -17,7 +17,8 @@ export default async function Dashboard() {
   const [stats] = await q<any>(
     `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) products,
             (SELECT count(*) FROM stay_units    WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) rooms,
-            (SELECT count(*) FROM feed_posts    WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) posts`, [acc.place_id]);
+            (SELECT count(*) FROM feed_posts    WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) posts,
+            (SELECT count(*) FROM stay_booking_request WHERE place_id=$1 AND status='new' AND deleted_at IS NULL) leads`, [acc.place_id]);
   // recycle-bin count: soft-deleted items for this branch (place) + brand (rewards) — drives the menu badge
   const [trash] = await q<any>(
     `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND deleted_at IS NOT NULL)
@@ -58,6 +59,28 @@ export default async function Dashboard() {
             <span className="menu-ic"><Icon n="bed" size={20} /></span>
             <span className="menu-tx">ห้องพัก</span>
             <span className="menu-val">{stats?.rooms ?? 0}</span>
+            <Icon n="chevR" className="menu-go" size={18} />
+          </a>
+        )}
+        {acc.manages_stay && (
+          <a className="menu-row" href="/merchant/units">
+            <span className="menu-ic"><Icon n="bed" size={20} /></span>
+            <span className="menu-tx">ผังห้อง · ห้องว่าง</span>
+            <Icon n="chevR" className="menu-go" size={18} />
+          </a>
+        )}
+        {(stay || acc.manages_stay) && (
+          <a className="menu-row" href="/merchant/leads">
+            <span className="menu-ic"><Icon n="chat" size={20} /></span>
+            <span className="menu-tx">คำขอจอง</span>
+            {(stats?.leads ?? 0) > 0 ? <span className="menu-val">{stats.leads}</span> : null}
+            <Icon n="chevR" className="menu-go" size={18} />
+          </a>
+        )}
+        {(stay || acc.manages_stay) && (
+          <a className="menu-row" href="/merchant/pricing">
+            <span className="menu-ic"><Icon n="wallet" size={20} /></span>
+            <span className="menu-tx">ราคาตามฤดู</span>
             <Icon n="chevR" className="menu-go" size={18} />
           </a>
         )}

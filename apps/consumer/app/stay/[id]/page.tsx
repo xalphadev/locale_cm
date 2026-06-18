@@ -1,6 +1,6 @@
 import { q, i18n, cover, demoUserId } from '@/lib/db';
 import { Icon, CAT_ICON } from '../../icons';
-import { toggleSaveAction } from '../../actions';
+import { toggleSaveAction, submitBookingRequestAction } from '../../actions';
 import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
 import { parsePoint } from '@/lib/geo';
 import { RoomCard, rentText, roomVacancy, FURNISH_TH, fmtDate, stayDaysAgo } from '../../RoomCard';
@@ -15,13 +15,13 @@ function Fact({ icon, label, value }: { icon: string; label: string; value: stri
   return <div className="factitem"><span className="factitem-ic"><Icon n={icon} size={17} /></span><div className="factitem-tx"><div className="factitem-l">{label}</div><div className="factitem-v">{value}</div></div></div>;
 }
 
-export default async function StayUnitDetail({ params }: { params: { id: string } }) {
-  let u: any = null; let others: any[] = [];
+export default async function StayUnitDetail({ params, searchParams }: { params: { id: string }; searchParams: { sent?: string; err?: string } }) {
+  let u: any = null; let others: any[] = []; let seasonalRates: any[] = [];
   try {
     const uid = await demoUserId();
     [u] = await q<any>(
       `SELECT su.id, su.name_i18n, su.description_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n,
-              su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at,
+              su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at, su.managed,
               su.capacity, su.deposit_minor, su.min_stay, su.room_size_sqm, su.furnished, su.bills_included, su.unit_amenities,
               p.id place_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website,
               p.opening_hours, p.geo::text geo, d.name_i18n district_name,
@@ -33,10 +33,15 @@ export default async function StayUnitDetail({ params }: { params: { id: string 
     if (u) {
       others = await q<any>(
         `SELECT id, name_i18n, rental_mode, price_minor, price_period, price_text_i18n, image_urls,
-                available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
+                available_units, available_from, daily_status, availability_updated_at, managed, capacity, deposit_minor, min_stay, furnished
            FROM stay_units WHERE place_id=$1 AND id<>$2 AND status='published' AND deleted_at IS NULL
           ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 8`,
         [u.place_id, u.id]);
+      seasonalRates = await q<any>(
+        `SELECT r.price_minor, r.price_period, r.start_date, r.end_date, r.season_id, s.label_i18n season_label
+           FROM stay_rate r LEFT JOIN stay_season s ON s.id = r.season_id
+          WHERE r.stay_unit_id=$1 AND r.deleted_at IS NULL AND (s.id IS NULL OR s.deleted_at IS NULL)
+          ORDER BY r.price_minor`, [u.id]);
     }
   } catch { /* db down */ }
 
@@ -86,6 +91,33 @@ export default async function StayUnitDetail({ params }: { params: { id: string 
           : <span className="roomcta-btn off"><Icon n="chat" size={18} /> ติดต่อที่พัก</span>}
         <div className="pcfresh" style={{ textAlign: 'center', margin: '6px 0 2px' }}>ไม่มีระบบจอง/จ่ายเงินในแอป — ติดต่อที่พักโดยตรง</div>
 
+        {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ</div>}
+        {searchParams?.err === 'contact' && <div className="bookerr">กรุณากรอกชื่อ และเบอร์โทรหรือไลน์อย่างน้อยหนึ่งช่อง</div>}
+        <details className="bookbox">
+          <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดูห้อง</summary>
+          <form className="bookform" action={submitBookingRequestAction.bind(null, u.place_id, u.id)}>
+            <label className="bk-field"><span>ต้องการ</span>
+              <select name="request_kind" defaultValue="viewing">
+                <option value="viewing">นัดดูห้อง</option>
+                <option value="booking">ขอจอง</option>
+                <option value="enquiry">สอบถามทั่วไป</option>
+              </select>
+            </label>
+            <div className="bk-row">
+              <label className="bk-field"><span>{monthly ? 'อยากเข้าอยู่' : 'เช็คอิน'}</span><input type="date" name="desired_from" /></label>
+              {!monthly && <label className="bk-field"><span>เช็คเอาท์</span><input type="date" name="desired_to" /></label>}
+            </div>
+            <label className="bk-field"><span>ชื่อ *</span><input name="contact_name" required placeholder="ชื่อของคุณ" /></label>
+            <div className="bk-row">
+              <label className="bk-field"><span>เบอร์โทร</span><input name="contact_phone" inputMode="tel" placeholder="08x-xxx-xxxx" /></label>
+              <label className="bk-field"><span>LINE ID</span><input name="contact_line" placeholder="@yourid" /></label>
+            </div>
+            <label className="bk-field"><span>ข้อความ (ถ้ามี)</span><textarea name="message" rows={2} placeholder="เช่น อยากดูห้องวันเสาร์บ่าย" /></label>
+            <p className="bookconsent">การกดส่ง = ยินยอมให้ส่งชื่อและช่องทางติดต่อของคุณให้เจ้าของที่พักเพื่อติดต่อกลับ — ไม่ใช่การจอง/ชำระเงิน</p>
+            <button className="roomcta-btn line" type="submit"><Icon n="chat" size={17} /> ส่งคำขอ</button>
+          </form>
+        </details>
+
         {u.fresh && (
           <div className="trust">
             <span className="ti"><Icon n="check" size={18} /></span>
@@ -108,6 +140,20 @@ export default async function StayUnitDetail({ params }: { params: { id: string 
           <h2 className="rsec"><span className="rsec-ic"><Icon n="sparkles" size={15} /></span>สิ่งอำนวยความสะดวก</h2>
           {amen.length > 0 && <div className="chips">{amen.map((a) => <span className="chip" key={a}><Icon n="check" size={12} /> {facetLabel(a)}</span>)}</div>}
           {bills.length > 0 && <div className="rbills"><Icon n="check" size={14} /> รวมในค่าเช่า: {bills.map((b) => facetLabel(b)).join(' · ')}</div>}
+        </>)}
+
+        {seasonalRates.length > 0 && (<>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="ticket" size={15} /></span>ราคาตามช่วง</h2>
+          <div className="ratecard">
+            {u.price_minor != null && <div className="rate-row"><span>ราคาปกติ</span><b>฿{Math.round(u.price_minor / 100).toLocaleString()}/{monthly ? 'เดือน' : 'คืน'}</b></div>}
+            {seasonalRates.map((r, i) => (
+              <div className="rate-row" key={i}>
+                <span>{r.season_id ? i18n(r.season_label) : `${fmtDate(r.start_date)}–${fmtDate(r.end_date)}`}</span>
+                <b>฿{Math.round(r.price_minor / 100).toLocaleString()}/{r.price_period === 'month' ? 'เดือน' : 'คืน'}</b>
+              </div>
+            ))}
+          </div>
+          <div className="pcfresh" style={{ margin: '2px 0 6px' }}>ราคาตามช่วงเป็นราคาแสดง — สอบถาม/ยืนยันกับที่พักโดยตรง</div>
         </>)}
 
         {(i18n(u.description_i18n) || i18n(u.place_desc)) && (<>

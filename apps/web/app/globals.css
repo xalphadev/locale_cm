@@ -594,3 +594,23 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .segbar{flex:1;height:9px;border-radius:999px;background:var(--m-sunk);overflow:hidden}
 .merchant-root .segbar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--m-accent),#7FB0F2)}
 .merchant-root .segrow-v{flex:none;font-size:.82rem;font-weight:800;color:var(--m-navy);width:38px;text-align:right}
+
+/* booking lead inbox (/merchant/leads) — P2 */
+.leadlist{display:flex;flex-direction:column;gap:10px;padding:4px 0 14px}
+.leadcard{border:1px solid var(--hairline,#e8e8ee);border-radius:14px;background:var(--surface,#fff);padding:12px 13px;display:flex;flex-direction:column;gap:7px}
+.leadcard.fresh{border-color:var(--accent,#1a73e8);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#1a73e8) 10%,transparent)}
+.lead-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lead-nm{font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e)}
+.lead-meta{font-size:.84rem;color:var(--muted,#6b7280)}
+.lead-msg{font-size:.92rem;color:var(--text,#1a1a2e);background:var(--sunk,#f4f5f7);border-radius:10px;padding:.5rem .7rem}
+.lead-contact{display:flex;flex-wrap:wrap;gap:8px}
+.lead-acts{display:flex;flex-wrap:wrap;gap:7px;border-top:1px solid var(--hairline,#eee);padding-top:9px}
+
+/* seasonal pricing add-forms (/merchant/pricing) — P3 */
+.pricesub{margin-top:10px;border-top:1px solid var(--hairline,#eee);padding-top:11px;display:flex;flex-direction:column;gap:9px}
+.pricesub .check{margin:0}
+
+/* onboarding guide (/merchant/units, before any rooms) — P-polish */
+.onboard{margin:4px 0 12px;padding:12px 14px;border:1px dashed var(--accent,#1a73e8);border-radius:13px;background:color-mix(in srgb,var(--accent,#1a73e8) 6%,transparent)}
+.onboard b{display:block;margin-bottom:6px}
+.onboard ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--text,#1a1a2e)}

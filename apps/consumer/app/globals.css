@@ -1220,3 +1220,25 @@ a.pcname{color:var(--text)}
 
 /* review report link */
 .review .rvreport{background:none;border:none;color:var(--muted);font-size:.76rem;cursor:pointer;padding:2px 0;display:inline-flex;align-items:center;gap:4px}
+
+/* booking-request box (stay detail) — P2 lead capture, no money */
+.bookbox{margin:10px 0 2px;border:1px solid var(--hairline,#e8e8ee);border-radius:14px;background:var(--surface,#fff);overflow:hidden}
+.bookbox-sum{display:flex;align-items:center;gap:8px;padding:.85rem 1rem;font-weight:800;cursor:pointer;list-style:none;color:var(--text,#1a1a2e)}
+.bookbox-sum::-webkit-details-marker{display:none}
+.bookbox[open] .bookbox-sum{border-bottom:1px solid var(--hairline,#e8e8ee)}
+.bookform{display:flex;flex-direction:column;gap:10px;padding:12px}
+.bk-row{display:flex;gap:10px}
+.bk-row .bk-field{flex:1;min-width:0}
+.bk-field{display:flex;flex-direction:column;gap:4px}
+.bk-field>span{font-size:.8rem;font-weight:700;color:var(--muted,#6b7280)}
+.bk-field input,.bk-field select,.bk-field textarea{width:100%;padding:.6rem .7rem;border:1px solid var(--hairline,#e8e8ee);border-radius:10px;font:inherit;font-size:.95rem;background:var(--bg,#fff);color:var(--text,#1a1a2e);outline:none}
+.bk-field input:focus,.bk-field select:focus,.bk-field textarea:focus{border-color:var(--accent,#1a73e8)}
+.bookconsent{font-size:.76rem;color:var(--hint,#9aa0a6);line-height:1.5;margin:2px 0}
+.booksent{display:flex;align-items:center;gap:6px;margin:10px 0 0;padding:.7rem .9rem;border-radius:11px;background:color-mix(in srgb,var(--accent,#1a73e8) 12%,transparent);color:var(--accent,#1a73e8);font-weight:700;font-size:.9rem}
+.bookerr{margin:10px 0 0;padding:.7rem .9rem;border-radius:11px;background:#fff0f0;color:#c0392b;font-weight:700;font-size:.9rem}
+
+/* seasonal price table (stay detail) — P3 */
+.ratecard{border:1px solid var(--hairline,#e8e8ee);border-radius:13px;overflow:hidden;margin:2px 0 4px}
+.rate-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:.6rem .9rem;font-size:.95rem;color:var(--text,#1a1a2e)}
+.rate-row+.rate-row{border-top:1px solid var(--hairline,#f0f0f4)}
+.rate-row b{font-weight:800}
