@@ -325,6 +325,9 @@ export async function updateShopAction(formData: FormData) {
   const sells = !!formData.get('sells_products');
   const offersStay = !!formData.get('offers_stay');
   const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing
+  // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
+  // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
+  const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
   await q(
     `UPDATE places SET
        name_i18n = CASE WHEN $2<>'' THEN jsonb_set(COALESCE(name_i18n,'{}'),'{th}',to_jsonb($2::text)) ELSE name_i18n END,
@@ -334,11 +337,13 @@ export async function updateShopAction(formData: FormData) {
      WHERE id = $1`,
     [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay]);
 
-  // Clearing a capability also hides its now-unreachable child rows: the portal tab disappears,
-  // so without this the published products/rooms would linger on the consumer side with no way to
-  // manage them. (Re-checking the flag doesn't auto-republish — the merchant shows each row again.)
-  if (!sells) await q(`UPDATE shop_products SET status='hidden', updated_at=now() WHERE place_id=$1 AND status='published'`, [acc.place_id]);
-  if (!offersStay) await q(`UPDATE stay_units SET status='hidden', updated_at=now() WHERE place_id=$1 AND status='published'`, [acc.place_id]);
+  // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
+  // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.
+  // Unchanged capability → leave per-listing hide/show as the owner set it.
+  if (prev?.sells_products && !sells) await q(`UPDATE shop_products SET status='hidden', updated_at=now() WHERE place_id=$1 AND status='published'`, [acc.place_id]);
+  else if (!prev?.sells_products && sells) await q(`UPDATE shop_products SET status='published', updated_at=now() WHERE place_id=$1 AND status='hidden' AND deleted_at IS NULL`, [acc.place_id]);
+  if (prev?.offers_stay && !offersStay) await q(`UPDATE stay_units SET status='hidden', updated_at=now() WHERE place_id=$1 AND status='published'`, [acc.place_id]);
+  else if (!prev?.offers_stay && offersStay) await q(`UPDATE stay_units SET status='published', updated_at=now() WHERE place_id=$1 AND status='hidden' AND deleted_at IS NULL`, [acc.place_id]);
 
   // Location pin: write only when both coords are finite AND inside the Chiang Mai bbox.
   // Clamp-and-skip — a save of just name/phone must never zero an existing good geo.
