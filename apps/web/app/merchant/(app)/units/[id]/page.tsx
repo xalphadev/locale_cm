@@ -18,7 +18,7 @@ const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'num
 export default async function RoomUnit({ params, searchParams }: { params: { id: string }; searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  if (!acc.manages_stay) redirect('/merchant');
+  if (!acc.manages_stay || acc.room_mode === 'unique') redirect('/merchant');
 
   const [r] = isUuid(params.id)
     ? await q<any>(

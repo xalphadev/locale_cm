@@ -33,7 +33,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products, offers_stay, manages_stay, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
   const pt = parsePoint(p?.geo);
   const pinned = !!pt && !(Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   const desc = i18n(p?.description_i18n);
@@ -75,6 +75,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
       {caps.length > 0
         ? <div className="chips">{caps.map((c) => <span className="chip" key={c}><Icon n="check" size={12} /> {c}</span>)}</div>
         : <p className="note">ร้านทั่วไป — ยังไม่ได้เปิด “สินค้า” หรือ “ห้องพัก” (เปิดได้ที่ปุ่มแก้ไข)</p>}
+      {p?.offers_stay && <p className="note" style={{ marginTop: 6 }}>รูปแบบห้อง: <b>{p.room_mode === 'unique' ? 'แต่ละห้องไม่เหมือนกัน (รีสอร์ท/เกสต์เฮาส์)' : 'หลายห้องเหมือนกัน (หอพัก/อพาร์ตเมนต์)'}</b></p>}
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="pin" size={15} /></span> ตำแหน่งบนแผนที่</h2>
       <div className="factgrid">

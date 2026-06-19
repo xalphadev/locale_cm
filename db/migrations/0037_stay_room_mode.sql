@@ -1,0 +1,11 @@
+-- 0037_stay_room_mode.sql — per-PROPERTY room model, so ONE merchant account can run a dorm, a hotel
+-- and a resort side by side, each managed in the way that fits it (account → brands → branches already
+-- gives the multi-property tree; this is just another per-place setting, like manages_stay).
+--
+--   room_mode = 'multi'  → many identical rooms share a TYPE (dorm/apartment): manage ประเภทห้อง
+--                          (price/photos once) + a ผังห้อง board (which physical rooms are vacant).
+--   room_mode = 'unique' → each room is its own listing (resort/guesthouse): "ห้อง" carries its own
+--                          name/price/photos + its own vacancy; no type-vs-room split, no board.
+-- Default 'multi' = today's behaviour. The merchant picks per branch (or it's defaulted from the
+-- accommodation kind at signup) and the management UI adapts to the active branch's mode.
+ALTER TABLE places ADD COLUMN IF NOT EXISTS room_mode text NOT NULL DEFAULT 'multi';

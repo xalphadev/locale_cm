@@ -14,6 +14,7 @@ export default async function Dashboard() {
   if (!acc?.place_id) redirect('/merchant/login');
   const sells = !!acc.sells_products;
   const stay = !!acc.offers_stay;
+  const mode = acc.room_mode || 'multi';   // 'unique' (resort) manages rooms directly → no separate ผังห้อง board
   const [stats] = await q<any>(
     `SELECT (SELECT count(*) FROM shop_products WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) products,
             (SELECT count(*) FROM stay_units    WHERE place_id=$1 AND status='published' AND deleted_at IS NULL) rooms,
@@ -57,12 +58,12 @@ export default async function Dashboard() {
         {stay && (
           <a className="menu-row" href="/merchant/rooms">
             <span className="menu-ic"><Icon n="bed" size={20} /></span>
-            <span className="menu-tx">ห้องพัก</span>
+            <span className="menu-tx">{mode === 'unique' ? 'ห้อง' : 'ห้องพัก'}</span>
             <span className="menu-val">{stats?.rooms ?? 0}</span>
             <Icon n="chevR" className="menu-go" size={18} />
           </a>
         )}
-        {acc.manages_stay && (
+        {acc.manages_stay && mode === 'multi' && (
           <a className="menu-row" href="/merchant/units">
             <span className="menu-ic"><Icon n="bed" size={20} /></span>
             <span className="menu-tx">ผังห้อง · ห้องว่าง</span>

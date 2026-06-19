@@ -14,7 +14,7 @@ const TESTS: Record<string, (i: Item) => boolean> = {
 };
 const DEFS = [['all', 'ทั้งหมด'], ['monthly', 'รายเดือน'], ['daily', 'รายวัน'], ['vacant', 'ว่าง'], ['full', 'เต็ม'], ['hidden', 'ซ่อน']] as const;
 
-export function RoomList({ items }: { items: Item[] }) {
+export function RoomList({ items, noun = 'ห้องพัก' }: { items: Item[]; noun?: string }) {
   const [q, setQ] = useState('');
   const [chip, setChip] = useState('all');
   const ql = q.trim().toLowerCase();
@@ -23,7 +23,7 @@ export function RoomList({ items }: { items: Item[] }) {
   return (
     <>
       <div className="listhead">
-        <h1>ห้องพัก <span className="listcount">{items.length}</span></h1>
+        <h1>{noun} <span className="listcount">{items.length}</span></h1>
         <a className="addbtn" href="/merchant/rooms/new"><Icon n="plus" size={17} /> เพิ่มห้อง</a>
       </div>
       <p className="note">โชว์ห้อง + บอกว่าว่างกี่ห้อง/ว่างวันนี้ไหม — ลูกค้าทักไลน์/โทรจองกับคุณเอง</p>
@@ -35,7 +35,7 @@ export function RoomList({ items }: { items: Item[] }) {
         </div>
       ) : (
         <>
-          <FilterBar query={q} onQuery={setQ} placeholder="ค้นหาห้องพัก…" chips={chips} active={chip} onChip={setChip} />
+          <FilterBar query={q} onQuery={setQ} placeholder={`ค้นหา${noun}…`} chips={chips} active={chip} onChip={setChip} />
           {filtered.length === 0 ? (
             <div className="nomatch">ไม่พบห้องที่ตรงกับที่ค้นหา</div>
           ) : (

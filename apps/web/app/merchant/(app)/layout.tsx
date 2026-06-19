@@ -35,7 +35,13 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   if (!acc) redirect('/merchant/login');
   const path = headers().get('x-pathname') || '/merchant';
   const live = acc.place_status === 'published';
-  const tabs = TABS.filter((t) => !t.cap || acc[t.cap]);
+  // per-branch room mode adapts the nav: 'unique' (resort) hides the ผังห้อง board and renames
+  // ห้องพัก → ห้อง; 'multi' (dorm) keeps both. Reflects the ACTIVE branch (Switcher), so one account
+  // can run a dorm and a resort and each shows its own tabs.
+  const mode = acc.room_mode || 'multi';
+  const tabs = TABS
+    .filter((t) => (t.href === '/merchant/units' ? acc.manages_stay && mode === 'multi' : (!t.cap || acc[t.cap])))
+    .map((t) => (t.href === '/merchant/rooms' && mode === 'unique' ? { ...t, label: 'ห้อง' } : t));
   return (
     <div className="mshell">
       <header className="mtop">

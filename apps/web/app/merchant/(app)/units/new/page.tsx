@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export default async function NewRoom({ searchParams }: { searchParams: { error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  if (!acc.manages_stay) redirect('/merchant');
+  if (!acc.manages_stay || acc.room_mode === 'unique') redirect('/merchant');
 
   const types = await q<any>(`SELECT id, name_i18n FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at`, [acc.place_id]);
   const term = acc.room_group_term || 'ชั้น';

@@ -93,12 +93,13 @@ async function createBranchPlace(c: any, opts: {
   const pl = (await c.query(
     `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
     [JSON.stringify(payload), opts.cityId, opts.distId, DEMO_AGENT, DEMO_ADMIN])).rows[0];
-  // An accommodation manages its rooms by default (manages_stay = the SaaS product) AND is published
-  // to the marketplace (offers_stay); the owner can turn publishing off in /merchant/shop to run the
-  // place privately. Both flags start equal to spec.stay; they diverge only when the owner toggles.
+  // Accommodation defaults: publish to marketplace (offers_stay) + a room_mode from the kind —
+  // homestay/guesthouse/house = 'unique' (each room its own listing), the rest = 'multi' (types + a
+  // room board). manages_stay (the ผังห้อง board) is on only for 'multi'. All editable in /merchant/shop.
+  const roomMode = spec.stay && ['homestay', 'guesthouse', 'house'].includes(opts.type) ? 'unique' : 'multi';
   await c.query(
-    `UPDATE places SET sells_products=$2, offers_stay=$3, manages_stay=$4, stay_kind=$5, source='merchant', brand_id=$6 WHERE id=$1`,
-    [pl.id, !!spec.sells, !!spec.stay, !!spec.stay, spec.stay ? spec.subcategory : null, opts.brandId]);
+    `UPDATE places SET sells_products=$2, offers_stay=$3, manages_stay=$4, room_mode=$5, stay_kind=$6, source='merchant', brand_id=$7 WHERE id=$1`,
+    [pl.id, !!spec.sells, !!spec.stay, !!spec.stay && roomMode === 'multi', roomMode, spec.stay ? spec.subcategory : null, opts.brandId]);
   return pl.id as string;
 }
 
@@ -325,6 +326,7 @@ export async function updateShopAction(formData: FormData) {
   const sells = !!formData.get('sells_products');
   const offersStay = !!formData.get('offers_stay');
   const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing
+  const roomMode = ['multi', 'unique'].includes(s(formData, 'room_mode')) ? s(formData, 'room_mode') : 'multi';
   // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
   // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
   const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
@@ -333,9 +335,9 @@ export async function updateShopAction(formData: FormData) {
        name_i18n = CASE WHEN $2<>'' THEN jsonb_set(COALESCE(name_i18n,'{}'),'{th}',to_jsonb($2::text)) ELSE name_i18n END,
        description_i18n = CASE WHEN $3<>'' THEN jsonb_set(COALESCE(description_i18n,'{}'),'{th}',to_jsonb($3::text)) ELSE description_i18n END,
        phone = NULLIF($4,''), line_id = NULLIF($5,''), website = NULLIF($6,''),
-       sells_products = $7, offers_stay = $8, manages_stay = $9, updated_at = now()
+       sells_products = $7, offers_stay = $8, manages_stay = $9, room_mode = $10, updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.

@@ -31,7 +31,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
-      <RoomList items={items} />
+      <RoomList items={items} noun={acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก'} />
     </>
   );
 }

@@ -20,7 +20,7 @@ const ST: Record<string, { label: string; color: string }> = {
 export default async function Units({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  if (!acc.manages_stay) redirect('/merchant');
+  if (!acc.manages_stay || acc.room_mode === 'unique') redirect('/merchant');
 
   const types = await q<any>(`SELECT id, name_i18n, rental_mode, managed FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at`, [acc.place_id]);
   const rooms = await q<any>(

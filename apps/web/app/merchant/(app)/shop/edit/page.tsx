@@ -20,7 +20,7 @@ export default async function ShopEdit() {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products, offers_stay, manages_stay, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   return (
@@ -50,6 +50,14 @@ export default async function ShopEdit() {
           <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — เปิดเมนู “ห้องพัก” + ขึ้นในหน้า “ที่พัก” ของลูกค้า</label>
           <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> ใช้ระบบจัดการห้อง — เปิดเมนู “ผังห้อง” (วางห้องจริง · คุมห้องว่าง · ปฏิทินรายวัน)</label>
           <p className="fhint">ปิดอันไหน เมนูนั้นจะถูกซ่อน และรายการที่เผยแพร่ไว้จะถูกซ่อนจากลูกค้า · “ผังห้อง” ใช้บริหารห้องภายใน ไม่บังคับว่าต้องเผยแพร่</p>
+          <div className="field" style={{ marginTop: 12 }}>
+            <label>รูปแบบห้องของที่พักนี้</label>
+            <select name="room_mode" defaultValue={p?.room_mode || 'multi'}>
+              <option value="multi">หลายห้องเหมือนกัน — หอพัก/อพาร์ตเมนต์ (ตั้งประเภท + ผังห้อง)</option>
+              <option value="unique">แต่ละห้องไม่เหมือนกัน — รีสอร์ท/เกสต์เฮาส์ (จัดการเป็นห้องเดี่ยว)</option>
+            </select>
+            <p className="fhint">ตั้งได้ต่อสาขา · “หลายห้องเหมือนกัน” = ราคาเดียวหลายห้อง (เปิดผังห้อง) · “แต่ละห้องไม่เหมือนกัน” = แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</p>
+          </div>
         </section>
 
         <section className="fsec">
