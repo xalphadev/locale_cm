@@ -86,7 +86,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Inter+Noto) ============ */
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
-  --m-bg:#F3F5F8; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
+  --m-bg:#FFFFFF; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
   --m-accent:#0D6EFD; --m-accent-press:#0A58CC; --m-soft:#CFE0FF; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
   --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
@@ -741,3 +741,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .btn-primary,.merchant-root .btn-approve,.merchant-root .addbtn,
 .merchant-root .dbtn.primary,.merchant-root .pquick .btn.btn-primary{background:var(--m-accent);border-color:var(--m-accent);color:#fff}
 .merchant-root .btn-primary:active,.merchant-root .addbtn:active,.merchant-root .dbtn.primary:active{background:var(--m-accent-press)}
+
+/* ===== OPTION A — white page · white cards with a whisper hairline (content floats, minimal boxes) ===== */
+.merchant-root{--m-line:#ECEEF3}

@@ -75,7 +75,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
               {byFloor[f].map((r) => {
                 const st = ST[r.status] || ST.vacant;
                 // [bg-tint%, ring%] — occupied stays calm but clearly blue; vacant/จอง pop stronger
-                const S: number[] = ({ vacant: [30, 52], occupied: [17, 34], reserved: [32, 54], maintenance: [24, 42] } as Record<string, number[]>)[r.status] || [30, 52];
+                const S: number[] = ({ vacant: [42, 62], occupied: [26, 44], reserved: [44, 64], maintenance: [34, 52] } as Record<string, number[]>)[r.status] || [42, 62];
                 const fs = r.code.length <= 3 ? '1rem' : r.code.length <= 5 ? '.86rem' : '.74rem';  // shrink long names so they don't overflow
                 return (
                   <a className="rchip" key={r.id} href={`/merchant/units/${r.id}`} title={`${r.code} · ${st.label}`}
