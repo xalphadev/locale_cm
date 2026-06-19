@@ -51,6 +51,9 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
          AND r.occupancy_status IN ('occupied','reserved') AND r.occupied_until IS NOT NULL
          AND r.occupied_until >= CURRENT_DATE AND r.occupied_until < CURRENT_DATE + 45
       ORDER BY r.occupied_until`, [acc.place_id]);
+  const roster = rooms
+    .filter((r) => r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved')
+    .sort((a, b) => (a.occupied_until ? String(a.occupied_until) : '9999').localeCompare(b.occupied_until ? String(b.occupied_until) : '9999'));
 
   return (
     <>
@@ -78,7 +81,10 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
           <div className="occbar">
             <div className="occbar-top">
               <span><b>{rooms.length}</b> ห้อง · <b style={{ color: ST.vacant.color }}>{vacant}</b> ว่าง</span>
-              <a className="occbar-leads" href="/merchant/leads"><Icon n="chat" size={14} /> คำขอจอง</a>
+              <span className="occbar-acts">
+                <a className="occbar-leads" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์</a>
+                <a className="occbar-leads" href="/merchant/leads"><Icon n="chat" size={14} /> คำขอจอง</a>
+              </span>
             </div>
             <div className="occbar-track">
               {vacant > 0 && <span style={{ width: seg(vacant), background: ST.vacant.color }} title={`ว่าง ${vacant}`} />}
@@ -124,6 +130,21 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
           <RoomBoard rooms={roomsData} groupTerm={term} />
 
+          {roster.length > 0 && (
+            <details className="usettings">
+              <summary><Icon n="users" size={14} /> ใครอยู่ห้องไหน · {roster.length} ห้อง</summary>
+              <p className="fhint">รวมโน้ตของห้องที่มีผู้เช่า/จอง — เห็นเฉพาะคุณ</p>
+              <div className="roster">
+                {roster.map((r) => (
+                  <a key={r.id} href={`/merchant/units/${r.id}`} className="rosterrow">
+                    <span className="rosterrow-rm">ห้อง {r.code}{r.floor ? ` · ${term} ${r.floor}` : ''}</span>
+                    <span className="rosterrow-nt">{r.note || '—'}</span>
+                    {r.occupied_until && <span className="rosterrow-un">ว่าง {fmtD(r.occupied_until)}</span>}
+                  </a>
+                ))}
+              </div>
+            </details>
+          )}
           <details className="usettings">
             <summary><Icon n="bed" size={14} /> ตั้งค่า · นับห้องว่างอัตโนมัติ</summary>
             <div className="grpterm-sec">นับห้องว่างอัตโนมัติ</div>

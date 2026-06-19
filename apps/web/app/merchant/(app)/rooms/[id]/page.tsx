@@ -102,7 +102,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
           </div>
           <p className="note" style={{ marginTop: 8 }}>แตะที่ห้องเพื่อดู/แก้สถานะในผังห้อง</p>
         </>) : (
-          <div className="banner-warn">ประเภทนี้ยัง “ลอย” — ไม่มีห้องจริงในผัง · <a href="/merchant/units/new">+ เพิ่มห้องจริง</a> เพื่อให้ระบบนับห้องว่างให้อัตโนมัติ</div>
+          <div className="banner-warn">ประเภทนี้ยังไม่มีห้องจริงในผัง — <a href="/merchant/units/new">+ เพิ่มห้องจริง</a> เพื่อให้นับห้องว่างอัตโนมัติ</div>
         )}
       </>)}
 

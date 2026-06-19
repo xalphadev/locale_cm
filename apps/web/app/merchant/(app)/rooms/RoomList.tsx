@@ -24,7 +24,7 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
   return (
     <>
       {floating > 0 && (
-        <div className="banner-warn">มี {floating} ประเภทยัง “ลอย” (ไม่มีห้องจริงในผัง) — เพิ่มห้องในผังให้ตรงกัน แล้วระบบจะนับห้องว่างให้อัตโนมัติ</div>
+        <div className="banner-warn">มี {floating} ประเภทยังไม่มีห้องจริงในผัง — เพิ่มห้องในผังเพื่อให้นับห้องว่างอัตโนมัติ</div>
       )}
       {items.length === 0 ? (
         <div className="mempty">

@@ -805,3 +805,32 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .soonbox-gl{flex:none;width:88px;font-size:.8rem;font-weight:700;color:var(--m-muted);padding-top:5px}
 .merchant-root .soonbox-items{display:flex;flex-wrap:wrap;gap:6px}
 .merchant-root .soonpill{display:inline-flex;padding:6px 10px;border-radius:9px;background:var(--m-sunk);color:var(--m-text);font-size:.82rem;font-weight:600;text-decoration:none}
+
+/* #6 roster ("ใครอยู่ห้องไหน") + .occbar-acts */
+.merchant-root .occbar-acts{display:flex;gap:14px}
+.merchant-root .roster{display:flex;flex-direction:column;margin-top:6px}
+.merchant-root .rosterrow{display:flex;align-items:center;gap:10px;padding:9px 4px;border-top:1px solid var(--m-line);text-decoration:none;color:var(--m-text)}
+.merchant-root .rosterrow-rm{flex:none;width:132px;font-weight:700;font-size:.85rem}
+.merchant-root .rosterrow-nt{flex:1;color:var(--m-muted);font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .rosterrow-un{flex:none;font-size:.8rem;font-weight:700;color:var(--m-accent)}
+
+/* #7 print sheet */
+.printsheet{max-width:720px;margin:0 auto;padding:8px 4px;color:#111}
+.printsheet .print-bar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:10px}
+.printsheet .print-head{border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}
+.printsheet .print-head h1{font-size:1.3rem;margin:0}
+.printsheet .print-head span{font-size:.82rem;color:#555}
+.printsheet .print-grp{margin-bottom:14px;break-inside:avoid}
+.printsheet .print-grp h2{font-size:.98rem;margin:0 0 5px;border-bottom:1px solid #bbb;padding-bottom:3px}
+.printsheet .print-grp h2 em{color:#777;font-style:normal;font-weight:400}
+.printsheet .print-tbl{width:100%;border-collapse:collapse;font-size:.85rem}
+.printsheet .print-tbl td{border-bottom:1px solid #ddd;padding:4px 8px;vertical-align:top}
+.printsheet .pc-code{font-weight:700;width:78px}
+.printsheet .pc-st{width:88px}
+.printsheet .pc-un{width:118px;color:#444}
+.printsheet .pc-nt{color:#444}
+@media print{
+  .merchant-root .mtop,.merchant-root .mtab,.printbtn,.printsheet .print-bar{display:none !important}
+  .merchant-root .mbody{padding:0 !important}
+  .printsheet{max-width:none}
+}
