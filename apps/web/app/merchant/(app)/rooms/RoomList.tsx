@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 import { FilterBar } from '../FilterBar';
 
-type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; monthly: boolean; vacant: boolean; full: boolean; availLabel: string; availCls: string; managed: boolean };
+type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; monthly: boolean; vacant: boolean; full: boolean; availLabel: string; availCls: string; managed: boolean; physical: number };
 const TESTS: Record<string, (i: Item) => boolean> = {
   all: () => true,
   monthly: (i) => i.monthly,
@@ -14,7 +14,7 @@ const TESTS: Record<string, (i: Item) => boolean> = {
 };
 const DEFS = [['all', 'ทั้งหมด'], ['monthly', 'รายเดือน'], ['daily', 'รายวัน'], ['vacant', 'ว่าง'], ['full', 'เต็ม'], ['hidden', 'ซ่อน']] as const;
 
-export function RoomList({ items, noun = 'ห้องพัก' }: { items: Item[]; noun?: string }) {
+export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { items: Item[]; noun?: string; hasBoard?: boolean }) {
   const [q, setQ] = useState('');
   const [chip, setChip] = useState('all');
   const ql = q.trim().toLowerCase();
@@ -44,7 +44,11 @@ export function RoomList({ items, noun = 'ห้องพัก' }: { items: Ite
                     <span className="mrow-tags">
                       {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
                       <span className={`t ${r.availCls}`}>{r.availLabel}</span>
-                      {r.managed && <span className="t link"><Icon n="grid" size={11} /> นับจากผังห้องจริง</span>}
+                      {r.managed
+                        ? <span className="t link"><Icon n="grid" size={11} /> {r.physical} ห้องในผัง</span>
+                        : hasBoard
+                          ? <span className="t hand">พิมพ์เอง · ไม่อยู่ในผัง</span>
+                          : null}
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />
@@ -53,6 +57,9 @@ export function RoomList({ items, noun = 'ห้องพัก' }: { items: Ite
             </div>
           )}
         </>
+      )}
+      {hasBoard && items.some((i) => i.managed) && (
+        <p className="note" style={{ marginTop: 10 }}>รวมห้องจริงในผัง {items.reduce((s, i) => s + i.physical, 0)} ห้อง — ตรงกับแท็บ “ผังห้อง”</p>
       )}
     </>
   );

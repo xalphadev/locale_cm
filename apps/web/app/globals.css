@@ -753,3 +753,4 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .roomseg-i.on{background:var(--m-surface);color:var(--m-accent);box-shadow:0 1px 2px rgba(16,24,40,.10)}
 .merchant-root .roomhub-sub{margin:0;color:var(--m-muted);font-size:.85rem;line-height:1.5}
 .merchant-root .t.link{background:var(--m-soft);color:var(--m-accent);display:inline-flex;align-items:center;gap:3px}
+.merchant-root .t.hand{background:#FFF3E0;color:#B25E00}

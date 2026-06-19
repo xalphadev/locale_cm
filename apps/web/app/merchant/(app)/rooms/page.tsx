@@ -15,6 +15,13 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
   const rows = await q<any>(
     `SELECT id, name_i18n, rental_mode, price_minor, available_units, daily_status, availability_updated_at, image_urls, status, managed
        FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at DESC`, [acc.place_id]);
+  // physical-room count per type — a managed type's "ว่าง N" is a SUBSET of these; showing "X ห้องในผัง"
+  // is what makes the type list add up to the ผังห้อง board total (else the two tabs look unrelated).
+  const rc = await q<{ stay_unit_id: string; n: number }>(
+    `SELECT stay_unit_id, count(*)::int n FROM stay_room
+      WHERE place_id=$1 AND deleted_at IS NULL AND status='active' AND stay_unit_id IS NOT NULL GROUP BY stay_unit_id`, [acc.place_id]);
+  const physById: Record<string, number> = {};
+  for (const row of rc) physById[row.stay_unit_id] = row.n;
   const items = rows.map((r) => {
     const monthly = r.rental_mode === 'monthly';
     const vacant = monthly ? r.available_units > 0 : r.daily_status === 'vacant';
@@ -24,7 +31,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
     return {
       id: r.id, name: i18n(r.name_i18n),
       meta: `${monthly ? 'รายเดือน' : 'รายวัน'}${r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}/${monthly ? 'เดือน' : 'คืน'}` : ''} · อัปเดต ${daysAgo(r.availability_updated_at)}`,
-      image_urls: r.image_urls, status: r.status, monthly, vacant, full, availLabel, availCls, managed: !!r.managed,
+      image_urls: r.image_urls, status: r.status, monthly, vacant, full, availLabel, availCls, managed: !!r.managed, physical: physById[r.id] || 0,
     };
   });
   const noun = acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก';
@@ -34,7 +41,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
       <RoomHub active="types" showSeg={!!acc.manages_stay && acc.room_mode !== 'unique'} noun={noun} addHref="/merchant/rooms/new" addLabel="เพิ่มห้อง" />
-      <RoomList items={items} noun={noun} />
+      <RoomList items={items} noun={noun} hasBoard={!!acc.manages_stay && acc.room_mode !== 'unique'} />
     </>
   );
 }
