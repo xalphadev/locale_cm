@@ -7,6 +7,11 @@ import { updateVacancyAction, setStayUnitFlagAction, deleteStayUnitAction } from
 
 export const dynamic = 'force-dynamic';
 const DAILY_TH: Record<string, string> = { vacant: 'ว่างวันนี้', full: 'เต็มวันนี้', ask: 'สอบถามว่าง' };
+const RST: Record<string, { label: string; color: string }> = {
+  vacant: { label: 'ว่าง', color: '#12b76a' }, occupied: { label: 'มีผู้เช่า', color: '#3b82f6' },
+  reserved: { label: 'จองแล้ว', color: '#f59e0b' }, maintenance: { label: 'ปิดซ่อม', color: '#9aa0a6' },
+};
+const ST_ORDER = ['vacant', 'occupied', 'reserved', 'maintenance'];
 const daysAgo = (ts: any) => { const d = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000); return d <= 0 ? 'วันนี้' : d === 1 ? 'เมื่อวาน' : `${d} วันก่อน`; };
 const baht = (m: any) => (m != null ? `฿${Math.round(m / 100).toLocaleString()}` : null);
 
@@ -16,6 +21,13 @@ export default async function RoomDetail({ params }: { params: { id: string } })
   if (!acc.offers_stay) redirect('/merchant');
   const [u] = isUuid(params.id) ? await q<any>(`SELECT * FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!u) return (<><div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div><h1>ไม่พบห้องพัก</h1></>);
+
+  // "ห้องในประเภทนี้": physical rooms grouped under this type — lets the owner browse rooms BY type, and
+  // surfaces a type that has no rooms on the board ("ลอย") so it can be fixed instead of silently drifting.
+  const board = !!acc.manages_stay && acc.room_mode !== 'unique';
+  const childRooms = board
+    ? await q<any>(`SELECT id, code, floor, occupancy_status FROM stay_room WHERE stay_unit_id=$1 AND place_id=$2 AND deleted_at IS NULL AND status='active' ORDER BY floor NULLS FIRST, code`, [u.id, acc.place_id])
+    : [];
 
   const imgs: string[] | null = u.image_urls;
   const monthly = u.rental_mode === 'monthly';
@@ -74,6 +86,25 @@ export default async function RoomDetail({ params }: { params: { id: string } })
           <form action={setStayUnitFlagAction.bind(null, u.id, 'cycle_daily')}><button className="dbtn sm" type="submit">เปลี่ยนสถานะ →</button></form>
         )}
       </div>
+
+      {board && (<>
+        <h2 className="rsec"><span className="rsec-ic"><Icon n="grid" size={15} /></span> ห้องในประเภทนี้{childRooms.length > 0 ? <span className="listcount" style={{ marginLeft: 6 }}>{childRooms.length}</span> : null}</h2>
+        {childRooms.length > 0 ? (<>
+          <div className="statusrow">
+            {ST_ORDER.map((s) => { const n = childRooms.filter((r: any) => r.occupancy_status === s).length; return n > 0 ? <span className="statpill" key={s}><i style={{ background: RST[s].color }} /> {RST[s].label} {n}</span> : null; })}
+          </div>
+          <div className="rmchips">
+            {childRooms.slice(0, 48).map((r: any) => {
+              const c = RST[r.occupancy_status]?.color || '#9aa0a6';
+              return <a key={r.id} className="rmchip" href={`/merchant/units/${r.id}`} style={{ background: `color-mix(in srgb,${c} 15%,#fff)`, color: `color-mix(in srgb,${c} 62%,#1a1a1a)`, boxShadow: `inset 0 0 0 1.5px color-mix(in srgb,${c} 32%,#fff)` }}>{r.code}</a>;
+            })}
+            {childRooms.length > 48 && <a className="rmchip" href="/merchant/units" style={{ background: 'var(--m-soft)', color: 'var(--m-accent)' }}>+{childRooms.length - 48} →</a>}
+          </div>
+          <p className="note" style={{ marginTop: 8 }}>แตะที่ห้องเพื่อดู/แก้สถานะในผังห้อง</p>
+        </>) : (
+          <div className="banner-warn">ประเภทนี้ยัง “ลอย” — ไม่มีห้องจริงในผัง · <a href="/merchant/units/new">+ เพิ่มห้องจริง</a> เพื่อให้ระบบนับห้องว่างให้อัตโนมัติ</div>
+        )}
+      </>)}
 
       {facts.length > 0 && (
         <div className="factgrid">

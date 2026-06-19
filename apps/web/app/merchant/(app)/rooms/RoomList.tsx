@@ -20,8 +20,12 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
   const ql = q.trim().toLowerCase();
   const chips = DEFS.map(([key, label]) => ({ key, label, count: items.filter(TESTS[key]).length }));
   const filtered = items.filter((i) => TESTS[chip](i) && (!ql || i.name.toLowerCase().includes(ql)));
+  const floating = hasBoard ? items.filter((i) => i.physical === 0).length : 0;
   return (
     <>
+      {floating > 0 && (
+        <div className="banner-warn">มี {floating} ประเภทยัง “ลอย” (ไม่มีห้องจริงในผัง) — เพิ่มห้องในผังให้ตรงกัน แล้วระบบจะนับห้องว่างให้อัตโนมัติ</div>
+      )}
       {items.length === 0 ? (
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
@@ -44,11 +48,9 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
                     <span className="mrow-tags">
                       {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
                       <span className={`t ${r.availCls}`}>{r.availLabel}</span>
-                      {r.managed
+                      {hasBoard && (r.physical > 0
                         ? <span className="t link"><Icon n="grid" size={11} /> {r.physical} ห้องในผัง</span>
-                        : hasBoard
-                          ? <span className="t hand">พิมพ์เอง · ไม่อยู่ในผัง</span>
-                          : null}
+                        : <span className="t warn">⚠ ยังไม่มีห้องในผัง</span>)}
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />

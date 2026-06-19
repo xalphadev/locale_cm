@@ -754,3 +754,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .roomhub-sub{margin:0;color:var(--m-muted);font-size:.85rem;line-height:1.5}
 .merchant-root .t.link{background:var(--m-soft);color:var(--m-accent);display:inline-flex;align-items:center;gap:3px}
 .merchant-root .t.hand{background:#FFF3E0;color:#B25E00}
+
+/* "ห้องในประเภทนี้" — physical rooms under a type, + the floating-type warning */
+.merchant-root .rmchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+.merchant-root .rmchip{display:inline-flex;align-items:center;justify-content:center;min-width:48px;padding:9px 11px;border-radius:11px;font-weight:700;font-size:.92rem;text-decoration:none}
+.merchant-root .statusrow{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:11px}
+.merchant-root .statpill{display:inline-flex;align-items:center;gap:5px;font-size:.82rem;color:var(--m-muted);font-weight:600}
+.merchant-root .statpill i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.merchant-root .t.warn{background:#FFF3E0;color:#B25E00}
+.merchant-root .banner-warn{background:#FFF8EC;border:1px solid #FCE0B0;color:#8A5A00;border-radius:12px;padding:10px 12px;font-size:.86rem;line-height:1.5;margin-bottom:12px}
+.merchant-root .banner-warn a{color:var(--m-accent);font-weight:700}
