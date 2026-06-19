@@ -911,6 +911,17 @@ export async function setRoomsOccupancyBulkAction(items: { id: string; status: s
   revalidatePath('/merchant/units', 'layout');
 }
 
+/** Set just the "free again" date on an occupied/reserved room — captured inline on the room detail so the
+ *  owner doesn't detour through the edit form. Empty clears it. */
+export async function setRoomOccupiedUntilAction(roomId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const d = s(formData, 'occupied_until');
+  const until = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
+  await q(`UPDATE stay_room SET occupied_until=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [roomId, acc.place_id, until]);
+  revalidatePath('/merchant/units', 'layout');
+}
+
 /** Edit a room's details (code / floor / capacity / private note / expected free date). */
 export async function updateRoomAction(roomId: string, formData: FormData) {
   const acc = await currentAccount();

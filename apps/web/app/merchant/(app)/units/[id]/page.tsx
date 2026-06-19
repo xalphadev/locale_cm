@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
-import { setRoomOccupancyAction, addRoomBlockAction, cancelRoomBlockAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
@@ -83,7 +83,13 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
             </form>
           ))}
         </div>
-        {r.occupied_until && r.occupancy_status !== 'vacant' && <div className="availcard-f" style={{ marginTop: 9 }}><Icon n="clock" size={12} /> ว่างอีกครั้ง {fmt(r.occupied_until)}</div>}
+        {(r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved') && (
+          <form className="untilform" action={setRoomOccupiedUntilAction.bind(null, r.id)}>
+            <label><Icon n="clock" size={12} /> ว่างอีกครั้ง (ถ้ารู้)</label>
+            <input type="date" name="occupied_until" defaultValue={r.occupied_until ? String(r.occupied_until).slice(0, 10) : ''} />
+            <button className="dbtn sm" type="submit">บันทึก</button>
+          </form>
+        )}
       </div>
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="bed" size={15} /></span> รายละเอียด</h2>

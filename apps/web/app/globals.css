@@ -794,3 +794,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .bulkbar-x{background:none;border:none;color:rgba(255,255,255,.82);font-weight:700;cursor:pointer;font-size:.84rem}
 .merchant-root .undotoast{display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:.88rem;font-weight:600}
 .merchant-root .undotoast button{background:none;border:none;color:#7BB0FF;font-weight:800;cursor:pointer;font-size:.88rem}
+
+/* Bet C: inline "ว่างอีกครั้ง" date setter on the room + the "ว่างเร็ว ๆ นี้" forward-planning card */
+.merchant-root .untilform{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:11px}
+.merchant-root .untilform label{display:inline-flex;align-items:center;gap:5px;font-size:.82rem;font-weight:600;color:var(--m-muted)}
+.merchant-root .untilform input{padding:7px 10px;border:1px solid var(--m-line);border-radius:9px;font-size:.88rem;background:var(--m-surface)}
+.merchant-root .soonbox{background:var(--m-surface);border:1px solid var(--m-line);border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.merchant-root .soonbox-h{display:flex;align-items:center;gap:7px;font-weight:800;font-size:.92rem;margin-bottom:9px}
+.merchant-root .soonbox-g{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.merchant-root .soonbox-gl{flex:none;width:88px;font-size:.8rem;font-weight:700;color:var(--m-muted);padding-top:5px}
+.merchant-root .soonbox-items{display:flex;flex-wrap:wrap;gap:6px}
+.merchant-root .soonpill{display:inline-flex;padding:6px 10px;border-radius:9px;background:var(--m-sunk);color:var(--m-text);font-size:.82rem;font-weight:600;text-decoration:none}

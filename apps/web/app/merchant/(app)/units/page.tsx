@@ -17,6 +17,8 @@ const ST: Record<string, { label: string; color: string }> = {
   reserved: { label: 'จองแล้ว', color: '#f59e0b' },
   maintenance: { label: 'ปิดซ่อม', color: '#9aa0a6' },
 };
+const fmtD = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
+const BUCKETS = ['สัปดาห์นี้', 'ภายในเดือนนี้', 'เดือนหน้า'];
 
 export default async function Units({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
@@ -42,6 +44,13 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
     occupied_until: r.occupied_until, note: r.note, type: r.unit_name ? i18n(r.unit_name) : '', monthly: r.rental_mode !== 'daily',
   }));
   const term = acc.room_group_term || 'ชั้น';
+  const soonRows = await q<any>(
+    `SELECT r.id, r.code, r.floor, r.occupied_until,
+            (CASE WHEN r.occupied_until < CURRENT_DATE + 7 THEN 0 WHEN r.occupied_until < CURRENT_DATE + 31 THEN 1 ELSE 2 END) bucket
+       FROM stay_room r WHERE r.place_id=$1 AND r.deleted_at IS NULL AND r.status='active'
+         AND r.occupancy_status IN ('occupied','reserved') AND r.occupied_until IS NOT NULL
+         AND r.occupied_until >= CURRENT_DATE AND r.occupied_until < CURRENT_DATE + 45
+      ORDER BY r.occupied_until`, [acc.place_id]);
 
   return (
     <>
@@ -84,6 +93,23 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> ปิดซ่อม {maint}</span>}
             </div>
           </div>
+
+          {soonRows.length > 0 && (
+            <div className="soonbox">
+              <div className="soonbox-h"><Icon n="clock" size={14} /> ว่างเร็ว ๆ นี้ <span className="listcount">{soonRows.length}</span></div>
+              {BUCKETS.map((b, bi) => {
+                const items = soonRows.filter((sr: any) => sr.bucket === bi);
+                return items.length ? (
+                  <div className="soonbox-g" key={bi}>
+                    <span className="soonbox-gl">{b}</span>
+                    <div className="soonbox-items">
+                      {items.map((sr: any) => <a key={sr.id} href={`/merchant/units/${sr.id}`} className="soonpill">ห้อง {sr.code} · {fmtD(sr.occupied_until)}</a>)}
+                    </div>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          )}
 
           <div className="grpset">
             <div className="grpset-row">
