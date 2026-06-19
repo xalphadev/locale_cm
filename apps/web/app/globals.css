@@ -851,3 +851,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .setupstep-ic{flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;background:var(--m-line);color:var(--m-muted)}
 .merchant-root .setupstep.done .setupstep-ic{background:#12b76a;color:#fff}
 .merchant-root .setupstep-go{margin-left:auto;color:var(--m-muted)}
+
+/* Bet D: daily-room views — วันนี้ (เข้า/ออก) + ว่างช่วงไหน */
+.merchant-root .dailybox{background:var(--m-surface);border:1px solid var(--m-line);border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.merchant-root .dailytoday{display:flex;gap:18px;font-size:.88rem;font-weight:600}
+.merchant-root .dailytoday b{font-size:1.05rem}
+.merchant-root .dt-in b{color:#12b76a}
+.merchant-root .dt-out b{color:#f59e0b}
+.merchant-root .dailyfind{margin-top:11px;border-top:1px solid var(--m-line);padding-top:10px}
+.merchant-root .dailyfind>summary{font-weight:700;font-size:.88rem;cursor:pointer;color:var(--m-accent)}
+.merchant-root .dailyfind-f{margin-top:10px}
+.merchant-root .dailyresult{margin-top:10px}

@@ -992,6 +992,23 @@ export async function addRoomBlockAction(roomId: string, formData: FormData) {
   redirect(`/merchant/units/${roomId}?ok=blocked`);
 }
 
+/** One-tap "block tonight" for a daily room (today → tomorrow). The GiST EXCLUDE rejects an overlap. */
+export async function blockTonightAction(roomId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [r] = await q<{ stay_unit_id: string | null }>(`SELECT stay_unit_id FROM stay_room WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [roomId, acc.place_id]);
+  if (!r) redirect('/merchant/units');
+  try {
+    await q(`INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date) VALUES($1,$2,'stay',CURRENT_DATE,CURRENT_DATE + 1)`, [roomId, acc.place_id]);
+  } catch (e: any) {
+    if (e?.code === '23P01') redirect(`/merchant/units/${roomId}?error=overlap`);
+    throw e;
+  }
+  await refreshUnitVacancy(r.stay_unit_id);
+  revalidatePath('/merchant/units', 'layout');
+  redirect(`/merchant/units/${roomId}?ok=blocked`);
+}
+
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();

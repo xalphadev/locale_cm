@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction, blockTonightAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
@@ -104,6 +104,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {!monthly && (
         <>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="calendar" size={15} /></span> ช่วงที่ไม่ว่าง (ปฏิทิน)</h2>
+          <form action={blockTonightAction.bind(null, r.id)} style={{ marginBottom: 10 }}><button className="dbtn sm primary" type="submit"><Icon n="plus" size={14} /> บล็อกคืนนี้</button></form>
           {blocks.length === 0
             ? <p className="note">ยังไม่มีช่วงจอง — ห้องนี้ว่างทุกวัน</p>
             : (

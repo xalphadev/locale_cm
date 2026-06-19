@@ -5,6 +5,7 @@ import { Icon } from '../ui';
 import { setStayUnitManagedAction, setRoomGroupTermAction } from '../../actions';
 import RoomBoard from './RoomBoard';
 import { RoomHub } from '../rooms/RoomHub';
+import DateRangePicker from '../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +21,7 @@ const ST: Record<string, { label: string; color: string }> = {
 const fmtD = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 const BUCKETS = ['สัปดาห์นี้', 'ภายในเดือนนี้', 'เดือนหน้า'];
 
-export default async function Units({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
+export default async function Units({ searchParams }: { searchParams: { ok?: string; error?: string; from?: string; to?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay || acc.room_mode === 'unique') redirect('/merchant');
@@ -55,6 +56,21 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
     .filter((r) => r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved')
     .sort((a, b) => (a.occupied_until ? String(a.occupied_until) : '9999').localeCompare(b.occupied_until ? String(b.occupied_until) : '9999'));
   const promptAutoCount = types.some((t) => !t.managed && (roomCountByUnit[t.id] || 0) > 0);
+  const hasDaily = rooms.some((r) => r.rental_mode === 'daily');
+  const fromQ = searchParams?.from, toQ = searchParams?.to;
+  const rangeOk = /^\d{4}-\d{2}-\d{2}$/.test(fromQ || '') && /^\d{4}-\d{2}-\d{2}$/.test(toQ || '') && (toQ || '') > (fromQ || '');
+  const todayRows = hasDaily ? await q<any>(
+    `SELECT r.id, r.code, b.note, (b.start_date=CURRENT_DATE) is_in, (b.end_date=CURRENT_DATE) is_out
+       FROM stay_occupancy_block b JOIN stay_room r ON r.id=b.room_id
+      WHERE r.place_id=$1 AND r.deleted_at IS NULL AND b.status='active' AND b.deleted_at IS NULL
+        AND (b.start_date=CURRENT_DATE OR b.end_date=CURRENT_DATE) ORDER BY r.code`, [acc.place_id]) : [];
+  const checkIns = todayRows.filter((t: any) => t.is_in);
+  const checkOuts = todayRows.filter((t: any) => t.is_out);
+  const freeRooms = (hasDaily && rangeOk) ? await q<any>(
+    `SELECT r.id, r.code FROM stay_room r JOIN stay_units su ON su.id=r.stay_unit_id
+      WHERE r.place_id=$1 AND r.deleted_at IS NULL AND r.status='active' AND su.rental_mode='daily'
+        AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL AND b.span && daterange($2::date,$3::date,'[)'))
+      ORDER BY r.floor NULLS FIRST, r.code`, [acc.place_id, fromQ, toQ]) : null;
 
   return (
     <>
@@ -115,6 +131,37 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                   </div>
                 ) : null;
               })}
+            </div>
+          )}
+
+          {hasDaily && (
+            <div className="dailybox">
+              <div className="soonbox-h"><Icon n="calendar" size={14} /> รายวัน · วันนี้</div>
+              <div className="dailytoday">
+                <span className="dt-in">เข้าวันนี้ <b>{checkIns.length}</b></span>
+                <span className="dt-out">ออกวันนี้ <b>{checkOuts.length}</b></span>
+              </div>
+              {(checkIns.length > 0 || checkOuts.length > 0) && (
+                <div className="soonbox-items" style={{ marginTop: 8 }}>
+                  {checkIns.map((t: any) => <a key={'i' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">เข้า · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
+                  {checkOuts.map((t: any) => <a key={'o' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">ออก · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
+                </div>
+              )}
+              <details className="dailyfind" open={rangeOk}>
+                <summary>เช็คห้องว่างตามวันที่</summary>
+                <form method="get" className="dailyfind-f">
+                  <DateRangePicker mode="range" fromName="from" toName="to" labelFrom="เข้า" labelTo="ออก" />
+                  <button className="btn btn-primary" type="submit" style={{ marginTop: 10 }}>เช็คห้องว่าง</button>
+                </form>
+                {freeRooms && (
+                  <div className="dailyresult">
+                    <p className="fhint">ว่างช่วง {fmtD(fromQ)} – {fmtD(toQ)} · {freeRooms.length} ห้อง</p>
+                    {freeRooms.length > 0
+                      ? <div className="soonbox-items">{freeRooms.map((fr: any) => <a key={fr.id} href={`/merchant/units/${fr.id}`} className="soonpill">{fr.code}</a>)}</div>
+                      : <span className="fhint">ไม่มีห้องว่างในช่วงนี้</span>}
+                  </div>
+                )}
+              </details>
             </div>
           )}
 
