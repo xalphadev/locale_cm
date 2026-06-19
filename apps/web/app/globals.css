@@ -781,3 +781,16 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .occlegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px}
 .merchant-root .occlegend span{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;font-weight:600;color:var(--m-text)}
 .merchant-root .occlegend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* Bet B: board multi-select → bulk status (sticky bar) + undo toast */
+.merchant-root .rsel{outline:3px solid var(--m-accent);outline-offset:1px}
+.merchant-root .rgroupsel{display:inline-block;margin:0 0 9px;padding:5px 11px;border-radius:9px;border:1px dashed var(--m-accent);background:var(--m-soft);color:var(--m-accent);font-weight:700;font-size:.82rem;cursor:pointer}
+.merchant-root .bulkbar,.merchant-root .undotoast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;z-index:45;background:var(--m-navy,#16284D);color:#fff;border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.28)}
+.merchant-root .bulkbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;max-width:93vw;padding:10px 14px}
+.merchant-root .bulkbar-n{font-weight:800;font-size:.9rem;white-space:nowrap}
+.merchant-root .bulkbar-acts{display:flex;gap:6px;flex-wrap:wrap}
+.merchant-root .bulkbar-acts button{display:inline-flex;align-items:center;gap:5px;padding:8px 11px;border-radius:10px;border:none;background:rgba(255,255,255,.15);color:#fff;font-weight:700;font-size:.84rem;cursor:pointer}
+.merchant-root .bulkbar-acts button i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.merchant-root .bulkbar-x{background:none;border:none;color:rgba(255,255,255,.82);font-weight:700;cursor:pointer;font-size:.84rem}
+.merchant-root .undotoast{display:flex;align-items:center;gap:14px;padding:11px 16px;font-size:.88rem;font-weight:600}
+.merchant-root .undotoast button{background:none;border:none;color:#7BB0FF;font-weight:800;cursor:pointer;font-size:.88rem}

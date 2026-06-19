@@ -888,6 +888,29 @@ export async function setRoomOccupancyAction(roomId: string, status: string) {
   revalidatePath('/merchant/units', 'layout');
 }
 
+/** Set occupancy for MANY rooms at once (board multi-select + undo). items carry a per-room status, so the
+ *  same action does a bulk apply (all one status) AND an undo (each room back to its previous status). */
+export async function setRoomsOccupancyBulkAction(items: { id: string; status: string }[]) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const STS = ['vacant', 'occupied', 'reserved', 'maintenance'];
+  const valid = (Array.isArray(items) ? items : []).filter((i) => i && typeof i.id === 'string' && STS.includes(i.status)).slice(0, 500);
+  if (!valid.length) return;
+  const affected = new Set<string>();
+  for (const status of STS) {
+    const ids = valid.filter((i) => i.status === status).map((i) => i.id);
+    if (!ids.length) continue;
+    const rows = await q<{ stay_unit_id: string | null }>(
+      `UPDATE stay_room SET occupancy_status=$3, occupied_until = CASE WHEN $3='vacant' THEN NULL ELSE occupied_until END, updated_at=now()
+         WHERE id = ANY($1::uuid[]) AND place_id=$2 AND deleted_at IS NULL RETURNING stay_unit_id`, [ids, acc.place_id, status]);
+    for (const r of rows) if (r.stay_unit_id) affected.add(r.stay_unit_id);
+    await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta)
+               SELECT unnest($1::uuid[]), $2, 'status_change', jsonb_build_object('to',$3::text,'bulk',true)`, [ids, acc.place_id, status]);
+  }
+  for (const uid of affected) await refreshUnitVacancy(uid);
+  revalidatePath('/merchant/units', 'layout');
+}
+
 /** Edit a room's details (code / floor / capacity / private note / expected free date). */
 export async function updateRoomAction(roomId: string, formData: FormData) {
   const acc = await currentAccount();

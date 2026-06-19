@@ -1,7 +1,7 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Icon } from '../ui';
-import { setRoomOccupancyAction } from '../../actions';
+import { setRoomOccupancyAction, setRoomsOccupancyBulkAction } from '../../actions';
 
 // Scalable room board for 1 → 100s of rooms: status filter + search + density toggle (cards ⇄ compact
 // chips) + collapsible floors. Compact mode is the "room rack" view — dozens of rooms per screen,
@@ -38,6 +38,25 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
   const byFloor: Record<string, BoardRoom[]> = {}; const floors: string[] = [];
   for (const r of filtered) { const f = r.floor || '—'; if (!byFloor[f]) { byFloor[f] = []; floors.push(f); } byFloor[f].push(r); }
 
+  // multi-select → bulk status (with undo). The same setRoomsOccupancyBulkAction does apply + undo.
+  const STATUSES = (['vacant', 'occupied', 'reserved', 'maintenance'] as const).map((k) => ({ k, label: ST[k].label, color: ST[k].color }));
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [undo, setUndo] = useState<{ items: { id: string; status: string }[]; label: string } | null>(null);
+  const [, startTransition] = useTransition();
+  useEffect(() => { if (!undo) return; const t = setTimeout(() => setUndo(null), 6000); return () => clearTimeout(t); }, [undo]);
+  const toggleSel = (id: string) => setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const selectGroup = (ids: string[]) => setSelected((p) => { const n = new Set(p); const allIn = ids.every((i) => n.has(i)); ids.forEach((i) => (allIn ? n.delete(i) : n.add(i))); return n; });
+  const exitSelect = () => { setSelectMode(false); setSelected(new Set()); };
+  const tileClick = (e: any, id: string) => { if (selectMode) { e.preventDefault(); toggleSel(id); } };
+  const applyBulk = (status: string, label: string) => {
+    const prev = rooms.filter((r) => selected.has(r.id)).map((r) => ({ id: r.id, status: r.status }));
+    if (!prev.length) return;
+    startTransition(() => { setRoomsOccupancyBulkAction(prev.map((p) => ({ id: p.id, status }))); });
+    setUndo({ items: prev, label }); exitSelect();
+  };
+  const doUndo = () => { if (!undo) return; const u = undo; startTransition(() => { setRoomsOccupancyBulkAction(u.items); }); setUndo(null); };
+
   return (
     <>
       <div className="rfilter">
@@ -49,6 +68,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         <button type="button" className={`rfdense ${dense ? 'on' : ''}`} onClick={() => setDense((d) => !d)} aria-label="สลับมุมมอง" title={dense ? 'มุมมองการ์ด' : 'มุมมองผังย่อ'}>
           <Icon n={dense ? 'feed' : 'grid'} size={17} />
         </button>
+        <button type="button" className={`rfdense ${selectMode ? 'on' : ''}`} onClick={() => (selectMode ? exitSelect() : setSelectMode(true))} aria-label="เลือกหลายห้อง" title="เลือกหลายห้อง"><Icon n="check" size={17} /></button>
       </div>
 
       <div className="rfchips">
@@ -69,6 +89,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
             <span>{f === '—' ? `ไม่ระบุ${groupTerm}` : `${groupTerm} ${f}`} <em>{byFloor[f].length} ห้อง</em></span>
             <Icon n={collapsed[f] ? 'chevR' : 'chevD'} size={16} />
           </button>
+          {selectMode && !collapsed[f] && <button type="button" className="rgroupsel" onClick={() => selectGroup(byFloor[f].map((r) => r.id))}>☑ เลือกทั้ง{f === '—' ? groupTerm : `${groupTerm} ${f}`}</button>}
 
           {!collapsed[f] && (dense ? (
             <div className="rgrid">
@@ -78,7 +99,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                 const S: number[] = ({ vacant: [42, 62], occupied: [26, 44], reserved: [44, 64], maintenance: [34, 52] } as Record<string, number[]>)[r.status] || [42, 62];
                 const fs = r.code.length <= 3 ? '1rem' : r.code.length <= 5 ? '.86rem' : '.74rem';  // shrink long names so they don't overflow
                 return (
-                  <a className="rchip" key={r.id} href={`/merchant/units/${r.id}`} title={`${r.code} · ${st.label}`}
+                  <a className={`rchip ${selected.has(r.id) ? 'rsel' : ''}`} key={r.id} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)} title={`${r.code} · ${st.label}`}
                     style={{ fontSize: fs, background: `color-mix(in srgb, ${st.color} ${S[0]}%, var(--m-surface,#fff))`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${st.color} ${S[1]}%, transparent)` } as any}>
                     {r.code}
                   </a>
@@ -91,20 +112,20 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                 const st = ST[r.status] || ST.vacant;
                 return (
                   <div className="rtile" key={r.id} style={{ '--st': st.color } as any}>
-                    <a className="rtile-main" href={`/merchant/units/${r.id}`}>
+                    <a className={`rtile-main ${selected.has(r.id) ? 'rsel' : ''}`} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)}>
                       <div className="rtile-top">
                         <span className="rtile-code">{r.code}{r.room_kind === 'bed' ? <span className="rtile-bed">เตียง</span> : null}</span>
                         <span className="rtile-chip" style={{ color: st.color, background: `color-mix(in srgb, ${st.color} 14%, transparent)` }}>{st.label}</span>
                       </div>
                       <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>
                     </a>
-                    {r.monthly
+                    {!selectMode && (r.monthly
                       ? (
                         <form className="rtile-act" action={setRoomOccupancyAction.bind(null, r.id, r.status === 'vacant' ? 'occupied' : 'vacant')}>
                           <button type="submit">{r.status === 'vacant' ? 'ตั้งมีผู้เช่า' : 'ตั้งว่าง'}</button>
                         </form>
                       )
-                      : <a className="rtile-act cal" href={`/merchant/units/${r.id}`}><Icon n="calendar" size={14} /> ปฏิทิน</a>}
+                      : <a className="rtile-act cal" href={`/merchant/units/${r.id}`}><Icon n="calendar" size={14} /> ปฏิทิน</a>)}
                   </div>
                 );
               })}
@@ -112,6 +133,19 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
           ))}
         </section>
       ))}
+
+      {selectMode && selected.size > 0 && (
+        <div className="bulkbar">
+          <span className="bulkbar-n">{selected.size} ห้อง</span>
+          <div className="bulkbar-acts">
+            {STATUSES.map((s) => (
+              <button key={s.k} type="button" onClick={() => applyBulk(s.k, s.label)}><i style={{ background: s.color }} /> {s.label}</button>
+            ))}
+          </div>
+          <button type="button" className="bulkbar-x" onClick={exitSelect}>ยกเลิก</button>
+        </div>
+      )}
+      {undo && <div className="undotoast"><span>เปลี่ยน {undo.items.length} ห้องเป็น “{undo.label}”</span><button type="button" onClick={doUndo}>เลิกทำ</button></div>}
     </>
   );
 }
