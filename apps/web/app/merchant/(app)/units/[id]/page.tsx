@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
-import { updateRoomAction, setRoomOccupancyAction, deleteRoomAction, addRoomBlockAction, cancelRoomBlockAction } from '../../../actions';
+import { setRoomOccupancyAction, addRoomBlockAction, cancelRoomBlockAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,18 @@ const OCC: Record<string, { cls: string; label: string }> = {
 };
 const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 
+function Fact({ ic, l, v }: { ic: string; l: string; v: string }) {
+  return (
+    <div className="factitem">
+      <span className="factitem-ic"><Icon n={ic} size={17} /></span>
+      <div className="factitem-tx"><div className="factitem-l">{l}</div><div className="factitem-v">{v}</div></div>
+    </div>
+  );
+}
+
+// READ-ONLY room detail. The edit form lives at /units/[id]/edit (reached via "แก้ไข") so tapping a room
+// shows its details + day-to-day status, not an editable form straight away. Quick status toggle + the
+// nightly calendar stay here (they're the frequent operational actions); renaming/regrouping is on edit.
 export default async function RoomUnit({ params, searchParams }: { params: { id: string }; searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
@@ -42,14 +54,15 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกช่วงไม่ว่างแล้ว</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ช่วงวันที่นี้ทับกับที่จองไว้แล้ว</div>}
       {searchParams?.error === 'date' && <div className="banner-err">กรุณาเลือกวันเริ่ม</div>}
-      {searchParams?.error === 'code' && <div className="banner-err">กรุณาใส่เลข/ชื่อห้อง</div>}
 
-      <div className="dtitle">
-        <div className="dtags">
-          <span className="t cat"><Icon n="bed" size={12} /> {r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'}</span>
-          <span className={`t ${o.cls}`}>{o.label}</span>
-        </div>
-        <h1>ห้อง {r.code}{r.floor ? ` · ${term} ${r.floor}` : ''}</h1>
+      <div className="listhead">
+        <h1>ห้อง {r.code}</h1>
+        <a className="addbtn" href={`/merchant/units/${r.id}/edit`}><Icon n="edit" size={16} /> แก้ไข</a>
+      </div>
+      <div className="dtags" style={{ marginBottom: 14 }}>
+        <span className="t cat"><Icon n="bed" size={12} /> {r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'}</span>
+        <span className={`t ${o.cls}`}>{o.label}</span>
+        {r.floor && <span className="t off">{term} {r.floor}</span>}
       </div>
 
       {monthly && (
@@ -65,22 +78,14 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
         </div>
       )}
 
-      <form className="form mform" action={updateRoomAction.bind(null, r.id)}>
-        <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="edit" size={15} /></span> ข้อมูลห้อง</div>
-          <div className="fgrid">
-            <div className="field"><label>เลข/ชื่อห้อง *</label><input name="code" defaultValue={r.code} required /></div>
-            <div className="field"><label>ชั้น</label><input name="floor" defaultValue={r.floor || ''} /></div>
-          </div>
-          <div className="fgrid">
-            <div className="field"><label>รับได้ (ท่าน)</label><input name="capacity" type="number" min="0" defaultValue={r.capacity ?? ''} /></div>
-            {monthly && <div className="field"><label>ว่างอีกครั้ง (ถ้ามีผู้เช่า)</label><input name="occupied_until" type="date" defaultValue={r.occupied_until || ''} /></div>}
-          </div>
-          <div className="field"><label>โน้ต (เห็นเฉพาะคุณ)</label><input name="note" defaultValue={r.note || ''} placeholder="เช่น คุณสมชาย ถึง 31 ธ.ค." /></div>
-          <p className="fhint">โน้ตเป็นบันทึกส่วนตัวของคุณ — ลูกค้าไม่เห็น และเราไม่นำไปใช้ที่อื่น</p>
-          <button className="btn btn-primary mform-save" type="submit">บันทึก</button>
-        </section>
-      </form>
+      <h2 className="rsec"><span className="rsec-ic"><Icon n="bed" size={15} /></span> รายละเอียด</h2>
+      <div className="factgrid">
+        <Fact ic="bed" l="ประเภท" v={r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'} />
+        {r.floor ? <Fact ic="grid" l={term} v={String(r.floor)} /> : null}
+        {r.capacity ? <Fact ic="users" l="รับได้" v={`${r.capacity} ท่าน`} /> : null}
+        {monthly && r.occupied_until && r.occupancy_status !== 'vacant' ? <Fact ic="clock" l="ว่างอีกครั้ง" v={fmt(r.occupied_until)} /> : null}
+      </div>
+      {r.note ? <p className="note" style={{ marginTop: 8 }}><b>โน้ต:</b> {r.note} <span style={{ opacity: .6 }}>(เห็นเฉพาะคุณ)</span></p> : null}
 
       {!monthly && (
         <>
@@ -108,10 +113,6 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
           </form>
         </>
       )}
-
-      <form className="delwrap" action={deleteRoomAction.bind(null, r.id)}>
-        <button className="dbtn danger" type="submit"><Icon n="trash" size={17} /> ลบห้องนี้</button>
-      </form>
     </>
   );
 }

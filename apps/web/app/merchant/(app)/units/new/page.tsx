@@ -61,7 +61,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
       <form className="form mform" action={createRoomsBulkAction}>
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มหลายห้องรวดเดียว</div>
-          <p className="fhint">ใส่{term} “1” · เลขเริ่ม 1 ถึง 10 → ได้ห้อง 101–110 อัตโนมัติ (เลขห้องที่มีอยู่แล้วจะถูกข้าม)</p>
+          <p className="fhint">{term}เป็นเลข → ใส่ “1” + เลข 1–10 ได้ห้อง 101–110 · ถ้าเป็นชื่อ (เช่น ริมน้ำ) ใส่ “คำนำหน้า” เองได้ เช่น A → A1–A10 (เลขที่มีอยู่แล้วจะถูกข้าม)</p>
           <div className="fgrid">
             <div className="field"><label>{term}</label><input name="floor" placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
             <div className="field"><label>รูปแบบห้อง</label>
@@ -71,6 +71,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
               </select>
             </div>
           </div>
+          <div className="field"><label>คำนำหน้าเลขห้อง (ไม่บังคับ)</label><input name="prefix" placeholder="เช่น A, ริมน้ำ- · เว้นว่างได้ถ้าชั้นเป็นเลข" /></div>
           <div className="fgrid">
             <div className="field"><label>เลขห้องเริ่ม *</label><input name="start" type="number" min="0" placeholder="1" required /></div>
             <div className="field"><label>ถึงเลข *</label><input name="end" type="number" min="0" placeholder="10" required /></div>

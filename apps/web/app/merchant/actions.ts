@@ -893,7 +893,7 @@ export async function updateRoomAction(roomId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const code = s(formData, 'code');
-  if (!code) redirect(`/merchant/units/${roomId}?error=code`);
+  if (!code) redirect(`/merchant/units/${roomId}/edit?error=code`);
   const floor = s(formData, 'floor') || null;
   const note = s(formData, 'note') || null;     // owner's private memo (may contain a tenant name; not used elsewhere)
   const ou = s(formData, 'occupied_until');
@@ -1061,6 +1061,7 @@ export async function createRoomsBulkAction(formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const floor = s(formData, 'floor') || null;
+  const prefix = s(formData, 'prefix').replace(/[^\p{L}\p{N}\-_ ]/gu, '').trim();
   const start = parseInt(s(formData, 'start'), 10);
   const end = parseInt(s(formData, 'end'), 10);
   if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || end - start > 199) redirect('/merchant/units/new?error=range');
@@ -1070,8 +1071,13 @@ export async function createRoomsBulkAction(formData: FormData) {
     const [u] = await q<{ id: string }>(`SELECT id FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [wantUnit, acc.place_id]);
     okUnit = u?.id ?? null;
   }
+  // Code pattern: an explicit prefix wins; else a numeric group keeps the dorm convention (floor 1 →
+  // 101–110, zero-padded), while a named group (โซน "ริมน้ำ") prefixes its own name unpadded ("ริมน้ำ1").
+  const floorIsNum = !!floor && /^\d+$/.test(floor);
+  const base = prefix || floor || '';
+  const pad = (!prefix && floorIsNum) ? 2 : 0;
   const codes: string[] = [];
-  for (let n = start; n <= end; n++) codes.push(`${floor ?? ''}${String(n).padStart(2, '0')}`);
+  for (let n = start; n <= end; n++) codes.push(`${base}${pad ? String(n).padStart(pad, '0') : n}`);
   await q(
     `INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind)
        SELECT $1, $2, c, $4, 'room' FROM unnest($3::text[]) c
