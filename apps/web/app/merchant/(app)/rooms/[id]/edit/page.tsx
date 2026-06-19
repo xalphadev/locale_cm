@@ -15,13 +15,14 @@ export default async function EditRoom({ params, searchParams }: { params: { id:
   if (!u) {
     return (<><div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div><h1>ไม่พบห้องพัก</h1></>);
   }
+  const typeNoun = acc.room_mode === 'unique' ? 'ห้อง' : 'รูปแบบห้อง';
   return (
     <>
-      <div className="mback"><a href={`/merchant/rooms/${u.id}`}><Icon n="chevL" size={18} /> รายละเอียดห้องพัก</a></div>
-      <h1>แก้ไขห้องพัก</h1>
-      {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อห้อง</div>}
+      <div className="mback"><a href={`/merchant/rooms/${u.id}`}><Icon n="chevL" size={18} /> รายละเอียด{typeNoun}</a></div>
+      <h1>แก้ไข{typeNoun}</h1>
+      {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
-      <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" managed={!!u.managed} />
+      <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" managed={!!u.managed} noun={typeNoun} />
     </>
   );
 }

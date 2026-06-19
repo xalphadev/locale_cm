@@ -772,3 +772,12 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .grpset-f{display:flex;gap:8px;align-items:center;flex:1;min-width:160px}
 .merchant-root .grpset-f input{flex:1;min-width:90px;padding:8px 10px;border:1px solid var(--m-line);border-radius:10px;font-size:.9rem;background:var(--m-surface)}
 .merchant-root .grpset .fhint{margin:8px 0 0}
+
+/* Release-1: 4-status picker on the room detail + a persistent status legend under the occupancy bar */
+.merchant-root .statuspick{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.merchant-root .statuspick-i{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:11px;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-muted);font-weight:700;font-size:.9rem;cursor:pointer}
+.merchant-root .statuspick-i i{width:9px;height:9px;border-radius:3px;display:inline-block}
+.merchant-root .statuspick-i.on{border-color:transparent}
+.merchant-root .occlegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px}
+.merchant-root .occlegend span{display:inline-flex;align-items:center;gap:6px;font-size:.84rem;font-weight:600;color:var(--m-text)}
+.merchant-root .occlegend i{width:10px;height:10px;border-radius:3px;display:inline-block}

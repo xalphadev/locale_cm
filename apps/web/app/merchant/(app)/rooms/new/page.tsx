@@ -10,12 +10,14 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay) redirect('/merchant');
+  const typeNoun = acc.room_mode === 'unique' ? 'ห้อง' : 'รูปแบบห้อง';
+  const backLabel = acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก';
   return (
     <>
-      <div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div>
-      <h1>เพิ่มห้องพัก</h1>
-      {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อห้อง</div>}
-      <RoomForm action={createStayUnitAction} submitLabel="เพิ่มห้อง" />
+      <div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> {backLabel}</a></div>
+      <h1>เพิ่ม{typeNoun}</h1>
+      {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
+      <RoomForm action={createStayUnitAction} submitLabel={`เพิ่ม${typeNoun}`} noun={typeNoun} />
     </>
   );
 }

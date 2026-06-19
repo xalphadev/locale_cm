@@ -14,6 +14,12 @@ const OCC: Record<string, { cls: string; label: string }> = {
   maintenance: { cls: 'off', label: 'ปิดซ่อม' },
 };
 const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
+const STATUSES = [
+  { k: 'vacant', label: 'ว่าง', color: '#12b76a' },
+  { k: 'occupied', label: 'มีผู้เช่า', color: '#3b82f6' },
+  { k: 'reserved', label: 'จองแล้ว', color: '#f59e0b' },
+  { k: 'maintenance', label: 'ปิดซ่อม', color: '#9aa0a6' },
+];
 
 function Fact({ ic, l, v }: { ic: string; l: string; v: string }) {
   return (
@@ -65,18 +71,20 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
         {r.floor && <span className="t off">{term} {r.floor}</span>}
       </div>
 
-      {monthly && (
-        <div className="availcard">
-          <div className="availcard-l">
-            <div className="availcard-k">สถานะห้อง</div>
-            <div className={`availcard-v ${r.occupancy_status === 'vacant' ? 'ok' : 'no'}`}>{o.label}</div>
-            {r.occupied_until && r.occupancy_status !== 'vacant' && <div className="availcard-f"><Icon n="clock" size={12} /> ว่างอีกครั้ง {fmt(r.occupied_until)}</div>}
-          </div>
-          <form action={setRoomOccupancyAction.bind(null, r.id, r.occupancy_status === 'vacant' ? 'occupied' : 'vacant')}>
-            <button className="dbtn sm" type="submit">{r.occupancy_status === 'vacant' ? 'ตั้งมีผู้เช่า →' : 'ตั้งว่าง →'}</button>
-          </form>
+      <div className="availcard" style={{ display: 'block' }}>
+        <div className="availcard-k">สถานะห้อง — แตะเพื่อเปลี่ยน</div>
+        <div className="statuspick">
+          {STATUSES.map((s) => (
+            <form action={setRoomOccupancyAction.bind(null, r.id, s.k)} key={s.k}>
+              <button type="submit" className={`statuspick-i ${r.occupancy_status === s.k ? 'on' : ''}`}
+                style={r.occupancy_status === s.k ? { background: `color-mix(in srgb,${s.color} 14%,#fff)`, color: `color-mix(in srgb,${s.color} 62%,#1a1a1a)`, boxShadow: `inset 0 0 0 2px ${s.color}` } : undefined}>
+                <i style={{ background: s.color }} /> {s.label}
+              </button>
+            </form>
+          ))}
         </div>
-      )}
+        {r.occupied_until && r.occupancy_status !== 'vacant' && <div className="availcard-f" style={{ marginTop: 9 }}><Icon n="clock" size={12} /> ว่างอีกครั้ง {fmt(r.occupied_until)}</div>}
+      </div>
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="bed" size={15} /></span> รายละเอียด</h2>
       <div className="factgrid">

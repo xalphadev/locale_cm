@@ -25,6 +25,7 @@ export function RoomHub({ active, showSeg, noun, addHref, addLabel }: {
         </div>
       )}
       <p className="roomhub-sub">{sub}</p>
+      {showSeg && active === 'types' && <p className="roomhub-sub" style={{ marginTop: 3 }}>รูปแบบห้อง = แบบ/ราคา (สตูดิโอ, เตียงรวม) · ห้องจริง = ห้องแต่ละห้อง (101, 102…) ในแท็บผังห้อง</p>}
     </div>
   );
 }

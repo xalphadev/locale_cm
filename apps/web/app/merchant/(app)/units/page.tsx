@@ -77,6 +77,12 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               {reserved > 0 && <span style={{ width: seg(reserved), background: ST.reserved.color }} title={`จอง ${reserved}`} />}
               {maint > 0 && <span style={{ width: seg(maint), background: ST.maintenance.color }} title={`ปิดซ่อม ${maint}`} />}
             </div>
+            <div className="occlegend">
+              {vacant > 0 && <span><i style={{ background: ST.vacant.color }} /> ว่าง {vacant}</span>}
+              {occupied > 0 && <span><i style={{ background: ST.occupied.color }} /> มีผู้เช่า {occupied}</span>}
+              {reserved > 0 && <span><i style={{ background: ST.reserved.color }} /> จองแล้ว {reserved}</span>}
+              {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> ปิดซ่อม {maint}</span>}
+            </div>
           </div>
 
           <div className="grpset">

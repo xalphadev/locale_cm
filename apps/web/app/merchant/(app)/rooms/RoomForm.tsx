@@ -8,7 +8,7 @@ const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id).
  *  Client component so the availability field + price/contract labels follow the chosen rental mode. */
-export function RoomForm({ action, u, submitLabel, managed }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean }) {
+export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง' }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean; noun?: string }) {
   const [mode, setMode] = useState<string>(u?.rental_mode || 'monthly');
   const monthly = mode === 'monthly';
   const bills: string[] = u?.bills_included ?? [];
@@ -18,7 +18,7 @@ export function RoomForm({ action, u, submitLabel, managed }: { action: (fd: For
     <form className="form mform" action={action}>
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> ข้อมูลห้อง</div>
-        <div className="field"><label>ชื่อห้อง *</label><input name="name_th" required defaultValue={u ? th(u.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
+        <div className="field"><label>ชื่อ{noun} *</label><input name="name_th" required defaultValue={u ? th(u.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
         <div className="fgrid">
           <div className="field"><label>ประเภทเช่า</label>
             <select name="rental_mode" value={mode} onChange={(e) => setMode(e.target.value)}><option value="monthly">รายเดือน</option><option value="daily">รายวัน</option></select></div>

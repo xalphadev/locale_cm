@@ -33,7 +33,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
   const ql = query.trim().toLowerCase();
   const filtered = rooms.filter((r) =>
     (status === 'all' || r.status === status) &&
-    (!ql || r.code.toLowerCase().includes(ql) || (r.type && r.type.toLowerCase().includes(ql))));
+    (!ql || r.code.toLowerCase().includes(ql) || (r.type && r.type.toLowerCase().includes(ql)) || (r.note && r.note.toLowerCase().includes(ql))));
 
   const byFloor: Record<string, BoardRoom[]> = {}; const floors: string[] = [];
   for (const r of filtered) { const f = r.floor || '—'; if (!byFloor[f]) { byFloor[f] = []; floors.push(f); } byFloor[f].push(r); }
@@ -43,7 +43,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
       <div className="rfilter">
         <div className="rfsearch">
           <Icon n="search" size={16} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาเลขห้อง / รูปแบบ…" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาเลขห้อง / รูปแบบ / โน้ต…" />
           {query && <button type="button" onClick={() => setQuery('')} aria-label="ล้าง"><Icon n="x" size={15} /></button>}
         </div>
         <button type="button" className={`rfdense ${dense ? 'on' : ''}`} onClick={() => setDense((d) => !d)} aria-label="สลับมุมมอง" title={dense ? 'มุมมองการ์ด' : 'มุมมองผังย่อ'}>
