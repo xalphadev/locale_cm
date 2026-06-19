@@ -11,9 +11,9 @@ export type BoardRoom = {
   occupied_until: string | null; note: string | null; type: string; monthly: boolean;
 };
 const ST: Record<string, { label: string; color: string }> = {
-  vacant: { label: 'ว่าง', color: '#1aa35a' },
-  occupied: { label: 'มีผู้เช่า', color: '#3f72c4' },
-  reserved: { label: 'จองแล้ว', color: '#e0992a' },
+  vacant: { label: 'ว่าง', color: '#12b76a' },
+  occupied: { label: 'มีผู้เช่า', color: '#3b82f6' },
+  reserved: { label: 'จองแล้ว', color: '#f59e0b' },
   maintenance: { label: 'ปิดซ่อม', color: '#9aa0a6' },
 };
 const FILTERS: [string, string][] = [['all', 'ทั้งหมด'], ['vacant', 'ว่าง'], ['occupied', 'มีผู้เช่า'], ['reserved', 'จอง'], ['maintenance', 'ปิดซ่อม']];
@@ -55,6 +55,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         {FILTERS.filter(([k]) => k === 'all' || counts[k]).map(([k, label]) => (
           <button key={k} type="button" className={`rfchip ${status === k ? 'on' : ''}`} onClick={() => setStatus(k)}
             style={k !== 'all' && status === k ? { background: ST[k].color, borderColor: ST[k].color } : undefined}>
+            {k !== 'all' && <span className="rfdot" style={{ background: status === k ? 'rgba(255,255,255,.9)' : ST[k].color }} />}
             {label}{k !== 'all' ? ` ${counts[k] || 0}` : ''}
           </button>
         ))}
@@ -73,11 +74,13 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
             <div className="rgrid">
               {byFloor[f].map((r) => {
                 const st = ST[r.status] || ST.vacant;
+                // [bg-tint%, ring%] — occupied stays calm but clearly blue; vacant/จอง pop stronger
+                const S: number[] = ({ vacant: [30, 52], occupied: [17, 34], reserved: [32, 54], maintenance: [24, 42] } as Record<string, number[]>)[r.status] || [30, 52];
+                const fs = r.code.length <= 3 ? '1rem' : r.code.length <= 5 ? '.86rem' : '.74rem';  // shrink long names so they don't overflow
                 return (
-                  <a className="rchip" key={r.id} href={`/merchant/units/${r.id}`}
-                    style={{ '--st': st.color, background: `color-mix(in srgb, ${st.color} 7%, var(--surface,#fff))` } as any}>
-                    <span className="rchip-code">{r.code}</span>
-                    <span className="rchip-st" style={{ color: st.color }}>{st.label}</span>
+                  <a className="rchip" key={r.id} href={`/merchant/units/${r.id}`} title={`${r.code} · ${st.label}`}
+                    style={{ fontSize: fs, background: `color-mix(in srgb, ${st.color} ${S[0]}%, var(--m-surface,#fff))`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${st.color} ${S[1]}%, transparent)` } as any}>
+                    {r.code}
                   </a>
                 );
               })}

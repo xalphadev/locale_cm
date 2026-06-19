@@ -87,12 +87,12 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
   --m-bg:#F3F5F8; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
-  --m-accent:#1A73E8; --m-accent-press:#1559C7; --m-soft:#E8F0FE; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
+  --m-accent:#0D6EFD; --m-accent-press:#0A58CC; --m-soft:#CFE0FF; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
-  --r-card:22px; --r-md:18px; --r-sm:13px; --r-chip:999px;
-  /* soft, layered, diffuse shadows — the "airy" depth (consumer shadow scale) */
-  --m-sh:0 1px 2px rgba(16,20,12,.05), 0 10px 26px -10px rgba(16,20,12,.16);
-  --m-sh-soft:0 4px 16px -8px rgba(16,20,12,.14);
+  --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
+  /* flat & clean — definition comes from hairline borders + spacing, not floating shadows */
+  --m-sh:none;
+  --m-sh-soft:none;
   --m-shlg:0 2px 6px rgba(16,20,12,.06), 0 26px 50px -22px rgba(16,20,12,.30);
   font-family:'Inter','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
   background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
@@ -694,13 +694,50 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rfchips::-webkit-scrollbar{display:none}
 .rfchip{flex:none;padding:.42rem .9rem;border:1px solid var(--hairline,#e8e8ee);border-radius:999px;background:var(--bg,#fff);font:inherit;font-size:.85rem;font-weight:700;color:var(--muted,#6b7280);cursor:pointer;white-space:nowrap}
 .rfchip.on{background:var(--text,#1a1a2e);color:#fff;border-color:var(--text,#1a1a2e)}
-.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-bottom:2px}
-.rchip{display:flex;flex-direction:column;gap:2px;justify-content:center;padding:9px 10px;border:1px solid var(--hairline,#e8e8ee);border-left:4px solid var(--st,#9aa0a6);border-radius:10px;text-decoration:none;min-height:52px}
-.rchip-code{font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rchip-st{font-size:.71rem;font-weight:700}
+/* dense room rack — small number-only tiles, colour = status (occupied recedes, vacant/จอง pop) */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:7px;margin-bottom:2px}
+.rchip{display:flex;align-items:center;justify-content:center;text-align:center;min-height:46px;padding:5px 7px;border:none;border-radius:10px;text-decoration:none;font-weight:800;font-size:1rem;color:var(--m-text,#0E1322);letter-spacing:-.01em;line-height:1.12;word-break:break-word;overflow:hidden;transition:transform .1s}
+.rchip:active{transform:scale(.95)}
 
 /* room-group term setting (board > ตั้งค่า) */
 .grpterm{display:flex;align-items:center;gap:10px;padding:10px 12px;flex-wrap:wrap}
 .grpterm-l{font-size:.9rem;font-weight:700;color:var(--text,#1a1a2e)}
 .grpterm form{display:flex;align-items:center;gap:8px}
 .grpterm-sec{padding:10px 12px 0;font-weight:700;font-size:.9rem;color:var(--text,#1a1a2e);border-top:1px solid var(--hairline,#f0f0f4);margin-top:4px}
+
+/* ============ CLEAN REDESIGN — flat surfaces, calm accents, fewer floating boxes ============ */
+/* crisper hairline so flat (shadowless) cards stay defined on the grey page bg */
+.merchant-root{--m-line:#E3E7EE}
+/* primary "+ add" pill: flat, no drop shadow */
+.merchant-root .addbtn{box-shadow:none}
+/* every card / grouped list / button is flat now — a hairline border + spacing does the work */
+.merchant-root .menu,.merchant-root .fsec,.merchant-root .info,.merchant-root .availcard,
+.merchant-root .pstat,.merchant-root .mrow,.merchant-root .mlist .mrow,.merchant-root .dbtn,
+.merchant-root .factitem,.merchant-root .dhero{box-shadow:none}
+.merchant-root .fsec{padding:1rem 1.05rem 1.1rem}
+.merchant-root .mform .fsec{margin-bottom:12px}
+/* section headings: a quiet bold label + a plain muted icon (drop the loud blue badge) */
+.merchant-root .rsec{font-size:.95rem;font-weight:800;color:var(--m-text);gap:8px;margin:1.5rem 0 .55rem;letter-spacing:-.01em}
+.merchant-root .rsec-ic{width:auto;height:auto;background:none;box-shadow:none;color:var(--m-accent)}
+/* icon-badges keep the accent colour (vivid but flat — no shadow) */
+.merchant-root .fsec-ic,.merchant-root .phead-ic,.merchant-root .factitem-ic,.merchant-root .pstat-ic{background:var(--m-soft);color:var(--m-accent);box-shadow:none}
+/* facts: flat sunk chips, not bordered mini-cards */
+.merchant-root .factitem{background:var(--m-sunk);border:none}
+/* fsec header divider lighter + tighter */
+.merchant-root .fsec-h{margin-bottom:.8rem;padding-bottom:.7rem}
+
+/* occupancy bar + legend dots (room board, redesigned) */
+.occbar{margin:2px 0 14px}
+.occbar-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;font-size:.92rem;color:var(--m-text,#0E1322)}
+.occbar-top b{font-weight:800}
+.occbar-leads{flex:none;display:inline-flex;align-items:center;gap:5px;font-size:.82rem;font-weight:700;color:var(--m-accent,#1a73e8);text-decoration:none}
+.occbar-track{display:flex;height:9px;border-radius:999px;overflow:hidden;background:var(--m-sunk,#eff1f5)}
+.occbar-track span{display:block;height:100%}
+.occbar-track span+span{box-shadow:inset 1.5px 0 0 var(--m-surface,#fff)}
+.merchant-root .rfchip{display:inline-flex;align-items:center;gap:6px}
+.rfdot{width:8px;height:8px;border-radius:50%;flex:none}
+
+/* primary CTAs in vivid accent blue (not black) — colour on the main actions */
+.merchant-root .btn-primary,.merchant-root .btn-approve,.merchant-root .addbtn,
+.merchant-root .dbtn.primary,.merchant-root .pquick .btn.btn-primary{background:var(--m-accent);border-color:var(--m-accent);color:#fff}
+.merchant-root .btn-primary:active,.merchant-root .addbtn:active,.merchant-root .dbtn.primary:active{background:var(--m-accent-press)}

@@ -11,9 +11,9 @@ export const dynamic = 'force-dynamic';
 // lives on separate pages (/units/new, /units/[id]) so the list isn't tangled with forms. Status color:
 // vacant=green (rentable), occupied=blue (rented), reserved=amber, maintenance=grey.
 const ST: Record<string, { label: string; color: string }> = {
-  vacant: { label: 'ว่าง', color: '#1aa35a' },
-  occupied: { label: 'มีผู้เช่า', color: '#3f72c4' },
-  reserved: { label: 'จองแล้ว', color: '#e0992a' },
+  vacant: { label: 'ว่าง', color: '#12b76a' },
+  occupied: { label: 'มีผู้เช่า', color: '#3b82f6' },
+  reserved: { label: 'จองแล้ว', color: '#f59e0b' },
   maintenance: { label: 'ปิดซ่อม', color: '#9aa0a6' },
 };
 
@@ -30,6 +30,10 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
   const vacant = rooms.filter((r) => r.occupancy_status === 'vacant').length;
   const occupied = rooms.filter((r) => r.occupancy_status === 'occupied').length;
+  const reserved = rooms.filter((r) => r.occupancy_status === 'reserved').length;
+  const maint = rooms.filter((r) => r.occupancy_status === 'maintenance').length;
+  const totalForBar = rooms.length || 1;
+  const seg = (n: number) => `${((n / totalForBar) * 100).toFixed(2)}%`;
   const roomCountByUnit: Record<string, number> = {};
   for (const r of rooms) if (r.stay_unit_id) roomCountByUnit[r.stay_unit_id] = (roomCountByUnit[r.stay_unit_id] || 0) + 1;
   const roomsData = rooms.map((r) => ({
@@ -63,11 +67,17 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
         </div>
       ) : (
         <>
-          <div className="rsum">
-            <div className="rsum-i"><b style={{ color: ST.vacant.color }}>{vacant}</b><span>ว่าง</span></div>
-            <div className="rsum-i"><b style={{ color: ST.occupied.color }}>{occupied}</b><span>มีผู้เช่า</span></div>
-            <div className="rsum-i"><b>{rooms.length}</b><span>ทั้งหมด</span></div>
-            <a className="rsum-leads" href="/merchant/leads"><Icon n="chat" size={15} /> คำขอจอง</a>
+          <div className="occbar">
+            <div className="occbar-top">
+              <span><b>{rooms.length}</b> ห้อง · <b style={{ color: ST.vacant.color }}>{vacant}</b> ว่าง</span>
+              <a className="occbar-leads" href="/merchant/leads"><Icon n="chat" size={14} /> คำขอจอง</a>
+            </div>
+            <div className="occbar-track">
+              {vacant > 0 && <span style={{ width: seg(vacant), background: ST.vacant.color }} title={`ว่าง ${vacant}`} />}
+              {occupied > 0 && <span style={{ width: seg(occupied), background: ST.occupied.color }} title={`มีผู้เช่า ${occupied}`} />}
+              {reserved > 0 && <span style={{ width: seg(reserved), background: ST.reserved.color }} title={`จอง ${reserved}`} />}
+              {maint > 0 && <span style={{ width: seg(maint), background: ST.maintenance.color }} title={`ปิดซ่อม ${maint}`} />}
+            </div>
           </div>
 
           <RoomBoard rooms={roomsData} groupTerm={acc.room_group_term || 'ชั้น'} />
