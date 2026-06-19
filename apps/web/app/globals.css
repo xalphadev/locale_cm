@@ -764,3 +764,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .t.warn{background:#FFF3E0;color:#B25E00}
 .merchant-root .banner-warn{background:#FFF8EC;border:1px solid #FCE0B0;color:#8A5A00;border-radius:12px;padding:10px 12px;font-size:.86rem;line-height:1.5;margin-bottom:12px}
 .merchant-root .banner-warn a{color:var(--m-accent);font-weight:700}
+
+/* group-by control on the board — owner-defined grouping word (ชั้น/โซน/อาคาร/ปีก…), surfaced not buried */
+.merchant-root .grpset{background:var(--m-surface);border:1px solid var(--m-line);border-radius:13px;padding:11px 13px;margin:0 0 12px}
+.merchant-root .grpset-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.merchant-root .grpset-l{font-weight:700;font-size:.92rem}
+.merchant-root .grpset-f{display:flex;gap:8px;align-items:center;flex:1;min-width:160px}
+.merchant-root .grpset-f input{flex:1;min-width:90px;padding:8px 10px;border:1px solid var(--m-line);border-radius:10px;font-size:.9rem;background:var(--m-surface)}
+.merchant-root .grpset .fhint{margin:8px 0 0}

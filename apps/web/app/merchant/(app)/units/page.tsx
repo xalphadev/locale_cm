@@ -41,6 +41,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
     id: r.id, code: r.code, floor: r.floor, room_kind: r.room_kind, status: r.occupancy_status,
     occupied_until: r.occupied_until, note: r.note, type: r.unit_name ? i18n(r.unit_name) : '', monthly: r.rental_mode !== 'daily',
   }));
+  const term = acc.room_group_term || 'ชั้น';
 
   return (
     <>
@@ -78,22 +79,21 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             </div>
           </div>
 
-          <RoomBoard rooms={roomsData} groupTerm={acc.room_group_term || 'ชั้น'} />
-
-          <details className="usettings">
-            <summary><Icon n="bed" size={14} /> ตั้งค่า</summary>
-            <div className="grpterm">
-              <span className="grpterm-l">เรียกกลุ่มห้องว่า</span>
-              <form action={setRoomGroupTermAction}>
-                <select name="term" defaultValue={acc.room_group_term || 'ชั้น'}>
-                  <option value="ชั้น">ชั้น</option>
-                  <option value="โซน">โซน (รีสอร์ท)</option>
-                  <option value="อาคาร">อาคาร</option>
-                  <option value="ตึก">ตึก</option>
-                </select>
+          <div className="grpset">
+            <div className="grpset-row">
+              <span className="grpset-l">จัดกลุ่มห้องตาม</span>
+              <form action={setRoomGroupTermAction} className="grpset-f">
+                <input name="term_custom" defaultValue={term} maxLength={16} placeholder="ชั้น" aria-label="คำเรียกกลุ่มห้อง" />
                 <button className="dbtn sm primary" type="submit">บันทึก</button>
               </form>
             </div>
+            <p className="fhint">พิมพ์เองได้ (เช่น โซน · อาคาร · ปีก · บ้าน) — ตอนเพิ่มห้องจะถามชื่อ{term} (เช่น ริมน้ำ) แล้วจัดกลุ่มในผังให้</p>
+          </div>
+
+          <RoomBoard rooms={roomsData} groupTerm={term} />
+
+          <details className="usettings">
+            <summary><Icon n="bed" size={14} /> ตั้งค่า · นับห้องว่างอัตโนมัติ</summary>
             <div className="grpterm-sec">นับห้องว่างอัตโนมัติ</div>
             <p className="fhint">เปิด “ใช้คำนวณ” → จำนวนห้องว่างที่ลูกค้าเห็นจะนับจากห้องจริงที่ตั้งเป็น “ว่าง” (ปิด = พิมพ์ตัวเลขเองเหมือนเดิม)</p>
             {types.map((t) => {

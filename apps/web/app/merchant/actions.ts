@@ -1087,8 +1087,10 @@ export async function createRoomsBulkAction(formData: FormData) {
 export async function setRoomGroupTermAction(formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const want = s(formData, 'term');
-  const term = ['ชั้น', 'โซน', 'อาคาร', 'ตึก'].includes(want) ? want : 'ชั้น';
+  // accept a preset OR a custom word ("ปีก", "บ้าน", "ตึก A") — owners group however their property is
+  // laid out, not just by floor. Keep letters/numbers/space only, ≤16 chars; fall back to ชั้น.
+  const raw = (s(formData, 'term_custom') || s(formData, 'term')).replace(/[^\p{L}\p{N} ]/gu, '').trim().slice(0, 16);
+  const term = raw || 'ชั้น';
   await q(`UPDATE places SET room_group_term=$2, updated_at=now() WHERE id=$1`, [acc.place_id, term]);
   revalidatePath('/merchant/units', 'layout');
 }
