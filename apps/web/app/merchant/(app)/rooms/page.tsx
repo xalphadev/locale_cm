@@ -3,6 +3,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { RoomList } from './RoomList';
 import { RoomHub } from './RoomHub';
+import { Icon } from '../ui';
 
 export const dynamic = 'force-dynamic';
 const DAILY_TH: Record<string, string> = { vacant: 'ว่างวันนี้', full: 'เต็มวันนี้', ask: 'สอบถามว่าง' };
@@ -35,11 +36,35 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
     };
   });
   const noun = acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก';
+  const roomsN = items.reduce((a, i) => a + i.physical, 0);
+  const hasBoard = !!acc.manages_stay && acc.room_mode !== 'unique';
+  const steps = hasBoard
+    ? [
+        { done: items.length > 0, label: 'สร้างรูปแบบห้อง', href: '/merchant/rooms/new' },
+        { done: roomsN > 0, label: 'วางห้องจริงในผัง', href: '/merchant/units/new' },
+        { done: items.some((i) => i.managed), label: 'เปิดนับห้องว่างอัตโนมัติ', href: '/merchant/units' },
+      ]
+    : [{ done: items.length > 0, label: 'เพิ่มห้อง', href: '/merchant/rooms/new' }];
+  const setupDone = steps.every((st) => st.done);
   return (
     <>
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
+      {!setupDone && (
+        <div className="setupcard">
+          <div className="setupcard-h">เริ่มต้นใช้งาน · {steps.filter((st) => st.done).length}/{steps.length}</div>
+          <div className="setupsteps">
+            {steps.map((st, i) => (
+              <a key={i} href={st.href} className={`setupstep ${st.done ? 'done' : ''}`}>
+                <span className="setupstep-ic">{st.done ? '✓' : i + 1}</span>
+                <span>{st.label}</span>
+                {!st.done && <Icon n="chevR" size={15} className="setupstep-go" />}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
       <RoomHub active="types" showSeg={!!acc.manages_stay && acc.room_mode !== 'unique'} noun={noun} addHref="/merchant/rooms/new" addLabel="เพิ่มห้อง" />
       <RoomList items={items} noun={noun} hasBoard={!!acc.manages_stay && acc.room_mode !== 'unique'} />
     </>

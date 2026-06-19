@@ -54,6 +54,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const roster = rooms
     .filter((r) => r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved')
     .sort((a, b) => (a.occupied_until ? String(a.occupied_until) : '9999').localeCompare(b.occupied_until ? String(b.occupied_until) : '9999'));
+  const promptAutoCount = types.some((t) => !t.managed && (roomCountByUnit[t.id] || 0) > 0);
 
   return (
     <>
@@ -145,8 +146,8 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               </div>
             </details>
           )}
-          <details className="usettings">
-            <summary><Icon n="bed" size={14} /> ตั้งค่า · นับห้องว่างอัตโนมัติ</summary>
+          <details className="usettings" open={promptAutoCount}>
+            <summary><Icon n="bed" size={14} /> ตั้งค่า · นับห้องว่างอัตโนมัติ{promptAutoCount ? ' ●' : ''}</summary>
             <div className="grpterm-sec">นับห้องว่างอัตโนมัติ</div>
             <p className="fhint">เปิด “ใช้คำนวณ” → จำนวนห้องว่างที่ลูกค้าเห็นจะนับจากห้องจริงที่ตั้งเป็น “ว่าง” (ปิด = พิมพ์ตัวเลขเองเหมือนเดิม)</p>
             {types.map((t) => {

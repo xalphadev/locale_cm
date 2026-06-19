@@ -834,3 +834,20 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   .merchant-root .mbody{padding:0 !important}
   .printsheet{max-width:none}
 }
+
+/* Bet A: onboarding — building-type mode cards + setup checklist */
+.merchant-root .modecards{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.merchant-root .modecard{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;border:1.5px solid var(--m-line);border-radius:13px;cursor:pointer}
+.merchant-root .modecard input{margin-top:3px;accent-color:var(--m-accent);flex:none}
+.merchant-root .modecard:has(input:checked){border-color:var(--m-accent);background:var(--m-soft)}
+.merchant-root .modecard-b{display:flex;flex-direction:column;gap:2px}
+.merchant-root .modecard-b b{font-size:.95rem}
+.merchant-root .modecard-b span{font-size:.82rem;color:var(--m-muted);line-height:1.4}
+.merchant-root .setupcard{background:var(--m-soft);border:1px solid #BCD4F7;border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.merchant-root .setupcard-h{font-weight:800;font-size:.92rem;margin-bottom:9px;color:var(--m-navy)}
+.merchant-root .setupsteps{display:flex;flex-direction:column;gap:6px}
+.merchant-root .setupstep{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;background:var(--m-surface);text-decoration:none;color:var(--m-text);font-weight:600;font-size:.9rem}
+.merchant-root .setupstep.done{opacity:.55}
+.merchant-root .setupstep-ic{flex:none;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;background:var(--m-line);color:var(--m-muted)}
+.merchant-root .setupstep.done .setupstep-ic{background:#12b76a;color:#fff}
+.merchant-root .setupstep-go{margin-left:auto;color:var(--m-muted)}

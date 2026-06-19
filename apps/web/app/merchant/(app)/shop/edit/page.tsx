@@ -52,10 +52,16 @@ export default async function ShopEdit() {
           <p className="fhint">ปิดอันไหน เมนูนั้นจะถูกซ่อน และรายการที่เผยแพร่ไว้จะถูกซ่อนจากลูกค้า · “ผังห้อง” ใช้บริหารห้องภายใน ไม่บังคับว่าต้องเผยแพร่</p>
           <div className="field" style={{ marginTop: 12 }}>
             <label>รูปแบบห้องของที่พักนี้</label>
-            <select name="room_mode" defaultValue={p?.room_mode || 'multi'}>
-              <option value="multi">หลายห้องเหมือนกัน — หอพัก/อพาร์ตเมนต์ (ตั้งประเภท + ผังห้อง)</option>
-              <option value="unique">แต่ละห้องไม่เหมือนกัน — รีสอร์ท/เกสต์เฮาส์ (จัดการเป็นห้องเดี่ยว)</option>
-            </select>
+            <div className="modecards">
+              <label className="modecard">
+                <input type="radio" name="room_mode" value="multi" defaultChecked={(p?.room_mode || 'multi') !== 'unique'} />
+                <span className="modecard-b"><b>หลายห้องเหมือนกัน</b><span>หอพัก · อพาร์ตเมนต์ — ตั้งราคา/รูปทีละแบบ + มีผังห้องคุมห้องว่าง</span></span>
+              </label>
+              <label className="modecard">
+                <input type="radio" name="room_mode" value="unique" defaultChecked={p?.room_mode === 'unique'} />
+                <span className="modecard-b"><b>แต่ละห้องไม่เหมือนกัน</b><span>รีสอร์ท · เกสต์เฮาส์ — แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</span></span>
+              </label>
+            </div>
             <p className="fhint">ตั้งได้ต่อสาขา · “หลายห้องเหมือนกัน” = ราคาเดียวหลายห้อง (เปิดผังห้อง) · “แต่ละห้องไม่เหมือนกัน” = แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</p>
           </div>
         </section>
