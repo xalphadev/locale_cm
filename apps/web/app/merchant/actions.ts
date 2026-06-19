@@ -1039,3 +1039,41 @@ export async function deleteRateAction(rateId: string) {
   revalidatePath('/merchant/pricing');
   redirect('/merchant/pricing?ok=rate_deleted');
 }
+
+/** Bulk-add a numeric run of rooms (e.g. floor "1", 1–10 → rooms 101–110) — the fast way to lay out
+ *  a dorm. Codes = floor + zero-padded number; existing codes are skipped (idempotent). */
+export async function createRoomsBulkAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const floor = s(formData, 'floor') || null;
+  const start = parseInt(s(formData, 'start'), 10);
+  const end = parseInt(s(formData, 'end'), 10);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || end - start > 199) redirect('/merchant/units/new?error=range');
+  const wantUnit = s(formData, 'stay_unit_id');
+  let okUnit: string | null = null;
+  if (UUID_RE.test(wantUnit)) {
+    const [u] = await q<{ id: string }>(`SELECT id FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [wantUnit, acc.place_id]);
+    okUnit = u?.id ?? null;
+  }
+  const codes: string[] = [];
+  for (let n = start; n <= end; n++) codes.push(`${floor ?? ''}${String(n).padStart(2, '0')}`);
+  await q(
+    `INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind)
+       SELECT $1, $2, c, $4, 'room' FROM unnest($3::text[]) c
+     ON CONFLICT (place_id, code) WHERE deleted_at IS NULL DO NOTHING`,
+    [acc.place_id, okUnit, codes, floor]);
+  await refreshUnitVacancy(okUnit);
+  revalidatePath('/merchant/units'); revalidatePath('/merchant');
+  redirect('/merchant/units?ok=bulk');
+}
+
+/** Set how this property labels its room groups (ชั้น / โซน / อาคาร / ตึก). Board headers + add-room
+ *  form adapt — a dorm groups by floor, a resort by zone. The per-room value stays in stay_room.floor. */
+export async function setRoomGroupTermAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const want = s(formData, 'term');
+  const term = ['ชั้น', 'โซน', 'อาคาร', 'ตึก'].includes(want) ? want : 'ชั้น';
+  await q(`UPDATE places SET room_group_term=$2, updated_at=now() WHERE id=$1`, [acc.place_id, term]);
+  revalidatePath('/merchant/units', 'layout');
+}

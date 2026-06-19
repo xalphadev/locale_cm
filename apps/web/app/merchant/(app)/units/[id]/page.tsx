@@ -3,6 +3,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { updateRoomAction, setRoomOccupancyAction, deleteRoomAction, addRoomBlockAction, cancelRoomBlockAction } from '../../../actions';
+import DateRangePicker from '../../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,6 +28,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
   if (!r) return (<><div className="mback"><a href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</a></div><h1>ไม่พบห้อง</h1></>);
 
   const monthly = r.rental_mode !== 'daily';
+  const term = acc.room_group_term || 'ชั้น';
   const o = OCC[r.occupancy_status] || OCC.vacant;
   const blocks = monthly ? [] : await q<any>(
     `SELECT id, start_date, end_date, note FROM stay_occupancy_block
@@ -47,7 +49,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
           <span className="t cat"><Icon n="bed" size={12} /> {r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'}</span>
           <span className={`t ${o.cls}`}>{o.label}</span>
         </div>
-        <h1>ห้อง {r.code}{r.floor ? ` · ชั้น ${r.floor}` : ''}</h1>
+        <h1>ห้อง {r.code}{r.floor ? ` · ${term} ${r.floor}` : ''}</h1>
       </div>
 
       {monthly && (
@@ -100,10 +102,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
             )}
           <form className="fsec" action={addRoomBlockAction.bind(null, r.id)}>
             <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มช่วงไม่ว่าง</div>
-            <div className="fgrid">
-              <div className="field"><label>เช็คอิน *</label><input name="start_date" type="date" required /></div>
-              <div className="field"><label>เช็คเอาท์</label><input name="end_date" type="date" /></div>
-            </div>
+            <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
             <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์" /></div>
             <button className="btn btn-primary" type="submit">+ บล็อกช่วงนี้</button>
           </form>

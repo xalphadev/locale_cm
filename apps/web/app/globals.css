@@ -614,3 +614,93 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .onboard{margin:4px 0 12px;padding:12px 14px;border:1px dashed var(--accent,#1a73e8);border-radius:13px;background:color-mix(in srgb,var(--accent,#1a73e8) 6%,transparent)}
 .onboard b{display:block;margin-bottom:6px}
 .onboard ol{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--text,#1a1a2e)}
+
+/* date-range picker (OTA-style) — merchant build, mirrors consumer .drp */
+.drp{width:100%}
+.drp-trigger{display:flex;align-items:center;gap:10px;width:100%;padding:.7rem .9rem;border:1px solid var(--hairline,#e8e8ee);border-radius:12px;background:var(--bg,#fff);font:inherit;text-align:left;cursor:pointer}
+.drp-trigger>svg{color:var(--hint,#9aa0a6);flex:none}
+.drp-tp{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.drp-tl{font-size:.74rem;font-weight:700;color:var(--muted,#6b7280)}
+.drp-tv{font-size:.96rem;font-weight:800;color:var(--text,#1a1a2e);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drp-tv.ph{font-weight:600;color:var(--hint,#9aa0a6)}
+.drp-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg,#fff);display:flex;flex-direction:column}
+.drp-head{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:8px 6px;border-bottom:1px solid var(--hairline,#eef)}
+.drp-x{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:none;background:none;color:var(--text,#1a1a2e);cursor:pointer}
+.drp-title{text-align:center;font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e)}
+.drp-summary{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--hairline,#f0f0f4)}
+.drp-summary>svg{color:var(--hint,#9aa0a6);flex:none}
+.drp-sp{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.drp-sp b{font-size:1.05rem;font-weight:800;color:var(--text,#1a1a2e)}
+.drp-dow{display:grid;grid-template-columns:repeat(7,1fr);padding:8px 8px;border-bottom:1px solid var(--hairline,#eef);position:sticky;top:0;background:var(--bg,#fff);z-index:1}
+.drp-dow span{text-align:center;font-size:.78rem;font-weight:700;color:var(--muted,#6b7280)}
+.drp-scroll{flex:1;overflow-y:auto;padding:2px 8px 16px;-webkit-overflow-scrolling:touch}
+.drp-month{margin-top:14px}
+.drp-mlabel{text-align:center;font-weight:800;font-size:1rem;color:var(--text,#1a1a2e);margin:6px 0 10px}
+.drp-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+.drp-day{position:relative;height:44px;border:none;background:transparent;padding:0;font:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.drp-day.empty{visibility:hidden}
+.drp-day.off{cursor:default}
+.drp-day.off .drp-d{color:var(--hairline,#cfcfd6)}
+/* slim rounded range band (pseudo-element so it hugs the circle & rounds at range/week/month edges) */
+.drp-day.band::before{content:'';position:absolute;top:4px;bottom:4px;left:0;right:0;background:color-mix(in srgb,var(--accent,#1a73e8) 13%,transparent);z-index:0}
+.drp-day.bl::before{left:50%}
+.drp-day.br::before{right:50%}
+.drp-day.rl::before{border-top-left-radius:21px;border-bottom-left-radius:21px}
+.drp-day.rr::before{border-top-right-radius:21px;border-bottom-right-radius:21px}
+.drp-d{position:relative;z-index:1;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:.98rem;font-weight:600;color:var(--text,#1a1a2e)}
+.drp-day.today .drp-d{box-shadow:inset 0 0 0 1.6px color-mix(in srgb,var(--accent,#1a73e8) 55%,transparent)}
+.drp-day.sel .drp-d{background:var(--accent,#1a73e8);color:#fff;font-weight:800;box-shadow:0 3px 8px -2px color-mix(in srgb,var(--accent,#1a73e8) 55%,transparent)}
+.drp-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--hairline,#eef);background:var(--bg,#fff)}
+.drp-ok{width:100%;padding:.95rem;border:none;border-radius:14px;background:var(--accent,#1a73e8);color:#fff;font-weight:800;font-size:1.02rem;cursor:pointer}
+.drp-ok:disabled{background:var(--sunk,#e9eaee);color:var(--hint,#9aa0a6);cursor:default}
+
+/* ผังห้อง board — visual room tiles by floor (UX redesign) */
+.rsum{display:flex;align-items:center;gap:8px;margin:2px 0 16px;padding:13px 10px;border:1px solid var(--hairline,#e8e8ee);border-radius:15px;background:var(--surface,#fff)}
+.rsum-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center}
+.rsum-i b{font-size:1.55rem;font-weight:800;line-height:1;color:var(--text,#1a1a2e)}
+.rsum-i span{font-size:.76rem;color:var(--muted,#6b7280)}
+.rsum-leads{flex:none;display:inline-flex;align-items:center;gap:5px;padding:.55rem .8rem;border-radius:11px;border:1px solid var(--hairline,#e8e8ee);font-size:.85rem;font-weight:700;color:var(--text,#1a1a2e);text-decoration:none;background:var(--bg,#fff)}
+.rfloor{margin:0 0 16px}
+.rfloor-h{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:none;background:none;text-align:left;font:inherit;font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e);margin:0 0 9px;padding:2px;cursor:pointer}
+.rfloor-h em{font-style:normal;font-size:.8rem;font-weight:600;color:var(--muted,#6b7280);margin-left:6px}
+.rfloor-h>svg{color:var(--muted,#6b7280);flex:none}
+.roomboard{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.rtile{position:relative;border:1px solid var(--hairline,#e8e8ee);border-left:4px solid var(--st,#9aa0a6);border-radius:13px;background:var(--surface,#fff);display:flex;flex-direction:column;overflow:hidden}
+.rtile-main{display:flex;flex-direction:column;gap:4px;padding:11px 12px 10px;text-decoration:none}
+.rtile-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.rtile-code{font-size:1.18rem;font-weight:800;color:var(--text,#1a1a2e);display:inline-flex;align-items:baseline;gap:5px;min-width:0}
+.rtile-bed{font-size:.64rem;font-weight:700;color:var(--muted,#6b7280)}
+.rtile-chip{flex:none;font-size:.74rem;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.rtile-type{font-size:.78rem;color:var(--muted,#6b7280);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtile-act{border-top:1px solid var(--hairline,#f0f0f4)}
+.rtile-act button,.rtile-act.cal{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:.58rem;border:none;background:none;font:inherit;font-size:.86rem;font-weight:700;color:var(--accent,#1a73e8);cursor:pointer;text-decoration:none}
+.rtile-act button:active{background:var(--sunk,#f4f5f7)}
+.usettings{margin:6px 0 18px;border:1px solid var(--hairline,#e8e8ee);border-radius:13px;background:var(--surface,#fff);overflow:hidden}
+.usettings>summary{display:flex;align-items:center;gap:8px;padding:.85rem 1rem;font-weight:700;cursor:pointer;list-style:none;color:var(--text,#1a1a2e)}
+.usettings>summary::-webkit-details-marker{display:none}
+.usettings[open]>summary{border-bottom:1px solid var(--hairline,#eef)}
+.usettings .fhint{padding:9px 12px 2px}
+.usettings .mrow{padding-left:12px;padding-right:12px}
+
+/* room board — filter bar + status chips + compact "rack" grid (scales to 100s of rooms) */
+.rfilter{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.rfsearch{flex:1;display:flex;align-items:center;gap:7px;padding:.55rem .8rem;border:1px solid var(--hairline,#e8e8ee);border-radius:11px;background:var(--bg,#fff);min-width:0}
+.rfsearch>svg{color:var(--hint,#9aa0a6);flex:none}
+.rfsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;outline:none;color:var(--text,#1a1a2e);min-width:0}
+.rfsearch button{border:none;background:none;color:var(--hint,#9aa0a6);display:inline-flex;cursor:pointer;flex:none}
+.rfdense{flex:none;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border:1px solid var(--hairline,#e8e8ee);border-radius:11px;background:var(--bg,#fff);color:var(--muted,#6b7280);cursor:pointer}
+.rfdense.on{color:var(--accent,#1a73e8);border-color:color-mix(in srgb,var(--accent,#1a73e8) 40%,var(--hairline,#ddd))}
+.rfchips{display:flex;gap:7px;overflow-x:auto;padding:0 0 12px;-webkit-overflow-scrolling:touch}
+.rfchips::-webkit-scrollbar{display:none}
+.rfchip{flex:none;padding:.42rem .9rem;border:1px solid var(--hairline,#e8e8ee);border-radius:999px;background:var(--bg,#fff);font:inherit;font-size:.85rem;font-weight:700;color:var(--muted,#6b7280);cursor:pointer;white-space:nowrap}
+.rfchip.on{background:var(--text,#1a1a2e);color:#fff;border-color:var(--text,#1a1a2e)}
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-bottom:2px}
+.rchip{display:flex;flex-direction:column;gap:2px;justify-content:center;padding:9px 10px;border:1px solid var(--hairline,#e8e8ee);border-left:4px solid var(--st,#9aa0a6);border-radius:10px;text-decoration:none;min-height:52px}
+.rchip-code{font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rchip-st{font-size:.71rem;font-weight:700}
+
+/* room-group term setting (board > ตั้งค่า) */
+.grpterm{display:flex;align-items:center;gap:10px;padding:10px 12px;flex-wrap:wrap}
+.grpterm-l{font-size:.9rem;font-weight:700;color:var(--text,#1a1a2e)}
+.grpterm form{display:flex;align-items:center;gap:8px}
+.grpterm-sec{padding:10px 12px 0;font-weight:700;font-size:.9rem;color:var(--text,#1a1a2e);border-top:1px solid var(--hairline,#f0f0f4);margin-top:4px}

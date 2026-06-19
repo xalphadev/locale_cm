@@ -3,6 +3,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import { createSeasonAction, deleteSeasonAction, createRateAction, deleteRateAction } from '../../actions';
+import DateRangePicker from '../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,11 +56,8 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
             </div>
           )}
         <form className="pricesub" action={createSeasonAction}>
-          <div className="fgrid">
-            <div className="field"><label>ชื่อช่วง *</label><input name="label" placeholder="ไฮซีซั่น" required /></div>
-            <div className="field"><label>เริ่ม *</label><input name="start_date" type="date" required /></div>
-            <div className="field"><label>ถึง *</label><input name="end_date" type="date" required /></div>
-          </div>
+          <div className="field"><label>ชื่อช่วง *</label><input name="label" placeholder="ไฮซีซั่น" required /></div>
+          <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เริ่ม" labelTo="ถึง" allowPast />
           <label className="check"><input type="checkbox" name="recurs_yearly" defaultChecked /> ใช้ช่วงนี้ทุกปี</label>
           <button className="btn btn-primary" type="submit">+ เพิ่มช่วง</button>
         </form>
@@ -97,10 +95,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
                 </div>
                 <div className="field"><label>ราคา/{per} *</label><input name="price" type="number" min="0" placeholder="1500" required /></div>
               </div>
-              <div className="fgrid">
-                <div className="field"><label>หรือ เริ่ม (ถ้าไม่เลือกช่วง)</label><input name="start_date" type="date" /></div>
-                <div className="field"><label>ถึง</label><input name="end_date" type="date" /></div>
-              </div>
+              <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เริ่ม (ถ้าไม่เลือกช่วง)" labelTo="ถึง" allowPast />
               <button className="btn btn-primary" type="submit">+ เพิ่มราคาช่วงนี้</button>
             </form>
           </section>

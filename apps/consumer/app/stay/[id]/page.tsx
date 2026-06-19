@@ -1,6 +1,7 @@
 import { q, i18n, cover, demoUserId } from '@/lib/db';
 import { Icon, CAT_ICON } from '../../icons';
 import { toggleSaveAction, submitBookingRequestAction } from '../../actions';
+import DateRangePicker from '../../DateRangePicker';
 import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
 import { parsePoint } from '@/lib/geo';
 import { RoomCard, rentText, roomVacancy, FURNISH_TH, fmtDate, stayDaysAgo } from '../../RoomCard';
@@ -103,10 +104,11 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
                 <option value="enquiry">สอบถามทั่วไป</option>
               </select>
             </label>
-            <div className="bk-row">
-              <label className="bk-field"><span>{monthly ? 'อยากเข้าอยู่' : 'เช็คอิน'}</span><input type="date" name="desired_from" /></label>
-              {!monthly && <label className="bk-field"><span>เช็คเอาท์</span><input type="date" name="desired_to" /></label>}
-            </div>
+            <DateRangePicker
+              mode={monthly ? 'single' : 'range'}
+              fromName="desired_from" toName="desired_to"
+              labelFrom={monthly ? 'อยากเข้าอยู่' : 'เช็คอิน'} labelTo="เช็คเอาท์"
+            />
             <label className="bk-field"><span>ชื่อ *</span><input name="contact_name" required placeholder="ชื่อของคุณ" /></label>
             <div className="bk-row">
               <label className="bk-field"><span>เบอร์โทร</span><input name="contact_phone" inputMode="tel" placeholder="08x-xxx-xxxx" /></label>

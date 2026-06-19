@@ -6,6 +6,8 @@ import type { CSSProperties } from 'react';
 const G: Record<string, JSX.Element> = {
   chevR: <path d="m9 6 6 6-6 6" />,
   chevL: <path d="m15 6-6 6 6 6" />,
+  chevD: <path d="m6 9 6 6 6-6" />,
+  grid: <><rect x="3" y="3" width="7.5" height="7.5" rx="1.4" /><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.4" /><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.4" /><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.4" /></>,
   edit: <><path d="M12 20h9" /><path d="M16.5 3.6a2.1 2.1 0 0 1 3 3L7 19.1l-4 1 1-4Z" /></>,
   eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
   eyeOff: <><path d="M3 3l18 18" /><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a18.4 18.4 0 0 1-3 4M6.5 6.6A18.3 18.3 0 0 0 2 12s3.5 7 10 7a10.7 10.7 0 0 0 4-.8" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
