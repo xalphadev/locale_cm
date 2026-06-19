@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { RoomList } from './RoomList';
+import { RoomHub } from './RoomHub';
 
 export const dynamic = 'force-dynamic';
 const DAILY_TH: Record<string, string> = { vacant: 'ว่างวันนี้', full: 'เต็มวันนี้', ask: 'สอบถามว่าง' };
@@ -12,7 +13,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay) redirect('/merchant');
   const rows = await q<any>(
-    `SELECT id, name_i18n, rental_mode, price_minor, available_units, daily_status, availability_updated_at, image_urls, status
+    `SELECT id, name_i18n, rental_mode, price_minor, available_units, daily_status, availability_updated_at, image_urls, status, managed
        FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at DESC`, [acc.place_id]);
   const items = rows.map((r) => {
     const monthly = r.rental_mode === 'monthly';
@@ -23,15 +24,17 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
     return {
       id: r.id, name: i18n(r.name_i18n),
       meta: `${monthly ? 'รายเดือน' : 'รายวัน'}${r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}/${monthly ? 'เดือน' : 'คืน'}` : ''} · อัปเดต ${daysAgo(r.availability_updated_at)}`,
-      image_urls: r.image_urls, status: r.status, monthly, vacant, full, availLabel, availCls,
+      image_urls: r.image_urls, status: r.status, monthly, vacant, full, availLabel, availCls, managed: !!r.managed,
     };
   });
+  const noun = acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก';
   return (
     <>
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
-      <RoomList items={items} noun={acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก'} />
+      <RoomHub active="types" showSeg={!!acc.manages_stay && acc.room_mode !== 'unique'} noun={noun} addHref="/merchant/rooms/new" addLabel="เพิ่มห้อง" />
+      <RoomList items={items} noun={noun} />
     </>
   );
 }

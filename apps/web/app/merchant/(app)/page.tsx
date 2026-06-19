@@ -63,13 +63,6 @@ export default async function Dashboard() {
             <Icon n="chevR" className="menu-go" size={18} />
           </a>
         )}
-        {acc.manages_stay && mode === 'multi' && (
-          <a className="menu-row" href="/merchant/units">
-            <span className="menu-ic"><Icon n="bed" size={20} /></span>
-            <span className="menu-tx">ผังห้อง · ห้องว่าง</span>
-            <Icon n="chevR" className="menu-go" size={18} />
-          </a>
-        )}
         {(stay || acc.manages_stay) && (
           <a className="menu-row" href="/merchant/leads">
             <span className="menu-ic"><Icon n="chat" size={20} /></span>

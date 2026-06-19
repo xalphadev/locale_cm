@@ -63,7 +63,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
             : <><Icon n="clock" size={12} /> อัปเดต {daysAgo(u.availability_updated_at)}</>}</div>
         </div>
         {u.managed ? (
-          <a className="dbtn sm" href="/merchant/units"><Icon n="grid" size={16} /> ผังห้อง</a>
+          <a className="dbtn sm" href="/merchant/units"><Icon n="grid" size={16} /> ผังห้องจริง</a>
         ) : monthly ? (
           <div className="stepper">
             <form action={updateVacancyAction.bind(null, u.id, -1)}><button className="step" type="submit" aria-label="ลดห้องว่าง"><Icon n="minus" size={18} /></button></form>

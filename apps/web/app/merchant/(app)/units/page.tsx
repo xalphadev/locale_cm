@@ -4,6 +4,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import { setStayUnitManagedAction, setRoomGroupTermAction } from '../../actions';
 import RoomBoard from './RoomBoard';
+import { RoomHub } from '../rooms/RoomHub';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,10 +49,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
       {searchParams?.error === 'norooms' && <div className="banner-err">เพิ่มห้องจริงอย่างน้อย 1 ห้องก่อน แล้วค่อยเปิด “ใช้คำนวณ”</div>}
 
-      <div className="listhead">
-        <h1>ผังห้อง</h1>
-        {types.length > 0 && <a className="addbtn" href="/merchant/units/new"><Icon n="plus" size={17} /> เพิ่มห้อง</a>}
-      </div>
+      <RoomHub active="board" showSeg noun="ห้องพัก" addHref={types.length > 0 ? '/merchant/units/new' : undefined} addLabel="เพิ่มห้อง" />
 
       {types.length === 0 ? (
         <div className="mempty">

@@ -24,8 +24,7 @@ function MIcon({ n }: { n: string }) {
 const TABS = [
   { href: '/merchant', icon: 'home', label: 'ภาพรวม', cap: null, match: (p: string) => p === '/merchant' },
   { href: '/merchant/products', icon: 'tag', label: 'สินค้า', cap: 'sells_products', match: (p: string) => p.startsWith('/merchant/products') },
-  { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: (p: string) => p.startsWith('/merchant/rooms') },
-  { href: '/merchant/units', icon: 'grid', label: 'ผังห้อง', cap: 'manages_stay', match: (p: string) => p.startsWith('/merchant/units') },
+  { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: (p: string) => p.startsWith('/merchant/rooms') || p.startsWith('/merchant/units') },
   { href: '/merchant/loyalty', icon: 'spark', label: 'แต้ม', cap: null, match: (p: string) => p.startsWith('/merchant/loyalty') },
   { href: '/merchant/shop', icon: 'store', label: 'ร้าน', cap: null, match: (p: string) => p.startsWith('/merchant/shop') },
 ];
@@ -35,12 +34,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   if (!acc) redirect('/merchant/login');
   const path = headers().get('x-pathname') || '/merchant';
   const live = acc.place_status === 'published';
-  // per-branch room mode adapts the nav: 'unique' (resort) hides the ผังห้อง board and renames
-  // ห้องพัก → ห้อง; 'multi' (dorm) keeps both. Reflects the ACTIVE branch (Switcher), so one account
-  // can run a dorm and a resort and each shows its own tabs.
+  // ห้องพัก + ผังห้อง are now ONE nav tab — the board is a segment inside the hub (see RoomHub), so the
+  // owner never faces two parallel room menus. The tab just renames ห้องพัก → ห้อง in 'unique' mode
+  // (resort, no board). Reflects the ACTIVE branch (Switcher), so one account's dorm vs resort each fit.
   const mode = acc.room_mode || 'multi';
   const tabs = TABS
-    .filter((t) => (t.href === '/merchant/units' ? acc.manages_stay && mode === 'multi' : (!t.cap || acc[t.cap])))
+    .filter((t) => !t.cap || acc[t.cap])
     .map((t) => (t.href === '/merchant/rooms' && mode === 'unique' ? { ...t, label: 'ห้อง' } : t));
   return (
     <div className="mshell">

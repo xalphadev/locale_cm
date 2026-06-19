@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 import { FilterBar } from '../FilterBar';
 
-type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; monthly: boolean; vacant: boolean; full: boolean; availLabel: string; availCls: string };
+type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; monthly: boolean; vacant: boolean; full: boolean; availLabel: string; availCls: string; managed: boolean };
 const TESTS: Record<string, (i: Item) => boolean> = {
   all: () => true,
   monthly: (i) => i.monthly,
@@ -18,15 +18,10 @@ export function RoomList({ items, noun = 'ห้องพัก' }: { items: Ite
   const [q, setQ] = useState('');
   const [chip, setChip] = useState('all');
   const ql = q.trim().toLowerCase();
-  const chips = DEFS.map(([key, label]) => ({ key, label, count: key === 'all' ? undefined : items.filter(TESTS[key]).length }));
+  const chips = DEFS.map(([key, label]) => ({ key, label, count: items.filter(TESTS[key]).length }));
   const filtered = items.filter((i) => TESTS[chip](i) && (!ql || i.name.toLowerCase().includes(ql)));
   return (
     <>
-      <div className="listhead">
-        <h1>{noun} <span className="listcount">{items.length}</span></h1>
-        <a className="addbtn" href="/merchant/rooms/new"><Icon n="plus" size={17} /> เพิ่มห้อง</a>
-      </div>
-      <p className="note">โชว์ห้อง + บอกว่าว่างกี่ห้อง/ว่างวันนี้ไหม — ลูกค้าทักไลน์/โทรจองกับคุณเอง</p>
       {items.length === 0 ? (
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
@@ -49,6 +44,7 @@ export function RoomList({ items, noun = 'ห้องพัก' }: { items: Ite
                     <span className="mrow-tags">
                       {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
                       <span className={`t ${r.availCls}`}>{r.availLabel}</span>
+                      {r.managed && <span className="t link"><Icon n="grid" size={11} /> นับจากผังห้องจริง</span>}
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />
