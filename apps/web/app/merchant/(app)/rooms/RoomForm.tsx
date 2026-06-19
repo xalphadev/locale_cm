@@ -8,7 +8,7 @@ const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id).
  *  Client component so the availability field + price/contract labels follow the chosen rental mode. */
-export function RoomForm({ action, u, submitLabel }: { action: (fd: FormData) => void; u?: any; submitLabel: string }) {
+export function RoomForm({ action, u, submitLabel, managed }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean }) {
   const [mode, setMode] = useState<string>(u?.rental_mode || 'monthly');
   const monthly = mode === 'monthly';
   const bills: string[] = u?.bills_included ?? [];
@@ -30,17 +30,22 @@ export function RoomForm({ action, u, submitLabel }: { action: (fd: FormData) =>
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="check" size={15} /></span> สถานะห้องว่าง</div>
-        {monthly ? (
+        {managed ? (
+          // managed listing → vacancy is counted from the ผังห้อง board, not typed here
+          <p className="fhint" style={{ margin: 0 }}><Icon n="grid" size={13} /> ห้องนี้นับจำนวนว่างจาก “ผังห้อง” อัตโนมัติ — แก้ที่ผังห้อง (เพิ่ม/ย้ายห้อง · ตั้งมีผู้เช่า) ไม่ใช่ที่นี่</p>
+        ) : monthly ? (
           <div className="field"><label>ตอนนี้ว่างกี่ห้อง</label><input name="available_units" type="number" min="0" defaultValue={u?.available_units ?? 1} />
             <p className="fhint">ลูกค้าเห็นป้าย “ว่าง N ห้อง” — ปรับเร็วๆ ได้ที่หน้ารายละเอียดห้องด้วยปุ่ม +/−</p></div>
         ) : (
           <div className="field"><label>สถานะวันนี้</label><select name="daily_status" defaultValue={u?.daily_status || 'vacant'}><option value="vacant">ว่างวันนี้</option><option value="ask">สอบถามว่าง</option><option value="full">เต็มวันนี้</option></select>
             <p className="fhint">ลูกค้าเห็นสถานะว่าง/เต็มของวันนี้ — อัปเดตได้ที่หน้ารายละเอียดห้อง</p></div>
         )}
-        {/* preserve the other mode's value when editing, without showing a confusing 2nd field */}
-        {monthly
-          ? <input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} />
-          : <input type="hidden" name="available_units" value={u?.available_units ?? 1} />}
+        {/* always submit both values; the action re-derives vacancy for managed listings (fn no-ops otherwise) */}
+        {managed
+          ? <><input type="hidden" name="available_units" value={u?.available_units ?? 1} /><input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} /></>
+          : monthly
+            ? <input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} />
+            : <input type="hidden" name="available_units" value={u?.available_units ?? 1} />}
       </section>
 
       <section className="fsec">

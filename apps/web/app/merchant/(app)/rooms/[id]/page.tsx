@@ -58,9 +58,13 @@ export default async function RoomDetail({ params }: { params: { id: string } })
           {monthly
             ? <div className={`availcard-v ${u.available_units > 0 ? 'ok' : 'no'}`}>{u.available_units > 0 ? `ว่าง ${u.available_units} ห้อง` : 'เต็มแล้ว'}</div>
             : <div className={`availcard-v ${u.daily_status === 'vacant' ? 'ok' : u.daily_status === 'full' ? 'no' : ''}`}>{DAILY_TH[u.daily_status]}</div>}
-          <div className="availcard-f"><Icon n="clock" size={12} /> อัปเดต {daysAgo(u.availability_updated_at)}</div>
+          <div className="availcard-f">{u.managed
+            ? <><Icon n="grid" size={12} /> นับจากผังห้องอัตโนมัติ</>
+            : <><Icon n="clock" size={12} /> อัปเดต {daysAgo(u.availability_updated_at)}</>}</div>
         </div>
-        {monthly ? (
+        {u.managed ? (
+          <a className="dbtn sm" href="/merchant/units"><Icon n="grid" size={16} /> ผังห้อง</a>
+        ) : monthly ? (
           <div className="stepper">
             <form action={updateVacancyAction.bind(null, u.id, -1)}><button className="step" type="submit" aria-label="ลดห้องว่าง"><Icon n="minus" size={18} /></button></form>
             <span className="step-n">{u.available_units}</span>

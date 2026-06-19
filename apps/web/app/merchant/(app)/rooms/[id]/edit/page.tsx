@@ -21,7 +21,7 @@ export default async function EditRoom({ params, searchParams }: { params: { id:
       <h1>แก้ไขห้องพัก</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อห้อง</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
-      <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" />
+      <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" managed={!!u.managed} />
     </>
   );
 }

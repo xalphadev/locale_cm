@@ -399,6 +399,9 @@ export async function updateVacancyAction(unitId: string, delta: number) {
   const step = Math.max(-1, Math.min(1, Math.trunc(Number(delta)) || 0));
   await q(`UPDATE stay_units SET available_units=GREATEST(0, available_units + $3), availability_updated_at=now(), updated_at=now()
            WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id, step]);
+  // managed listings derive vacancy from the ผังห้อง board — snap back to the computed count so a manual
+  // +/− can't desync them (fn self-guards: it RETURNs early for hand-typed / unmanaged listings).
+  await q(`SELECT fn_stay_refresh_vacancy($1)`, [unitId]);
   revalidatePath('/merchant/rooms', 'layout'); // list + detail
 }
 
@@ -408,9 +411,11 @@ export async function setStayUnitFlagAction(unitId: string, flag: string) {
   requireCap(acc, 'offers_stay');
   if (flag === 'hide') await q(`UPDATE stay_units SET status='hidden', updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
   else if (flag === 'show') await q(`UPDATE stay_units SET status='published', updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
-  else if (flag === 'cycle_daily')
+  else if (flag === 'cycle_daily') {
     await q(`UPDATE stay_units SET daily_status = CASE daily_status WHEN 'vacant' THEN 'full' WHEN 'full' THEN 'ask' ELSE 'vacant' END,
                availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+    await q(`SELECT fn_stay_refresh_vacancy($1)`, [unitId]); // managed daily snaps back to the computed status
+  }
   revalidatePath('/merchant/rooms', 'layout'); // list + detail
 }
 
@@ -453,6 +458,9 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
     [unitId, acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
       bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null]);
+  // managed listings keep their ผังห้อง-derived vacancy — re-derive so the edit form can't override it
+  // (fn no-ops for unmanaged listings, so hand-typed ones keep exactly what the form set).
+  await q(`SELECT fn_stay_refresh_vacancy($1)`, [unitId]);
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=updated');
 }
