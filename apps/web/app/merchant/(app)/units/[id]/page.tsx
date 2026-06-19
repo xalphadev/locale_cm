@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction, blockTonightAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
@@ -52,6 +52,10 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
     `SELECT id, start_date, end_date, note FROM stay_occupancy_block
        WHERE room_id=$1 AND status='active' AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE)
        ORDER BY start_date`, [r.id]);
+  const occupiedNow = r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved';
+  const vacantRooms = occupiedNow
+    ? await q<any>(`SELECT id, code, floor FROM stay_room WHERE place_id=$1 AND deleted_at IS NULL AND status='active' AND occupancy_status='vacant' AND id<>$2 ORDER BY floor NULLS FIRST, code`, [acc.place_id, r.id])
+    : [];
 
   return (
     <>
@@ -60,6 +64,9 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกช่วงไม่ว่างแล้ว</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ช่วงวันที่นี้ทับกับที่จองไว้แล้ว</div>}
       {searchParams?.error === 'date' && <div className="banner-err">กรุณาเลือกวันเริ่ม</div>}
+      {searchParams?.ok === 'moved' && <div className="banner-ok">✓ ย้ายผู้เช่าแล้ว</div>}
+      {searchParams?.error === 'occupied' && <div className="banner-err">ห้องปลายทางไม่ว่าง</div>}
+      {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
 
       <div className="listhead">
         <h1>ห้อง {r.code}</h1>
@@ -91,6 +98,19 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
           </form>
         )}
       </div>
+
+      {occupiedNow && vacantRooms.length > 0 && (
+        <form className="moveform" action={moveTenantAction.bind(null, r.id)}>
+          <label>ย้ายผู้เช่าไปห้องอื่น <span style={{ fontWeight: 400 }}>(ย้ายโน้ต + วันว่างไปด้วย)</span></label>
+          <div className="moveform-row">
+            <select name="dest" defaultValue="" required>
+              <option value="" disabled>เลือกห้องปลายทาง (ที่ว่าง)</option>
+              {vacantRooms.map((v: any) => <option key={v.id} value={v.id}>ห้อง {v.code}{v.floor ? ` · ${term} ${v.floor}` : ''}</option>)}
+            </select>
+            <button className="dbtn sm" type="submit">ย้าย →</button>
+          </div>
+        </form>
+      )}
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="bed" size={15} /></span> รายละเอียด</h2>
       <div className="factgrid">

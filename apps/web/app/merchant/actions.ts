@@ -1009,6 +1009,27 @@ export async function blockTonightAction(roomId: string) {
   redirect(`/merchant/units/${roomId}?ok=blocked`);
 }
 
+/** Move a tenant from one room to a vacant one — relocates the free-text note + occupied_until, flips
+ *  statuses, logs both sides. No money/contract/ID; destination must be vacant. */
+export async function moveTenantAction(srcId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const destId = s(formData, 'dest');
+  if (!UUID_RE.test(destId) || destId === srcId) redirect(`/merchant/units/${srcId}?error=dest`);
+  const rows = await q<any>(`SELECT id, occupancy_status, note, occupied_until, stay_unit_id FROM stay_room WHERE id = ANY($1::uuid[]) AND place_id=$2 AND deleted_at IS NULL`, [[srcId, destId], acc.place_id]);
+  const src = rows.find((r: any) => r.id === srcId);
+  const dest = rows.find((r: any) => r.id === destId);
+  if (!src || !dest) redirect('/merchant/units');
+  if (dest.occupancy_status !== 'vacant') redirect(`/merchant/units/${srcId}?error=occupied`);
+  await q(`UPDATE stay_room SET occupancy_status='occupied', note=$3, occupied_until=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [destId, acc.place_id, src.note, src.occupied_until]);
+  await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [srcId, acc.place_id]);
+  await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta) VALUES ($1,$3,'move_out',jsonb_build_object('to',$2::text)), ($2,$3,'move_in',jsonb_build_object('from',$1::text))`, [srcId, destId, acc.place_id]);
+  await refreshUnitVacancy(src.stay_unit_id);
+  if (dest.stay_unit_id && dest.stay_unit_id !== src.stay_unit_id) await refreshUnitVacancy(dest.stay_unit_id);
+  revalidatePath('/merchant/units', 'layout');
+  redirect(`/merchant/units/${destId}?ok=moved`);
+}
+
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();
