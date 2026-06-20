@@ -939,3 +939,26 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .ffilters{align-items:center}
 .merchant-root .ffilters .ffmode{flex:none;width:auto;border-radius:999px;padding:8px 12px;font-weight:700;font-size:.85rem}
 .merchant-root .ffilters .ffstatus{flex:1;min-width:0;margin-top:0}
+
+/* P1: per-room month calendar (daily rooms) — free(green)/booked(by kind), tap 2 days = block */
+.merchant-root .rsec-h2row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:1.1rem 0 .6rem}
+.merchant-root .rcal{margin-bottom:12px}
+.merchant-root .rcal-m{margin-bottom:14px}
+.merchant-root .rcal-mh{font-weight:800;font-size:.9rem;margin-bottom:7px}
+.merchant-root .rcal-dow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.merchant-root .rcal-dow span{text-align:center;font-size:.68rem;font-weight:700;color:var(--m-muted)}
+.merchant-root .rcal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.merchant-root .rcal-d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:none;border-radius:9px;font-size:.84rem;font-weight:700;cursor:pointer;background:#EAF7F1;color:#0E7A4F}
+.merchant-root .rcal-d.pa{background:transparent;color:#C8CDD6;cursor:default}
+.merchant-root .rcal-d.sel{outline:2.5px solid var(--m-accent);outline-offset:-2px}
+.merchant-root .rcal-d.td{box-shadow:inset 0 0 0 2px var(--m-accent)}
+.merchant-root .rcal-add{background:var(--m-soft);border:1px solid #BCD4F7;border-radius:12px;padding:11px 13px;margin-bottom:10px}
+.merchant-root .rcal-add-r{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:.9rem;margin-bottom:8px}
+.merchant-root .rcal-add-r em{font-style:normal;font-weight:400;color:var(--m-muted);font-size:.8rem}
+.merchant-root .rcal-add input[name="note"]{width:100%;padding:8px 10px;border:1px solid var(--m-line);border-radius:9px;margin-bottom:8px;font-size:.9rem;background:var(--m-surface)}
+.merchant-root .rcal-x{background:none;border:none;color:var(--m-muted);font-weight:700;cursor:pointer;font-size:.82rem}
+.merchant-root .rcal-pop{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--m-sunk);border-radius:11px;padding:10px 12px;margin-bottom:10px;font-size:.85rem}
+.merchant-root .rcal-legend{display:flex;gap:14px;font-size:.78rem;color:var(--m-muted);font-weight:600;margin-top:2px;flex-wrap:wrap}
+.merchant-root .rcal-legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+.merchant-root .rcal-legend i.fr{background:#9BE3C4}
+.merchant-root .rcal-legend i.bk{background:#9DBEF5}

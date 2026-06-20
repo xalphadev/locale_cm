@@ -4,6 +4,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
+import RoomCalendar from '../RoomCalendar';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,7 +50,8 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
   const term = acc.room_group_term || 'ชั้น';
   const o = OCC[r.occupancy_status] || OCC.vacant;
   const blocks = monthly ? [] : await q<any>(
-    `SELECT id, start_date, end_date, note FROM stay_occupancy_block
+    `SELECT id, to_char(start_date,'YYYY-MM-DD') start_date, to_char(end_date,'YYYY-MM-DD') end_date, note, block_kind
+       FROM stay_occupancy_block
        WHERE room_id=$1 AND status='active' AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE)
        ORDER BY start_date`, [r.id]);
   const occupiedNow = r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved';
@@ -123,29 +125,35 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
 
       {!monthly && (
         <>
-          <h2 className="rsec"><span className="rsec-ic"><Icon n="calendar" size={15} /></span> ช่วงที่ไม่ว่าง (ปฏิทิน)</h2>
-          <form action={blockTonightAction.bind(null, r.id)} style={{ marginBottom: 10 }}><button className="dbtn sm primary" type="submit"><Icon n="plus" size={14} /> บล็อกคืนนี้</button></form>
-          {blocks.length === 0
-            ? <p className="note">ยังไม่มีช่วงจอง — ห้องนี้ว่างทุกวัน</p>
-            : (
-              <div className="mlist">
-                {blocks.map((b) => (
-                  <div className="mrow" key={b.id}>
-                    <span className="mrow-body">
-                      <span className="mrow-nm">{fmt(b.start_date)}{b.end_date ? ` – ${fmt(b.end_date)}` : ' เป็นต้นไป'}</span>
-                      {b.note && <span className="mrow-meta">{b.note}</span>}
-                    </span>
-                    <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm" type="submit">เอาออก</button></form>
-                  </div>
-                ))}
-              </div>
-            )}
-          <form className="fsec" action={addRoomBlockAction.bind(null, r.id)}>
-            <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มช่วงไม่ว่าง</div>
-            <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
-            <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์" /></div>
-            <button className="btn btn-primary" type="submit">+ บล็อกช่วงนี้</button>
-          </form>
+          <div className="rsec-h2row">
+            <h2 className="rsec" style={{ margin: 0 }}><span className="rsec-ic"><Icon n="calendar" size={15} /></span> ปฏิทินรายวัน</h2>
+            <form action={blockTonightAction.bind(null, r.id)}><button className="dbtn sm primary" type="submit"><Icon n="plus" size={14} /> บล็อกคืนนี้</button></form>
+          </div>
+          <RoomCalendar roomId={r.id} blocks={blocks} />
+          <details className="usettings">
+            <summary><Icon n="calendar" size={14} /> รายการช่วง + เพิ่มแบบกรอกวัน</summary>
+            {blocks.length === 0
+              ? <p className="note">ยังไม่มีช่วงจอง — ห้องนี้ว่างทุกวัน</p>
+              : (
+                <div className="mlist">
+                  {blocks.map((b) => (
+                    <div className="mrow" key={b.id}>
+                      <span className="mrow-body">
+                        <span className="mrow-nm">{fmt(b.start_date)}{b.end_date ? ` – ${fmt(b.end_date)}` : ' เป็นต้นไป'}</span>
+                        {b.note && <span className="mrow-meta">{b.note}</span>}
+                      </span>
+                      <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm" type="submit">เอาออก</button></form>
+                    </div>
+                  ))}
+                </div>
+              )}
+            <form className="fsec" action={addRoomBlockAction.bind(null, r.id)} style={{ marginTop: 10 }}>
+              <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มช่วงไม่ว่าง (กรอกวัน)</div>
+              <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
+              <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์" /></div>
+              <button className="btn btn-primary" type="submit">+ บล็อกช่วงนี้</button>
+            </form>
+          </details>
         </>
       )}
     </>
