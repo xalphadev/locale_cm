@@ -38,9 +38,9 @@ export function roomVacancy(u: any): { cls: string; label: string } {
 
 /** Non-transactional accommodation card. Mode-aware vacancy chip + a "contact the place" CTA (LINE → phone).
  *  Vacancy that's gone stale (no owner update past the threshold) degrades to a neutral "สอบถามห้องว่าง". */
-export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'grid', placeId, saved }: {
+export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'grid', placeId, saved, qs }: {
   u: any; line_id?: string | null; phone?: string | null; shopName?: string; shopHref?: string;
-  variant?: 'grid' | 'wide'; placeId?: string; saved?: boolean;
+  variant?: 'grid' | 'wide'; placeId?: string; saved?: boolean; qs?: string;
 }) {
   const line = lineHref(line_id);
   const cta = line ? { href: line, label: 'ทักไลน์สอบถามห้อง', icon: 'chat' as const, ext: true, cls: 'line' }
@@ -48,7 +48,7 @@ export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'gri
       : null;
   const monthly = u.rental_mode === 'monthly';
   const chip = roomVacancy(u);
-  const href = `/stay/${u.id}`;
+  const href = `/stay/${u.id}${qs || ''}`;
   const freshTxt = `อัปเดตห้องว่าง ${stayDaysAgo(u.availability_updated_at) <= 0 ? 'วันนี้' : `${stayDaysAgo(u.availability_updated_at)} วันก่อน`}`;
 
   const facts: string[] = [];

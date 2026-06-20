@@ -47,7 +47,10 @@ function parsePoint(geo: string | null) {
   return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
 }
 
-export default async function PlaceDetail({ params, searchParams }: { params: { id: string }; searchParams: { view?: string } }) {
+export default async function PlaceDetail({ params, searchParams }: { params: { id: string }; searchParams: { view?: string; from?: string; to?: string } }) {
+  const reD = /^\d{4}-\d{2}-\d{2}$/;
+  const dq = { from: reD.test(searchParams?.from || '') ? searchParams.from! : '', to: reD.test(searchParams?.to || '') ? searchParams.to! : '' };
+  const dateQs = dq.from && dq.to && dq.to > dq.from ? `?from=${dq.from}&to=${dq.to}` : '';
   let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = [];
   try {
     const uid = await demoUserId();
@@ -301,7 +304,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         {isStay && units.length > 0 && (<>
           <h2>ห้องพัก / ห้องว่าง</h2>
           <div className="prail">
-            {units.map((u) => <RoomCard key={u.id} u={{ ...u, stay_kind: p.stay_kind }} line_id={p.line_id} phone={p.phone} />)}
+            {units.map((u) => <RoomCard key={u.id} u={{ ...u, stay_kind: p.stay_kind }} line_id={p.line_id} phone={p.phone} qs={dateQs} />)}
           </div>
           <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
         </>)}

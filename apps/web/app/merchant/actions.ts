@@ -1030,6 +1030,34 @@ export async function moveTenantAction(srcId: string, formData: FormData) {
   redirect(`/merchant/units/${destId}?ok=moved`);
 }
 
+/** Close the loop: turn an agreed booking lead into a real calendar block (daily/managed). Auto-assigns
+ *  the first room of the type free for the requested dates; the GiST EXCLUDE resolves any off-app race.
+ *  No money — it only records the agreed dates as occupied + links the lead. */
+export async function convertLeadToBlockAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_to, rental_mode, contact_name FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  if (!b || !b.stay_unit_id || b.rental_mode !== 'daily' || !b.desired_from || !b.desired_to) redirect('/merchant/leads?error=cvt');
+  const [room] = await q<{ id: string }>(
+    `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+        AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
+          AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)'))
+      ORDER BY r.code LIMIT 1`, [b.stay_unit_id, b.desired_from, b.desired_to]);
+  if (!room) redirect('/merchant/leads?error=full');
+  try {
+    const [blk] = await q<{ id: string }>(
+      `INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,'stay',$3,$4,$5) RETURNING id`,
+      [room.id, acc.place_id, b.desired_from, b.desired_to, b.contact_name ? `จองผ่านแอป: ${b.contact_name}` : 'จองผ่านแอป']);
+    await q(`UPDATE stay_booking_request SET status='converted', converted_block_id=$2, updated_at=now() WHERE id=$1 AND place_id=$3`, [leadId, blk.id, acc.place_id]);
+    await refreshUnitVacancy(b.stay_unit_id);
+  } catch (e: any) {
+    if (e?.code === '23P01') redirect('/merchant/leads?error=full');
+    throw e;
+  }
+  revalidatePath('/merchant/leads'); revalidatePath('/merchant/units', 'layout');
+  redirect('/merchant/leads?ok=converted');
+}
+
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();

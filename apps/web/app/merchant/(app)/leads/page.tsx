@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
-import { setLeadStatusAction, deleteLeadAction } from '../../actions';
+import { setLeadStatusAction, deleteLeadAction, convertLeadToBlockAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,14 +22,14 @@ const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 
 const ago = (ts: any) => { const x = Math.floor((Date.now() - new Date(ts).getTime()) / 86400000); return x <= 0 ? 'วันนี้' : x === 1 ? 'เมื่อวาน' : `${x} วันก่อน`; };
 const lineHref = (id: string) => `https://line.me/R/ti/p/~${String(id).trim().replace(/^@/, '')}`;
 
-export default async function Leads() {
+export default async function Leads({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
 
   const rows = await q<any>(
     `SELECT b.id, b.request_kind, b.rental_mode, b.desired_from, b.desired_to, b.contact_name, b.contact_phone,
-            b.contact_line, b.message, b.status, b.created_at, su.name_i18n unit_name
+            b.contact_line, b.message, b.status, b.created_at, su.name_i18n unit_name, su.managed
        FROM stay_booking_request b LEFT JOIN stay_units su ON su.id = b.stay_unit_id
       WHERE b.place_id=$1 AND b.deleted_at IS NULL
       ORDER BY (b.status='new') DESC, b.created_at DESC LIMIT 100`, [acc.place_id]);
@@ -42,6 +42,9 @@ export default async function Leads() {
         {newN > 0 && <span className="t season">ใหม่ {newN}</span>}
       </div>
       <p className="note">ลูกค้ากด “ขอให้ติดต่อกลับ / นัดดูห้อง” จากหน้าที่พัก จะมาที่นี่ — โทรหรือทักไลน์กลับได้เลย (ไม่มีการชำระเงินผ่านแอป)</p>
+      {searchParams?.ok === 'converted' && <div className="banner-ok">✓ ลงปฏิทิน (บล็อกห้อง) ตามวันที่ขอแล้ว</div>}
+      {searchParams?.error === 'full' && <div className="banner-err">ไม่มีห้องว่างในช่วงที่ขอ — เลือกห้อง/วันอื่น หรือบล็อกเองในผังห้อง</div>}
+      {searchParams?.error === 'cvt' && <div className="banner-err">คำขอนี้ไม่มีวันที่ หรือไม่ใช่ห้องรายวันที่ผูกผัง จึงลงปฏิทินอัตโนมัติไม่ได้</div>}
 
       {rows.length === 0 ? (
         <div className="mempty"><span className="mempty-ic"><Icon n="chat" size={30} /></span><p>ยังไม่มีคำขอจอง</p></div>
@@ -65,6 +68,8 @@ export default async function Leads() {
                   {b.contact_line && <a className="dbtn sm" href={lineHref(b.contact_line)} target="_blank" rel="noopener"><Icon n="chat" size={14} /> ไลน์ {b.contact_line}</a>}
                 </div>
                 <div className="lead-acts">
+                  {b.managed && b.rental_mode === 'daily' && b.desired_from && b.desired_to && b.status !== 'converted' && b.status !== 'declined' &&
+                    <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> ลงปฏิทิน</button></form>}
                   {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn sm" type="submit">ติดต่อแล้ว</button></form>}
                   {b.status !== 'confirmed' && b.status !== 'declined' && <form action={setLeadStatusAction.bind(null, b.id, 'confirmed')}><button className="dbtn sm primary" type="submit">ยืนยัน</button></form>}
                   {b.status !== 'declined' && <form action={setLeadStatusAction.bind(null, b.id, 'declined')}><button className="dbtn sm" type="submit">ปฏิเสธ</button></form>}
