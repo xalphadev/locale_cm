@@ -30,8 +30,7 @@ export function PlaceStayCard({ p, qs }: { p: StayPlace; qs?: string }) {
           <a className="scard-nm" href={href}>{p.name}</a>
           {scored && <span className="scard-rate"><Icon n="star" size={12} fill="currentColor" /> {p.rating}</span>}
         </div>
-        <div className="scard-loc"><Icon n="pin" size={12} /> {KIND_TH[p.kind] || 'ที่พัก'}{p.district ? ` · ${p.district}` : ''}</div>
-        <div className="scard-facts">{p.units > 1 ? `${p.units} แบบห้องให้เลือก` : '1 แบบห้อง'}</div>
+        <div className="scard-loc"><Icon n="pin" size={12} /> {KIND_TH[p.kind] || 'ที่พัก'}{p.district ? ` · ${p.district}` : ''}{p.units > 1 ? ` · ${p.units} แบบห้อง` : ''}</div>
         <div className="scard-foot">
           <span className="scard-price">{price}</span>
           <a className="scard-go" href={href}>ดูห้องว่าง <Icon n="chevR" size={14} /></a>

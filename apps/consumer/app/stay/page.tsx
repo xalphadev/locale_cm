@@ -10,6 +10,9 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   const d = await loadStay(searchParams);
   const { mode, kind, sort, am, fr, qtext, pr, cap, fromQ, toQ, dateMode, dateQs,
     placeList, activeCount, hidden, href, searched, recapBits } = d;
+  // server load-more (no infinite-scroll JS): ?n bumps the batch; SQL already caps at 60
+  const n = Math.min(60, Math.max(18, parseInt(searchParams?.n || '18', 10) || 18));
+  const shown = placeList.slice(0, n);
 
   // the search apparatus, shared by the expanded (fresh visitor) and collapsed (re-open) states
   const searchControls = (
@@ -83,8 +86,11 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
 
       <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : dateMode ? 'ห้องว่างตามวันที่เลือก' : 'ที่พักรายวัน'}</h2>
       <div className="staylist">
-        {placeList.map((p) => <PlaceStayCard key={p.id} p={p} qs={dateQs} />)}
+        {shown.map((p) => <PlaceStayCard key={p.id} p={p} qs={dateQs} />)}
       </div>
+      {placeList.length > shown.length && (
+        <a className="loadmore" href={`${href({})}${href({}).includes('?') ? '&' : '?'}n=${n + 18}`}>ดูเพิ่มเติม ({placeList.length - shown.length})</a>
+      )}
       {placeList.length === 0 && (
         <p className="empty">{dateMode
           ? <>ไม่มีที่พักที่ยืนยันว่างช่วง {fromQ}–{toQ} · <a href={href({})}>ดูทั้งหมด (ไม่ระบุวัน)</a> เพื่อสอบถามที่พักโดยตรง</>

@@ -190,7 +190,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           {u.line_id && <div className="info-row"><Icon n="chat" size={18} className="flat-ico" /><span>LINE: {u.line_id}</span></div>}
           {u.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><a href={u.website}>{u.website}</a></div>}
           {pt && <div className="info-row"><Icon n="directions" size={18} className="flat-ico" /><a href={mapUrl} target="_blank">เปิดใน Google Maps</a></div>}
-          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><a href={`/stay?view=map&focus=${u.place_id}`}>ดูบนแผนที่ที่พัก</a></div>
+          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><a href={`/stay/map?focus=${u.place_id}`}>ดูบนแผนที่ที่พัก</a></div>
           <div className="info-row"><Icon n="bookmark" size={18} className="flat-ico" />
             <form action={toggleSaveAction.bind(null, u.place_id)}><button className="linklike" type="submit">{u.saved ? 'บันทึกที่พักนี้แล้ว' : 'บันทึกที่พักนี้'}</button></form></div>
         </div>

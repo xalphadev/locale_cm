@@ -1301,6 +1301,9 @@ a.pcname{color:var(--text)}
 .staysearchbox[open] .staypill-edit svg{transform:rotate(90deg)}
 .staysearch-body{padding-top:2px}
 
+/* P4: server load-more (continuous list, no infinite-scroll JS) */
+.loadmore{display:block;text-align:center;margin:14px 16px 4px;padding:12px;border:1px solid var(--hairline);border-radius:12px;background:var(--surface);color:var(--accent);font-weight:700;font-size:.92rem;text-decoration:none}
+
 /* P2: sticky results toolbar — count + view toggle, then a scrollable quick-filter chip row.
    Sticks at top:0 normally; when a search exists it stacks under the collapsed pill (.stk → top:60). */
 .staytools{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0 6px}

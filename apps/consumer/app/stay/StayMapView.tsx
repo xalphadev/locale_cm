@@ -18,6 +18,8 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
   const cardById = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const railRef = useRef<HTMLDivElement>(null);
+  const scrollTmr = useRef<any>(null);
   const focused = useRef(false);
   const [sel, setSel] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -75,6 +77,23 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
     if (fromPin) cardById.current[id]?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }
 
+  // touch carousel: when a swipe settles, select the card nearest the rail centre (pans the map +
+  // highlights its pin). onMouseEnter only fires on desktop, so this is the mobile equivalent.
+  function onRailScroll() {
+    clearTimeout(scrollTmr.current);
+    scrollTmr.current = setTimeout(() => {
+      const rail = railRef.current; if (!rail) return;
+      const center = rail.scrollLeft + rail.clientWidth / 2;
+      let best: string | null = null, bestD = Infinity;
+      for (const p of pins) {
+        const el = cardById.current[p.id]; if (!el) continue;
+        const dd = Math.abs(el.offsetLeft + el.offsetWidth / 2 - center);
+        if (dd < bestD) { bestD = dd; best = p.id; }
+      }
+      if (best && best !== sel) select(best, false);
+    }, 120);
+  }
+
   return (
     <div className={full ? 'mapscreen' : 'staymap'}>
       <div ref={hostRef} className="leaflet-host" />
@@ -87,7 +106,7 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
         </div>
       )}
       {!ready && <div className="map-loading">กำลังโหลดแผนที่…</div>}
-      <div className="map-rail">
+      <div className="map-rail" ref={railRef} onScroll={onRailScroll}>
         {pins.map((p) => (
           <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}${qs || ''}`}
             className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
