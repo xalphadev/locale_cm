@@ -868,3 +868,62 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .moveform>label{display:block;font-size:.84rem;font-weight:700;color:var(--m-text);margin-bottom:7px}
 .merchant-root .moveform-row{display:flex;gap:8px}
 .merchant-root .moveform-row select{flex:1;padding:8px 10px;border:1px solid var(--m-line);border-radius:9px;font-size:.9rem;background:var(--m-surface)}
+
+/* ============ RESPONSIVE merchant shell — iPad + desktop ============ */
+/* iPad portrait (768–1023): keep the bottom-tab feel but widen the column, content + denser grids */
+@media (min-width:768px) and (max-width:1023px){
+  .merchant-root .mshell{max-width:740px;box-shadow:0 0 80px rgba(16,20,12,.10)}
+  .merchant-root .mtab{max-width:560px}
+  .merchant-root .mbody{padding:1.5rem 1.7rem 1.2rem}
+  .merchant-root .factgrid{grid-template-columns:repeat(3,1fr)}
+}
+/* iPad landscape + desktop (≥1024): bottom pill → LEFT SIDEBAR, wide centered content, hover states */
+@media (min-width:1024px){
+  .merchant-root{background:var(--m-bg)}
+  .merchant-root .mshell{
+    max-width:none;box-shadow:none;padding-bottom:0;overflow-x:visible;background:var(--m-bg);min-height:100vh;
+    display:grid;grid-template-columns:256px minmax(0,1fr);grid-template-rows:auto 1fr;
+    grid-template-areas:"side top" "side main";
+  }
+  .merchant-root .mtop{grid-area:top;z-index:30}
+  .merchant-root .mbody{grid-area:main;max-width:1000px;width:100%;margin:0 auto;padding:1.9rem 2.4rem 3.2rem}
+  /* the bottom pill nav becomes a full-height left sidebar */
+  .merchant-root .mtab{
+    grid-area:side;position:sticky;top:0;align-self:start;height:100vh;width:256px;left:auto;transform:none;
+    flex-direction:column;justify-content:flex-start;align-items:stretch;gap:4px;
+    border:none;border-right:1px solid var(--m-line);border-radius:0;background:var(--m-surface);
+    backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none;padding:1.5rem .8rem;overflow-y:auto;
+  }
+  .merchant-root .mtab-i{flex:none;flex-direction:row;justify-content:flex-start;align-items:center;gap:13px;width:100%;padding:11px 14px;border-radius:12px;font-size:.96rem;font-weight:600}
+  .merchant-root .mtab-i svg{width:21px;height:21px}
+  .merchant-root .mtab-i.on{background:var(--m-soft)}
+  .merchant-root .mtab-i:hover{background:var(--m-sunk);color:var(--m-text)}
+  .merchant-root .mtab-i.on:hover{background:var(--m-soft);color:var(--m-accent)}
+  /* desktop hover affordances (mobile uses :active) */
+  .merchant-root .menu-row:hover{background:var(--m-sunk)}
+  .merchant-root .mrow:hover{border-color:var(--m-soft)}
+  .merchant-root .rfchip:hover,.merchant-root .roomseg-i:hover{filter:brightness(.98)}
+  /* roomier grids on wide screens (board/list grids are auto-fill → already reflow) */
+  .merchant-root .factgrid{grid-template-columns:repeat(3,1fr)}
+  .merchant-root .fgrid{gap:.85rem 1.15rem}
+}
+/* ultra-wide — let the board breathe a touch more */
+@media (min-width:1480px){ .merchant-root .mbody{max-width:1120px} }
+
+/* จัดกลุ่มห้องตาม — collapsed to a quiet line (showing the current word) so it doesn't read as a form to fill */
+.merchant-root details.grpset{padding:0;overflow:hidden}
+.merchant-root details.grpset>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 14px;font-weight:600;font-size:.9rem;color:var(--m-text)}
+.merchant-root details.grpset>summary::-webkit-details-marker{display:none}
+.merchant-root details.grpset>summary b{color:var(--m-accent);font-weight:800}
+.merchant-root details.grpset .grpset-edit{margin-left:auto;color:var(--m-accent);font-size:.82rem;font-weight:700}
+.merchant-root details.grpset[open]>summary{border-bottom:1px solid var(--m-line);margin-bottom:11px}
+.merchant-root details.grpset .grpset-f{padding:0 14px}
+.merchant-root details.grpset .fhint{padding:0 14px 13px;margin:8px 0 0}
+
+/* board declutter: insight teaser as a quiet sub-row of occbar; soon/daily collapse below the grid */
+.merchant-root .occteaser{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--m-line)}
+.merchant-root .occteaser-chip{display:inline-flex;align-items:center;gap:5px;font-size:.82rem;font-weight:700;color:var(--m-accent);text-decoration:none;background:var(--m-sunk);padding:6px 11px;border-radius:9px}
+.merchant-root details.soonbox>summary,.merchant-root details.dailybox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-weight:800;font-size:.92rem;color:var(--m-text)}
+.merchant-root details.soonbox>summary::-webkit-details-marker,.merchant-root details.dailybox>summary::-webkit-details-marker{display:none}
+.merchant-root details.soonbox[open]>summary,.merchant-root details.dailybox[open]>summary{margin-bottom:10px}
+.merchant-root details.soonbox:target,.merchant-root details.dailybox:target{box-shadow:0 0 0 2px var(--m-soft)}

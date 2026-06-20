@@ -115,11 +115,19 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               {reserved > 0 && <span><i style={{ background: ST.reserved.color }} /> จองแล้ว {reserved}</span>}
               {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> ปิดซ่อม {maint}</span>}
             </div>
+            {(soonRows.length > 0 || hasDaily) && (
+              <div className="occteaser">
+                {soonRows.length > 0 && <a href="#soon" className="occteaser-chip"><Icon n="clock" size={13} /> ว่างเร็ว {soonRows.length}</a>}
+                {hasDaily && <a href="#daily" className="occteaser-chip"><Icon n="calendar" size={13} /> วันนี้ เข้า {checkIns.length} · ออก {checkOuts.length}</a>}
+              </div>
+            )}
           </div>
 
+          <RoomBoard rooms={roomsData} groupTerm={term} />
+
           {soonRows.length > 0 && (
-            <div className="soonbox">
-              <div className="soonbox-h"><Icon n="clock" size={14} /> ว่างเร็ว ๆ นี้ <span className="listcount">{soonRows.length}</span></div>
+            <details id="soon" className="soonbox">
+              <summary><Icon n="clock" size={14} /> ว่างเร็ว ๆ นี้ <span className="listcount">{soonRows.length}</span></summary>
               {BUCKETS.map((b, bi) => {
                 const items = soonRows.filter((sr: any) => sr.bucket === bi);
                 return items.length ? (
@@ -131,18 +139,14 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                   </div>
                 ) : null;
               })}
-            </div>
+            </details>
           )}
 
           {hasDaily && (
-            <div className="dailybox">
-              <div className="soonbox-h"><Icon n="calendar" size={14} /> รายวัน · วันนี้</div>
-              <div className="dailytoday">
-                <span className="dt-in">เข้าวันนี้ <b>{checkIns.length}</b></span>
-                <span className="dt-out">ออกวันนี้ <b>{checkOuts.length}</b></span>
-              </div>
+            <details id="daily" className="dailybox" open={rangeOk}>
+              <summary><Icon n="calendar" size={14} /> รายวัน · วันนี้ · เข้า {checkIns.length} / ออก {checkOuts.length}</summary>
               {(checkIns.length > 0 || checkOuts.length > 0) && (
-                <div className="soonbox-items" style={{ marginTop: 8 }}>
+                <div className="soonbox-items" style={{ marginTop: 4 }}>
                   {checkIns.map((t: any) => <a key={'i' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">เข้า · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
                   {checkOuts.map((t: any) => <a key={'o' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">ออก · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
                 </div>
@@ -162,21 +166,17 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                   </div>
                 )}
               </details>
-            </div>
+            </details>
           )}
 
-          <div className="grpset">
-            <div className="grpset-row">
-              <span className="grpset-l">จัดกลุ่มห้องตาม</span>
-              <form action={setRoomGroupTermAction} className="grpset-f">
-                <input name="term_custom" defaultValue={term} maxLength={16} placeholder="ชั้น" aria-label="คำเรียกกลุ่มห้อง" />
-                <button className="dbtn sm primary" type="submit">บันทึก</button>
-              </form>
-            </div>
+          <details className="grpset">
+            <summary><span>จัดกลุ่มห้องตาม <b>{term}</b></span><span className="grpset-edit">เปลี่ยน</span></summary>
+            <form action={setRoomGroupTermAction} className="grpset-f">
+              <input name="term_custom" defaultValue={term} maxLength={16} placeholder="ชั้น" aria-label="คำเรียกกลุ่มห้อง" />
+              <button className="dbtn sm primary" type="submit">บันทึก</button>
+            </form>
             <p className="fhint">พิมพ์เองได้ (เช่น โซน · อาคาร · ปีก · บ้าน) — ตอนเพิ่มห้องจะถามชื่อ{term} (เช่น ริมน้ำ) แล้วจัดกลุ่มในผังให้</p>
-          </div>
-
-          <RoomBoard rooms={roomsData} groupTerm={term} />
+          </details>
 
           {roster.length > 0 && (
             <details className="usettings">
