@@ -6,6 +6,7 @@ import { setStayUnitManagedAction, setRoomGroupTermAction } from '../../actions'
 import RoomBoard from './RoomBoard';
 import { RoomHub } from '../rooms/RoomHub';
 import DateRangePicker from '../DateRangePicker';
+import TypeCalendar from './TypeCalendar';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,8 +70,17 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const freeRooms = (hasDaily && rangeOk) ? await q<any>(
     `SELECT r.id, r.code FROM stay_room r JOIN stay_units su ON su.id=r.stay_unit_id
       WHERE r.place_id=$1 AND r.deleted_at IS NULL AND r.status='active' AND su.rental_mode='daily'
-        AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL AND b.span && daterange($2::date,$3::date,'[)'))
+        AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL AND b.block_kind IN ('stay','tenancy','maintenance') AND b.span && daterange($2::date,$3::date,'[)'))
       ORDER BY r.floor NULLS FIRST, r.code`, [acc.place_id, fromQ, toQ]) : null;
+  const dayAvail = hasDaily ? await q<any>(
+    `SELECT to_char(d,'YYYY-MM-DD') day, count(r.id)::int total,
+            count(r.id) FILTER (WHERE NOT EXISTS (
+              SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL
+                AND b.block_kind IN ('stay','tenancy','maintenance') AND b.span @> d::date))::int free
+       FROM generate_series(CURRENT_DATE, CURRENT_DATE + 34, interval '1 day') d
+       CROSS JOIN stay_room r JOIN stay_units su ON su.id=r.stay_unit_id AND su.rental_mode='daily'
+      WHERE r.place_id=$1 AND r.deleted_at IS NULL AND r.status='active'
+      GROUP BY d ORDER BY d`, [acc.place_id]) : [];
 
   return (
     <>
@@ -151,8 +161,9 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                   {checkOuts.map((t: any) => <a key={'o' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">ออก · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
                 </div>
               )}
+              {dayAvail.length > 0 && <TypeCalendar days={dayAvail} />}
               <details className="dailyfind" open={rangeOk}>
-                <summary>เช็คห้องว่างตามวันที่</summary>
+                <summary>เช็คห้องว่างเฉพาะช่วง</summary>
                 <form method="get" className="dailyfind-f">
                   <DateRangePicker mode="range" fromName="from" toName="to" labelFrom="เข้า" labelTo="ออก" />
                   <button className="btn btn-primary" type="submit" style={{ marginTop: 10 }}>เช็คห้องว่าง</button>
