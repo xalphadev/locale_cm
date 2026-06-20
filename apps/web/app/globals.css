@@ -927,3 +927,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root details.soonbox>summary::-webkit-details-marker,.merchant-root details.dailybox>summary::-webkit-details-marker{display:none}
 .merchant-root details.soonbox[open]>summary,.merchant-root details.dailybox[open]>summary{margin-bottom:10px}
 .merchant-root details.soonbox:target,.merchant-root details.dailybox:target{box-shadow:0 0 0 2px var(--m-soft)}
+
+/* room-type list: two independent filter axes (โหมด + สถานะ), combinable */
+.merchant-root .ffacet{display:flex;align-items:center;gap:9px;margin-top:8px}
+.merchant-root .ffacet-l{flex:none;width:46px;font-size:.76rem;font-weight:800;color:var(--m-muted)}
+.merchant-root .ffacet .fchips{flex:1;min-width:0;margin-top:0}
+/* room-type list filters → two compact dropdowns in one row (combinable, space-saving) */
+.merchant-root .ffilters{display:flex;gap:8px;margin-top:8px}
+.merchant-root .ffilters select{flex:1;min-width:0;padding:9px 11px;border:1px solid var(--m-line);border-radius:11px;font-size:.88rem;font-weight:600;background:var(--m-surface);color:var(--m-text)}
+/* mode dropdown (leading pill) + status chips in one row */
+.merchant-root .ffilters{align-items:center}
+.merchant-root .ffilters .ffmode{flex:none;width:auto;border-radius:999px;padding:8px 12px;font-weight:700;font-size:.85rem}
+.merchant-root .ffilters .ffstatus{flex:1;min-width:0;margin-top:0}

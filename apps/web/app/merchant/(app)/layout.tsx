@@ -41,22 +41,27 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const tabs = TABS
     .filter((t) => !t.cap || acc[t.cap])
     .map((t) => (t.href === '/merchant/rooms' && mode === 'unique' ? { ...t, label: 'ห้อง' } : t));
+  // The account header (avatar + brand switcher + status + logout) belongs only on top-level pages
+  // (≤2 path segments: /merchant, /merchant/rooms…). Deep pages (detail/edit/new, ≥3 segments) carry
+  // their own back-link + title, so the full header there is redundant chrome — drop it.
+  const isTop = path.split('/').filter(Boolean).length <= 2;
   return (
     <div className="mshell">
-      <header className="mtop">
-        <span className="mtop-ava">{(i18n(acc.brand_name) || i18n(acc.place_name) || acc.display_name || 'ร').trim().charAt(0)}</span>
-        <div className="mtop-l">
-          <div className="mtop-brand">SOI HOP · ร้านค้า</div>
-          <Switcher
-            accountId={acc.id}
-            activePlaceId={acc.place_id}
-            activeBrandName={i18n(acc.brand_name)}
-            activePlaceName={i18n(acc.place_name) || acc.display_name}
-          />
-          <div className={`mtop-status ${live ? 'on' : ''}`}>{live ? '● เผยแพร่อยู่' : '○ รอตรวจสอบ'}</div>
-        </div>
-        <form action={logoutAction}><button className="mtop-out" type="submit">ออก</button></form>
-      </header>
+      {isTop && (
+        <header className="mtop">
+          <span className="mtop-ava">{(i18n(acc.brand_name) || i18n(acc.place_name) || acc.display_name || 'ร').trim().charAt(0)}</span>
+          <div className="mtop-l">
+            <Switcher
+              accountId={acc.id}
+              activePlaceId={acc.place_id}
+              activeBrandName={i18n(acc.brand_name)}
+              activePlaceName={i18n(acc.place_name) || acc.display_name}
+            />
+            <div className={`mtop-status ${live ? 'on' : ''}`}>{live ? '● เผยแพร่อยู่' : '○ รอตรวจสอบ'}</div>
+          </div>
+          <form action={logoutAction}><button className="mtop-out" type="submit">ออก</button></form>
+        </header>
+      )}
       <main className="mbody">{children}</main>
       <nav className="mtab">
         {tabs.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} /><span>{t.label}</span></a>)}
