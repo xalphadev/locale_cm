@@ -1298,6 +1298,18 @@ a.pcname{color:var(--text)}
 .staysearchbox[open] .staypill-edit svg{transform:rotate(90deg)}
 .staysearch-body{padding-top:2px}
 
+/* P2: sticky results toolbar — count + view toggle, then a scrollable quick-filter chip row.
+   Sticks at top:0 normally; when a search exists it stacks under the collapsed pill (.stk → top:60). */
+.staytools{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0 6px}
+.staytools.stk{top:60px}
+.staytools-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 7px}
+.staycount{font-size:.9rem;color:var(--muted);font-weight:600}
+.staycount b{color:var(--text);font-weight:800}
+.staychips{display:flex;align-items:center;gap:7px;overflow-x:auto;padding:0 16px 2px;scrollbar-width:none}
+.staychips::-webkit-scrollbar{display:none}
+.qchip{flex:none;display:inline-flex;align-items:center;padding:7px 13px;border-radius:999px;font-size:.85rem;font-weight:600;background:var(--surface);border:1px solid var(--hairline);color:var(--text);white-space:nowrap;text-decoration:none}
+.qchip.on{background:var(--accent,#0D6EFD);border-color:var(--accent,#0D6EFD);color:#fff}
+
 /* daily date search = ONE clean card: borderless date row on top + full-width CTA below */
 .staydates{display:flex;flex-direction:column;gap:6px;margin:10px 16px 2px;padding:6px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;box-shadow:0 1px 2px rgba(16,20,12,.04)}
 .staydates .drp-trigger{border:none;padding:.5rem .65rem;background:none}

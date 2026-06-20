@@ -17,6 +17,11 @@ const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
   monthly: { lt5k: [null, 500000], '5_10k': [500000, 1000000], '10_20k': [1000000, 2000000], '20k': [2000000, null] },
   daily: { lt800: [null, 80000], '800_1500': [80000, 150000], '1500': [150000, null] },
 };
+// compact Thai labels for the quick-filter price chips (must mirror PRICE keys)
+const PRICE_LABEL: Record<string, Record<string, string>> = {
+  monthly: { lt5k: '‹5พัน', '5_10k': '5–10พัน', '10_20k': '1–2หมื่น', '20k': '2หมื่น+' },
+  daily: { lt800: '‹800', '800_1500': '800–1,500', '1500': '1,500+' },
+};
 // server-side Thai date read-back for the collapsed search pill (no UTC drift: day math on UTC-midnight)
 const TH_ABBR = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const fmtThai = (s: string) => { const [, m, d] = s.split('-'); return `${Number(d)} ${TH_ABBR[Number(m) - 1]}`; };
@@ -186,13 +191,22 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         </details>
       ) : searchControls}
 
-      {/* one clean bar: list/map toggle + a single filter button (all filters live in the sheet) */}
-      <div className="staybar">
-        <div className="vtgroup">
-          <a href={href({ view: 'list' })} className={`vtg ${view === 'list' ? 'on' : ''}`}><Icon n="feed" size={14} /> รายการ</a>
-          <a href={href({ view: 'map' })} className={`vtg ${view === 'map' ? 'on' : ''}`}><Icon n="map" size={14} /> แผนที่</a>
+      {/* sticky results toolbar: count + view toggle, then a scrollable quick-filter chip row */}
+      <div className={`staytools ${searched ? 'stk' : ''}`}>
+        <div className="staytools-top">
+          <span className="staycount">พบ <b>{placeList.length}</b> ที่พัก</span>
+          <div className="vtgroup">
+            <a href={href({ view: 'list' })} className={`vtg ${view === 'list' ? 'on' : ''}`}><Icon n="feed" size={14} /> รายการ</a>
+            <a href={href({ view: 'map' })} className={`vtg ${view === 'map' ? 'on' : ''}`}><Icon n="map" size={14} /> แผนที่</a>
+          </div>
         </div>
-        <StayFilterSheet mode={mode} view={view} q={qtext} kind={kind} sort={sort} am={am} fr={fr} pr={pr} cap={cap} count={activeCount} />
+        <div className="staychips">
+          <StayFilterSheet mode={mode} view={view} q={qtext} kind={kind} sort={sort} am={am} fr={fr} pr={pr} cap={cap} count={activeCount} />
+          <a href={href({ sort: sort === 'cheap' ? '' : 'cheap' })} className={`qchip ${sort === 'cheap' ? 'on' : ''}`}>ราคาถูกสุด</a>
+          {Object.keys(PRICE[mode]).map((k) => (
+            <a key={k} href={href({ pr: pr === k ? '' : k })} className={`qchip ${pr === k ? 'on' : ''}`}>{PRICE_LABEL[mode][k]}</a>
+          ))}
+        </div>
       </div>
 
       {view === 'map' ? (
@@ -202,7 +216,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         </>
       ) : (
         <>
-          <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : dateMode ? `ว่างช่วง ${fromQ} – ${toQ}` : 'ที่พักรายวัน'} ({placeList.length})</h2>
+          <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : dateMode ? 'ห้องว่างตามวันที่เลือก' : 'ที่พักรายวัน'}</h2>
           <div className="staylist">
             {placeList.map((p) => <PlaceStayCard key={p.id} p={p} qs={dateQs} />)}
           </div>
