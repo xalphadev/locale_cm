@@ -65,7 +65,7 @@ export default function StayFilterSheet(p: Props) {
   return (
     <>
       <button type="button" className={`filterbtn ${p.count ? 'has' : ''}`} onClick={openSheet}>
-        <Icon n="dots" size={15} /> ตัวกรอง{p.count ? ` · ${p.count}` : ''}
+        <Icon n="sort" size={15} /> ตัวกรอง{p.count ? ` · ${p.count}` : ''}
       </button>
 
       {open && (

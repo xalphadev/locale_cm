@@ -16,7 +16,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
 
   // the search apparatus, shared by the expanded (fresh visitor) and collapsed (re-open) states
   const searchControls = (
-    <>
+    <div className="staycard">
       <form className="staysearch" method="GET" action="/stay">
         {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         {dateMode && <><input type="hidden" name="from" value={fromQ as string} /><input type="hidden" name="to" value={toQ as string} /></>}
@@ -36,7 +36,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
           {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
         </form>
       )}
-    </>
+    </div>
   );
 
   return (
