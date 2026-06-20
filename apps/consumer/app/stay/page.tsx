@@ -6,6 +6,7 @@ import { parsePoint, isDefaultGeo } from '@/lib/geo';
 import StayMapView from './StayMapView';
 import StayFilterSheet from './StayFilterSheet';
 import { PlaceStayCard } from './PlaceStayCard';
+import DateRangePicker from '../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,12 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   const cap = ['1', '2', '3'].includes(searchParams?.cap || '') ? searchParams.cap : '';
   const view = searchParams?.view === 'map' ? 'map' : 'list';
   const focus = typeof searchParams?.focus === 'string' ? searchParams.focus : undefined;
+  // nightly date search: real availability for [from,to) computed from blocks (managed daily only)
+  const reD = /^\d{4}-\d{2}-\d{2}$/;
+  const fromQ = mode === 'daily' && reD.test(searchParams?.from || '') ? searchParams.from : '';
+  const toQ = mode === 'daily' && reD.test(searchParams?.to || '') ? searchParams.to : '';
+  const dateMode = !!fromQ && !!toQ && toQ > fromQ;
+  const dateQs = dateMode ? `?from=${fromQ}&to=${toQ}` : '';
 
   let rows: any[] = [];
   try {
@@ -37,7 +44,18 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
     // is therefore structurally invisible here — isolation by flag, not by a separate DB.
     const where = [`su.status='published'`, `su.deleted_at IS NULL`, `su.published_to_marketplace`, `p.status='published'`, `p.is_visible`, `p.offers_stay`, `su.rental_mode=$1`];
     const params: any[] = [mode];
-    where.push(mode === 'monthly' ? `su.available_units>0` : `su.daily_status<>'full'`);
+    let freeSel = ', 0 free_rooms';
+    if (dateMode) {
+      // a daily TYPE is bookable for [from,to) iff ≥1 active room has no overlapping active block — same
+      // predicate as fn_stay_units_available (0038) / the GiST EXCLUDE; here inlined (list isn't city-scoped)
+      params.push(fromQ); const fi = params.length; params.push(toQ); const ti = params.length;
+      const freeRoom = `stay_room r WHERE r.stay_unit_id=su.id AND r.status='active' AND r.deleted_at IS NULL AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL AND b.block_kind IN ('stay','tenancy','maintenance') AND b.span && daterange($${fi}::date,$${ti}::date,'[)'))`;
+      where.push('su.managed');
+      where.push(`EXISTS (SELECT 1 FROM ${freeRoom})`);
+      freeSel = `, (SELECT count(*) FROM ${freeRoom})::int free_rooms`;
+    } else {
+      where.push(mode === 'monthly' ? `su.available_units>0` : `su.daily_status<>'full'`);
+    }
     if (kind.length) { params.push(kind); where.push(`p.stay_kind = ANY($${params.length}::text[])`); }
     if (am.length) { params.push(am); where.push(`su.unit_amenities @> $${params.length}::text[]`); }
     if (mode === 'monthly' && fr.length) { params.push(fr); where.push(`su.furnished = ANY($${params.length}::text[])`); }
@@ -55,7 +73,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
               p.id place_id, p.name_i18n shop_name, p.stay_kind, p.line_id, p.phone, p.geo::text geo, d.name_i18n district_name,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$${sIdx}) saved,
               (SELECT round(avg(rv.rating),1) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating,
-              (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating_n
+              (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating_n${freeSel}
          FROM stay_units su JOIN places p ON p.id=su.place_id LEFT JOIN districts d ON d.id=p.district_id
         WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 60`, params);
   } catch { /* db down */ }
@@ -76,7 +94,8 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
       order.push(r.place_id);
     }
     g.units++;
-    if (roomVacancy(r).cls === 'season') g.vac += (r.rental_mode === 'monthly' ? r.available_units : 1);
+    if (dateMode) g.vac += (r.free_rooms || 0);
+    else if (roomVacancy(r).cls === 'season') g.vac += (r.rental_mode === 'monthly' ? r.available_units : 1);
     if (r.price_minor != null) { const b = Math.round(r.price_minor / 100); g.priceMin = g.priceMin == null ? b : Math.min(g.priceMin, b); g.priceMax = g.priceMax == null ? b : Math.max(g.priceMax, b); }
   }
   const placeList = order.map((id) => byId[id]);
@@ -133,6 +152,15 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
       </div>
 
+      {mode === 'daily' && (
+        <form className="staydates" method="GET" action="/stay">
+          {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+          <DateRangePicker mode="range" fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
+          <button type="submit" className="staydates-go"><Icon n="search" size={15} /> ค้นหาวันว่าง</button>
+          {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
+        </form>
+      )}
+
       {/* one clean bar: list/map toggle + a single filter button (all filters live in the sheet) */}
       <div className="staybar">
         <div className="vtgroup">
@@ -149,11 +177,15 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         </>
       ) : (
         <>
-          <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : 'ที่พักรายวัน'} ({placeList.length})</h2>
+          <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : dateMode ? `ว่างช่วง ${fromQ} – ${toQ}` : 'ที่พักรายวัน'} ({placeList.length})</h2>
           <div className="staylist">
-            {placeList.map((p) => <PlaceStayCard key={p.id} p={p} />)}
+            {placeList.map((p) => <PlaceStayCard key={p.id} p={p} qs={dateQs} />)}
           </div>
-          {placeList.length === 0 && <p className="empty">ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง</p>}
+          {placeList.length === 0 && (
+            <p className="empty">{dateMode
+              ? <>ไม่มีที่พักที่ยืนยันว่างช่วง {fromQ}–{toQ} · <a href={href({})}>ดูทั้งหมด (ไม่ระบุวัน)</a> เพื่อสอบถามที่พักโดยตรง</>
+              : 'ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง'}</p>
+          )}
         </>
       )}
       <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>

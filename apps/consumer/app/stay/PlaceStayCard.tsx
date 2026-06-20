@@ -11,13 +11,13 @@ export type StayPlace = {
 };
 
 /** One ACCOMMODATION on the /stay list (groups its rooms). Tap → /place/[id] (shows all rooms). No LINE CTA here. */
-export function PlaceStayCard({ p }: { p: StayPlace }) {
-  const href = `/place/${p.id}`;
+export function PlaceStayCard({ p, qs }: { p: StayPlace; qs?: string }) {
+  const href = `/place/${p.id}${qs || ''}`;
   const per = PERIOD_TH[p.period] || p.period;
   const price = p.priceMin == null ? 'สอบถามราคา'
     : p.priceMin === p.priceMax ? `฿${p.priceMin.toLocaleString()}/${per}`
       : `฿${p.priceMin.toLocaleString()}–${(p.priceMax ?? p.priceMin).toLocaleString()}/${per}`;
-  const chip = p.vac > 0 ? { cls: 'season', label: `ว่าง ${p.vac} ห้อง` } : { cls: 'ask', label: 'สอบถามห้องว่าง' };
+  const chip = p.vac > 0 ? { cls: 'season', label: `ว่าง ${p.vac} ห้อง${qs ? ' ช่วงนี้' : ''}` } : { cls: 'ask', label: 'สอบถามห้องว่าง' };
   const scored = (p.ratingN ?? 0) >= 5; // fairness: numeric score only once a place has ≥5 verified reviews
   return (
     <div className="scard">
