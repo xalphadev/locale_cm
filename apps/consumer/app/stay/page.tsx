@@ -17,6 +17,10 @@ const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
   monthly: { lt5k: [null, 500000], '5_10k': [500000, 1000000], '10_20k': [1000000, 2000000], '20k': [2000000, null] },
   daily: { lt800: [null, 80000], '800_1500': [80000, 150000], '1500': [150000, null] },
 };
+// server-side Thai date read-back for the collapsed search pill (no UTC drift: day math on UTC-midnight)
+const TH_ABBR = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const fmtThai = (s: string) => { const [, m, d] = s.split('-'); return `${Number(d)} ${TH_ABBR[Number(m) - 1]}`; };
+const nightsOf = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
 export default async function Stay({ searchParams }: { searchParams: Record<string, string> }) {
   const mode = searchParams?.mode === 'daily' ? 'daily' : 'monthly';
@@ -127,6 +131,34 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   if (am.length) hidden.push(['am', am.join(',')]); if (fr.length) hidden.push(['fr', fr.join(',')]);
   if (pr) hidden.push(['pr', pr]); if (cap) hidden.push(['cap', cap]); if (view === 'map') hidden.push(['view', 'map']);
 
+  // OTA pattern: once a search exists, collapse the whole form into a recap pill (tap to re-expand).
+  const searched = !!qtext || dateMode || activeCount > 0;
+  const recapBits = [mode === 'daily' ? 'รายวัน' : 'รายเดือน'];
+  if (dateMode) recapBits.push(`${fmtThai(fromQ)}–${fmtThai(toQ)} · ${nightsOf(fromQ, toQ)} คืน`);
+  if (activeCount > 0) recapBits.push(`ตัวกรอง ${activeCount}`);
+  const searchControls = (
+    <>
+      <form className="staysearch" method="GET" action="/stay">
+        {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+        <Icon n="search" size={17} />
+        <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
+        {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
+      </form>
+      <div className="segmented">
+        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
+        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
+      </div>
+      {mode === 'daily' && (
+        <form className="staydates" method="GET" action="/stay">
+          {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+          <DateRangePicker mode="range" fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />
+          <button type="submit" className="staydates-go"><Icon n="search" size={15} /> ค้นหาวันว่าง</button>
+          {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
+        </form>
+      )}
+    </>
+  );
+
   return (
     <>
       <div className="staytop">
@@ -140,26 +172,19 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         </div>
       </div>
 
-      <form className="staysearch" method="GET" action="/stay">
-        {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        <Icon n="search" size={17} />
-        <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
-        {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
-      </form>
-
-      <div className="segmented">
-        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
-        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
-      </div>
-
-      {mode === 'daily' && (
-        <form className="staydates" method="GET" action="/stay">
-          {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-          <DateRangePicker mode="range" fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
-          <button type="submit" className="staydates-go"><Icon n="search" size={15} /> ค้นหาวันว่าง</button>
-          {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
-        </form>
-      )}
+      {searched ? (
+        <details className="staysearchbox">
+          <summary className="staypill">
+            <span className="staypill-ic"><Icon n="search" size={16} /></span>
+            <span className="staypill-recap">
+              <b>{qtext || 'ที่พักทั้งหมด'}</b>
+              <span className="staypill-sub">{recapBits.join(' · ')}</span>
+            </span>
+            <span className="staypill-edit">แก้ไข <Icon n="chevR" size={15} /></span>
+          </summary>
+          <div className="staysearch-body">{searchControls}</div>
+        </details>
+      ) : searchControls}
 
       {/* one clean bar: list/map toggle + a single filter button (all filters live in the sheet) */}
       <div className="staybar">

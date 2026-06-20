@@ -1283,6 +1283,21 @@ a.pcname{color:var(--text)}
 .drp-ok:disabled{background:var(--sunk,#e9eaee);color:var(--hint,#9aa0a6);cursor:default}
 
 /* nightly date search bar on /stay */
+/* OTA collapsing search: when a search exists the form folds into a sticky recap pill (tap to re-open).
+   Pure <details> — zero new client JS. bg matches --bg so the sticky band is seamless on scroll. */
+.staysearchbox{position:sticky;top:0;z-index:30;background:var(--bg);padding:6px 0 2px}
+.staysearchbox>summary{list-style:none;cursor:pointer}
+.staysearchbox>summary::-webkit-details-marker{display:none}
+.staypill{display:flex;align-items:center;gap:11px;margin:2px 16px;padding:10px 13px;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 2px 8px -4px rgba(16,20,12,.12)}
+.staypill-ic{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent-soft,#E8F0FE);color:var(--accent,#0D6EFD);display:flex;align-items:center;justify-content:center}
+.staypill-recap{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.staypill-recap b{font-size:.97rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staypill-sub{font-size:.79rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staypill-edit{flex:none;display:inline-flex;align-items:center;gap:2px;font-size:.84rem;font-weight:700;color:var(--accent,#0D6EFD)}
+.staypill-edit svg{transition:transform .15s}
+.staysearchbox[open] .staypill-edit svg{transform:rotate(90deg)}
+.staysearch-body{padding-top:2px}
+
 /* daily date search = ONE clean card: borderless date row on top + full-width CTA below */
 .staydates{display:flex;flex-direction:column;gap:6px;margin:10px 16px 2px;padding:6px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;box-shadow:0 1px 2px rgba(16,20,12,.04)}
 .staydates .drp-trigger{border:none;padding:.5rem .65rem;background:none}
