@@ -14,16 +14,18 @@ const DAY = 86400000;
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const fmtPill = (d: Date) => `${THDOW[d.getDay()]} ${d.getDate()} ${THMON_ABBR[d.getMonth()]}`;
 const midnight = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+// parse a YYYY-MM-DD (local, no UTC drift) → midnight Date, for prefilling from a search ?from/?to
+const parseYmd = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? midnight(new Date(Number(s.slice(0, 4)), Number(s.slice(5, 7)) - 1, Number(s.slice(8, 10)))) : null);
 
 export default function DateRangePicker({
-  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12,
+  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, initialFrom, initialTo,
 }: {
-  mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number;
+  mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; initialFrom?: string; initialTo?: string;
 }) {
   const today = useMemo(() => midnight(new Date()), []);
   const [open, setOpen] = useState(false);
-  const [from, setFrom] = useState<Date | null>(null);
-  const [to, setTo] = useState<Date | null>(null);
+  const [from, setFrom] = useState<Date | null>(() => parseYmd(initialFrom));
+  const [to, setTo] = useState<Date | null>(() => parseYmd(initialTo));
 
   // lock body scroll while the full-screen sheet is open
   useEffect(() => {

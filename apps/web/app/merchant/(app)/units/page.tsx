@@ -73,7 +73,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
         AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL AND b.block_kind IN ('stay','tenancy','maintenance') AND b.span && daterange($2::date,$3::date,'[)'))
       ORDER BY r.floor NULLS FIRST, r.code`, [acc.place_id, fromQ, toQ]) : null;
   const dayAvail = hasDaily ? await q<any>(
-    `SELECT to_char(d,'YYYY-MM-DD') day, count(r.id)::int total,
+    `SELECT to_char(d,'YYYY-MM-DD') AS day, count(r.id)::int total,
             count(r.id) FILTER (WHERE NOT EXISTS (
               SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL
                 AND b.block_kind IN ('stay','tenancy','maintenance') AND b.span @> d::date))::int free

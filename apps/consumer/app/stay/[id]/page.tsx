@@ -2,6 +2,7 @@ import { q, i18n, cover, demoUserId } from '@/lib/db';
 import { Icon, CAT_ICON } from '../../icons';
 import { toggleSaveAction, submitBookingRequestAction } from '../../actions';
 import DateRangePicker from '../../DateRangePicker';
+import { StayAvailability } from '../StayAvailability';
 import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
 import { parsePoint } from '@/lib/geo';
 import { RoomCard, rentText, roomVacancy, FURNISH_TH, fmtDate, stayDaysAgo } from '../../RoomCard';
@@ -16,8 +17,8 @@ function Fact({ icon, label, value }: { icon: string; label: string; value: stri
   return <div className="factitem"><span className="factitem-ic"><Icon n={icon} size={17} /></span><div className="factitem-tx"><div className="factitem-l">{label}</div><div className="factitem-v">{value}</div></div></div>;
 }
 
-export default async function StayUnitDetail({ params, searchParams }: { params: { id: string }; searchParams: { sent?: string; err?: string } }) {
-  let u: any = null; let others: any[] = []; let seasonalRates: any[] = [];
+export default async function StayUnitDetail({ params, searchParams }: { params: { id: string }; searchParams: { sent?: string; err?: string; from?: string; to?: string } }) {
+  let u: any = null; let others: any[] = []; let seasonalRates: any[] = []; let avail: any[] = [];
   try {
     const uid = await demoUserId();
     [u] = await q<any>(
@@ -43,6 +44,15 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
            FROM stay_rate r LEFT JOIN stay_season s ON s.id = r.season_id
           WHERE r.stay_unit_id=$1 AND r.deleted_at IS NULL AND (s.id IS NULL OR s.deleted_at IS NULL)
           ORDER BY r.price_minor`, [u.id]);
+      if (u.rental_mode === 'daily' && u.managed) {
+        avail = await q<any>(
+          `SELECT to_char(d,'YYYY-MM-DD') AS day, count(r.id)::int total,
+                  count(r.id) FILTER (WHERE NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL AND b.block_kind IN ('stay','tenancy','maintenance') AND b.span @> d::date))::int free
+             FROM generate_series(CURRENT_DATE, CURRENT_DATE + 60, interval '1 day') d
+             CROSS JOIN stay_room r
+            WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+            GROUP BY d ORDER BY d`, [u.id]);
+      }
     }
   } catch { /* db down */ }
 
@@ -52,6 +62,9 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
   }
 
   const monthly = u.rental_mode === 'monthly';
+  const reD = /^\d{4}-\d{2}-\d{2}$/;
+  const fromQ = reD.test(searchParams?.from || '') ? searchParams.from! : '';
+  const toQ = reD.test(searchParams?.to || '') ? searchParams.to! : '';
   const chip = roomVacancy(u);
   // gallery: real photos if uploaded, else several varied stock room photos so there's more to see
   const gallery: string[] = (u.image_urls && u.image_urls.length >= 2) ? u.image_urls
@@ -92,13 +105,18 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           : <span className="roomcta-btn off"><Icon n="chat" size={18} /> ติดต่อที่พัก</span>}
         <div className="pcfresh" style={{ textAlign: 'center', margin: '6px 0 2px' }}>ไม่มีระบบจอง/จ่ายเงินในแอป — ติดต่อที่พักโดยตรง</div>
 
+        {avail.length > 0 && (<>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="calendar" size={15} /></span>ปฏิทินคืนว่าง</h2>
+          <StayAvailability days={avail} />
+        </>)}
+
         {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ</div>}
         {searchParams?.err === 'contact' && <div className="bookerr">กรุณากรอกชื่อ และเบอร์โทรหรือไลน์อย่างน้อยหนึ่งช่อง</div>}
-        <details className="bookbox">
-          <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดูห้อง</summary>
+        <details className="bookbox" {...(fromQ ? { open: true } : {})}>
+          <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดู·จองห้องนี้</summary>
           <form className="bookform" action={submitBookingRequestAction.bind(null, u.place_id, u.id)}>
             <label className="bk-field"><span>ต้องการ</span>
-              <select name="request_kind" defaultValue="viewing">
+              <select name="request_kind" defaultValue={fromQ ? 'booking' : 'viewing'}>
                 <option value="viewing">นัดดูห้อง</option>
                 <option value="booking">ขอจอง</option>
                 <option value="enquiry">สอบถามทั่วไป</option>
@@ -108,6 +126,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
               mode={monthly ? 'single' : 'range'}
               fromName="desired_from" toName="desired_to"
               labelFrom={monthly ? 'อยากเข้าอยู่' : 'เช็คอิน'} labelTo="เช็คเอาท์"
+              initialFrom={fromQ || undefined} initialTo={toQ || undefined}
             />
             <label className="bk-field"><span>ชื่อ *</span><input name="contact_name" required placeholder="ชื่อของคุณ" /></label>
             <div className="bk-row">
