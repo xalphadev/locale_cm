@@ -33,7 +33,8 @@ export async function loadStay(searchParams: Record<string, string>) {
   const fr = String(searchParams?.fr || '').split(',').map((x) => x.trim()).filter((x) => ['furnished', 'partial', 'unfurnished'].includes(x));
   const qtext = String(searchParams?.q || '').slice(0, 60).trim();
   const pr = PRICE[mode][searchParams?.pr] ? searchParams.pr : '';
-  const cap = ['1', '2', '3'].includes(searchParams?.cap || '') ? searchParams.cap : '';
+  const capN = Math.max(0, Math.min(10, parseInt(searchParams?.cap || '0', 10) || 0));
+  const cap = capN >= 2 ? String(capN) : '';   // guests: neutral at 0/1, active 2..10 (su.capacity>=N)
   const focus = typeof searchParams?.focus === 'string' ? searchParams.focus : undefined;
   // nightly date search: real availability for [from,to) computed from blocks (managed daily only)
   const reD = /^\d{4}-\d{2}-\d{2}$/;
@@ -41,6 +42,10 @@ export async function loadStay(searchParams: Record<string, string>) {
   const toQ = mode === 'daily' && reD.test(searchParams?.to || '') ? searchParams.to : '';
   const dateMode = !!fromQ && !!toQ && toQ > fromQ;
   const dateQs = dateMode ? `?from=${fromQ}&to=${toQ}` : '';
+  // rooms: only meaningful for daily + a real date range (the one branch where we know free-room counts);
+  // post-filters places to g.vac>=rooms. Neutral at 0/1, active 2..8. Ignored (0) outside dateMode.
+  const roomsN = dateMode ? Math.max(0, Math.min(8, parseInt(searchParams?.rooms || '0', 10) || 0)) : 0;
+  const rooms = roomsN >= 2 ? roomsN : 0;
 
   let rows: any[] = [];
   try {
@@ -103,7 +108,9 @@ export async function loadStay(searchParams: Record<string, string>) {
     else if (roomVacancy(r).cls === 'season') g.vac += (r.rental_mode === 'monthly' ? r.available_units : 1);
     if (r.price_minor != null) { const b = Math.round(r.price_minor / 100); g.priceMin = g.priceMin == null ? b : Math.min(g.priceMin, b); g.priceMax = g.priceMax == null ? b : Math.max(g.priceMax, b); }
   }
-  const placeList = ord.map((id) => byId[id]);
+  // rooms is a POST-GROUP filter: g.vac is the genuine count of free rooms across [from,to) (honest — never
+  // a hold/reservation). Keep a place only if it can supply ≥N free rooms.
+  const placeList = ord.map((id) => byId[id]).filter((g) => rooms < 2 || g.vac >= rooms);
   const pinned = placeList.filter((g) => g.lat != null && !isDefaultGeo(g.lng, g.lat));
   const unpinned = placeList.length - pinned.length;
   const pins: StayPin[] = pinned.map((g) => ({
@@ -111,17 +118,18 @@ export async function loadStay(searchParams: Record<string, string>) {
     priceFrom: g.priceMin, badge: g.vac > 0 ? `ว่าง ${g.vac}` : 'สอบถาม', live: g.vac > 0,
   }));
 
-  const activeCount = kind.length + (sort ? 1 : 0) + am.length + fr.length + (pr ? 1 : 0) + (cap ? 1 : 0);
+  // cap (guests) + rooms are PRIMARY search dimensions (own recap bits), not counted as "ตัวกรอง N"
+  const activeCount = kind.length + (sort ? 1 : 0) + am.length + fr.length + (pr ? 1 : 0);
 
   // URL builder shared by both routes: pass base='/stay' or '/stay/map'; dates ride along so the
   // list↔map toggle and the quick chips never drop an active date search.
-  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, cap };
+  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, cap, rooms: rooms ? String(rooms) : '' };
   const href = (patch: Partial<typeof cur> = {}, base = '/stay') => {
     const s = { ...cur, ...patch }; const u = new URLSearchParams();
     if (s.mode !== 'monthly') u.set('mode', s.mode);
     if (s.kind) u.set('kind', s.kind); if (s.sort) u.set('sort', s.sort);
     if (s.am) u.set('am', s.am); if (s.fr) u.set('fr', s.fr);
-    if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr); if (s.cap) u.set('cap', s.cap);
+    if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr); if (s.cap) u.set('cap', s.cap); if (s.rooms) u.set('rooms', s.rooms);
     if (s.mode === 'daily' && dateMode) { u.set('from', fromQ as string); u.set('to', toQ as string); }
     const qs = u.toString(); return qs ? `${base}?${qs}` : base;
   };
@@ -133,15 +141,17 @@ export async function loadStay(searchParams: Record<string, string>) {
   if (mode !== 'monthly') hidden.push(['mode', mode]);
   if (kind.length) hidden.push(['kind', kind.join(',')]); if (sort) hidden.push(['sort', sort]);
   if (am.length) hidden.push(['am', am.join(',')]); if (fr.length) hidden.push(['fr', fr.join(',')]);
-  if (pr) hidden.push(['pr', pr]); if (cap) hidden.push(['cap', cap]);
+  if (pr) hidden.push(['pr', pr]);   // NOTE: cap/rooms are NOT here — the who/when form owns them via StayGuests/picker
 
-  const searched = !!qtext || dateMode || activeCount > 0;
+  const searched = !!qtext || dateMode || !!cap || rooms > 0 || activeCount > 0;
   const recapBits = [mode === 'daily' ? 'รายวัน' : 'รายเดือน'];
   if (dateMode) recapBits.push(`${fmtThai(fromQ as string)}–${fmtThai(toQ as string)} · ${nightsOf(fromQ as string, toQ as string)} คืน`);
+  if (cap) recapBits.push(`${cap} ท่าน`);
+  if (rooms) recapBits.push(`${rooms} ห้อง`);
   if (activeCount > 0) recapBits.push(`ตัวกรอง ${activeCount}`);
 
   return {
-    mode, kind, sort, am, fr, qtext, pr, cap, focus, fromQ, toQ, dateMode, dateQs,
+    mode, kind, sort, am, fr, qtext, pr, cap, rooms, focus, fromQ, toQ, dateMode, dateQs,
     placeList, pins, unpinned, activeCount, hidden, href, searched, recapBits,
   };
 }

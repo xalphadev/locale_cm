@@ -1378,3 +1378,12 @@ a.pcname{color:var(--text)}
 .staysearchbox .staypill{display:flex;align-items:center;gap:11px;margin:8px 16px 2px;padding:11px 13px;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;box-shadow:var(--shadow-sm)}
 .staysearchbox .staypill-ic{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
 .staysearchbox[open] .staycard{margin-top:6px}
+/* guests/rooms stepper rows (StayGuests sheet, reuses .sheet/.sheet-body) */
+.stepper{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 2px}
+.stepper + .stepper{border-top:1px solid var(--hairline)}
+.stepper-tx b{display:block;font-size:.98rem;font-weight:700;color:var(--text)}
+.stepper-tx span{font-size:.8rem;color:var(--muted)}
+.stepper-ctl{display:flex;align-items:center;gap:16px;flex:none}
+.stepbtn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--hairline);background:var(--surface);color:var(--accent);font-size:1.35rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.stepbtn:disabled{color:var(--hint);border-color:var(--sunk);cursor:default}
+.stepval{min-width:20px;text-align:center;font-size:1.05rem;font-weight:800;color:var(--text)}
