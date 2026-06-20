@@ -20,7 +20,7 @@ export function rentText(u: any): string {
 }
 export function roomImg(u: any): string {
   if (u.image_urls && u.image_urls.length) return thumb(u.image_urls[0]);
-  return cover(`stay-${u.id}`, u.stay_kind || 'stay', 'see', 360, 360);
+  return cover(`stay-${u.id}`, u.stay_kind || 'stay', 'stay', 360, 360);
 }
 export function roomImages(u: any): string[] {
   return (u.image_urls && u.image_urls.length) ? u.image_urls : [roomImg(u)];
