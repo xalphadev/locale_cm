@@ -1,0 +1,18 @@
+import StayMapView from '../StayMapView';
+import StayFilterSheet from '../StayFilterSheet';
+import { loadStay } from '../query';
+
+export const dynamic = 'force-dynamic';
+
+// Full-screen map as its OWN route (Booking/Agoda pattern): edge-to-edge map + price pins + the
+// pin-synced bottom card carousel, sharing ALL search params with /stay so list↔map is one search.
+export default async function StayMap({ searchParams }: { searchParams: Record<string, string> }) {
+  const d = await loadStay(searchParams);
+  const { mode, kind, sort, am, fr, qtext, pr, cap, focus, pins, placeList, activeCount, href, dateQs } = d;
+  return (
+    <StayMapView pins={pins} focus={focus} full backHref={href({}, '/stay')} qs={dateQs}>
+      <div className="mapcount-pill">พบ {placeList.length} ที่พัก</div>
+      <StayFilterSheet mode={mode} q={qtext} kind={kind} sort={sort} am={am} fr={fr} pr={pr} cap={cap} count={activeCount} from={d.fromQ as string} to={d.toQ as string} basePath="/stay/map" />
+    </StayMapView>
+  );
+}

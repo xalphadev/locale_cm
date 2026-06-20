@@ -17,7 +17,7 @@ const MULTI = 'เลือกได้หลายอย่าง';
 const ONE = 'เลือก 1 อย่าง';
 
 type Props = {
-  mode: string; view: string; q: string;
+  mode: string; q: string; basePath?: string; from?: string; to?: string;
   kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; cap: string; count: number;
 };
 
@@ -38,7 +38,7 @@ export default function StayFilterSheet(p: Props) {
     const u = new URLSearchParams();
     if (p.mode !== 'monthly') u.set('mode', p.mode);
     if (p.q) u.set('q', p.q);
-    if (p.view === 'map') u.set('view', 'map');
+    if (p.mode === 'daily' && p.from && p.to) { u.set('from', p.from); u.set('to', p.to); }   // keep the date search
     if (s.kind.length) u.set('kind', s.kind.join(','));
     if (s.sort) u.set('sort', s.sort);
     if (s.am.length) u.set('am', s.am.join(','));
@@ -47,7 +47,8 @@ export default function StayFilterSheet(p: Props) {
     if (s.cap) u.set('cap', s.cap);
     const qs = u.toString();
     setOpen(false);
-    router.push(qs ? `/stay?${qs}` : '/stay');
+    const base = p.basePath || '/stay';                                                       // /stay or /stay/map
+    router.push(qs ? `${base}?${qs}` : base);
   }
 
   const selected = s.kind.length + s.am.length + s.fr.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.cap ? 1 : 0);

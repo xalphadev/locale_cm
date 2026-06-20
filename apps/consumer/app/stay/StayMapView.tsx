@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon } from '../icons';
 import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
 
@@ -13,7 +13,7 @@ const KIND_COLORS: Record<string, string> = {
 const loadCss = (id: string, href: string) => { if (!document.getElementById(id)) { const l = document.createElement('link'); l.id = id; l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } };
 const loadJs = (src: string) => new Promise<void>((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(); document.body.appendChild(s); });
 
-export default function StayMapView({ pins, focus }: { pins: Pin[]; focus?: string }) {
+export default function StayMapView({ pins, focus, full, backHref, qs, children }: { pins: Pin[]; focus?: string; full?: boolean; backHref?: string; qs?: string; children?: ReactNode }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
@@ -76,12 +76,20 @@ export default function StayMapView({ pins, focus }: { pins: Pin[]; focus?: stri
   }
 
   return (
-    <div className="staymap">
+    <div className={full ? 'mapscreen' : 'staymap'}>
       <div ref={hostRef} className="leaflet-host" />
+      {full && (
+        <div className="map-top">
+          <div className="map-searchrow">
+            <a className="map-back" href={backHref || '/stay'} aria-label="กลับไปรายการ"><Icon n="back" size={18} /></a>
+            {children}
+          </div>
+        </div>
+      )}
       {!ready && <div className="map-loading">กำลังโหลดแผนที่…</div>}
       <div className="map-rail">
         {pins.map((p) => (
-          <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}`}
+          <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}${qs || ''}`}
             className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
             <img src={p.img} alt="" loading="lazy" />
             <div className="mc">
