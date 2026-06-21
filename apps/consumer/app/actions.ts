@@ -199,3 +199,30 @@ export async function withdrawBookingRequestAction(leadId: string, _formData?: F
     [leadId, uid]);
   redirect('/stay/requests?cancelled=1');
 }
+
+// Write/edit a review. Verified-visitor only (a check-in fact at this place — spec 8.2.2, no fake reviews) and
+// post-moderated (visible immediately, the report→hide flow handles abuse). No money. One review per user/place.
+export async function submitReviewAction(placeId: string, formData: FormData) {
+  const uid = await demoUserId();
+  if (!uid) redirect('/login');
+  const rating = Math.max(0, Math.min(5, parseInt(String(formData.get('rating') ?? '0'), 10) || 0));
+  const body = String(formData.get('body') ?? '').trim().slice(0, 500);
+  if (rating < 1 || body.length < 10) redirect(`/place/${placeId}?reviewed=short`);
+  const [p] = await q<any>(`SELECT id, city_id, merchant_id FROM places WHERE id=$1 AND status='published'`, [placeId]);
+  if (!p) redirect('/');
+  const [ci] = await q<{ id: string }>(`SELECT id FROM check_ins WHERE user_id=$1 AND place_id=$2 ORDER BY created_at DESC LIMIT 1`, [uid, placeId]);
+  if (!ci) redirect(`/place/${placeId}?reviewed=visit`);                              // must have visited
+  const lang = ['en', 'zh', 'th'].includes(cookies().get('lang')?.value || '') ? cookies().get('lang')!.value : 'th';
+  const bodyJson = JSON.stringify({ [lang]: body });
+  const [existing] = await q<{ id: string }>(`SELECT id FROM reviews WHERE user_id=$1 AND place_id=$2 AND moderation_status<>'rejected' ORDER BY created_at DESC LIMIT 1`, [uid, placeId]);
+  if (existing) await q(
+    `UPDATE reviews SET rating=$1, body_i18n=$2::jsonb, original_locale=$3::locale_code, linked_check_in_id=$4, moderation_status='approved', updated_at=now()
+      WHERE id=$5 AND user_id=$6`,
+    [rating, bodyJson, lang, ci.id, existing.id, uid]);
+  else await q(
+    `INSERT INTO reviews(place_id, city_id, merchant_id, user_id, rating, body_i18n, original_locale, linked_check_in_id, moderation_status)
+     VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::locale_code,$8,'approved')`,
+    [placeId, p.city_id, p.merchant_id, uid, rating, bodyJson, lang, ci.id]);
+  revalidatePath(`/place/${placeId}`);
+  redirect(`/place/${placeId}?reviewed=1`);
+}

@@ -1513,3 +1513,19 @@ a.pcname{color:var(--text)}
 .reqlink{display:inline-flex;align-items:center;gap:4px;font-size:.82rem;color:#2b74ff;text-decoration:none;font-weight:600}
 .reqlink.muted{color:#8a909a;font-weight:500}
 .reqwithdraw{background:none;border:none;color:#e5484d;font-size:.82rem;font-weight:600;cursor:pointer;padding:0}
+
+/* ── เขียนรีวิว (consumer review form) ── */
+.rvform-wrap{margin:0 0 14px}
+.rvform-gate{display:flex;align-items:center;gap:8px;padding:11px 14px;border-radius:14px;background:#f6f7f9;color:#6b7280;font-size:.86rem;text-decoration:none;margin-top:8px}
+a.rvform-gate{color:#2b74ff;background:rgba(43,116,255,.08)}
+.rvform{border:1px solid #e8eaee;border-radius:16px;overflow:hidden;margin-top:8px}
+.rvform-sum{display:flex;align-items:center;gap:8px;padding:12px 14px;font-weight:600;cursor:pointer;color:#2b74ff;list-style:none}
+.rvform-sum::-webkit-details-marker{display:none}
+.rvform-body{padding:0 14px 14px;display:flex;flex-direction:column;gap:10px}
+.rvstars{display:flex;gap:6px}
+.rvstar{background:none;border:none;padding:2px;cursor:pointer;color:#d1d5db;line-height:0}
+.rvstar.on{color:#f5a623}
+.rvtext{width:100%;border:1px solid #e3e6ea;border-radius:12px;padding:10px 12px;font:inherit;resize:vertical;min-height:80px;box-sizing:border-box}
+.rvform-foot{display:flex;align-items:center;justify-content:space-between}
+.rvsubmit{background:#2b74ff;color:#fff;border:none;border-radius:999px;padding:9px 20px;font-weight:600;cursor:pointer}
+.rvsubmit:disabled{background:#c7d2e0;cursor:not-allowed}

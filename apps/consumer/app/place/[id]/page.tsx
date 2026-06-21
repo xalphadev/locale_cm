@@ -8,6 +8,7 @@ import { RoomCard } from '../../RoomCard';
 import { HeroZoom, HeroThumbs, GalleryGrid } from '../../Lightbox';
 import ShareButton from '../../ShareButton';
 import { ReviewsFeed } from './ReviewsFeed';
+import { ReviewForm } from './ReviewForm';
 import { PlaceTabs } from './PlaceTabs';
 import CheckInButton from './CheckInButton';
 
@@ -47,11 +48,11 @@ function parsePoint(geo: string | null) {
   return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
 }
 
-export default async function PlaceDetail({ params, searchParams }: { params: { id: string }; searchParams: { view?: string; from?: string; to?: string } }) {
+export default async function PlaceDetail({ params, searchParams }: { params: { id: string }; searchParams: { view?: string; from?: string; to?: string; reviewed?: string } }) {
   const reD = /^\d{4}-\d{2}-\d{2}$/;
   const dq = { from: reD.test(searchParams?.from || '') ? searchParams.from! : '', to: reD.test(searchParams?.to || '') ? searchParams.to! : '' };
   const dateQs = dq.from && dq.to && dq.to > dq.from ? `?from=${dq.from}&to=${dq.to}` : '';
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = [];
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = []; let canReview = false; let myReview: any = null; let loggedIn = false;
   try {
     const uid = await demoUserId();
     [p] = await q<any>(
@@ -77,6 +78,12 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
       [rev] = await q<any>(`SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [params.id]);
       reviews = await q<any>(`SELECT r.id, r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 8`, [params.id]);
       dist = await q<any>(`SELECT rating, count(*)::int c FROM reviews WHERE place_id=$1 AND moderation_status='approved' GROUP BY rating`, [params.id]);
+      if (uid) {   // review eligibility: verified-visitor only (a check-in fact at this place) + their own existing review (edit)
+        loggedIn = true;
+        const [ci] = await q<any>(`SELECT 1 FROM check_ins WHERE user_id=$1 AND place_id=$2 LIMIT 1`, [uid, params.id]);
+        canReview = !!ci;
+        [myReview] = await q<any>(`SELECT id, rating, body_i18n FROM reviews WHERE user_id=$1 AND place_id=$2 AND moderation_status<>'rejected' ORDER BY created_at DESC LIMIT 1`, [uid, params.id]);
+      }
       const [vid] = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='video' AND moderation_status='approved' LIMIT 1`, [params.id]);
       videoUrl = vid?.storage_path ?? null;
       mediaImgs = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='image' AND moderation_status='approved' LIMIT 12`, [params.id]);
@@ -203,6 +210,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         gallery={<div className="dbody"><GalleryGrid images={galleryImages} /></div>}
         review={(
           <div className="dbody">
+            <ReviewForm placeId={p.id} loggedIn={loggedIn} canReview={canReview} mine={myReview ? { rating: myReview.rating, body: i18n(myReview.body_i18n) } : null} status={searchParams?.reviewed} />
             {(rev?.n ?? 0) === 0 ? (
               <p className="empty">ยังไม่มีรีวิว</p>
             ) : (<>
