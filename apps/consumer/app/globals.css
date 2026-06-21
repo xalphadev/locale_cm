@@ -1345,7 +1345,7 @@ a.pcname{color:var(--text)}
    inside a single shadowed .staycard. 3-step radius scale (20 card / 12 inner / 999 pills), rationed
    accent, fixed-height hairline chip row. This layer supersedes the scattered stay rules above. */
 /* /stay: white at the top, gently fading down to the page grey; header rides on it (transparent) */
-.staybg{background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 88px,var(--bg) 560px)}
+.staybg{background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 100px,var(--bg) 820px)}
 .staytop{background:transparent;padding:16px 16px 6px}
 .staytop-ic{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--navy));color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
 .staytop-row{display:flex;align-items:center;gap:11px}
