@@ -1477,3 +1477,7 @@ a.pcname{color:var(--text)}
 .staysearch,.gfield,.staydates-go{border-radius:30px;padding:0 8px}
 /* uniform head/tail: every field + the CTA flush to the card edges (no stray side margins) */
 .staysearch,.gfield,.fieldrow,.staydates-go{margin-left:0;margin-right:0}
+/* founder: inset ALL fields + CTA equally (the look the search field had) — done once on the card so they
+   all match; tabs negate it to stay full-width */
+.staycard{padding-left:10px;padding-right:10px}
+.staytabs{margin-left:-10px;margin-right:-10px}
