@@ -44,7 +44,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   );
 
   return (
-    <>
+    <div className="staybg">
       <div className="staytop">
         <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
         <div className="staytop-row">
@@ -103,6 +103,6 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
             : 'ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง'}</p>
       )}
       <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
-    </>
+    </div>
   );
 }
