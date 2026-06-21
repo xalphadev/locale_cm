@@ -210,19 +210,20 @@ export async function submitReviewAction(placeId: string, formData: FormData) {
   if (rating < 1 || body.length < 10) redirect(`/place/${placeId}?reviewed=short`);
   const [p] = await q<any>(`SELECT id, city_id, merchant_id FROM places WHERE id=$1 AND status='published'`, [placeId]);
   if (!p) redirect('/');
-  const [ci] = await q<{ id: string }>(`SELECT id FROM check_ins WHERE user_id=$1 AND place_id=$2 ORDER BY created_at DESC LIMIT 1`, [uid, placeId]);
+  const [ci] = await q<{ id: string; trust_tier: string }>(`SELECT id, trust_tier FROM check_ins WHERE user_id=$1 AND place_id=$2 ORDER BY created_at DESC LIMIT 1`, [uid, placeId]);
   if (!ci) redirect(`/place/${placeId}?reviewed=visit`);                              // must have visited
   const lang = ['en', 'zh', 'th'].includes(cookies().get('lang')?.value || '') ? cookies().get('lang')!.value : 'th';
   const bodyJson = JSON.stringify({ [lang]: body });
-  const [existing] = await q<{ id: string }>(`SELECT id FROM reviews WHERE user_id=$1 AND place_id=$2 AND moderation_status<>'rejected' ORDER BY created_at DESC LIMIT 1`, [uid, placeId]);
-  if (existing) await q(
-    `UPDATE reviews SET rating=$1, body_i18n=$2::jsonb, original_locale=$3::locale_code, linked_check_in_id=$4, moderation_status='approved', updated_at=now()
-      WHERE id=$5 AND user_id=$6`,
-    [rating, bodyJson, lang, ci.id, existing.id, uid]);
-  else await q(
-    `INSERT INTO reviews(place_id, city_id, merchant_id, user_id, rating, body_i18n, original_locale, linked_check_in_id, moderation_status)
-     VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::locale_code,$8,'approved')`,
-    [placeId, p.city_id, p.merchant_id, uid, rating, bodyJson, lang, ci.id]);
+  const weight = ({ gps_dwell: 0.5, verified_visit: 1, proven_purchase: 1.5 } as Record<string, number>)[ci.trust_tier] ?? 1;
+  // atomic upsert (0042 UNIQUE user_id,place_id): one review per place — ON CONFLICT edits it, race-free, no double-post
+  await q(
+    `INSERT INTO reviews(place_id, city_id, merchant_id, user_id, rating, body_i18n, original_locale, linked_check_in_id, trust_weight, moderation_status)
+     VALUES($1,$2,$3,$4,$5,$6::jsonb,$7::locale_code,$8,$9,'approved')
+     ON CONFLICT (user_id, place_id) DO UPDATE SET
+       rating = EXCLUDED.rating, body_i18n = EXCLUDED.body_i18n, original_locale = EXCLUDED.original_locale,
+       linked_check_in_id = EXCLUDED.linked_check_in_id, trust_weight = EXCLUDED.trust_weight,
+       moderation_status = 'approved', updated_at = now()`,
+    [placeId, p.city_id, p.merchant_id, uid, rating, bodyJson, lang, ci.id, weight]);
   revalidatePath(`/place/${placeId}`);
   redirect(`/place/${placeId}?reviewed=1`);
 }
