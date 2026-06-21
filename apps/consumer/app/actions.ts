@@ -191,9 +191,11 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
 // disappears from the merchant inbox; never touch a converted one. No money anywhere.
 export async function withdrawBookingRequestAction(leadId: string, _formData?: FormData) {
   const uid = await demoUserId();
+  // soft-delete only (deleted_at is the withdraw signal — keeps the lead's documented status enum intact,
+  // and the merchant inbox already filters deleted_at IS NULL). Terminal states can't be withdrawn.
   if (uid) await q(
-    `UPDATE stay_booking_request SET deleted_at = now(), status = 'cancelled', updated_at = now()
-      WHERE id = $1 AND requester_user_id = $2 AND deleted_at IS NULL AND status NOT IN ('converted')`,
+    `UPDATE stay_booking_request SET deleted_at = now(), updated_at = now()
+      WHERE id = $1 AND requester_user_id = $2 AND deleted_at IS NULL AND status NOT IN ('converted', 'declined')`,
     [leadId, uid]);
   redirect('/stay/requests?cancelled=1');
 }

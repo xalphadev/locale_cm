@@ -6,7 +6,8 @@ import { withdrawBookingRequestAction } from '../../actions';
 export const dynamic = 'force-dynamic';
 
 const TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-const fmt = (d: any) => { if (!d) return ''; const [y, m, da] = String(d).slice(0, 10).split('-'); return `${Number(da)} ${TH[Number(m) - 1]}`; };
+// pg returns date/timestamptz as JS Date objects (not strings) — format via local getters (no UTC drift)
+const fmt = (d: any) => { if (!d) return ''; const dt = d instanceof Date ? d : new Date(d); return isNaN(dt.getTime()) ? '' : `${dt.getDate()} ${TH[dt.getMonth()]}`; };
 
 const KIND_TH: Record<string, string> = { viewing: 'ขอเข้าชมห้อง', booking: 'ขอจอง/กันห้อง', enquiry: 'สอบถามข้อมูล' };
 
@@ -15,7 +16,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
   const uid = await demoUserId();
   const rows = uid ? await q<any>(
     `SELECT r.id, r.request_kind, r.rental_mode, r.desired_from, r.desired_to, r.desired_months,
-            r.status, r.created_at, r.expires_at, r.converted_block_id,
+            r.status, r.created_at, r.expires_at, r.converted_block_id, r.scheduled_at,
             p.id place_id, p.name_i18n place_name, p.stay_kind, p.phone, p.line_id,
             su.id unit_id, su.name_i18n unit_name
        FROM stay_booking_request r
@@ -25,11 +26,15 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
       ORDER BY r.created_at DESC LIMIT 50`, [uid]) : [];
 
   const now = Date.now();
+  // mirror the merchant lead enum (0034): new | contacted | scheduled | confirmed | declined | expired | converted.
+  // 'confirmed' = owner accepted the request; 'converted' = promoted to a real occupancy block (kept distinct).
   const statusOf = (r: any) => {
     const expired = r.status !== 'converted' && r.expires_at && Date.parse(r.expires_at) < now;
     if (r.status === 'converted') return { label: 'ยืนยันการเข้าพักแล้ว', cls: 'ok', ic: 'check' };
     if (r.status === 'declined') return { label: 'ที่พักไม่สะดวกรับ', cls: 'muted', ic: 'x' };
     if (expired) return { label: 'หมดอายุแล้ว', cls: 'muted', ic: 'clock' };
+    if (r.status === 'confirmed') return { label: 'ที่พักยืนยันรับคำขอแล้ว', cls: 'ok', ic: 'check' };
+    if (r.status === 'scheduled') return { label: r.scheduled_at ? `นัดเข้าชม ${fmt(r.scheduled_at)}` : 'นัดเข้าชมแล้ว', cls: 'ok', ic: 'calendar' };
     if (r.status === 'contacted') return { label: 'ที่พักติดต่อกลับแล้ว', cls: 'ok', ic: 'phone' };
     return { label: 'ส่งแล้ว · รอที่พักติดต่อกลับ', cls: 'pending', ic: 'clock' };
   };
@@ -57,7 +62,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
             const dates = r.rental_mode === 'monthly'
               ? `${r.desired_months ? `${r.desired_months} เดือน` : 'รายเดือน'}${r.desired_from ? ` · เข้าพัก ${fmt(r.desired_from)}` : ''}`
               : (r.desired_from && r.desired_to ? `${fmt(r.desired_from)} – ${fmt(r.desired_to)}` : 'รายวัน');
-            const canWithdraw = st.cls !== 'ok' && st.label !== 'หมดอายุแล้ว' && r.status !== 'converted';
+            const canWithdraw = r.status !== 'converted' && r.status !== 'declined' && st.label !== 'หมดอายุแล้ว';
             return (
               <div className="reqcard" key={r.id}>
                 <a className="reqcard-h" href={href}>
