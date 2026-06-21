@@ -7,8 +7,8 @@ type Pin = { id: string; name: string; lat: number; lng: number; kind: string; p
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
 const KIND_COLORS: Record<string, string> = {
-  dorm: '#16284D', apartment: '#1A73E8', condo: '#1559C7', mansion: '#28457C', house: '#16284D',
-  homestay: '#28457C', hotel: '#F5B500', guesthouse: '#1559C7',
+  dorm: '#16284D', apartment: '#2B74FF', condo: '#1A5FE6', mansion: '#28457C', house: '#16284D',
+  homestay: '#28457C', hotel: '#F5B500', guesthouse: '#1A5FE6',
 };
 const loadCss = (id: string, href: string) => { if (!document.getElementById(id)) { const l = document.createElement('link'); l.id = id; l.rel = 'stylesheet'; l.href = href; document.head.appendChild(l); } };
 const loadJs = (src: string) => new Promise<void>((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = () => res(); s.onerror = () => rej(); document.body.appendChild(s); });
@@ -53,7 +53,7 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
     if (!ready || !L || !grp) return;
     grp.clearLayers();
     pins.forEach((p) => {
-      const c = p.live ? (KIND_COLORS[p.kind] || '#1A73E8') : '#9AA0A6';
+      const c = p.live ? (KIND_COLORS[p.kind] || '#2B74FF') : '#9AA0A6';
       const on = p.id === sel;
       const icon = L.divIcon({ className: 'pin-wrap', html: `<span class="stay-pin${on ? ' on' : ''}" style="--c:${c}"><img src="${p.img}" alt="" /><b>${p.badge}</b></span>`, iconSize: [84, 32], iconAnchor: [42, 32] });
       const mk = L.marker([p.lat, p.lng], { icon, zIndexOffset: (on ? 2000 : 0) + (p.live ? 500 : 0) });

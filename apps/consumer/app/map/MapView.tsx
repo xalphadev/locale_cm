@@ -6,7 +6,7 @@ import { cover } from '../../lib/img';
 type Place = { id: string; name: string; category: string; subcategory: string | null; lat: number; lng: number; rev_n: number; rev_avg: string | null };
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
-const COLORS: Record<string, string> = { eat: '#F4A52B', see: '#1A73E8', do: '#8A5CF6' };
+const COLORS: Record<string, string> = { eat: '#F4A52B', see: '#2B74FF', do: '#8A5CF6' };
 const catTH = (c: string) => (c === 'eat' ? 'กิน' : c === 'see' ? 'เที่ยว' : 'ทำกิจกรรม');
 const FILTERS = [{ k: '', l: 'ทั้งหมด' }, { k: 'eat', l: 'กิน' }, { k: 'see', l: 'เที่ยว' }, { k: 'do', l: 'ทำกิจกรรม' }];
 

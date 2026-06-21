@@ -87,7 +87,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
   --m-bg:#FFFFFF; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
-  --m-accent:#0D6EFD; --m-accent-press:#0A58CC; --m-soft:#CFE0FF; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
+  --m-accent:#2B74FF; --m-accent-press:#1A5FE6; --m-soft:#D6E4FF; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
   --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
   /* flat & clean — definition comes from hairline borders + spacing, not floating shadows */
