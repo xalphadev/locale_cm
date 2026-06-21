@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '../icons';
-import { STAY_AMENITIES, STAY_KINDS, STAY_KIND_TH, facetLabel } from '@/lib/facets';
+import { STAY_AMENITIES, STAY_BUILDING, STAY_KINDS, STAY_KIND_TH, facetLabel } from '@/lib/facets';
 const SORTS: Record<string, [string, string][]> = {
   monthly: [['', 'มาใหม่'], ['soon', 'ว่างเร็วๆนี้'], ['cheap', 'ราคาประหยัด']],
   daily: [['', 'มาใหม่'], ['vacant', 'ว่างวันนี้'], ['cheap', 'ราคาประหยัด']],
@@ -19,22 +19,22 @@ const ONE = 'เลือก 1 อย่าง';
 
 type Props = {
   mode: string; q: string; basePath?: string; from?: string; to?: string;
-  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; beds: string; gender: string; count: number;
+  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; beds: string; gender: string; bam: string[]; count: number;
 };
 
 export default function StayFilterSheet(p: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr, beds: p.beds, gender: p.gender });
+  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr, beds: p.beds, gender: p.gender, bam: [...p.bam] });
   const [s, setS] = useState(init);
 
   function openSheet() { setS(init()); setOpen(true); }
   // single-select (radio): ช่วงราคา · ห้องนอน · เพศ · เรียงลำดับ — click again to clear
   const single = (key: 'sort' | 'pr' | 'beds' | 'gender', val: string) => setS((x) => ({ ...x, [key]: x[key] === val ? '' : val }));
   // multi-select (checkbox): ประเภทที่พัก · เฟอร์นิเจอร์ · สิ่งอำนวยความสะดวก
-  const multi = (key: 'kind' | 'am' | 'fr', val: string) =>
+  const multi = (key: 'kind' | 'am' | 'fr' | 'bam', val: string) =>
     setS((x) => ({ ...x, [key]: x[key].includes(val) ? x[key].filter((y) => y !== val) : [...x[key], val] }));
-  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '', beds: '', gender: '' }); }
+  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '', beds: '', gender: '', bam: [] }); }
   function apply() {
     const u = new URLSearchParams();
     if (p.mode !== 'monthly') u.set('mode', p.mode);
@@ -46,13 +46,14 @@ export default function StayFilterSheet(p: Props) {
     if (s.fr.length) u.set('fr', s.fr.join(','));
     if (s.pr) u.set('pr', s.pr);
     if (s.beds) u.set('beds', s.beds); if (s.gender) u.set('gender', s.gender);
+    if (s.bam.length) u.set('bam', s.bam.join(','));
     const qs = u.toString();
     setOpen(false);
     const base = p.basePath || '/stay';                                                       // /stay or /stay/map
     router.push(qs ? `${base}?${qs}` : base);
   }
 
-  const selected = s.kind.length + s.am.length + s.fr.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.beds ? 1 : 0) + (s.gender ? 1 : 0);
+  const selected = s.kind.length + s.am.length + s.fr.length + s.bam.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.beds ? 1 : 0) + (s.gender ? 1 : 0);
 
   const Chip = ({ on, onClick, check = false, children }: { on: boolean; onClick: () => void; check?: boolean; children: any }) =>
     <button type="button" className={`fchip ${on ? 'on' : ''}`} onClick={onClick}>{check && on && <Icon n="check" size={13} className="fchip-ck" />}{children}</button>;
@@ -96,6 +97,9 @@ export default function StayFilterSheet(p: Props) {
               )}
               <Sec icon="sparkles" title="สิ่งอำนวยความสะดวก" hint={MULTI}>
                 {STAY_AMENITIES.map((a) => <Chip key={a} on={s.am.includes(a)} check onClick={() => multi('am', a)}>{facetLabel(a)}</Chip>)}
+              </Sec>
+              <Sec icon="sparkles" title="ส่วนกลาง / อาคาร" hint={MULTI}>
+                {STAY_BUILDING.map((a) => <Chip key={a} on={s.bam.includes(a)} check onClick={() => multi('bam', a)}>{facetLabel(a)}</Chip>)}
               </Sec>
               <Sec icon="sort" title="เรียงลำดับ" hint={ONE}>
                 {SORTS[p.mode].map(([k, l]) => <Chip key={k || 'new'} on={s.sort === k} onClick={() => single('sort', k)}>{l}</Chip>)}

@@ -21,10 +21,16 @@ export const FACET_LABELS: Record<string, string> = {
   furnished: 'เฟอร์ครบ', partial: 'เฟอร์บางส่วน', unfurnished: 'ไม่มีเฟอร์',
   // bills_included tokens
   water: 'ค่าน้ำ', electricity: 'ค่าไฟ', common_fee: 'ค่าส่วนกลาง',
+  // stay building / common-area facilities (stored in stay_units.attrs.building[])
+  pool: 'สระว่ายน้ำ', gym: 'ฟิตเนส', lift: 'ลิฟต์', security: 'รปภ.', cctv: 'กล้องวงจรปิด',
+  garden: 'สวน', coworking: 'โต๊ะทำงานส่วนกลาง', laundry_room: 'ห้องซักผ้า',
 };
 
 /** Unit amenities offered as filter chips on /stay (match stay_units.unit_amenities[]). */
 export const STAY_AMENITIES = ['aircon', 'private_bath', 'kitchen', 'washing_machine', 'parking', 'pets_ok', 'fiber_wifi', 'balcony'];
+
+/** Building / common-area facilities (stay_units.attrs.building[]) — surfaced for multi-unit kinds. */
+export const STAY_BUILDING = ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'];
 
 /** Accommodation types (places.stay_kind). Shown for both rental modes — a place's type is
  *  independent of whether its rooms rent monthly or daily. */

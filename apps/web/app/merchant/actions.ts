@@ -386,6 +386,8 @@ export async function createStayUnitAction(formData: FormData) {
   if (formData.get('attr_breakfast')) attrs.breakfast = true;
   const canc = s(formData, 'attr_cancellation'); if (['flexible', 'moderate', 'strict'].includes(canc)) attrs.cancellation = canc;
   const hostInfo = s(formData, 'attr_host').slice(0, 500).trim(); if (hostInfo) attrs.host = hostInfo;
+  const building = formData.getAll('building').map(String).filter((k) => ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'].includes(k));
+  if (building.length) attrs.building = building;
   await q(
     `INSERT INTO stay_units(place_id, name_i18n, rental_mode, price_minor, price_period, available_units, daily_status,
         capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
@@ -461,6 +463,8 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   if (formData.get('attr_breakfast')) attrs.breakfast = true;
   const canc = s(formData, 'attr_cancellation'); if (['flexible', 'moderate', 'strict'].includes(canc)) attrs.cancellation = canc;
   const hostInfo = s(formData, 'attr_host').slice(0, 500).trim(); if (hostInfo) attrs.host = hostInfo;
+  const building = formData.getAll('building').map(String).filter((k) => ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'].includes(k));
+  if (building.length) attrs.building = building;
   await q(
     // available_units/daily_status are written only for the row's ACTIVE mode, so toggling
     // rental_mode never zeroes the other mode's value; for monthly, COALESCE keeps the live count

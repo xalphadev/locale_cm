@@ -185,6 +185,11 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           {bills.length > 0 && <div className="rbills"><Icon n="check" size={14} /> รวมในค่าเช่า: {bills.map((b) => facetLabel(b)).join(' · ')}</div>}
         </>)}
 
+        {u.attrs?.building?.length > 0 && (<>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="sparkles" size={15} /></span>ส่วนกลาง / อาคาร</h2>
+          <div className="chips">{u.attrs.building.map((a: string) => <span className="chip" key={a}><Icon n="check" size={12} /> {facetLabel(a)}</span>)}</div>
+        </>)}
+
         {seasonalRates.length > 0 && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="ticket" size={15} /></span>ราคาตามช่วง</h2>
           <div className="ratecard">

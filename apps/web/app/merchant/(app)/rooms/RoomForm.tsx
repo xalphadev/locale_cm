@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '../ui';
-import { BILLS, AMEN } from './constants';
+import { BILLS, AMEN, BUILDING } from './constants';
 
 // local pure i18n (avoid importing the server-only @/lib/db into this client component)
 const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '' : '');
@@ -21,6 +21,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
   const wantBreakfast = ['hotel', 'guesthouse', 'homestay'].includes(kind);
   const wantCancel = ['hotel', 'guesthouse', 'homestay', 'hostel'].includes(kind);
   const wantHost = ['homestay', 'guesthouse'].includes(kind);
+  const wantBuilding = ['dorm', 'hostel', 'apartment', 'condo', 'mansion', 'hotel', 'guesthouse'].includes(kind);   // common/shared facilities
   const at = u?.attrs || {};
   return (
     <form className="form mform" action={action}>
@@ -69,7 +70,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
         )}
       </section>
 
-      {(wantRooms || wantGender || !monthly) && (
+      {(wantRooms || wantGender || wantBuilding || !monthly) && (
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> รายละเอียดตามประเภท</div>
           {wantRooms && (
@@ -97,6 +98,11 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
           )}
           {wantHost && (
             <div className="field"><label>ข้อมูลเจ้าบ้าน / บริการ</label><textarea name="attr_host" defaultValue={at.host || ''} placeholder="เช่น เจ้าบ้านพูดอังกฤษ มีรถรับส่ง ทำอาหารเช้าให้" style={{ minHeight: 44 }} /></div>
+          )}
+          {wantBuilding && (
+            <div className="field"><label>สิ่งอำนวยความสะดวกส่วนกลาง / อาคาร</label>
+              <div className="checkrow">{BUILDING.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="building" value={k} defaultChecked={(at.building || []).includes(k)} /> {l}</label>)}</div>
+            </div>
           )}
         </section>
       )}
