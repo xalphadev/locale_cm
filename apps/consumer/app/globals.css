@@ -1345,22 +1345,22 @@ a.pcname{color:var(--text)}
    inside a single shadowed .staycard. 3-step radius scale (20 card / 12 inner / 999 pills), rationed
    accent, fixed-height hairline chip row. This layer supersedes the scattered stay rules above. */
 /* /stay: white at the top, gently fading down to the page grey; header rides on it (transparent) */
-.staybg{background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 100px,var(--bg) 820px)}
+.staybg{background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 46vh,var(--bg) 100vh)}
 .staytop{background:transparent;padding:16px 16px 6px}
 .staytop-ic{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--navy));color:#fff;display:flex;align-items:center;justify-content:center;flex:none}
 .staytop-row{display:flex;align-items:center;gap:11px}
 .staytop-tx h1{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
 .staytop-sub{font-size:.78rem;color:var(--muted);margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.staycard{display:flex;flex-direction:column;gap:8px;margin:10px 16px 6px;padding:12px;background:var(--surface);border-radius:24px;box-shadow:0 12px 32px -16px rgba(16,20,40,.22),0 2px 8px -4px rgba(16,20,40,.08)}
-.staysearch{display:flex;align-items:center;gap:8px;margin:0;padding:10px 12px;background:var(--sunk);border:none;border-radius:16px;min-width:0}
+.staycard{display:flex;flex-direction:column;gap:8px;margin:10px 16px 6px}
+.staysearch{display:flex;align-items:center;gap:8px;margin:0;padding:12px 14px;background:var(--sunk);border:none;border-radius:24px;min-width:0}
 .staysearch input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:.92rem;font-weight:600;outline:none;color:var(--text)}
 .staysearch .ss-x{flex:none;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
-.segmented{display:flex;gap:0;margin:0;padding:3px;background:var(--sunk);border-radius:16px;overflow:visible;scrollbar-width:none}
-.seg{flex:1;text-align:center;padding:.5rem 0;border-radius:13px;font-size:.86rem;font-weight:700;background:none;border:none;color:var(--muted);white-space:nowrap;text-decoration:none;transition:background .12s,color .12s}
+.segmented{display:flex;gap:0;margin:0;padding:4px;background:var(--sunk);border-radius:24px;overflow:visible;scrollbar-width:none}
+.seg{flex:1;text-align:center;padding:.55rem 0;border-radius:20px;font-size:.86rem;font-weight:700;background:none;border:none;color:var(--muted);white-space:nowrap;text-decoration:none;transition:background .12s,color .12s}
 .seg.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(16,20,40,.12)}
 .staydates{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;background:none;border:none;border-radius:0;box-shadow:none}
-.staydates .drp-trigger{display:flex;align-items:center;width:100%;border:none;padding:10px 12px;background:var(--sunk);border-radius:16px}
-.staydates-go{display:flex;width:100%;justify-content:center;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:16px;padding:14px;font:inherit;font-weight:800;font-size:.95rem;cursor:pointer;box-shadow:0 6px 16px -8px rgba(26,115,232,.55)}
+.staydates .drp-trigger{display:flex;align-items:center;width:100%;border:none;padding:12px 14px;background:var(--sunk);border-radius:24px}
+.staydates-go{display:flex;width:100%;justify-content:center;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:24px;padding:15px;font:inherit;font-weight:800;font-size:.95rem;cursor:pointer;box-shadow:0 6px 16px -8px rgba(26,115,232,.55)}
 .staydates-go:active{background:var(--accent-press);box-shadow:none}
 .staydates-clear{align-self:center;font-size:.82rem;color:var(--muted);font-weight:600;text-decoration:none;padding:2px 0 0}
 .staytools-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 8px}
@@ -1391,7 +1391,7 @@ a.pcname{color:var(--text)}
 .stepval{min-width:20px;text-align:center;font-size:1.05rem;font-weight:800;color:var(--text)}
 /* clean single-line card fields (ref-style): guests | rooms side by side + compact date row */
 .guestrow{display:flex;gap:8px}
-.gfield{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--sunk);border:none;border-radius:16px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
+.gfield{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--sunk);border:none;border-radius:24px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
 .gfield svg{color:var(--muted);flex:none}
 .gfield .gf-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .staydates .drp-compact{gap:9px}
