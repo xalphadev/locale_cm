@@ -12,27 +12,29 @@ const PRICE: Record<string, [string, string][]> = {
   daily: [['lt800', '<800'], ['800_1500', '800–1500'], ['1500', '1500+']],
 };
 const FURNISH: [string, string][] = [['furnished', 'เฟอร์ครบ'], ['partial', 'เฟอร์บางส่วน'], ['unfurnished', 'ไม่มีเฟอร์']];
+const BEDS: [string, string][] = [['1', '1+'], ['2', '2+'], ['3', '3+'], ['4', '4+']];
+const GENDER: [string, string][] = [['female', 'หญิงล้วน'], ['male', 'ชายล้วน']];
 const MULTI = 'เลือกได้หลายอย่าง';
 const ONE = 'เลือก 1 อย่าง';
 
 type Props = {
   mode: string; q: string; basePath?: string; from?: string; to?: string;
-  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; count: number;
+  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; beds: string; gender: string; count: number;
 };
 
 export default function StayFilterSheet(p: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr });
+  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr, beds: p.beds, gender: p.gender });
   const [s, setS] = useState(init);
 
   function openSheet() { setS(init()); setOpen(true); }
-  // single-select (radio): ช่วงราคา · รองรับ · เรียงลำดับ — click again to clear
-  const single = (key: 'sort' | 'pr', val: string) => setS((x) => ({ ...x, [key]: x[key] === val ? '' : val }));
+  // single-select (radio): ช่วงราคา · ห้องนอน · เพศ · เรียงลำดับ — click again to clear
+  const single = (key: 'sort' | 'pr' | 'beds' | 'gender', val: string) => setS((x) => ({ ...x, [key]: x[key] === val ? '' : val }));
   // multi-select (checkbox): ประเภทที่พัก · เฟอร์นิเจอร์ · สิ่งอำนวยความสะดวก
   const multi = (key: 'kind' | 'am' | 'fr', val: string) =>
     setS((x) => ({ ...x, [key]: x[key].includes(val) ? x[key].filter((y) => y !== val) : [...x[key], val] }));
-  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '' }); }
+  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '', beds: '', gender: '' }); }
   function apply() {
     const u = new URLSearchParams();
     if (p.mode !== 'monthly') u.set('mode', p.mode);
@@ -43,13 +45,14 @@ export default function StayFilterSheet(p: Props) {
     if (s.am.length) u.set('am', s.am.join(','));
     if (s.fr.length) u.set('fr', s.fr.join(','));
     if (s.pr) u.set('pr', s.pr);
+    if (s.beds) u.set('beds', s.beds); if (s.gender) u.set('gender', s.gender);
     const qs = u.toString();
     setOpen(false);
     const base = p.basePath || '/stay';                                                       // /stay or /stay/map
     router.push(qs ? `${base}?${qs}` : base);
   }
 
-  const selected = s.kind.length + s.am.length + s.fr.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0);
+  const selected = s.kind.length + s.am.length + s.fr.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.beds ? 1 : 0) + (s.gender ? 1 : 0);
 
   const Chip = ({ on, onClick, check = false, children }: { on: boolean; onClick: () => void; check?: boolean; children: any }) =>
     <button type="button" className={`fchip ${on ? 'on' : ''}`} onClick={onClick}>{check && on && <Icon n="check" size={13} className="fchip-ck" />}{children}</button>;
@@ -77,6 +80,14 @@ export default function StayFilterSheet(p: Props) {
               </Sec>
               <Sec icon="tag" title="ช่วงราคา" hint={ONE}>
                 {PRICE[p.mode].map(([k, l]) => <Chip key={k} on={s.pr === k} onClick={() => single('pr', k)}>฿{l}</Chip>)}
+              </Sec>
+              {p.mode === 'monthly' && (
+                <Sec icon="bed" title="ห้องนอน" hint={ONE}>
+                  {BEDS.map(([k, l]) => <Chip key={k} on={s.beds === k} onClick={() => single('beds', k)}>{l}</Chip>)}
+                </Sec>
+              )}
+              <Sec icon="users" title="เพศผู้เข้าพัก (หอพัก/โฮสเทล)" hint={ONE}>
+                {GENDER.map(([k, l]) => <Chip key={k} on={s.gender === k} onClick={() => single('gender', k)}>{l}</Chip>)}
               </Sec>
               {p.mode === 'monthly' && (
                 <Sec icon="sofa" title="เฟอร์นิเจอร์" hint={MULTI}>

@@ -25,6 +25,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
       `SELECT su.id, su.name_i18n, su.description_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n,
               su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at, su.managed,
               su.capacity, su.deposit_minor, su.min_stay, su.room_size_sqm, su.furnished, su.bills_included, su.unit_amenities,
+              su.bedrooms, su.bathrooms, su.gender_policy, su.check_in_time, su.check_out_time, su.attrs,
               p.id place_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website,
               p.opening_hours, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
@@ -159,13 +160,24 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
 
         <h2 className="rsec"><span className="rsec-ic"><Icon n="bed" size={15} /></span>รายละเอียดห้อง</h2>
         <div className="factgrid">
+          {u.bedrooms != null && <Fact icon="bed" label="ห้องนอน" value={`${u.bedrooms} ห้อง`} />}
+          {u.bathrooms != null && <Fact icon="bed" label="ห้องน้ำ" value={`${u.bathrooms} ห้อง`} />}
           {u.capacity && <Fact icon="users" label="รองรับ" value={`${u.capacity} ท่าน`} />}
-          {u.deposit_minor != null && <Fact icon="ticket" label="เงินมัดจำ" value={`฿${Math.round(u.deposit_minor / 100).toLocaleString()}`} />}
+          {u.gender_policy && <Fact icon="users" label="เพศผู้เข้าพัก" value={u.gender_policy === 'female' ? 'หญิงล้วน' : u.gender_policy === 'male' ? 'ชายล้วน' : 'ทุกเพศ'} />}
+          {!monthly && u.check_in_time && <Fact icon="clock" label="เช็คอิน" value={u.check_in_time} />}
+          {!monthly && u.check_out_time && <Fact icon="clock" label="เช็คเอาท์" value={u.check_out_time} />}
+          {monthly && u.deposit_minor != null && <Fact icon="ticket" label="เงินมัดจำ" value={`฿${Math.round(u.deposit_minor / 100).toLocaleString()}`} />}
           {u.min_stay && <Fact icon="calendar" label="สัญญาขั้นต่ำ" value={`${u.min_stay} ${monthly ? 'เดือน' : 'คืน'}`} />}
           {u.room_size_sqm && <Fact icon="ruler" label="ขนาดห้อง" value={`${u.room_size_sqm} ตร.ม.`} />}
           {u.furnished && FURNISH_TH[u.furnished] && <Fact icon="sofa" label="เฟอร์นิเจอร์" value={FURNISH_TH[u.furnished]} />}
+          {u.attrs?.breakfast && <Fact icon="check" label="อาหารเช้า" value="รวมในราคา" />}
+          {u.attrs?.cancellation && <Fact icon="ticket" label="การยกเลิก" value={u.attrs.cancellation === 'flexible' ? 'ยกเลิกฟรี' : u.attrs.cancellation === 'moderate' ? 'ปานกลาง' : 'เข้มงวด'} />}
           {monthly && u.available_from && <Fact icon="clock" label="ว่างตั้งแต่" value={fmtDate(u.available_from)} />}
         </div>
+        {u.attrs?.host && (<>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="chat" size={15} /></span>เจ้าบ้าน / บริการ</h2>
+          <p className="desc">{u.attrs.host}</p>
+        </>)}
 
         {(amen.length > 0 || bills.length > 0) && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="sparkles" size={15} /></span>สิ่งอำนวยความสะดวก</h2>

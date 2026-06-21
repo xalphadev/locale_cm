@@ -75,6 +75,8 @@ export async function loadStay(searchParams: Record<string, string>) {
   const rooms = roomsN >= 2 ? roomsN : 0;
   const district = /^[a-z_]+$/.test(searchParams?.district || '') ? searchParams.district : '';   // district slug deep-link
   const savedOnly = searchParams?.saved === '1';
+  const beds = ['1', '2', '3', '4'].includes(searchParams?.beds || '') ? searchParams.beds : '';   // min bedrooms (apt/condo/house)
+  const gender = ['female', 'male'].includes(searchParams?.gender || '') ? searchParams.gender : '';   // dorm/hostel
 
   let rows: any[] = [];
   try {
@@ -102,6 +104,8 @@ export async function loadStay(searchParams: Record<string, string>) {
     if (qtext) { params.push('%' + qtext + '%'); const n = params.length; where.push(`(su.name_i18n->>'th' ILIKE $${n} OR su.name_i18n->>'en' ILIKE $${n} OR p.name_i18n->>'th' ILIKE $${n} OR p.name_i18n->>'en' ILIKE $${n} OR d.name_i18n->>'th' ILIKE $${n})`); }
     if (pr) { const [lo, hi] = PRICE[mode][pr]; if (lo != null) { params.push(lo); where.push(`su.price_minor>=$${params.length}`); } if (hi != null) { params.push(hi); where.push(`su.price_minor<$${params.length}`); } }
     if (cap) { params.push(Number(cap)); where.push(`su.capacity>=$${params.length}`); }
+    if (beds) { params.push(Number(beds)); where.push(`su.bedrooms>=$${params.length}`); }
+    if (gender) { params.push(gender); where.push(`su.gender_policy=$${params.length}`); }
     if (district) { params.push(district); where.push(`d.slug=$${params.length}`); }
     if (savedOnly && uid) { params.push(uid); where.push(`EXISTS (SELECT 1 FROM saved_places sp2 WHERE sp2.place_id=p.id AND sp2.user_id=$${params.length})`); }
     const popOrder = `(SELECT avg(rv.rating) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') DESC NULLS LAST, (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') DESC, su.created_at DESC`;
@@ -135,11 +139,11 @@ export async function loadStay(searchParams: Record<string, string>) {
   }));
 
   // cap (guests) + rooms are PRIMARY search dimensions (own recap bits), not counted as "ตัวกรอง N"
-  const activeCount = kind.length + (sort ? 1 : 0) + am.length + fr.length + (pr ? 1 : 0);
+  const activeCount = kind.length + (sort ? 1 : 0) + am.length + fr.length + (pr ? 1 : 0) + (beds ? 1 : 0) + (gender ? 1 : 0);
 
   // URL builder shared by both routes: pass base='/stay' or '/stay/map'; dates ride along so the
   // list↔map toggle and the quick chips never drop an active date search.
-  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, ad: adults > 1 ? String(adults) : '', ch: children > 0 ? String(children) : '', rooms: rooms ? String(rooms) : '', district, saved: savedOnly ? '1' : '' };
+  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, ad: adults > 1 ? String(adults) : '', ch: children > 0 ? String(children) : '', rooms: rooms ? String(rooms) : '', district, saved: savedOnly ? '1' : '', beds, gender };
   const href = (patch: Partial<typeof cur> = {}, base = '/stay/search') => {
     const s = { ...cur, ...patch }; const u = new URLSearchParams();
     if (s.mode !== 'monthly') u.set('mode', s.mode);
@@ -148,6 +152,7 @@ export async function loadStay(searchParams: Record<string, string>) {
     if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr);
     if (s.ad) u.set('ad', s.ad); if (s.ch) u.set('ch', s.ch); if (s.mode === 'daily' && s.rooms) u.set('rooms', s.rooms);
     if (s.district) u.set('district', s.district); if (s.saved) u.set('saved', s.saved);
+    if (s.beds) u.set('beds', s.beds); if (s.gender) u.set('gender', s.gender);
     if (s.mode === 'daily' && dateMode) { u.set('from', fromQ as string); u.set('to', toQ as string); }
     const qs = u.toString(); return qs ? `${base}?${qs}` : base;
   };
@@ -161,6 +166,7 @@ export async function loadStay(searchParams: Record<string, string>) {
   if (am.length) hidden.push(['am', am.join(',')]); if (fr.length) hidden.push(['fr', fr.join(',')]);
   if (pr) hidden.push(['pr', pr]);   // NOTE: cap/rooms are NOT here — the who/when form owns them via StayGuests/picker
   if (district) hidden.push(['district', district]); if (savedOnly) hidden.push(['saved', '1']);
+  if (beds) hidden.push(['beds', beds]); if (gender) hidden.push(['gender', gender]);
 
   const searched = !!qtext || dateMode || !!cap || !!district || savedOnly || activeCount > 0;
   const recapBits = [mode === 'daily' ? 'รายวัน' : 'รายเดือน'];
@@ -170,7 +176,7 @@ export async function loadStay(searchParams: Record<string, string>) {
   if (activeCount > 0) recapBits.push(`ตัวกรอง ${activeCount}`);
 
   return {
-    mode, kind, sort, am, fr, qtext, pr, cap, adults, children, rooms, focus, fromQ, toQ, dateMode, dateQs,
+    mode, kind, sort, am, fr, qtext, pr, cap, adults, children, rooms, beds, gender, focus, fromQ, toQ, dateMode, dateQs,
     placeList, pins, unpinned, activeCount, hidden, href, searched, recapBits,
   };
 }

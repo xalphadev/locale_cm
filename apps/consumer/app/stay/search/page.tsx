@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 // reached after the user searches on the /stay home or taps any curated link. Reuses loadStay unchanged.
 export default async function StaySearch({ searchParams }: { searchParams: Record<string, string> }) {
   const d = await loadStay(searchParams);
-  const { mode, kind, sort, am, fr, qtext, pr, cap, rooms, fromQ, toQ, dateMode, dateQs,
+  const { mode, kind, sort, am, fr, qtext, pr, cap, rooms, beds, gender, fromQ, toQ, dateMode, dateQs,
     placeList, activeCount, href, recapBits } = d;
   const n = Math.min(60, Math.max(18, parseInt(searchParams?.n || '18', 10) || 18));
   const shown = placeList.slice(0, n);
@@ -43,7 +43,7 @@ export default async function StaySearch({ searchParams }: { searchParams: Recor
           </div>
         </div>
         <div className="staychips">
-          <StayFilterSheet mode={mode} q={qtext} kind={kind} sort={sort} am={am} fr={fr} pr={pr} count={activeCount} from={fromQ as string} to={toQ as string} />
+          <StayFilterSheet mode={mode} q={qtext} kind={kind} sort={sort} am={am} fr={fr} pr={pr} beds={beds} gender={gender} count={activeCount} from={fromQ as string} to={toQ as string} />
           <a href={href({ sort: sort === 'cheap' ? '' : 'cheap' })} className={`qchip ${sort === 'cheap' ? 'on' : ''}`}>ราคาถูกสุด</a>
           {Object.keys(PRICE[mode]).map((k) => (
             <a key={k} href={href({ pr: pr === k ? '' : k })} className={`qchip ${pr === k ? 'on' : ''}`}>{PRICE_LABEL[mode][k]}</a>
