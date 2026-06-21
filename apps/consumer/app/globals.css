@@ -1475,3 +1475,5 @@ a.pcname{color:var(--text)}
 .staytab.on::after{content:'';position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:46px;height:3px;border-radius:3px 3px 0 0;background:var(--accent)}
 /* founder: fields + CTA → 30px radius, 0 8px padding */
 .staysearch,.gfield,.staydates-go{border-radius:30px;padding:0 8px}
+/* uniform head/tail: every field + the CTA flush to the card edges (no stray side margins) */
+.staysearch,.gfield,.fieldrow,.staydates-go{margin-left:0;margin-right:0}
