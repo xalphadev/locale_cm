@@ -36,9 +36,9 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   return (
     <div className="staybg">
       <div className="staytop">
-        <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
+        <a className="back" href="/" aria-label="กลับ"><Icon n="back" size={19} /></a>
         <div className="staytop-row">
-          <span className="staytop-ic"><Icon n="bed" size={23} /></span>
+          <span className="staytop-ic"><Icon n="bed" size={18} /></span>
           <div className="staytop-tx">
             <h1>ที่พัก</h1>
             <div className="staytop-sub">หอพัก · อพาร์ตเมนต์ · โฮมสเตย์ ในนิมมาน / ใกล้ มช.</div>
