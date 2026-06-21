@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Stay({ searchParams }: { searchParams: Record<string, string> }) {
   const d = await loadStay(searchParams);
-  const { mode, kind, sort, am, fr, qtext, pr, cap, rooms, fromQ, toQ, dateMode, dateQs,
+  const { mode, kind, sort, am, fr, qtext, pr, cap, adults, children, rooms, fromQ, toQ, dateMode, dateQs,
     placeList, activeCount, hidden, href, searched, recapBits } = d;
   // server load-more (no infinite-scroll JS): ?n bumps the batch; SQL already caps at 60
   const n = Math.min(60, Math.max(18, parseInt(searchParams?.n || '18', 10) || 18));
@@ -25,7 +25,8 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
       <form className="staysearch" method="GET" action="/stay">
         {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         {dateMode && <><input type="hidden" name="from" value={fromQ as string} /><input type="hidden" name="to" value={toQ as string} /></>}
-        {cap && <input type="hidden" name="cap" value={cap} />}
+        {adults > 1 && <input type="hidden" name="ad" value={String(adults)} />}
+        {children > 0 && <input type="hidden" name="ch" value={String(children)} />}
         {rooms ? <input type="hidden" name="rooms" value={String(rooms)} /> : null}
         <Icon n="search" size={17} />
         <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
@@ -35,8 +36,8 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
           hidden[] carries the rest. (Renders in both modes — guests applies to monthly leases too.) */}
       <form className="staydates" method="GET" action="/stay">
         {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        {mode === 'daily' && <DateRangePicker mode="range" compact fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />}
-        <StayGuests capName="cap" roomsName="rooms" initialCap={Number(cap) || 1} initialRooms={rooms || 1} showRooms={mode === 'daily'} roomsLive={dateMode} />
+        {mode === 'daily' && <DateRangePicker mode="range" split fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />}
+        <StayGuests adultsName="ad" childrenName="ch" roomsName="rooms" initialAdults={adults} initialChildren={children} initialRooms={rooms || 1} showRooms={mode === 'daily'} roomsLive={dateMode} />
         <button type="submit" className="staydates-go"><Icon n="search" size={15} /> {mode === 'daily' ? 'ค้นหาวันว่าง' : 'ค้นหา'}</button>
         {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
       </form>
@@ -97,7 +98,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
       )}
       {placeList.length === 0 && (
         <p className="empty">{(cap || rooms)
-          ? <>ไม่พบที่พักที่รองรับ{cap ? ` ${cap} ท่าน` : ''}{rooms ? ` · ${rooms} ห้อง` : ''} — <a href={href({ cap: '', rooms: '' })}>ลดจำนวนผู้เข้าพัก/ห้อง</a></>
+          ? <>ไม่พบที่พักที่รองรับ{cap ? ` ${cap} ท่าน` : ''}{rooms ? ` · ${rooms} ห้อง` : ''} — <a href={href({ ad: '', ch: '', rooms: '' })}>ลดจำนวนผู้เข้าพัก/ห้อง</a></>
           : dateMode
             ? <>ไม่มีที่พักที่ยืนยันว่างช่วง {fromQ}–{toQ} · <a href={href({})}>ดูทั้งหมด (ไม่ระบุวัน)</a> เพื่อสอบถามที่พักโดยตรง</>
             : 'ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง'}</p>

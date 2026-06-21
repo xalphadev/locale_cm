@@ -33,8 +33,11 @@ export async function loadStay(searchParams: Record<string, string>) {
   const fr = String(searchParams?.fr || '').split(',').map((x) => x.trim()).filter((x) => ['furnished', 'partial', 'unfurnished'].includes(x));
   const qtext = String(searchParams?.q || '').slice(0, 60).trim();
   const pr = PRICE[mode][searchParams?.pr] ? searchParams.pr : '';
-  const capN = Math.max(0, Math.min(10, parseInt(searchParams?.cap || '0', 10) || 0));
-  const cap = capN >= 2 ? String(capN) : '';   // guests: neutral at 0/1, active 2..10 (su.capacity>=N)
+  // occupancy: adults + children = total guests → capacity FIT filter (no money/age pricing). neutral = 1 adult.
+  const adults = Math.max(1, Math.min(10, parseInt(searchParams?.ad || '1', 10) || 1));
+  const children = Math.max(0, Math.min(6, parseInt(searchParams?.ch || '0', 10) || 0));
+  const guests = adults + children;
+  const cap = guests >= 2 ? String(guests) : '';   // active when total ≥ 2 → su.capacity>=N
   const focus = typeof searchParams?.focus === 'string' ? searchParams.focus : undefined;
   // nightly date search: real availability for [from,to) computed from blocks (managed daily only)
   const reD = /^\d{4}-\d{2}-\d{2}$/;
@@ -123,13 +126,14 @@ export async function loadStay(searchParams: Record<string, string>) {
 
   // URL builder shared by both routes: pass base='/stay' or '/stay/map'; dates ride along so the
   // list↔map toggle and the quick chips never drop an active date search.
-  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, cap, rooms: rooms ? String(rooms) : '' };
+  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, ad: adults > 1 ? String(adults) : '', ch: children > 0 ? String(children) : '', rooms: rooms ? String(rooms) : '' };
   const href = (patch: Partial<typeof cur> = {}, base = '/stay') => {
     const s = { ...cur, ...patch }; const u = new URLSearchParams();
     if (s.mode !== 'monthly') u.set('mode', s.mode);
     if (s.kind) u.set('kind', s.kind); if (s.sort) u.set('sort', s.sort);
     if (s.am) u.set('am', s.am); if (s.fr) u.set('fr', s.fr);
-    if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr); if (s.cap) u.set('cap', s.cap); if (s.rooms) u.set('rooms', s.rooms);
+    if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr);
+    if (s.ad) u.set('ad', s.ad); if (s.ch) u.set('ch', s.ch); if (s.mode === 'daily' && s.rooms) u.set('rooms', s.rooms);
     if (s.mode === 'daily' && dateMode) { u.set('from', fromQ as string); u.set('to', toQ as string); }
     const qs = u.toString(); return qs ? `${base}?${qs}` : base;
   };
@@ -151,7 +155,7 @@ export async function loadStay(searchParams: Record<string, string>) {
   if (activeCount > 0) recapBits.push(`ตัวกรอง ${activeCount}`);
 
   return {
-    mode, kind, sort, am, fr, qtext, pr, cap, rooms, focus, fromQ, toQ, dateMode, dateQs,
+    mode, kind, sort, am, fr, qtext, pr, cap, adults, children, rooms, focus, fromQ, toQ, dateMode, dateQs,
     placeList, pins, unpinned, activeCount, hidden, href, searched, recapBits,
   };
 }

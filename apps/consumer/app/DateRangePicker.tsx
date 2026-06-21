@@ -19,9 +19,9 @@ const midnight = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); r
 const parseYmd = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? midnight(new Date(Number(s.slice(0, 4)), Number(s.slice(5, 7)) - 1, Number(s.slice(8, 10)))) : null);
 
 export default function DateRangePicker({
-  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, initialFrom, initialTo, compact = false,
+  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, initialFrom, initialTo, compact = false, split = false,
 }: {
-  mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; initialFrom?: string; initialTo?: string; compact?: boolean;
+  mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; initialFrom?: string; initialTo?: string; compact?: boolean; split?: boolean;
 }) {
   const today = useMemo(() => midnight(new Date()), []);
   const [open, setOpen] = useState(false);
@@ -53,6 +53,18 @@ export default function DateRangePicker({
 
   return (
     <div className="drp">
+      {split ? (
+        <div className="fieldrow">
+          <button type="button" className="gfield" onClick={() => setOpen(true)}>
+            <Icon n="calendar" size={17} />
+            <span className={`gf-v ${from ? '' : 'ph'}`}>{from ? fmtPill(from) : labelFrom}</span>
+          </button>
+          <button type="button" className="gfield" onClick={() => setOpen(true)}>
+            <Icon n="calendar" size={17} />
+            <span className={`gf-v ${to ? '' : 'ph'}`}>{to ? fmtPill(to) : labelTo}</span>
+          </button>
+        </div>
+      ) : (
       <button type="button" className={`drp-trigger ${compact ? 'drp-compact' : ''}`} onClick={() => setOpen(true)}>
         {compact ? (
           <>
@@ -81,6 +93,7 @@ export default function DateRangePicker({
           </>
         )}
       </button>
+      )}
 
       <input type="hidden" name={fromName} value={from ? ymd(from) : ''} />
       {mode === 'range' && toName && <input type="hidden" name={toName} value={to ? ymd(to) : ''} />}
