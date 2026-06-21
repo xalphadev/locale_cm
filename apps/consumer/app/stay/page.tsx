@@ -18,6 +18,10 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   // the search apparatus, shared by the expanded (fresh visitor) and collapsed (re-open) states
   const searchControls = (
     <div className="staycard">
+      <div className="staytabs">
+        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`staytab ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
+        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`staytab ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
+      </div>
       <form className="staysearch" method="GET" action="/stay">
         {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
         {dateMode && <><input type="hidden" name="from" value={fromQ as string} /><input type="hidden" name="to" value={toQ as string} /></>}
@@ -27,10 +31,6 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
         {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
       </form>
-      <div className="segmented">
-        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
-        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`seg ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
-      </div>
       {/* where/when/who in one form → one CTA. The picker writes from/to; StayGuests writes cap/rooms;
           hidden[] carries the rest. (Renders in both modes — guests applies to monthly leases too.) */}
       <form className="staydates" method="GET" action="/stay">
