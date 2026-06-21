@@ -63,6 +63,12 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
   }
 
   const monthly = u.rental_mode === 'monthly';
+  // per-type display gates — mirror RoomForm's capture manifest so detail shows only the fields a kind owns
+  const kind = u.stay_kind || '';
+  const isRoomKind = ['apartment', 'condo', 'house', 'mansion'].includes(kind);
+  const isSharedKind = ['dorm', 'hostel'].includes(kind);
+  const isHostKind = ['homestay', 'guesthouse'].includes(kind);
+  const isBuildingKind = ['dorm', 'hostel', 'apartment', 'condo', 'mansion', 'hotel', 'guesthouse'].includes(kind);
   const reD = /^\d{4}-\d{2}-\d{2}$/;
   const fromQ = reD.test(searchParams?.from || '') ? searchParams.from! : '';
   const toQ = reD.test(searchParams?.to || '') ? searchParams.to! : '';
@@ -160,21 +166,21 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
 
         <h2 className="rsec"><span className="rsec-ic"><Icon n="bed" size={15} /></span>รายละเอียดห้อง</h2>
         <div className="factgrid">
-          {u.bedrooms != null && <Fact icon="bed" label="ห้องนอน" value={`${u.bedrooms} ห้อง`} />}
-          {u.bathrooms != null && <Fact icon="bed" label="ห้องน้ำ" value={`${u.bathrooms} ห้อง`} />}
+          {isRoomKind && u.bedrooms != null && <Fact icon="bed" label="ห้องนอน" value={`${u.bedrooms} ห้อง`} />}
+          {isRoomKind && u.bathrooms != null && <Fact icon="bed" label="ห้องน้ำ" value={`${u.bathrooms} ห้อง`} />}
           {u.capacity && <Fact icon="users" label="รองรับ" value={`${u.capacity} ท่าน`} />}
-          {u.gender_policy && <Fact icon="users" label="เพศผู้เข้าพัก" value={u.gender_policy === 'female' ? 'หญิงล้วน' : u.gender_policy === 'male' ? 'ชายล้วน' : 'ทุกเพศ'} />}
+          {isSharedKind && u.gender_policy && <Fact icon="users" label="เพศผู้เข้าพัก" value={u.gender_policy === 'female' ? 'หญิงล้วน' : u.gender_policy === 'male' ? 'ชายล้วน' : 'ทุกเพศ'} />}
           {!monthly && u.check_in_time && <Fact icon="clock" label="เช็คอิน" value={u.check_in_time} />}
           {!monthly && u.check_out_time && <Fact icon="clock" label="เช็คเอาท์" value={u.check_out_time} />}
           {monthly && u.deposit_minor != null && <Fact icon="ticket" label="เงินมัดจำ" value={`฿${Math.round(u.deposit_minor / 100).toLocaleString()}`} />}
           {u.min_stay && <Fact icon="calendar" label="สัญญาขั้นต่ำ" value={`${u.min_stay} ${monthly ? 'เดือน' : 'คืน'}`} />}
           {u.room_size_sqm && <Fact icon="ruler" label="ขนาดห้อง" value={`${u.room_size_sqm} ตร.ม.`} />}
           {u.furnished && FURNISH_TH[u.furnished] && <Fact icon="sofa" label="เฟอร์นิเจอร์" value={FURNISH_TH[u.furnished]} />}
-          {u.attrs?.breakfast && <Fact icon="check" label="อาหารเช้า" value="รวมในราคา" />}
-          {u.attrs?.cancellation && <Fact icon="ticket" label="การยกเลิก" value={u.attrs.cancellation === 'flexible' ? 'ยกเลิกฟรี' : u.attrs.cancellation === 'moderate' ? 'ปานกลาง' : 'เข้มงวด'} />}
+          {!monthly && u.attrs?.breakfast && <Fact icon="check" label="อาหารเช้า" value="รวมในราคา" />}
+          {!monthly && u.attrs?.cancellation && <Fact icon="ticket" label="การยกเลิก" value={u.attrs.cancellation === 'flexible' ? 'ยกเลิกฟรี' : u.attrs.cancellation === 'moderate' ? 'ปานกลาง' : 'เข้มงวด'} />}
           {monthly && u.available_from && <Fact icon="clock" label="ว่างตั้งแต่" value={fmtDate(u.available_from)} />}
         </div>
-        {u.attrs?.host && (<>
+        {isHostKind && u.attrs?.host && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="chat" size={15} /></span>เจ้าบ้าน / บริการ</h2>
           <p className="desc">{u.attrs.host}</p>
         </>)}
@@ -185,7 +191,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           {bills.length > 0 && <div className="rbills"><Icon n="check" size={14} /> รวมในค่าเช่า: {bills.map((b) => facetLabel(b)).join(' · ')}</div>}
         </>)}
 
-        {u.attrs?.building?.length > 0 && (<>
+        {isBuildingKind && u.attrs?.building?.length > 0 && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="sparkles" size={15} /></span>ส่วนกลาง / อาคาร</h2>
           <div className="chips">{u.attrs.building.map((a: string) => <span className="chip" key={a}><Icon n="check" size={12} /> {facetLabel(a)}</span>)}</div>
         </>)}
