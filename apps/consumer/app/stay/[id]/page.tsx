@@ -7,6 +7,8 @@ import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
 import { parsePoint } from '@/lib/geo';
 import { RoomCard, rentText, roomVacancy, FURNISH_TH, fmtDate, stayDaysAgo } from '../../RoomCard';
 import { StayGallery } from '../../Lightbox';
+import { ReviewForm } from '../../place/[id]/ReviewForm';
+import { ReviewsFeed } from '../../place/[id]/ReviewsFeed';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,8 +19,9 @@ function Fact({ icon, label, value }: { icon: string; label: string; value: stri
   return <div className="factitem"><span className="factitem-ic"><Icon n={icon} size={17} /></span><div className="factitem-tx"><div className="factitem-l">{label}</div><div className="factitem-v">{value}</div></div></div>;
 }
 
-export default async function StayUnitDetail({ params, searchParams }: { params: { id: string }; searchParams: { sent?: string; err?: string; from?: string; to?: string } }) {
+export default async function StayUnitDetail({ params, searchParams }: { params: { id: string }; searchParams: { sent?: string; err?: string; from?: string; to?: string; reviewed?: string } }) {
   let u: any = null; let others: any[] = []; let seasonalRates: any[] = []; let avail: any[] = [];
+  let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let canReview = false; let myReview: any = null; let loggedIn = false;
   try {
     const uid = await demoUserId();
     [u] = await q<any>(
@@ -54,6 +57,16 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
             WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
             GROUP BY d ORDER BY d`, [u.id]);
       }
+      // reviews are place-level (place_id) — same data the /place page shows; eligibility = a check-in fact here
+      [rev] = await q<any>(`SELECT count(*)::int n, COALESCE(round(avg(rating),1),0)::text avg FROM reviews WHERE place_id=$1 AND moderation_status='approved'`, [u.place_id]);
+      reviews = await q<any>(`SELECT r.id, r.rating, r.body_i18n, pr.display_name, to_char(r.created_at,'YYYY-MM-DD') d FROM reviews r LEFT JOIN profiles pr ON pr.user_id=r.user_id WHERE r.place_id=$1 AND r.moderation_status='approved' ORDER BY r.created_at DESC, r.rating DESC LIMIT 8`, [u.place_id]);
+      dist = await q<any>(`SELECT rating, count(*)::int c FROM reviews WHERE place_id=$1 AND moderation_status='approved' GROUP BY rating`, [u.place_id]);
+      if (uid) {
+        loggedIn = true;
+        const [ci] = await q<any>(`SELECT 1 FROM check_ins WHERE user_id=$1 AND place_id=$2 LIMIT 1`, [uid, u.place_id]);
+        canReview = !!ci;
+        [myReview] = await q<any>(`SELECT rating, body_i18n FROM reviews WHERE user_id=$1 AND place_id=$2 AND moderation_status<>'rejected' LIMIT 1`, [uid, u.place_id]);
+      }
     }
   } catch { /* db down */ }
 
@@ -69,6 +82,9 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
   const isSharedKind = ['dorm', 'hostel'].includes(kind);
   const isHostKind = ['homestay', 'guesthouse'].includes(kind);
   const isBuildingKind = ['dorm', 'hostel', 'apartment', 'condo', 'mansion', 'hotel', 'guesthouse'].includes(kind);
+  const scoredP = (rev?.n ?? 0) >= 5;   // fairness gate — numeric score only with ≥5 approved reviews
+  const distMap: Record<number, number> = {}; for (const dd of dist) distMap[dd.rating] = dd.c;
+  const reviewTotal = (rev?.n ?? 0) || 1;
   const reD = /^\d{4}-\d{2}-\d{2}$/;
   const fromQ = reD.test(searchParams?.from || '') ? searchParams.from! : '';
   const toQ = reD.test(searchParams?.to || '') ? searchParams.to! : '';
@@ -213,6 +229,25 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
         {(i18n(u.description_i18n) || i18n(u.place_desc)) && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="feed" size={15} /></span>รายละเอียด</h2>
           <p className="desc">{i18n(u.description_i18n) || i18n(u.place_desc)}</p>
+        </>)}
+
+        <h2 className="rsec"><span className="rsec-ic"><Icon n="star" size={15} /></span>รีวิว{(rev?.n ?? 0) ? ` (${rev.n})` : ''}</h2>
+        <ReviewForm placeId={u.place_id} loggedIn={loggedIn} canReview={canReview} mine={myReview ? { rating: myReview.rating, body: i18n(myReview.body_i18n) } : null} status={searchParams?.reviewed} backTo={`/stay/${u.id}`} />
+        {(rev?.n ?? 0) === 0 ? (
+          <p className="empty">ยังไม่มีรีวิว — เป็นคนแรกที่รีวิวที่พักนี้</p>
+        ) : (<>
+          {scoredP ? (
+            <div className="rdist">
+              <div className="rbig"><div className="n">{rev?.avg}</div><div className="s">{Array.from({ length: 5 }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={11} />)}</div><div className="c">{rev?.n} รีวิว</div></div>
+              <div className="rbars">{[5, 4, 3, 2, 1].map((st) => (
+                <div className="rbarrow" key={st}><span>{st}</span><span className="rtrack"><span className="rfill" style={{ width: `${Math.round(((distMap[st] || 0) / reviewTotal) * 100)}%` }} /></span></div>
+              ))}</div>
+            </div>
+          ) : (
+            <p className="muted" style={{ margin: '0 0 12px' }}>ที่พักนี้ยังใหม่ — มีรีวิวจากผู้เข้าพักจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับที่พักใหม่)</p>
+          )}
+          <ReviewsFeed placeId={u.place_id} total={rev?.n ?? 0}
+            initial={reviews.map((r) => ({ id: r.id, rating: r.rating, body: i18n(r.body_i18n), name: r.display_name, d: r.d }))} />
         </>)}
 
         <h2 className="rsec"><span className="rsec-ic"><Icon n="pin" size={15} /></span>ที่พัก</h2>

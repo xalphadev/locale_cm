@@ -5,9 +5,9 @@ import { submitReviewAction } from '../../actions';
 
 // Write/edit a review. Shown only to verified visitors (server passes canReview from a check-in fact);
 // logged-out → login nudge; logged-in but no check-in → visit nudge. No money — opinion + rating only.
-export function ReviewForm({ placeId, loggedIn, canReview, mine, status }: {
+export function ReviewForm({ placeId, loggedIn, canReview, mine, status, backTo }: {
   placeId: string; loggedIn: boolean; canReview: boolean;
-  mine: { rating: number; body: string } | null; status?: string;
+  mine: { rating: number; body: string } | null; status?: string; backTo?: string;
 }) {
   const [rating, setRating] = useState(mine?.rating || 0);
   const [body, setBody] = useState(mine?.body || '');
@@ -27,6 +27,7 @@ export function ReviewForm({ placeId, loggedIn, canReview, mine, status }: {
         <details className="rvform" {...(editing && status ? { open: true } : {})}>
           <summary className="rvform-sum"><Icon n="star" size={16} /> {editing ? 'แก้ไขรีวิวของคุณ' : 'เขียนรีวิว'}</summary>
           <form action={submitReviewAction.bind(null, placeId)} className="rvform-body">
+            {backTo && <input type="hidden" name="back" value={backTo} />}
             <div className="rvstars">
               {[1, 2, 3, 4, 5].map((s) => (
                 <button type="button" key={s} className={`rvstar ${s <= rating ? 'on' : ''}`} onClick={() => setRating(s)} aria-label={`${s} ดาว`}>

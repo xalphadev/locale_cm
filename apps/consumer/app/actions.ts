@@ -207,11 +207,13 @@ export async function submitReviewAction(placeId: string, formData: FormData) {
   if (!uid) redirect('/login');
   const rating = Math.max(0, Math.min(5, parseInt(String(formData.get('rating') ?? '0'), 10) || 0));
   const body = String(formData.get('body') ?? '').trim().slice(0, 500);
-  if (rating < 1 || body.length < 10) redirect(`/place/${placeId}?reviewed=short`);
+  const back0 = String(formData.get('back') ?? '');                                  // return to the page the form was on
+  const back = /^\/(place|stay)\/[a-z0-9-]+$/i.test(back0) ? back0 : `/place/${placeId}`;
+  if (rating < 1 || body.length < 10) redirect(`${back}?reviewed=short`);
   const [p] = await q<any>(`SELECT id, city_id, merchant_id FROM places WHERE id=$1 AND status='published'`, [placeId]);
   if (!p) redirect('/');
   const [ci] = await q<{ id: string; trust_tier: string }>(`SELECT id, trust_tier FROM check_ins WHERE user_id=$1 AND place_id=$2 ORDER BY created_at DESC LIMIT 1`, [uid, placeId]);
-  if (!ci) redirect(`/place/${placeId}?reviewed=visit`);                              // must have visited
+  if (!ci) redirect(`${back}?reviewed=visit`);                                        // must have visited
   const lang = ['en', 'zh', 'th'].includes(cookies().get('lang')?.value || '') ? cookies().get('lang')!.value : 'th';
   const bodyJson = JSON.stringify({ [lang]: body });
   const weight = ({ gps_dwell: 0.5, verified_visit: 1, proven_purchase: 1.5 } as Record<string, number>)[ci.trust_tier] ?? 1;
@@ -224,6 +226,7 @@ export async function submitReviewAction(placeId: string, formData: FormData) {
        linked_check_in_id = EXCLUDED.linked_check_in_id, trust_weight = EXCLUDED.trust_weight,
        moderation_status = 'approved', updated_at = now()`,
     [placeId, p.city_id, p.merchant_id, uid, rating, bodyJson, lang, ci.id, weight]);
+  revalidatePath(back);
   revalidatePath(`/place/${placeId}`);
-  redirect(`/place/${placeId}?reviewed=1`);
+  redirect(`${back}?reviewed=1`);
 }
