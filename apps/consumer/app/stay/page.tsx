@@ -1,48 +1,37 @@
+import { redirect } from 'next/navigation';
 import { Icon } from '../icons';
-import StayFilterSheet from './StayFilterSheet';
 import { PlaceStayCard } from './PlaceStayCard';
-import DateRangePicker from '../DateRangePicker';
-import StayGuests from './StayGuests';
-import { loadStay, PRICE, PRICE_LABEL } from './query';
+import { StayRailCard } from './StayRailCard';
+import { SearchControls } from './SearchControls';
+import { loadStay } from './query';
+import { loadStayHome } from './home-query';
+import { STAY_KIND_TH } from '@/lib/facets';
 
 export const dynamic = 'force-dynamic';
 
-export default async function Stay({ searchParams }: { searchParams: Record<string, string> }) {
-  const d = await loadStay(searchParams);
-  const { mode, kind, sort, am, fr, qtext, pr, cap, adults, children, rooms, fromQ, toQ, dateMode, dateQs,
-    placeList, activeCount, hidden, href, searched, recapBits } = d;
-  // server load-more (no infinite-scroll JS): ?n bumps the batch; SQL already caps at 60
-  const n = Math.min(60, Math.max(18, parseInt(searchParams?.n || '18', 10) || 18));
-  const shown = placeList.slice(0, n);
-
-  // the search apparatus, shared by the expanded (fresh visitor) and collapsed (re-open) states
-  const searchControls = (
-    <div className="staycard">
-      <div className="staytabs">
-        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' })} className={`staytab ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
-        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' })} className={`staytab ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
-      </div>
-      <form className="staysearch" method="GET" action="/stay">
-        {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        {dateMode && <><input type="hidden" name="from" value={fromQ as string} /><input type="hidden" name="to" value={toQ as string} /></>}
-        {adults > 1 && <input type="hidden" name="ad" value={String(adults)} />}
-        {children > 0 && <input type="hidden" name="ch" value={String(children)} />}
-        {rooms ? <input type="hidden" name="rooms" value={String(rooms)} /> : null}
-        <Icon n="search" size={17} />
-        <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
-        {qtext && <a className="ss-x" href={href({ q: '' })} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
-      </form>
-      {/* where/when/who in one form → one CTA. The picker writes from/to; StayGuests writes cap/rooms;
-          hidden[] carries the rest. (Renders in both modes — guests applies to monthly leases too.) */}
-      <form className="staydates" method="GET" action="/stay">
-        {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        {mode === 'daily' && <DateRangePicker mode="range" split fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />}
-        <StayGuests adultsName="ad" childrenName="ch" roomsName="rooms" initialAdults={adults} initialChildren={children} initialRooms={rooms || 1} showRooms={mode === 'daily'} roomsLive={dateMode} />
-        <button type="submit" className="staydates-go"><Icon n="search" size={15} /> {mode === 'daily' ? 'ค้นหาวันว่าง' : 'ค้นหา'}</button>
-        {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
-      </form>
-    </div>
+function Rail({ title, items, more }: { title: string; items: any[]; more: string }) {
+  if (!items.length) return null;
+  return (
+    <section className="staysec">
+      <div className="staysec-h"><h2>{title}</h2><a className="staysec-more" href={more}>ดูทั้งหมด <Icon n="chevR" size={14} /></a></div>
+      <div className="stayrail">{items.map((p) => <StayRailCard key={p.id} p={p} />)}</div>
+    </section>
   );
+}
+
+// /stay = DISCOVERY HOME for accommodations. Search card on top, then curated rails (honest data, no money).
+// The actual results LIST lives on /stay/search (reached via the CTA or any curated link); /stay/map = map.
+export default async function Stay({ searchParams }: { searchParams: Record<string, string> }) {
+  const sp = searchParams || {};
+  // back-compat: an old deep search (q/dates/filters) lands on the results route, not the home
+  const hasSearch = !!(sp.q || sp.kind || sp.sort || sp.am || sp.fr || sp.pr || sp.district || sp.saved
+    || (sp.from && sp.to) || Number(sp.ad) > 1 || Number(sp.ch) > 0 || sp.rooms);
+  if (hasSearch) redirect('/stay/search?' + new URLSearchParams(sp).toString());
+
+  const d = await loadStay(sp);
+  const home = await loadStayHome(sp);
+  const { mode } = home;
+  const m = mode === 'daily' ? 'mode=daily&' : '';
 
   return (
     <div className="staybg">
@@ -57,53 +46,51 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         </div>
       </div>
 
-      {searched ? (
-        <details className="staysearchbox">
-          <summary className="staypill">
-            <span className="staypill-ic"><Icon n="search" size={16} /></span>
-            <span className="staypill-recap">
-              <b>{qtext || 'ที่พักทั้งหมด'}</b>
-              <span className="staypill-sub">{recapBits.join(' · ')}</span>
-            </span>
-            <span className="staypill-edit">แก้ไข <Icon n="chevR" size={15} /></span>
-          </summary>
-          <div className="staysearch-body">{searchControls}</div>
-        </details>
-      ) : searchControls}
+      <SearchControls d={d} action="/stay/search" tabsBase="/stay" />
 
-      {/* sticky results toolbar: count + view toggle (map = its own route), then quick-filter chips */}
-      <div className={`staytools ${searched ? 'stk' : ''}`}>
-        <div className="staytools-top">
-          <span className="staycount">พบ <b>{placeList.length}</b> ที่พัก</span>
-          <div className="vtgroup">
-            <span className="vtg on"><Icon n="feed" size={14} /> รายการ</span>
-            <a href={href({}, '/stay/map')} className="vtg"><Icon n="map" size={14} /> แผนที่</a>
+      {home.kinds.length > 0 && (
+        <section className="staysec">
+          <div className="staysec-h"><h2>ตามประเภทที่พัก</h2></div>
+          <div className="staytiles">
+            {home.kinds.map((k) => (
+              <a key={k.kind} className="staytile" href={`/stay/search?${m}kind=${k.kind}`}>
+                <span className="staytile-ic"><Icon n="bed" size={19} /></span>
+                <span className="staytile-tx"><b>{STAY_KIND_TH[k.kind] || 'ที่พัก'}</b><span>{k.n} ที่</span></span>
+              </a>
+            ))}
           </div>
-        </div>
-        <div className="staychips">
-          <StayFilterSheet mode={mode} q={qtext} kind={kind} sort={sort} am={am} fr={fr} pr={pr} count={activeCount} from={fromQ as string} to={toQ as string} />
-          <a href={href({ sort: sort === 'cheap' ? '' : 'cheap' })} className={`qchip ${sort === 'cheap' ? 'on' : ''}`}>ราคาถูกสุด</a>
-          {Object.keys(PRICE[mode]).map((k) => (
-            <a key={k} href={href({ pr: pr === k ? '' : k })} className={`qchip ${pr === k ? 'on' : ''}`}>{PRICE_LABEL[mode][k]}</a>
-          ))}
-        </div>
-      </div>
+        </section>
+      )}
 
-      <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{mode === 'monthly' ? 'ที่พักให้เช่ารายเดือน' : dateMode ? 'ห้องว่างตามวันที่เลือก' : 'ที่พักรายวัน'}</h2>
-      <div className="staylist">
-        {shown.map((p) => <PlaceStayCard key={p.id} p={p} qs={dateQs} />)}
+      <Rail title="ว่างคืนนี้" items={home.tonight} more="/stay/search?mode=daily&sort=vacant" />
+
+      {home.areas.length > 0 && (
+        <section className="staysec">
+          <div className="staysec-h"><h2>ตามย่าน</h2></div>
+          <div className="stayareas">
+            {home.areas.map((a) => (
+              <a key={a.slug} className="stayarea" href={`/stay/search?${m}district=${a.slug}`}>{a.name} <span className="stayarea-n">{a.n}</span></a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <Rail title="ที่พักแนะนำ" items={home.featured} more={`/stay/search?${m}sort=new`} />
+      <Rail title="ยอดนิยม" items={home.popular} more={`/stay/search?${m}sort=popular`} />
+      <Rail title="ราคาคุ้มค่า" items={home.value} more={`/stay/search?${m}sort=cheap`} />
+
+      {home.saved.length > 0 && (
+        <section className="staysec">
+          <div className="staysec-h"><h2>บันทึกไว้</h2><a className="staysec-more" href="/stay/search?saved=1">ดูทั้งหมด <Icon n="chevR" size={14} /></a></div>
+          <div className="staylist">{home.saved.map((p: any) => <PlaceStayCard key={p.id} p={p} />)}</div>
+        </section>
+      )}
+
+      <div className="staysec">
+        <a className="staymaplink" href="/stay/search"><Icon n="feed" size={16} /> ดูที่พักทั้งหมด (รายการ)</a>
+        <a className="staymaplink" href="/stay/map"><Icon n="map" size={16} /> ดูที่พักบนแผนที่</a>
       </div>
-      {placeList.length > shown.length && (
-        <a className="loadmore" href={`${href({})}${href({}).includes('?') ? '&' : '?'}n=${n + 18}`}>ดูเพิ่มเติม ({placeList.length - shown.length})</a>
-      )}
-      {placeList.length === 0 && (
-        <p className="empty">{(cap || rooms)
-          ? <>ไม่พบที่พักที่รองรับ{cap ? ` ${cap} ท่าน` : ''}{rooms ? ` · ${rooms} ห้อง` : ''} — <a href={href({ ad: '', ch: '', rooms: '' })}>ลดจำนวนผู้เข้าพัก/ห้อง</a></>
-          : dateMode
-            ? <>ไม่มีที่พักที่ยืนยันว่างช่วง {fromQ}–{toQ} · <a href={href({})}>ดูทั้งหมด (ไม่ระบุวัน)</a> เพื่อสอบถามที่พักโดยตรง</>
-            : 'ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง'}</p>
-      )}
-      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
+      <p className="shopnote" style={{ margin: '12px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
     </div>
   );
 }

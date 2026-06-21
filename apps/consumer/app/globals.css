@@ -1384,6 +1384,33 @@ a.pcname{color:var(--text)}
 .staysearchbox .staypill{display:flex;align-items:center;gap:11px;margin:8px 16px 2px;padding:11px 13px;background:var(--surface);border:1px solid var(--hairline);border-radius:18px;box-shadow:var(--shadow-sm)}
 .staysearchbox .staypill-ic{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
 .staysearchbox[open] .staycard{margin-top:6px}
+
+/* /stay discovery HOME: curated sections, rails, type tiles, area chips */
+.staysec{margin:18px 0 2px}
+.staysec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 9px}
+.staysec-h h2{margin:0;font-size:1.12rem;font-weight:800;letter-spacing:-.01em}
+.staysec-more{flex:none;font-size:.86rem;font-weight:700;color:var(--accent);display:inline-flex;align-items:center;gap:1px;text-decoration:none}
+.stayrail{display:flex;gap:12px;overflow-x:auto;padding:1px 16px 4px;scrollbar-width:none}
+.stayrail::-webkit-scrollbar{display:none}
+.rcard{flex:none;width:165px;text-decoration:none;color:var(--text)}
+.rcard-img{position:relative;width:165px;height:120px;border-radius:16px;overflow:hidden;background:#ECECEF}
+.rcard-img img{width:100%;height:100%;object-fit:cover;display:block}
+.rcard-img .pchip{top:7px;left:7px}
+.rcard-nm{font-weight:700;font-size:.92rem;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcard-meta{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.rcard-price{font-size:.88rem;font-weight:800;margin-top:3px}
+.staytiles{display:flex;gap:9px;overflow-x:auto;padding:0 16px 4px;scrollbar-width:none}
+.staytiles::-webkit-scrollbar{display:none}
+.staytile{flex:none;display:flex;align-items:center;gap:9px;padding:9px 15px 9px 9px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;text-decoration:none;color:var(--text);box-shadow:var(--shadow-sm)}
+.staytile-ic{width:38px;height:38px;border-radius:11px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;flex:none}
+.staytile-tx{display:flex;flex-direction:column;line-height:1.25}
+.staytile-tx b{font-size:.92rem;font-weight:700;white-space:nowrap}
+.staytile-tx span{font-size:.76rem;color:var(--muted)}
+.stayareas{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 2px}
+.stayarea{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--hairline);font-size:.88rem;font-weight:600;color:var(--text);text-decoration:none}
+.stayarea-n{font-size:.76rem;color:var(--muted);font-weight:700}
+.staymaplink{display:flex;align-items:center;gap:9px;margin:0 16px 8px;padding:13px 16px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;font-weight:700;font-size:.92rem;color:var(--text);text-decoration:none;box-shadow:var(--shadow-sm)}
+.staymaplink svg{color:var(--accent)}
 /* guests/rooms stepper rows (StayGuests sheet, reuses .sheet/.sheet-body) */
 .stepper{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 2px}
 .stepper + .stepper{border-top:1px solid var(--hairline)}

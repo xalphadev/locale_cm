@@ -7,7 +7,7 @@ import { parsePoint, isDefaultGeo } from '@/lib/geo';
 // so the two views are one continuous search: identical SQL, grouping, pins, filters, and URL state.
 // No money anywhere — search + display + a contact lead only.
 
-export const SORTS: Record<string, string[]> = { monthly: ['', 'soon', 'cheap'], daily: ['', 'vacant', 'cheap'] };
+export const SORTS: Record<string, string[]> = { monthly: ['', 'soon', 'cheap', 'new', 'popular'], daily: ['', 'vacant', 'cheap', 'new', 'popular'] };
 // price buckets (price_minor satang): key → [lo, hi]
 export const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
   monthly: { lt5k: [null, 500000], '5_10k': [500000, 1000000], '10_20k': [1000000, 2000000], '20k': [2000000, null] },
@@ -24,6 +24,30 @@ const fmtThai = (s: string) => { const [, m, d] = s.split('-'); return `${Number
 const nightsOf = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
 export type StayPin = { id: string; name: string; lat: number; lng: number; kind: string; priceFrom: number | null; badge: string; live: boolean; img: string };
+
+// group stay_unit rows → one ACCOMMODATION (place) per card (the StayPlace shape PlaceStayCard consumes).
+// Shared by loadStay (list/map) and loadStayHome (curated rails) so both speak one universe.
+export function groupStayRows(rows: any[], dateMode = false) {
+  const byId: Record<string, any> = {}; const ord: string[] = [];
+  for (const r of rows) {
+    let g = byId[r.place_id];
+    if (!g) {
+      const pt = parsePoint(r.geo);
+      g = byId[r.place_id] = {
+        id: r.place_id, name: i18n(r.shop_name), district: i18n(r.district_name), kind: r.stay_kind,
+        period: r.price_period, units: 0, vac: 0, priceMin: null as number | null, priceMax: null as number | null,
+        saved: !!r.saved, img: roomImg(r), lat: pt?.lat ?? null, lng: pt?.lng ?? null,
+        rating: r.rating, ratingN: Number(r.rating_n ?? 0),
+      };
+      ord.push(r.place_id);
+    }
+    g.units++;
+    if (dateMode) g.vac += (r.free_rooms || 0);
+    else if (roomVacancy(r).cls === 'season') g.vac += (r.rental_mode === 'monthly' ? r.available_units : 1);
+    if (r.price_minor != null) { const b = Math.round(r.price_minor / 100); g.priceMin = g.priceMin == null ? b : Math.min(g.priceMin, b); g.priceMax = g.priceMax == null ? b : Math.max(g.priceMax, b); }
+  }
+  return ord.map((id) => byId[id]);
+}
 
 export async function loadStay(searchParams: Record<string, string>) {
   const mode = searchParams?.mode === 'daily' ? 'daily' : 'monthly';
@@ -49,6 +73,8 @@ export async function loadStay(searchParams: Record<string, string>) {
   // applies only with a real date range (the one branch where g.vac = genuine free-room count). Neutral 0/1.
   const roomsN = mode === 'daily' ? Math.max(0, Math.min(8, parseInt(searchParams?.rooms || '0', 10) || 0)) : 0;
   const rooms = roomsN >= 2 ? roomsN : 0;
+  const district = /^[a-z_]+$/.test(searchParams?.district || '') ? searchParams.district : '';   // district slug deep-link
+  const savedOnly = searchParams?.saved === '1';
 
   let rows: any[] = [];
   try {
@@ -76,9 +102,15 @@ export async function loadStay(searchParams: Record<string, string>) {
     if (qtext) { params.push('%' + qtext + '%'); const n = params.length; where.push(`(su.name_i18n->>'th' ILIKE $${n} OR su.name_i18n->>'en' ILIKE $${n} OR p.name_i18n->>'th' ILIKE $${n} OR p.name_i18n->>'en' ILIKE $${n} OR d.name_i18n->>'th' ILIKE $${n})`); }
     if (pr) { const [lo, hi] = PRICE[mode][pr]; if (lo != null) { params.push(lo); where.push(`su.price_minor>=$${params.length}`); } if (hi != null) { params.push(hi); where.push(`su.price_minor<$${params.length}`); } }
     if (cap) { params.push(Number(cap)); where.push(`su.capacity>=$${params.length}`); }
-    const order = mode === 'monthly'
-      ? (sort === 'soon' ? 'su.available_from NULLS FIRST, su.created_at DESC' : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST' : 'su.created_at DESC')
-      : (sort === 'vacant' ? `(su.daily_status='vacant') DESC, su.created_at DESC` : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST' : 'su.created_at DESC');
+    if (district) { params.push(district); where.push(`d.slug=$${params.length}`); }
+    if (savedOnly && uid) { params.push(uid); where.push(`EXISTS (SELECT 1 FROM saved_places sp2 WHERE sp2.place_id=p.id AND sp2.user_id=$${params.length})`); }
+    const popOrder = `(SELECT avg(rv.rating) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') DESC NULLS LAST, (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') DESC, su.created_at DESC`;
+    const order = sort === 'popular' ? popOrder
+      : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST'
+      : sort === 'new' ? 'su.created_at DESC'
+      : mode === 'monthly'
+        ? (sort === 'soon' ? 'su.available_from NULLS FIRST, su.created_at DESC' : 'su.created_at DESC')
+        : (sort === 'vacant' ? `(su.daily_status='vacant') DESC, su.created_at DESC` : 'su.created_at DESC');
     params.push(uid); const sIdx = params.length;
     rows = await q<any>(
       `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n, su.image_urls,
@@ -92,28 +124,9 @@ export async function loadStay(searchParams: Record<string, string>) {
         WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 60`, params);
   } catch { /* db down */ }
 
-  // group rooms → one ACCOMMODATION (place) per card; serves both the list and the map.
-  const byId: Record<string, any> = {}; const ord: string[] = [];
-  for (const r of rows) {
-    let g = byId[r.place_id];
-    if (!g) {
-      const pt = parsePoint(r.geo);
-      g = byId[r.place_id] = {
-        id: r.place_id, name: i18n(r.shop_name), district: i18n(r.district_name), kind: r.stay_kind,
-        period: r.price_period, units: 0, vac: 0, priceMin: null as number | null, priceMax: null as number | null,
-        saved: !!r.saved, img: roomImg(r), lat: pt?.lat ?? null, lng: pt?.lng ?? null,
-        rating: r.rating, ratingN: Number(r.rating_n ?? 0),
-      };
-      ord.push(r.place_id);
-    }
-    g.units++;
-    if (dateMode) g.vac += (r.free_rooms || 0);
-    else if (roomVacancy(r).cls === 'season') g.vac += (r.rental_mode === 'monthly' ? r.available_units : 1);
-    if (r.price_minor != null) { const b = Math.round(r.price_minor / 100); g.priceMin = g.priceMin == null ? b : Math.min(g.priceMin, b); g.priceMax = g.priceMax == null ? b : Math.max(g.priceMax, b); }
-  }
-  // rooms is a POST-GROUP filter: g.vac is the genuine count of free rooms across [from,to) (honest — never
-  // a hold/reservation). Keep a place only if it can supply ≥N free rooms.
-  const placeList = ord.map((id) => byId[id]).filter((g) => !(dateMode && rooms >= 2) || g.vac >= rooms);
+  // group rows → one card per place (shared groupStayRows); rooms is a POST-GROUP filter on the honest
+  // free-room count g.vac (never a hold/reservation).
+  const placeList = groupStayRows(rows, dateMode).filter((g) => !(dateMode && rooms >= 2) || g.vac >= rooms);
   const pinned = placeList.filter((g) => g.lat != null && !isDefaultGeo(g.lng, g.lat));
   const unpinned = placeList.length - pinned.length;
   const pins: StayPin[] = pinned.map((g) => ({
@@ -126,14 +139,15 @@ export async function loadStay(searchParams: Record<string, string>) {
 
   // URL builder shared by both routes: pass base='/stay' or '/stay/map'; dates ride along so the
   // list↔map toggle and the quick chips never drop an active date search.
-  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, ad: adults > 1 ? String(adults) : '', ch: children > 0 ? String(children) : '', rooms: rooms ? String(rooms) : '' };
-  const href = (patch: Partial<typeof cur> = {}, base = '/stay') => {
+  const cur = { mode, kind: kind.join(','), sort, am: am.join(','), fr: fr.join(','), q: qtext, pr, ad: adults > 1 ? String(adults) : '', ch: children > 0 ? String(children) : '', rooms: rooms ? String(rooms) : '', district, saved: savedOnly ? '1' : '' };
+  const href = (patch: Partial<typeof cur> = {}, base = '/stay/search') => {
     const s = { ...cur, ...patch }; const u = new URLSearchParams();
     if (s.mode !== 'monthly') u.set('mode', s.mode);
     if (s.kind) u.set('kind', s.kind); if (s.sort) u.set('sort', s.sort);
     if (s.am) u.set('am', s.am); if (s.fr) u.set('fr', s.fr);
     if (s.q) u.set('q', s.q); if (s.pr) u.set('pr', s.pr);
     if (s.ad) u.set('ad', s.ad); if (s.ch) u.set('ch', s.ch); if (s.mode === 'daily' && s.rooms) u.set('rooms', s.rooms);
+    if (s.district) u.set('district', s.district); if (s.saved) u.set('saved', s.saved);
     if (s.mode === 'daily' && dateMode) { u.set('from', fromQ as string); u.set('to', toQ as string); }
     const qs = u.toString(); return qs ? `${base}?${qs}` : base;
   };
@@ -146,8 +160,9 @@ export async function loadStay(searchParams: Record<string, string>) {
   if (kind.length) hidden.push(['kind', kind.join(',')]); if (sort) hidden.push(['sort', sort]);
   if (am.length) hidden.push(['am', am.join(',')]); if (fr.length) hidden.push(['fr', fr.join(',')]);
   if (pr) hidden.push(['pr', pr]);   // NOTE: cap/rooms are NOT here — the who/when form owns them via StayGuests/picker
+  if (district) hidden.push(['district', district]); if (savedOnly) hidden.push(['saved', '1']);
 
-  const searched = !!qtext || dateMode || !!cap || activeCount > 0;
+  const searched = !!qtext || dateMode || !!cap || !!district || savedOnly || activeCount > 0;
   const recapBits = [mode === 'daily' ? 'รายวัน' : 'รายเดือน'];
   if (dateMode) recapBits.push(`${fmtThai(fromQ as string)}–${fmtThai(toQ as string)} · ${nightsOf(fromQ as string, toQ as string)} คืน`);
   if (cap) recapBits.push(`${cap} ท่าน`);

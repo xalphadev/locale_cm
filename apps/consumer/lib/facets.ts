@@ -28,9 +28,9 @@ export const STAY_AMENITIES = ['aircon', 'private_bath', 'kitchen', 'washing_mac
 
 /** Accommodation types (places.stay_kind). Shown for both rental modes — a place's type is
  *  independent of whether its rooms rent monthly or daily. */
-export const STAY_KINDS = ['dorm', 'apartment', 'condo', 'mansion', 'house', 'homestay', 'guesthouse', 'hotel'];
+export const STAY_KINDS = ['dorm', 'hostel', 'apartment', 'condo', 'mansion', 'house', 'homestay', 'guesthouse', 'hotel'];
 export const STAY_KIND_TH: Record<string, string> = {
-  dorm: 'หอพัก', apartment: 'อพาร์ตเมนต์', condo: 'คอนโด', mansion: 'แมนชั่น', house: 'บ้านเช่า',
+  dorm: 'หอพัก', hostel: 'โฮสเทล', apartment: 'อพาร์ตเมนต์', condo: 'คอนโด', mansion: 'แมนชั่น', house: 'บ้านเช่า',
   homestay: 'โฮมสเตย์', guesthouse: 'เกสต์เฮาส์', hotel: 'โรงแรม', mixed: 'ที่พัก',
 };
 
