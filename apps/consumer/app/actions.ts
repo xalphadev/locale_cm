@@ -186,3 +186,14 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
     [lead.id, name, kind, mode, placeId]);
   redirect(`${back}?sent=1`);
 }
+
+// Renter withdraws their OWN still-open lead (PDPA self-service + control). Soft-delete so it also
+// disappears from the merchant inbox; never touch a converted one. No money anywhere.
+export async function withdrawBookingRequestAction(leadId: string, _formData?: FormData) {
+  const uid = await demoUserId();
+  if (uid) await q(
+    `UPDATE stay_booking_request SET deleted_at = now(), status = 'cancelled', updated_at = now()
+      WHERE id = $1 AND requester_user_id = $2 AND deleted_at IS NULL AND status NOT IN ('converted')`,
+    [leadId, uid]);
+  redirect('/stay/requests?cancelled=1');
+}

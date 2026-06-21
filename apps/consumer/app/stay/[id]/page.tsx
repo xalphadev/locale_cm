@@ -117,7 +117,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           <StayAvailability days={avail} />
         </>)}
 
-        {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ</div>}
+        {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ · <a href="/stay/requests">ดูคำขอของฉัน</a></div>}
         {searchParams?.err === 'contact' && <div className="bookerr">กรุณากรอกชื่อ และเบอร์โทรหรือไลน์อย่างน้อยหนึ่งช่อง</div>}
         <details className="bookbox" {...(fromQ ? { open: true } : {})}>
           <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดู·จองห้องนี้</summary>
