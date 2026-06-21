@@ -42,9 +42,9 @@ export async function loadStay(searchParams: Record<string, string>) {
   const toQ = mode === 'daily' && reD.test(searchParams?.to || '') ? searchParams.to : '';
   const dateMode = !!fromQ && !!toQ && toQ > fromQ;
   const dateQs = dateMode ? `?from=${fromQ}&to=${toQ}` : '';
-  // rooms: only meaningful for daily + a real date range (the one branch where we know free-room counts);
-  // post-filters places to g.vac>=rooms. Neutral at 0/1, active 2..8. Ignored (0) outside dateMode.
-  const roomsN = dateMode ? Math.max(0, Math.min(8, parseInt(searchParams?.rooms || '0', 10) || 0)) : 0;
+  // rooms: shown/selectable in ALL daily mode (so the field sits beside guests like an OTA), but the FILTER
+  // applies only with a real date range (the one branch where g.vac = genuine free-room count). Neutral 0/1.
+  const roomsN = mode === 'daily' ? Math.max(0, Math.min(8, parseInt(searchParams?.rooms || '0', 10) || 0)) : 0;
   const rooms = roomsN >= 2 ? roomsN : 0;
 
   let rows: any[] = [];
@@ -110,7 +110,7 @@ export async function loadStay(searchParams: Record<string, string>) {
   }
   // rooms is a POST-GROUP filter: g.vac is the genuine count of free rooms across [from,to) (honest — never
   // a hold/reservation). Keep a place only if it can supply ≥N free rooms.
-  const placeList = ord.map((id) => byId[id]).filter((g) => rooms < 2 || g.vac >= rooms);
+  const placeList = ord.map((id) => byId[id]).filter((g) => !(dateMode && rooms >= 2) || g.vac >= rooms);
   const pinned = placeList.filter((g) => g.lat != null && !isDefaultGeo(g.lng, g.lat));
   const unpinned = placeList.length - pinned.length;
   const pins: StayPin[] = pinned.map((g) => ({
@@ -143,11 +143,11 @@ export async function loadStay(searchParams: Record<string, string>) {
   if (am.length) hidden.push(['am', am.join(',')]); if (fr.length) hidden.push(['fr', fr.join(',')]);
   if (pr) hidden.push(['pr', pr]);   // NOTE: cap/rooms are NOT here — the who/when form owns them via StayGuests/picker
 
-  const searched = !!qtext || dateMode || !!cap || rooms > 0 || activeCount > 0;
+  const searched = !!qtext || dateMode || !!cap || activeCount > 0;
   const recapBits = [mode === 'daily' ? 'รายวัน' : 'รายเดือน'];
   if (dateMode) recapBits.push(`${fmtThai(fromQ as string)}–${fmtThai(toQ as string)} · ${nightsOf(fromQ as string, toQ as string)} คืน`);
   if (cap) recapBits.push(`${cap} ท่าน`);
-  if (rooms) recapBits.push(`${rooms} ห้อง`);
+  if (dateMode && rooms) recapBits.push(`${rooms} ห้อง`);
   if (activeCount > 0) recapBits.push(`ตัวกรอง ${activeCount}`);
 
   return {

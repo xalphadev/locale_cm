@@ -6,8 +6,8 @@ import { Icon } from '../icons';
 // the SURROUNDING GET form — it never navigates itself. NO money/booking: guests = a capacity FIT filter
 // (su.capacity>=N per room type), rooms = a free-room COUNT filter (daily+dates only). Neutral default 1
 // writes no param, so a fresh /stay never silently hides single rooms.
-export default function StayGuests({ capName = 'cap', roomsName = 'rooms', initialCap = 1, initialRooms = 1, showRooms = false }:
-  { capName?: string; roomsName?: string; initialCap?: number; initialRooms?: number; showRooms?: boolean }) {
+export default function StayGuests({ capName = 'cap', roomsName = 'rooms', initialCap = 1, initialRooms = 1, showRooms = false, roomsLive = true }:
+  { capName?: string; roomsName?: string; initialCap?: number; initialRooms?: number; showRooms?: boolean; roomsLive?: boolean }) {
   const [open, setOpen] = useState(false);
   const [guests, setGuests] = useState(() => Math.min(10, Math.max(1, initialCap || 1)));
   const [rooms, setRooms] = useState(() => Math.min(8, Math.max(1, initialRooms || 1)));
@@ -53,7 +53,7 @@ export default function StayGuests({ capName = 'cap', roomsName = 'rooms', initi
               </div>
               {showRooms && (
                 <div className="stepper">
-                  <div className="stepper-tx"><b>จำนวนห้อง</b><span>ต้องการห้องว่างกี่ห้องในช่วงนี้</span></div>
+                  <div className="stepper-tx"><b>จำนวนห้อง</b><span>{roomsLive ? 'ต้องการห้องว่างกี่ห้องในช่วงนี้' : 'เลือกวันเข้าพักก่อน เพื่อกรองห้องว่าง'}</span></div>
                   <div className="stepper-ctl">
                     <button type="button" className="stepbtn" disabled={rooms <= 1} onClick={() => setRooms((n) => Math.max(1, n - 1))} aria-label="ลดห้อง">−</button>
                     <span className="stepval">{rooms}</span>
