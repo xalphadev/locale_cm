@@ -17,7 +17,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
       <div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> {backLabel}</a></div>
       <h1>เพิ่ม{typeNoun}</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
-      <RoomForm action={createStayUnitAction} submitLabel={`เพิ่ม${typeNoun}`} noun={typeNoun} />
+      <RoomForm action={createStayUnitAction} submitLabel={`เพิ่ม${typeNoun}`} noun={typeNoun} stayKind={acc.stay_kind} />
     </>
   );
 }

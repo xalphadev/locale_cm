@@ -378,14 +378,25 @@ export async function createStayUnitAction(formData: FormData) {
   const amen = formData.getAll('amenity').map(String).filter(Boolean);
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const urls = [...await saveUploads(formData.getAll('photos') as File[], 'rooms'), ...pasted];
+  const gender = ['female', 'male'].includes(s(formData, 'gender_policy')) ? s(formData, 'gender_policy') : null;
+  const reTime = /^\d{1,2}:\d{2}$/;
+  const ci = mode === 'daily' && reTime.test(s(formData, 'check_in_time')) ? s(formData, 'check_in_time') : null;
+  const co = mode === 'daily' && reTime.test(s(formData, 'check_out_time')) ? s(formData, 'check_out_time') : null;
+  const attrs: Record<string, any> = {};
+  if (formData.get('attr_breakfast')) attrs.breakfast = true;
+  const canc = s(formData, 'attr_cancellation'); if (['flexible', 'moderate', 'strict'].includes(canc)) attrs.cancellation = canc;
+  const hostInfo = s(formData, 'attr_host').slice(0, 500).trim(); if (hostInfo) attrs.host = hostInfo;
   await q(
     `INSERT INTO stay_units(place_id, name_i18n, rental_mode, price_minor, price_period, available_units, daily_status,
         capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
+        bedrooms, bathrooms, gender_policy, check_in_time, check_out_time, attrs,
         image_urls, image_count, status, author_kind)
-     VALUES($1, jsonb_build_object('th',$2::text), $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'published','merchant')`,
+     VALUES($1, jsonb_build_object('th',$2::text), $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb,$21,$22,'published','merchant')`,
     [acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
-      bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null, urls.length || 1]);
+      bills.length ? bills : null, amen.length ? amen : null,
+      num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs),
+      urls.length ? urls : null, urls.length || 1]);
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=1');
 }
@@ -442,6 +453,14 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   const saved = await saveUploads(photos, 'rooms');
   if (tried && saved.length < tried) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
+  const gender = ['female', 'male'].includes(s(formData, 'gender_policy')) ? s(formData, 'gender_policy') : null;
+  const reTime = /^\d{1,2}:\d{2}$/;
+  const ci = mode === 'daily' && reTime.test(s(formData, 'check_in_time')) ? s(formData, 'check_in_time') : null;
+  const co = mode === 'daily' && reTime.test(s(formData, 'check_out_time')) ? s(formData, 'check_out_time') : null;
+  const attrs: Record<string, any> = {};
+  if (formData.get('attr_breakfast')) attrs.breakfast = true;
+  const canc = s(formData, 'attr_cancellation'); if (['flexible', 'moderate', 'strict'].includes(canc)) attrs.cancellation = canc;
+  const hostInfo = s(formData, 'attr_host').slice(0, 500).trim(); if (hostInfo) attrs.host = hostInfo;
   await q(
     // available_units/daily_status are written only for the row's ACTIVE mode, so toggling
     // rental_mode never zeroes the other mode's value; for monthly, COALESCE keeps the live count
@@ -451,13 +470,15 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
        daily_status    = CASE WHEN $4='daily'   THEN $8 ELSE daily_status END,
        capacity=$9, deposit_minor=$10, min_stay=$11, room_size_sqm=$12, furnished=$13,
        bills_included = CASE WHEN $4='monthly' THEN $14 ELSE bills_included END, unit_amenities=$15,
+       bedrooms=$17, bathrooms=$18, gender_policy=$19, check_in_time=$20, check_out_time=$21, attrs=$22::jsonb,
        image_urls = CASE WHEN $16::text[] IS NOT NULL THEN $16 ELSE image_urls END,
        image_count = CASE WHEN $16::text[] IS NOT NULL THEN COALESCE(array_length($16,1),1) ELSE image_count END,
        availability_updated_at=now(), updated_at=now()
      WHERE id=$1 AND place_id=$2`,
     [unitId, acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
-      bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null]);
+      bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null,
+      num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs)]);
   // managed listings keep their ผังห้อง-derived vacancy — re-derive so the edit form can't override it
   // (fn no-ops for unmanaged listings, so hand-typed ones keep exactly what the form set).
   await q(`SELECT fn_stay_refresh_vacancy($1)`, [unitId]);

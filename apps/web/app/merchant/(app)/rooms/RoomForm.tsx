@@ -8,12 +8,20 @@ const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id).
  *  Client component so the availability field + price/contract labels follow the chosen rental mode. */
-export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง' }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean; noun?: string }) {
+export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง', stayKind }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean; noun?: string; stayKind?: string }) {
   const [mode, setMode] = useState<string>(u?.rental_mode || 'monthly');
   const monthly = mode === 'monthly';
   const bills: string[] = u?.bills_included ?? [];
   const amen: string[] = u?.unit_amenities ?? [];
   const baht = (m: any) => (m != null ? Math.round(m / 100) : '');
+  // per-type fields (audit wrxdo62qb): each accommodation kind surfaces the subset it needs
+  const kind = stayKind || '';
+  const wantRooms = ['apartment', 'condo', 'house', 'mansion'].includes(kind);   // bedrooms/bathrooms
+  const wantGender = ['dorm', 'hostel'].includes(kind);
+  const wantBreakfast = ['hotel', 'guesthouse', 'homestay'].includes(kind);
+  const wantCancel = ['hotel', 'guesthouse', 'homestay', 'hostel'].includes(kind);
+  const wantHost = ['homestay', 'guesthouse'].includes(kind);
+  const at = u?.attrs || {};
   return (
     <form className="form mform" action={action}>
       <section className="fsec">
@@ -60,6 +68,38 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
             <div className="checkrow">{BILLS.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="bills" value={k} defaultChecked={bills.includes(k)} /> {l}</label>)}</div></div>
         )}
       </section>
+
+      {(wantRooms || wantGender || !monthly) && (
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> รายละเอียดตามประเภท</div>
+          {wantRooms && (
+            <div className="fgrid">
+              <div className="field"><label>ห้องนอน</label><input name="bedrooms" type="number" min="0" defaultValue={u?.bedrooms ?? ''} placeholder="1" /></div>
+              <div className="field"><label>ห้องน้ำ</label><input name="bathrooms" type="number" min="0" defaultValue={u?.bathrooms ?? ''} placeholder="1" /></div>
+            </div>
+          )}
+          {wantGender && (
+            <div className="field"><label>เพศผู้เข้าพัก</label>
+              <select name="gender_policy" defaultValue={u?.gender_policy || ''}><option value="">ทุกเพศ</option><option value="female">หญิงล้วน</option><option value="male">ชายล้วน</option></select></div>
+          )}
+          {!monthly && (
+            <div className="fgrid">
+              <div className="field"><label>เวลาเช็คอิน</label><input name="check_in_time" type="time" defaultValue={u?.check_in_time || ''} /></div>
+              <div className="field"><label>เวลาเช็คเอาท์</label><input name="check_out_time" type="time" defaultValue={u?.check_out_time || ''} /></div>
+            </div>
+          )}
+          {!monthly && wantBreakfast && (
+            <div className="field"><label className="cbox"><input type="checkbox" name="attr_breakfast" defaultChecked={!!at.breakfast} /> รวมอาหารเช้า</label></div>
+          )}
+          {!monthly && wantCancel && (
+            <div className="field"><label>นโยบายยกเลิก</label>
+              <select name="attr_cancellation" defaultValue={at.cancellation || ''}><option value="">—</option><option value="flexible">ยืดหยุ่น (ยกเลิกฟรี)</option><option value="moderate">ปานกลาง</option><option value="strict">เข้มงวด</option></select></div>
+          )}
+          {wantHost && (
+            <div className="field"><label>ข้อมูลเจ้าบ้าน / บริการ</label><textarea name="attr_host" defaultValue={at.host || ''} placeholder="เช่น เจ้าบ้านพูดอังกฤษ มีรถรับส่ง ทำอาหารเช้าให้" style={{ minHeight: 44 }} /></div>
+          )}
+        </section>
+      )}
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="sofa" size={15} /></span> สิ่งอำนวยความสะดวก</div>
