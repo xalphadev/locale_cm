@@ -33,7 +33,7 @@ export async function loadStayHome(searchParams: Record<string, string>) {
 
     // ว่างคืนนี้ — owner-attested vacancy (daily only), NOT a hold
     if (mode === 'daily') {
-      const trows = await q<any>(`SELECT ${cardCols} ${FROM} WHERE ${GATE} AND su.rental_mode='daily' AND su.daily_status='vacant' ORDER BY su.availability_updated_at DESC NULLS LAST LIMIT 30`, [mode, uid]);
+      const trows = await q<any>(`SELECT ${cardCols} ${FROM} WHERE ${GATE} AND su.rental_mode=$1 AND su.daily_status='vacant' ORDER BY su.availability_updated_at DESC NULLS LAST LIMIT 30`, [mode, uid]);
       tonight = groupStayRows(trows, false).slice(0, 8);
     }
 
