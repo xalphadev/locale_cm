@@ -1349,16 +1349,16 @@ a.pcname{color:var(--text)}
 .staytop-row{display:flex;align-items:center;gap:11px}
 .staytop-tx h1{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
 .staytop-sub{font-size:.78rem;color:var(--muted);margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.staycard{display:flex;flex-direction:column;gap:8px;margin:10px 16px 4px;padding:10px;background:var(--surface);border:1px solid var(--hairline);border-radius:20px;box-shadow:var(--shadow-sm)}
-.staysearch{display:flex;align-items:center;gap:8px;margin:0;padding:10px 12px;background:var(--sunk);border:none;border-radius:12px;min-width:0}
+.staycard{display:flex;flex-direction:column;gap:8px;margin:10px 16px 4px;padding:10px;background:var(--surface);border:1px solid var(--hairline);border-radius:24px;box-shadow:var(--shadow-sm)}
+.staysearch{display:flex;align-items:center;gap:8px;margin:0;padding:10px 12px;background:var(--sunk);border:none;border-radius:16px;min-width:0}
 .staysearch input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:.92rem;font-weight:600;outline:none;color:var(--text)}
 .staysearch .ss-x{flex:none;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
-.segmented{display:flex;gap:0;margin:0;padding:3px;background:var(--sunk);border-radius:12px;overflow:visible;scrollbar-width:none}
-.seg{flex:1;text-align:center;padding:.5rem 0;border-radius:9px;font-size:.86rem;font-weight:700;background:none;border:none;color:var(--muted);white-space:nowrap;text-decoration:none;transition:background .12s,color .12s}
+.segmented{display:flex;gap:0;margin:0;padding:3px;background:var(--sunk);border-radius:16px;overflow:visible;scrollbar-width:none}
+.seg{flex:1;text-align:center;padding:.5rem 0;border-radius:13px;font-size:.86rem;font-weight:700;background:none;border:none;color:var(--muted);white-space:nowrap;text-decoration:none;transition:background .12s,color .12s}
 .seg.on{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(16,20,40,.12)}
 .staydates{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;background:none;border:none;border-radius:0;box-shadow:none}
-.staydates .drp-trigger{display:flex;align-items:center;width:100%;border:none;padding:10px 12px;background:var(--sunk);border-radius:12px}
-.staydates-go{display:flex;width:100%;justify-content:center;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:13px;font:inherit;font-weight:800;font-size:.95rem;cursor:pointer;box-shadow:0 6px 16px -8px rgba(26,115,232,.55)}
+.staydates .drp-trigger{display:flex;align-items:center;width:100%;border:none;padding:10px 12px;background:var(--sunk);border-radius:16px}
+.staydates-go{display:flex;width:100%;justify-content:center;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:16px;padding:14px;font:inherit;font-weight:800;font-size:.95rem;cursor:pointer;box-shadow:0 6px 16px -8px rgba(26,115,232,.55)}
 .staydates-go:active{background:var(--accent-press);box-shadow:none}
 .staydates-clear{align-self:center;font-size:.82rem;color:var(--muted);font-weight:600;text-decoration:none;padding:2px 0 0}
 .staytools-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 8px}
@@ -1375,7 +1375,7 @@ a.pcname{color:var(--text)}
 .filterbtn{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--hairline);background:var(--surface);font:inherit;font-weight:700;font-size:.85rem;color:var(--text);white-space:nowrap;cursor:pointer;transition:transform .12s}
 .filterbtn.has{border-color:var(--accent);color:var(--accent);background:var(--accent-soft);font-weight:800}
 .filterbtn:active{transform:scale(.97)}
-.staysearchbox .staypill{display:flex;align-items:center;gap:11px;margin:8px 16px 2px;padding:11px 13px;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;box-shadow:var(--shadow-sm)}
+.staysearchbox .staypill{display:flex;align-items:center;gap:11px;margin:8px 16px 2px;padding:11px 13px;background:var(--surface);border:1px solid var(--hairline);border-radius:18px;box-shadow:var(--shadow-sm)}
 .staysearchbox .staypill-ic{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
 .staysearchbox[open] .staycard{margin-top:6px}
 /* guests/rooms stepper rows (StayGuests sheet, reuses .sheet/.sheet-body) */
@@ -1389,7 +1389,7 @@ a.pcname{color:var(--text)}
 .stepval{min-width:20px;text-align:center;font-size:1.05rem;font-weight:800;color:var(--text)}
 /* clean single-line card fields (ref-style): guests | rooms side by side + compact date row */
 .guestrow{display:flex;gap:8px}
-.gfield{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--sunk);border:none;border-radius:12px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
+.gfield{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--sunk);border:none;border-radius:16px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
 .gfield svg{color:var(--muted);flex:none}
 .gfield .gf-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .staydates .drp-compact{gap:9px}
