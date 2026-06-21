@@ -128,6 +128,16 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
               labelFrom={monthly ? 'อยากเข้าอยู่' : 'เช็คอิน'} labelTo="เช็คเอาท์"
               initialFrom={fromQ || undefined} initialTo={toQ || undefined}
             />
+            {monthly && (
+              <label className="bk-field"><span>ระยะเวลา</span>
+                <select name="desired_months" defaultValue="3">
+                  <option value="1">1 เดือน</option>
+                  <option value="3">3 เดือน</option>
+                  <option value="6">6 เดือน</option>
+                  <option value="12">12 เดือน</option>
+                </select>
+              </label>
+            )}
             <label className="bk-field"><span>ชื่อ *</span><input name="contact_name" required placeholder="ชื่อของคุณ" /></label>
             <div className="bk-row">
               <label className="bk-field"><span>เบอร์โทร</span><input name="contact_phone" inputMode="tel" placeholder="08x-xxx-xxxx" /></label>

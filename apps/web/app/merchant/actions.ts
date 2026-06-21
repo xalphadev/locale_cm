@@ -1058,6 +1058,34 @@ export async function convertLeadToBlockAction(leadId: string) {
   redirect('/merchant/leads?ok=converted');
 }
 
+/** Close a MONTHLY lead in-app (no money). Managed listing → occupy the first vacant room until
+ *  (move-in + N months). Unmanaged listing (vacancy counter) → decrement available_units. Marks converted. */
+export async function convertMonthlyLeadAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_months, rental_mode, contact_name FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  if (!b || !b.stay_unit_id || b.rental_mode !== 'monthly') redirect('/merchant/leads?error=cvt');
+  const months = Math.max(1, Math.min(36, Number(b.desired_months) || 1));
+  const [su] = await q<{ managed: boolean }>(`SELECT managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [b.stay_unit_id, acc.place_id]);
+  if (!su) redirect('/merchant/leads?error=cvt');
+  if (su.managed) {
+    const [room] = await q<{ id: string }>(
+      `SELECT id FROM stay_room WHERE stay_unit_id=$1 AND status='active' AND deleted_at IS NULL AND occupancy_status='vacant' ORDER BY code LIMIT 1`, [b.stay_unit_id]);
+    if (!room) redirect('/merchant/leads?error=full');
+    await q(
+      `UPDATE stay_room SET occupancy_status='occupied', occupied_until=(COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, note=$5, updated_at=now() WHERE id=$1 AND place_id=$2`,
+      [room.id, acc.place_id, b.desired_from, String(months), b.contact_name ? `เข้าอยู่ผ่านแอป: ${b.contact_name}` : 'เข้าอยู่ผ่านแอป']);
+  } else {
+    const [u] = await q<{ available_units: number }>(
+      `UPDATE stay_units SET available_units=GREATEST(0, available_units-1), availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND available_units>0 RETURNING available_units`, [b.stay_unit_id, acc.place_id]);
+    if (!u) redirect('/merchant/leads?error=full');
+  }
+  await q(`UPDATE stay_booking_request SET status='converted', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  await refreshUnitVacancy(b.stay_unit_id);
+  revalidatePath('/merchant/leads'); revalidatePath('/merchant/units', 'layout');
+  redirect('/merchant/leads?ok=converted_m');
+}
+
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();

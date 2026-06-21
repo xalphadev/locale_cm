@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
-import { setLeadStatusAction, deleteLeadAction, convertLeadToBlockAction } from '../../actions';
+import { setLeadStatusAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +28,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
 
   const rows = await q<any>(
-    `SELECT b.id, b.request_kind, b.rental_mode, b.desired_from, b.desired_to, b.contact_name, b.contact_phone,
+    `SELECT b.id, b.stay_unit_id, b.request_kind, b.rental_mode, b.desired_from, b.desired_to, b.desired_months, b.contact_name, b.contact_phone,
             b.contact_line, b.message, b.status, b.created_at, su.name_i18n unit_name, su.managed
        FROM stay_booking_request b LEFT JOIN stay_units su ON su.id = b.stay_unit_id
       WHERE b.place_id=$1 AND b.deleted_at IS NULL
@@ -43,6 +43,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
       </div>
       <p className="note">ลูกค้ากด “ขอให้ติดต่อกลับ / นัดดูห้อง” จากหน้าที่พัก จะมาที่นี่ — โทรหรือทักไลน์กลับได้เลย (ไม่มีการชำระเงินผ่านแอป)</p>
       {searchParams?.ok === 'converted' && <div className="banner-ok">✓ ลงปฏิทิน (บล็อกห้อง) ตามวันที่ขอแล้ว</div>}
+      {searchParams?.ok === 'converted_m' && <div className="banner-ok">✓ รับเข้าพักแล้ว — ตั้งห้องเป็นไม่ว่าง / ปรับจำนวนว่าง</div>}
       {searchParams?.error === 'full' && <div className="banner-err">ไม่มีห้องว่างในช่วงที่ขอ — เลือกห้อง/วันอื่น หรือบล็อกเองในผังห้อง</div>}
       {searchParams?.error === 'cvt' && <div className="banner-err">คำขอนี้ไม่มีวันที่ หรือไม่ใช่ห้องรายวันที่ผูกผัง จึงลงปฏิทินอัตโนมัติไม่ได้</div>}
 
@@ -52,7 +53,9 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
         <div className="leadlist">
           {rows.map((b) => {
             const st = ST[b.status] || ST.new;
-            const dates = b.desired_from ? `${fmtDate(b.desired_from)}${b.desired_to ? `–${fmtDate(b.desired_to)}` : ''}` : '';
+            const dates = b.desired_from
+              ? `${fmtDate(b.desired_from)}${b.rental_mode === 'monthly' && b.desired_months ? ` · ${b.desired_months} เดือน` : b.desired_to ? `–${fmtDate(b.desired_to)}` : ''}`
+              : '';
             return (
               <div className={`leadcard ${b.status === 'new' ? 'fresh' : ''}`} key={b.id}>
                 <div className="lead-top">
@@ -70,6 +73,8 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
                 <div className="lead-acts">
                   {b.managed && b.rental_mode === 'daily' && b.desired_from && b.desired_to && b.status !== 'converted' && b.status !== 'declined' &&
                     <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> ลงปฏิทิน</button></form>}
+                  {b.rental_mode === 'monthly' && b.stay_unit_id && b.status !== 'converted' && b.status !== 'declined' &&
+                    <form action={convertMonthlyLeadAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> รับเข้าพัก</button></form>}
                   {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn sm" type="submit">ติดต่อแล้ว</button></form>}
                   {b.status !== 'confirmed' && b.status !== 'declined' && <form action={setLeadStatusAction.bind(null, b.id, 'confirmed')}><button className="dbtn sm primary" type="submit">ยืนยัน</button></form>}
                   {b.status !== 'declined' && <form action={setLeadStatusAction.bind(null, b.id, 'declined')}><button className="dbtn sm" type="submit">ปฏิเสธ</button></form>}

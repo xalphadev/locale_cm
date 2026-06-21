@@ -158,6 +158,7 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
   const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
   const from = isDate(g('desired_from')) ? g('desired_from') : null;
   const to = isDate(g('desired_to')) ? g('desired_to') : null;
+  const monthsRaw = parseInt(g('desired_months') || '0', 10) || 0;   // monthly lease duration
   const back = `/stay/${stayUnitId}`;
   if (!name || (!phone && !line)) redirect(`${back}?err=contact`);              // need a name + one way to reach them
 
@@ -170,9 +171,9 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
     if (su) { unitId = su.id; mode = su.rental_mode; }
   }
   await q(
-    `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to,
+    `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, desired_months,
         requester_user_id, contact_name, contact_phone, contact_line, message, channel, status, expires_at)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'app','new', now() + interval '60 days')`,
-    [placeId, unitId, kind, mode, from, to, uid, name, phone || null, line || null, message || null]);
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'app','new', now() + interval '60 days')`,
+    [placeId, unitId, kind, mode, from, to, mode === 'monthly' ? Math.max(1, Math.min(36, monthsRaw)) : null, uid, name, phone || null, line || null, message || null]);
   redirect(`${back}?sent=1`);
 }
