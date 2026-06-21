@@ -1306,7 +1306,7 @@ a.pcname{color:var(--text)}
 
 /* P2: sticky results toolbar — count + view toggle, then a scrollable quick-filter chip row.
    Sticks at top:0 normally; when a search exists it stacks under the collapsed pill (.stk → top:60). */
-.staytools{position:sticky;top:0;z-index:20;background:var(--bg);padding:8px 0 6px}
+.staytools{position:sticky;top:0;z-index:20;padding:8px 0 6px}
 .staytools.stk{top:60px}
 .staytools-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 7px}
 .staycount{font-size:.9rem;color:var(--muted);font-weight:600}
@@ -1352,7 +1352,7 @@ a.pcname{color:var(--text)}
 .staytop-tx h1{margin:0;font-size:1.45rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
 .staytop-sub{font-size:.78rem;color:var(--muted);margin-top:1px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
 .staycard{display:flex;flex-direction:column;gap:8px;margin:10px 16px 6px}
-.staysearch{display:flex;align-items:center;gap:8px;margin:0;padding:12px 14px;background:var(--sunk);border:none;border-radius:24px;min-width:0}
+.staysearch{display:flex;align-items:center;gap:8px;margin:0;height:48px;padding:0 14px;box-sizing:border-box;background:var(--sunk);border:none;border-radius:24px;min-width:0}
 .staysearch input{flex:1;min-width:0;border:none;background:none;font:inherit;font-size:.92rem;font-weight:600;outline:none;color:var(--text)}
 .staysearch .ss-x{flex:none;display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
 .segmented{display:flex;gap:0;margin:0;padding:4px;background:var(--sunk);border-radius:24px;overflow:visible;scrollbar-width:none}
@@ -1395,7 +1395,7 @@ a.pcname{color:var(--text)}
 .stepval{min-width:20px;text-align:center;font-size:1.05rem;font-weight:800;color:var(--text)}
 /* clean single-line card fields (ref-style): guests | rooms side by side + compact date row */
 .guestrow,.fieldrow{display:flex;gap:8px}
-.gfield{flex:none;width:100%;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 14px;background:var(--sunk);border:none;border-radius:24px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
+.gfield{flex:none;width:100%;min-width:0;display:flex;align-items:center;gap:9px;height:48px;padding:0 14px;box-sizing:border-box;background:var(--sunk);border:none;border-radius:24px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
 .fieldrow .gfield{flex:1;width:auto}
 .gfield svg{color:var(--muted);flex:none}
 .gfield .gf-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
