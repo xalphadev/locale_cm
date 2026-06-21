@@ -28,8 +28,13 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
 
   const rows = await q<any>(
-    `SELECT b.id, b.stay_unit_id, b.request_kind, b.rental_mode, b.desired_from, b.desired_to, b.desired_months, b.contact_name, b.contact_phone,
-            b.contact_line, b.message, b.status, b.created_at, su.name_i18n unit_name, su.managed
+    `SELECT b.id, b.stay_unit_id, b.request_kind, b.rental_mode, b.desired_from, b.desired_to, b.desired_months,
+            CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.contact_name END contact_name,
+            CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.contact_phone END contact_phone,
+            CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.contact_line END contact_line,
+            CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.message END message,
+            (b.expires_at < now() AND b.status <> 'converted') expired_pii,
+            b.status, b.created_at, su.name_i18n unit_name, su.managed
        FROM stay_booking_request b LEFT JOIN stay_units su ON su.id = b.stay_unit_id
       WHERE b.place_id=$1 AND b.deleted_at IS NULL
       ORDER BY (b.status='new') DESC, b.created_at DESC LIMIT 100`, [acc.place_id]);
@@ -66,6 +71,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
                   {KIND_TH[b.request_kind] || 'สอบถาม'}{b.unit_name ? ` · ${i18n(b.unit_name)}` : ''}{dates ? ` · ${dates}` : ''} · {ago(b.created_at)}
                 </div>
                 {b.message && <div className="lead-msg">“{b.message}”</div>}
+                {b.expired_pii && <p className="note" style={{ margin: '4px 0 0' }}>ข้อมูลติดต่อถูกลบอัตโนมัติตามนโยบายความเป็นส่วนตัว (เกิน 60 วัน)</p>}
                 <div className="lead-contact">
                   {b.contact_phone && <a className="dbtn sm" href={`tel:${b.contact_phone}`}><Icon n="chat" size={14} /> โทร {b.contact_phone}</a>}
                   {b.contact_line && <a className="dbtn sm" href={lineHref(b.contact_line)} target="_blank" rel="noopener"><Icon n="chat" size={14} /> ไลน์ {b.contact_line}</a>}
