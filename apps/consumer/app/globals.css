@@ -1469,3 +1469,7 @@ a.pcname{color:var(--text)}
 .gfield .gf-v,.staysearch input{height:19px;line-height:19px;font-size:.95rem;font-weight:800;margin:0;padding:0}
 .staysearch input{display:block;width:100%;box-sizing:border-box;background:none;border:none;outline:none}
 .gfield{-webkit-appearance:none;appearance:none}
+/* mode-tab underline → short centered rounded bar (match the รายละเอียด/.ptab tabs) */
+.staytab{position:relative;border-bottom:none;margin-bottom:0}
+.staytab.on{border-bottom:none}
+.staytab.on::after{content:'';position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:46px;height:3px;border-radius:3px 3px 0 0;background:var(--accent)}
