@@ -170,10 +170,19 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
     const [su] = await q<any>(`SELECT id, rental_mode FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]);
     if (su) { unitId = su.id; mode = su.rental_mode; }
   }
-  await q(
+  const [lead] = await q<{ id: string }>(
     `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, desired_months,
         requester_user_id, contact_name, contact_phone, contact_line, message, channel, status, expires_at)
-     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'app','new', now() + interval '60 days')`,
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'app','new', now() + interval '60 days') RETURNING id`,
     [placeId, unitId, kind, mode, from, to, mode === 'monthly' ? Math.max(1, Math.min(36, monthsRaw)) : null, uid, name, phone || null, line || null, message || null]);
+  // alert the place's owner of a new lead — a durable notif_outbox signal (the merchant notif dispatcher
+  // routes it to the owner; the lead model is worthless if the owner isn't told). dedup per lead.
+  if (lead) await q(
+    `INSERT INTO notif_outbox(event_type, event_class, merchant_id, city_id, entity_type, entity_id, dedup_key, payload)
+     SELECT 'stay_lead_new', 'ops', p.merchant_id, p.city_id, 'stay_booking_request', $1, 'lead:' || $1,
+            jsonb_build_object('place_id', p.id, 'name', $2::text, 'kind', $3::text, 'rental_mode', $4::text)
+       FROM places p WHERE p.id=$5 AND p.merchant_id IS NOT NULL
+     ON CONFLICT DO NOTHING`,
+    [lead.id, name, kind, mode, placeId]);
   redirect(`${back}?sent=1`);
 }
