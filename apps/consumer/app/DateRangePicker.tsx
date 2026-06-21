@@ -13,14 +13,15 @@ const DOW = ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
 const DAY = 86400000;
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const fmtPill = (d: Date) => `${THDOW[d.getDay()]} ${d.getDate()} ${THMON_ABBR[d.getMonth()]}`;
+const fmtShort = (d: Date) => `${d.getDate()} ${THMON_ABBR[d.getMonth()]}`;   // compact single-line trigger
 const midnight = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 // parse a YYYY-MM-DD (local, no UTC drift) → midnight Date, for prefilling from a search ?from/?to
 const parseYmd = (s?: string) => (s && /^\d{4}-\d{2}-\d{2}$/.test(s) ? midnight(new Date(Number(s.slice(0, 4)), Number(s.slice(5, 7)) - 1, Number(s.slice(8, 10)))) : null);
 
 export default function DateRangePicker({
-  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, initialFrom, initialTo,
+  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, initialFrom, initialTo, compact = false,
 }: {
-  mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; initialFrom?: string; initialTo?: string;
+  mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; initialFrom?: string; initialTo?: string; compact?: boolean;
 }) {
   const today = useMemo(() => midnight(new Date()), []);
   const [open, setOpen] = useState(false);
@@ -52,21 +53,33 @@ export default function DateRangePicker({
 
   return (
     <div className="drp">
-      <button type="button" className="drp-trigger" onClick={() => setOpen(true)}>
-        <span className="drp-tp">
-          <span className="drp-tl">{labelFrom}</span>
-          <span className={`drp-tv ${from ? '' : 'ph'}`}>{from ? fmtPill(from) : 'เลือกวัน'}</span>
-        </span>
-        {mode === 'range' && (
+      <button type="button" className={`drp-trigger ${compact ? 'drp-compact' : ''}`} onClick={() => setOpen(true)}>
+        {compact ? (
           <>
-            <Icon n="chevR" size={16} />
-            <span className="drp-tp">
-              <span className="drp-tl">{labelTo}</span>
-              <span className={`drp-tv ${to ? '' : 'ph'}`}>{to ? fmtPill(to) : 'เลือกวัน'}</span>
+            <Icon n="calendar" size={18} />
+            <span className={`drp-cv ${from ? '' : 'ph'}`}>
+              {from ? `${fmtShort(from)}${mode === 'range' ? ` — ${to ? fmtShort(to) : labelTo}` : ''}` : (mode === 'range' ? `${labelFrom} — ${labelTo}` : labelFrom)}
             </span>
+            <Icon n="chevR" size={16} />
+          </>
+        ) : (
+          <>
+            <span className="drp-tp">
+              <span className="drp-tl">{labelFrom}</span>
+              <span className={`drp-tv ${from ? '' : 'ph'}`}>{from ? fmtPill(from) : 'เลือกวัน'}</span>
+            </span>
+            {mode === 'range' && (
+              <>
+                <Icon n="chevR" size={16} />
+                <span className="drp-tp">
+                  <span className="drp-tl">{labelTo}</span>
+                  <span className={`drp-tv ${to ? '' : 'ph'}`}>{to ? fmtPill(to) : 'เลือกวัน'}</span>
+                </span>
+              </>
+            )}
+            <Icon n="calendar" size={18} />
           </>
         )}
-        <Icon n="calendar" size={18} />
       </button>
 
       <input type="hidden" name={fromName} value={from ? ymd(from) : ''} />

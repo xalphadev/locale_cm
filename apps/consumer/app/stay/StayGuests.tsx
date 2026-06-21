@@ -19,20 +19,20 @@ export default function StayGuests({ capName = 'cap', roomsName = 'rooms', initi
     return () => { document.body.style.overflow = prev; };
   }, [open]);
 
-  const valueTxt = guests < 2
-    ? 'ทุกจำนวน'
-    : `${guests} ท่าน${showRooms && rooms > 1 ? ` · ${rooms} ห้อง` : ''}`;
-
   return (
-    <div className="drp">
-      <button type="button" className="drp-trigger" onClick={() => setOpen(true)}>
-        <Icon n="users" size={18} />
-        <span className="drp-tp">
-          <span className="drp-tl">ผู้เข้าพัก</span>
-          <span className={`drp-tv ${guests < 2 ? 'ph' : ''}`}>{valueTxt}</span>
-        </span>
-        <Icon n="chevR" size={16} />
-      </button>
+    <>
+      <div className="guestrow">
+        <button type="button" className="gfield" onClick={() => setOpen(true)}>
+          <Icon n="users" size={17} />
+          <span className="gf-v">{guests} ท่าน</span>
+        </button>
+        {showRooms && (
+          <button type="button" className="gfield" onClick={() => setOpen(true)}>
+            <Icon n="bed" size={17} />
+            <span className="gf-v">{rooms} ห้อง</span>
+          </button>
+        )}
+      </div>
 
       <input type="hidden" name={capName} value={guests > 1 ? String(guests) : ''} />
       {showRooms && <input type="hidden" name={roomsName} value={rooms > 1 ? String(rooms) : ''} />}
@@ -68,6 +68,6 @@ export default function StayGuests({ capName = 'cap', roomsName = 'rooms', initi
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

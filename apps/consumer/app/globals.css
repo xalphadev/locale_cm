@@ -1387,3 +1387,11 @@ a.pcname{color:var(--text)}
 .stepbtn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--hairline);background:var(--surface);color:var(--accent);font-size:1.35rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .stepbtn:disabled{color:var(--hint);border-color:var(--sunk);cursor:default}
 .stepval{min-width:20px;text-align:center;font-size:1.05rem;font-weight:800;color:var(--text)}
+/* clean single-line card fields (ref-style): guests | rooms side by side + compact date row */
+.guestrow{display:flex;gap:8px}
+.gfield{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:11px 12px;background:var(--sunk);border:none;border-radius:12px;font:inherit;font-size:.92rem;font-weight:600;color:var(--text);cursor:pointer;text-align:left}
+.gfield svg{color:var(--muted);flex:none}
+.gfield .gf-v{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staydates .drp-compact{gap:9px}
+.staydates .drp-compact .drp-cv{flex:1;min-width:0;font-size:.92rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staydates .drp-compact .drp-cv.ph{color:var(--hint);font-weight:600}

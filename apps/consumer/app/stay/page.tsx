@@ -35,7 +35,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
           hidden[] carries the rest. (Renders in both modes — guests applies to monthly leases too.) */}
       <form className="staydates" method="GET" action="/stay">
         {hidden.map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-        {mode === 'daily' && <DateRangePicker mode="range" fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />}
+        {mode === 'daily' && <DateRangePicker mode="range" compact fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />}
         <StayGuests capName="cap" roomsName="rooms" initialCap={Number(cap) || 1} initialRooms={rooms || 1} showRooms={mode === 'daily' && dateMode} />
         <button type="submit" className="staydates-go"><Icon n="search" size={15} /> {mode === 'daily' ? 'ค้นหาวันว่าง' : 'ค้นหา'}</button>
         {dateMode && <a className="staydates-clear" href={href({})}>ล้างวันที่</a>}
