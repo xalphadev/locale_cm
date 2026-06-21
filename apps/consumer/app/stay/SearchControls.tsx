@@ -26,8 +26,8 @@ export function SearchControls({ d, action = '/stay/search', tabsBase = '/stay/s
         {adults > 1 && <input type="hidden" name="ad" value={String(adults)} />}
         {children > 0 && <input type="hidden" name="ch" value={String(children)} />}
         {rooms ? <input type="hidden" name="rooms" value={String(rooms)} /> : null}
-        <Icon n="search" size={17} />
-        <input name="q" defaultValue={qtext} placeholder="ค้นหาชื่อที่พัก / ย่าน" autoComplete="off" />
+        <span className="gf-ic"><Icon n="search" size={17} /></span>
+        <span className="gf-cell"><span className="gf-l">ค้นหา</span><input name="q" defaultValue={qtext} placeholder="ชื่อที่พัก / ย่าน" autoComplete="off" /></span>
         {qtext && <a className="ss-x" href={href({ q: '' }, action)} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
       </form>
       {/* where/when/who in one form → one CTA. picker writes from/to; StayGuests writes ad/ch/rooms; hidden carries the rest. */}

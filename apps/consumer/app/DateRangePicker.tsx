@@ -56,12 +56,12 @@ export default function DateRangePicker({
       {split ? (
         <div className="fieldrow">
           <button type="button" className="gfield" onClick={() => setOpen(true)}>
-            <Icon n="calendar" size={17} />
-            <span className={`gf-v ${from ? '' : 'ph'}`}>{from ? fmtPill(from) : labelFrom}</span>
+            <span className="gf-ic"><Icon n="calendar" size={17} /></span>
+            <span className="gf-cell"><span className="gf-l">{labelFrom}</span><span className={`gf-v ${from ? '' : 'ph'}`}>{from ? fmtPill(from) : 'เลือกวัน'}</span></span>
           </button>
           <button type="button" className="gfield" onClick={() => setOpen(true)}>
-            <Icon n="calendar" size={17} />
-            <span className={`gf-v ${to ? '' : 'ph'}`}>{to ? fmtPill(to) : labelTo}</span>
+            <span className="gf-ic"><Icon n="calendar" size={17} /></span>
+            <span className="gf-cell"><span className="gf-l">{labelTo}</span><span className={`gf-v ${to ? '' : 'ph'}`}>{to ? fmtPill(to) : 'เลือกวัน'}</span></span>
           </button>
         </div>
       ) : (

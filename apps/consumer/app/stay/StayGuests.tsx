@@ -33,8 +33,8 @@ export default function StayGuests({
   return (
     <>
       <button type="button" className="gfield" onClick={() => setOpen(true)}>
-        <Icon n="users" size={17} />
-        <span className="gf-v">{parts.join(' · ')}</span>
+        <span className="gf-ic"><Icon n="users" size={17} /></span>
+        <span className="gf-cell"><span className="gf-l">ผู้เข้าพัก</span><span className="gf-v">{parts.join(' · ')}</span></span>
         <Icon n="chevR" size={16} />
       </button>
 
