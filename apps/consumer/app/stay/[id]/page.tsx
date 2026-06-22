@@ -135,6 +135,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
 
         {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ · <a href="/stay/requests">ดูคำขอของฉัน</a></div>}
         {searchParams?.err === 'contact' && <div className="bookerr">กรุณากรอกชื่อ และเบอร์โทรหรือไลน์อย่างน้อยหนึ่งช่อง</div>}
+        {searchParams?.err === 'full' && <div className="bookerr">ช่วงวันที่นี้เต็มแล้ว — เลือกวันอื่น หรือดู “ปฏิทินคืนว่าง” ด้านบน</div>}
         <details className="bookbox" {...(fromQ ? { open: true } : {})}>
           <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดู·จองห้องนี้</summary>
           <form className="bookform" action={submitBookingRequestAction.bind(null, u.place_id, u.id)}>

@@ -56,7 +56,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
         {newN > 0 && <span className="t season">ใหม่ {newN}</span>}
       </div>
       <p className="note">ลูกค้ากด “ขอให้ติดต่อกลับ / นัดดูห้อง” จากหน้าที่พัก จะมาที่นี่ — โทรหรือทักไลน์กลับได้เลย (ไม่มีการชำระเงินผ่านแอป)</p>
-      {searchParams?.ok === 'converted' && <div className="banner-ok">✓ ลงปฏิทิน (บล็อกห้อง) ตามวันที่ขอแล้ว</div>}
+      {searchParams?.ok === 'converted' && <div className="banner-ok">✓ ยืนยันการจองแล้ว — กันห้องตามวันที่ขอในปฏิทิน</div>}
       {searchParams?.ok === 'converted_m' && <div className="banner-ok">✓ รับเข้าพักแล้ว — ตั้งห้องเป็นไม่ว่าง / ปรับจำนวนว่าง</div>}
       {searchParams?.ok === 'scheduled' && <div className="banner-ok">✓ บันทึกนัดหมายแล้ว — ลูกค้าเห็นเวลานัดในแอป</div>}
       {searchParams?.error === 'full' && <div className="banner-err">ไม่มีห้องว่างในช่วงที่ขอ — เลือกห้อง/วันอื่น หรือบล็อกเองในผังห้อง</div>}
@@ -99,7 +99,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
                 </div>
                 <div className="lead-acts">
                   {b.managed && b.rental_mode === 'daily' && b.desired_from && b.desired_to && b.status !== 'converted' && b.status !== 'declined' &&
-                    <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> ลงปฏิทิน</button></form>}
+                    <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> ยืนยันการจอง</button></form>}
                   {b.rental_mode === 'monthly' && b.stay_unit_id && b.status !== 'converted' && b.status !== 'declined' &&
                     <form action={convertMonthlyLeadAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> รับเข้าพัก</button></form>}
                   {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn sm" type="submit">ติดต่อแล้ว</button></form>}

@@ -165,10 +165,20 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
   // re-prove the place is a published, publicly-listed accommodation; resolve the listing it belongs to
   const [pl] = await q<any>(`SELECT id, offers_stay FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
   if (!pl || !pl.offers_stay) redirect('/stay');
-  let unitId: string | null = null; let mode: string | null = null;
+  let unitId: string | null = null; let mode: string | null = null; let managed = false;
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId)) {
-    const [su] = await q<any>(`SELECT id, rental_mode FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]);
-    if (su) { unitId = su.id; mode = su.rental_mode; }
+    const [su] = await q<any>(`SELECT id, rental_mode, managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]);
+    if (su) { unitId = su.id; mode = su.rental_mode; managed = !!su.managed; }
+  }
+  // request-to-book: a dated booking only goes through when a room is actually free for those nights (managed
+  // daily listings) — so the owner never gets an un-fulfillable request. Viewing/enquiry are NOT gated. No money.
+  if (kind === 'booking' && mode === 'daily' && managed && unitId && from && to) {
+    const [free] = await q<{ id: string }>(
+      `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+         AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
+           AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)'))
+       LIMIT 1`, [unitId, from, to]);
+    if (!free) redirect(`${back}?err=full`);
   }
   const [lead] = await q<{ id: string }>(
     `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, desired_months,
