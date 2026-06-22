@@ -170,6 +170,14 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
     const [su] = await q<any>(`SELECT id, rental_mode, managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]);
     if (su) { unitId = su.id; mode = su.rental_mode; managed = !!su.managed; }
   }
+  // can't book dates in the past (server guard; the picker also prevents it). Bangkok day.
+  const todayBkk = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  if (kind === 'booking' && mode === 'daily' && from && from < todayBkk) redirect(`${back}?err=past`);
+  // anti-spam / no-money commitment: cap how many open requests one user can have at a place
+  if (uid) {
+    const [oc] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_booking_request WHERE requester_user_id=$1 AND place_id=$2 AND deleted_at IS NULL AND status IN ('new','contacted','scheduled')`, [uid, placeId]);
+    if ((oc?.n || 0) >= 5) redirect(`${back}?err=toomany`);
+  }
   // request-to-book: a dated booking only goes through when a room is actually free for those nights (managed
   // daily listings) — so the owner never gets an un-fulfillable request. Viewing/enquiry are NOT gated. No money.
   if (kind === 'booking' && mode === 'daily' && managed && unitId && from && to) {
