@@ -86,7 +86,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Inter+Noto) ============ */
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
-  --m-bg:#FFFFFF; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
+  --m-bg:#F8F7F3; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
   --m-accent:#2B74FF; --m-accent-press:#1A5FE6; --m-soft:#D6E4FF; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
   --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
@@ -1065,3 +1065,30 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mtab-i[href="/merchant/rooms"].on{color:var(--m-sec-rooms)}
 .merchant-root .mtab-i[href="/merchant/loyalty"].on{color:var(--m-sec-loyalty)}
 .merchant-root .mtab-i[href="/merchant/shop"].on{color:var(--m-sec-shop)}
+
+/* ── in-page section accent: chrome INSIDE each section follows its hue (home/default = brand blue) ── */
+.merchant-root .mbody{--m-sec:var(--m-accent);--m-sec-bg:var(--m-soft)}
+.merchant-root .mbody.sec-products{--m-sec:var(--m-sec-products);--m-sec-bg:var(--m-sec-products-bg)}
+.merchant-root .mbody.sec-rooms{--m-sec:var(--m-sec-rooms);--m-sec-bg:var(--m-sec-rooms-bg)}
+.merchant-root .mbody.sec-loyalty{--m-sec:var(--m-sec-loyalty);--m-sec-bg:var(--m-sec-loyalty-bg)}
+.merchant-root .mbody.sec-leads{--m-sec:var(--m-sec-leads);--m-sec-bg:var(--m-sec-leads-bg)}
+.merchant-root .mbody.sec-pricing{--m-sec:var(--m-sec-pricing);--m-sec-bg:var(--m-sec-pricing-bg)}
+.merchant-root .mbody.sec-deals{--m-sec:var(--m-sec-deals);--m-sec-bg:var(--m-sec-deals-bg)}
+.merchant-root .mbody.sec-payouts{--m-sec:var(--m-sec-payouts);--m-sec-bg:var(--m-sec-payouts-bg)}
+.merchant-root .mbody.sec-shop{--m-sec:var(--m-sec-shop);--m-sec-bg:var(--m-sec-shop-bg)}
+/* section icon chips + the inset ring follow the section accent */
+.merchant-root .rsec-ic,.merchant-root .fsec-ic,.merchant-root .phead-ic,.merchant-root .pstat-ic,.merchant-root .mempty-ic,.merchant-root .factitem-ic{background:var(--m-sec-bg);color:var(--m-sec)}
+.merchant-root .rsec-ic,.merchant-root .pstat-ic,.merchant-root .fsec-ic,.merchant-root .factitem-ic,.merchant-root .phead-ic{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec) 10%,transparent)}
+/* active tab / active filter chip / "in board" info pill follow the section accent */
+.merchant-root .roomseg-i.on{color:var(--m-sec)}
+.merchant-root .fchip.on{background:var(--m-sec);border-color:var(--m-sec)}
+.merchant-root .t.link{background:var(--m-sec-bg);color:var(--m-sec)}
+/* status pills are SEMANTIC, not section: available/new = green (was blue) */
+.merchant-root .t.season{background:#E4F6EC;color:var(--m-jade)}
+/* onboarding card follows the section accent (rooms = indigo) */
+.merchant-root .setupcard-spark{background:color-mix(in srgb,var(--m-sec) 13%,transparent);color:var(--m-sec)}
+.merchant-root .setupcard-badge{background:color-mix(in srgb,var(--m-sec) 11%,transparent);color:var(--m-sec)}
+.merchant-root .setupbar>span{background:var(--m-sec)}
+.merchant-root .setupstep.now{background:color-mix(in srgb,var(--m-sec) 7%,transparent);border-color:color-mix(in srgb,var(--m-sec) 28%,transparent)}
+.merchant-root .setupstep.now .setupstep-ic{background:var(--m-sec)}
+.merchant-root .setupstep-go{color:var(--m-sec)}

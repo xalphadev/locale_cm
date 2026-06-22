@@ -56,6 +56,15 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   // (≤2 path segments: /merchant, /merchant/rooms…). Deep pages (detail/edit/new, ≥3 segments) carry
   // their own back-link + title, so the full header there is redundant chrome — drop it.
   const isTop = path.split('/').filter(Boolean).length <= 2;
+  // section identity → an in-page accent color (the chrome inside each section follows its hue; home stays blue)
+  const sec = path.startsWith('/merchant/products') ? 'products'
+    : (path.startsWith('/merchant/rooms') || path.startsWith('/merchant/units')) ? 'rooms'
+    : path.startsWith('/merchant/loyalty') ? 'loyalty'
+    : path.startsWith('/merchant/leads') ? 'leads'
+    : path.startsWith('/merchant/pricing') ? 'pricing'
+    : path.startsWith('/merchant/deals') ? 'deals'
+    : path.startsWith('/merchant/payouts') ? 'payouts'
+    : path.startsWith('/merchant/shop') ? 'shop' : '';
   return (
     <div className="mshell">
       {isTop && (
@@ -73,7 +82,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           <form action={logoutAction}><button className="mtop-out" type="submit">ออก</button></form>
         </header>
       )}
-      <main className="mbody">{children}</main>
+      <main className={`mbody ${sec ? 'sec-' + sec : ''}`}>{children}</main>
       <nav className="mtab">
         {tabs.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} />{t.badge ? <span className="mtab-badge">{t.badge > 9 ? '9+' : t.badge}</span> : null}<span>{t.label}</span></a>)}
       </nav>
