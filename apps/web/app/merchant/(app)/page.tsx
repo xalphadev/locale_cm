@@ -112,11 +112,11 @@ export default async function Dashboard() {
           {acc.branch_count > 1 ? <span className="menu-val">{acc.branch_count}</span> : null}
           <Icon n="chevR" className="menu-go" size={18} />
         </Link>
-        <Link className="menu-row" href={`${CONSUMER}/place/${acc.place_id}`} target="_blank">
+        <a className="menu-row" href={`${CONSUMER}/place/${acc.place_id}`} target="_blank" rel="noopener">
           <span className="menu-ic"><Icon n="eye" size={19} /></span>
           <span className="menu-tx">ดูหน้าร้านที่ลูกค้าเห็น</span>
           <Icon n="ext" className="menu-go" size={16} />
-        </Link>
+        </a>
         <Link className="menu-row" href="/merchant/trash">
           <span className="menu-ic"><Icon n="trash" size={20} /></span>
           <span className="menu-tx">ถังขยะ · รายการที่ลบ</span>
