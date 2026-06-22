@@ -1094,3 +1094,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .setupstep-go{color:var(--m-sec)}
 /* roomseg control authored for <a>; allow <button> (the add-rooms mode switch) to use it cleanly */
 .merchant-root button.roomseg-i{border:0;background:transparent;cursor:pointer;font:inherit}
+/* add-rooms: tooltip body + the "important" confirm line / calm gate prompt */
+.merchant-root .hubpop-body{white-space:pre-line;font-size:.86rem;line-height:1.6;color:var(--m-text)}
+.merchant-root .addroom-on{display:flex;align-items:center;gap:6px;margin-top:9px;padding:9px 12px;border-radius:10px;background:var(--m-sec-bg);color:var(--m-sec);font-weight:700;font-size:.86rem}
+.merchant-root .addroom-hint{display:flex;align-items:center;gap:6px;margin-top:9px;padding:9px 12px;border-radius:10px;background:var(--m-sunk);color:var(--m-muted);font-size:.84rem}
