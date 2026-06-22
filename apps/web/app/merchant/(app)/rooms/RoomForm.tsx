@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui';
-import { BILLS, AMEN, BUILDING } from './constants';
+
+type AmenOpt = { key: string; label: string };   // amenity catalog options (passed from the server page)
 
 // local pure i18n (avoid importing the server-only @/lib/db into this client component)
 const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '' : '');
@@ -69,7 +70,7 @@ function PhotoUpload({ existing }: { existing?: string[] }) {
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id).
  *  Client component so the availability field + price/contract labels follow the chosen rental mode. */
-export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง', stayKind }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean; noun?: string; stayKind?: string }) {
+export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง', stayKind, amenOpts, buildOpts, billOpts }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean; noun?: string; stayKind?: string; amenOpts: AmenOpt[]; buildOpts: AmenOpt[]; billOpts: AmenOpt[] }) {
   const [mode, setMode] = useState<string>(u?.rental_mode || 'monthly');
   const monthly = mode === 'monthly';
   const bills: string[] = u?.bills_included ?? [];
@@ -135,7 +136,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
         </div>
         {monthly && (
           <div className="field"><label>รวมค่าใช้จ่ายในค่าเช่า</label>
-            <div className="checkrow">{BILLS.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="bills" value={k} defaultChecked={bills.includes(k)} /> {l}</label>)}</div></div>
+            <div className="checkrow">{billOpts.map((o) => <label key={o.key} className="cbox"><input type="checkbox" name="bills" value={o.key} defaultChecked={bills.includes(o.key)} /> {o.label}</label>)}</div></div>
         )}
       </section>
 
@@ -170,7 +171,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
           )}
           {wantBuilding && (
             <div className="field"><label>สิ่งอำนวยความสะดวกส่วนกลาง / อาคาร</label>
-              <div className="checkrow">{BUILDING.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="building" value={k} defaultChecked={(at.building || []).includes(k)} /> {l}</label>)}</div>
+              <div className="checkrow">{buildOpts.map((o) => <label key={o.key} className="cbox"><input type="checkbox" name="building" value={o.key} defaultChecked={(at.building || []).includes(o.key)} /> {o.label}</label>)}</div>
             </div>
           )}
         </section>
@@ -178,7 +179,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="sofa" size={15} /></span> สิ่งอำนวยความสะดวก</div>
-        <div className="checkrow">{AMEN.map(([k, l]) => <label key={k} className="cbox"><input type="checkbox" name="amenity" value={k} defaultChecked={amen.includes(k)} /> {l}</label>)}</div>
+        <div className="checkrow">{amenOpts.map((o) => <label key={o.key} className="cbox"><input type="checkbox" name="amenity" value={o.key} defaultChecked={amen.includes(o.key)} /> {o.label}</label>)}</div>
       </section>
 
       <section className="fsec">

@@ -209,3 +209,25 @@ export async function rejectPayoutAction(reqId: string) {
   await q(`UPDATE payout_requests SET status='rejected', resolved_by=$2, resolved_at=now() WHERE id=$1 AND status='requested'`, [reqId, DEMO_ADMIN]);
   revalidatePath('/payouts'); redirect('/payouts?ok=rejected');
 }
+
+/** Admin: add/edit a row in the amenity catalog (stay_amenity, 0044) — feeds the merchant room form +
+ *  consumer filter + detail pages. Re-adding an existing (grp,key) updates its label/sort and re-activates. */
+export async function addAmenityAction(formData: FormData) {
+  const grp = String(formData.get('grp') ?? '').trim();
+  const key = String(formData.get('key') ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const label = String(formData.get('label') ?? '').trim().slice(0, 60);
+  const sort = Number(formData.get('sort')) || 100;
+  if (!['amenity', 'building', 'bills'].includes(grp) || !key || !label) redirect('/reports/amenities?err=1');
+  await q(`INSERT INTO stay_amenity(grp, key, label_i18n, sort) VALUES($1,$2,jsonb_build_object('th',$3::text),$4)
+           ON CONFLICT (grp, key) DO UPDATE SET label_i18n=EXCLUDED.label_i18n, sort=EXCLUDED.sort, active=true, updated_at=now()`,
+    [grp, key, label, sort]);
+  revalidatePath('/reports/amenities');
+  redirect('/reports/amenities?ok=saved');
+}
+
+/** Admin: hide/show a catalog row (active flag) — never deletes, so an existing selection of the key still
+ *  renders on detail pages; it just stops being offered in the form/filter. */
+export async function toggleAmenityAction(grp: string, key: string) {
+  await q(`UPDATE stay_amenity SET active = NOT active, updated_at=now() WHERE grp=$1 AND key=$2`, [grp, key]);
+  revalidatePath('/reports/amenities');
+}

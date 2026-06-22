@@ -2,7 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '../icons';
-import { STAY_AMENITIES, STAY_BUILDING, STAY_KINDS, STAY_KIND_TH, facetLabel } from '@/lib/facets';
+import { STAY_KINDS, STAY_KIND_TH } from '@/lib/facets';
+
+type AmenOpt = { key: string; label: string };
 const SORTS: Record<string, [string, string][]> = {
   monthly: [['', 'มาใหม่'], ['soon', 'ว่างเร็วๆนี้'], ['cheap', 'ราคาประหยัด']],
   daily: [['', 'มาใหม่'], ['vacant', 'ว่างวันนี้'], ['cheap', 'ราคาประหยัด']],
@@ -20,6 +22,7 @@ const ONE = 'เลือก 1 อย่าง';
 type Props = {
   mode: string; q: string; basePath?: string; from?: string; to?: string;
   kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; beds: string; gender: string; bam: string[]; count: number;
+  amenOpts: AmenOpt[]; buildOpts: AmenOpt[];
 };
 
 export default function StayFilterSheet(p: Props) {
@@ -95,12 +98,16 @@ export default function StayFilterSheet(p: Props) {
                   {FURNISH.map(([k, l]) => <Chip key={k} on={s.fr.includes(k)} check onClick={() => multi('fr', k)}>{l}</Chip>)}
                 </Sec>
               )}
-              <Sec icon="sparkles" title="สิ่งอำนวยความสะดวก" hint={MULTI}>
-                {STAY_AMENITIES.map((a) => <Chip key={a} on={s.am.includes(a)} check onClick={() => multi('am', a)}>{facetLabel(a)}</Chip>)}
-              </Sec>
-              <Sec icon="sparkles" title="ส่วนกลาง / อาคาร" hint={MULTI}>
-                {STAY_BUILDING.map((a) => <Chip key={a} on={s.bam.includes(a)} check onClick={() => multi('bam', a)}>{facetLabel(a)}</Chip>)}
-              </Sec>
+              {p.amenOpts.length > 0 && (
+                <Sec icon="sparkles" title="สิ่งอำนวยความสะดวก" hint={MULTI}>
+                  {p.amenOpts.map((a) => <Chip key={a.key} on={s.am.includes(a.key)} check onClick={() => multi('am', a.key)}>{a.label}</Chip>)}
+                </Sec>
+              )}
+              {p.buildOpts.length > 0 && (
+                <Sec icon="sparkles" title="ส่วนกลาง / อาคาร" hint={MULTI}>
+                  {p.buildOpts.map((a) => <Chip key={a.key} on={s.bam.includes(a.key)} check onClick={() => multi('bam', a.key)}>{a.label}</Chip>)}
+                </Sec>
+              )}
               <Sec icon="sort" title="เรียงลำดับ" hint={ONE}>
                 {SORTS[p.mode].map(([k, l]) => <Chip key={k || 'new'} on={s.sort === k} onClick={() => single('sort', k)}>{l}</Chip>)}
               </Sec>

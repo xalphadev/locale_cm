@@ -1,6 +1,7 @@
 import { q, i18n, demoUserId } from '@/lib/db';
 import { roomVacancy, roomImg } from '../RoomCard';
-import { STAY_AMENITIES, STAY_KINDS, STAY_BUILDING } from '@/lib/facets';
+import { STAY_KINDS } from '@/lib/facets';
+const AKEY = /^[a-z0-9_]+$/;   // amenity/building keys are an admin catalog now — accept any well-formed key
 import { parsePoint, isDefaultGeo } from '@/lib/geo';
 
 // Shared stay-search data loader for BOTH the list (/stay) and the full-screen map (/stay/map) routes,
@@ -53,7 +54,7 @@ export async function loadStay(searchParams: Record<string, string>) {
   const mode = searchParams?.mode === 'daily' ? 'daily' : 'monthly';
   const kind = String(searchParams?.kind || '').split(',').map((x) => x.trim()).filter((x) => STAY_KINDS.includes(x));
   const sort = SORTS[mode].includes(searchParams?.sort) ? searchParams.sort : '';
-  const am = String(searchParams?.am || '').split(',').map((x) => x.trim()).filter((x) => STAY_AMENITIES.includes(x));
+  const am = String(searchParams?.am || '').split(',').map((x) => x.trim()).filter((x) => AKEY.test(x)).slice(0, 20);
   const fr = String(searchParams?.fr || '').split(',').map((x) => x.trim()).filter((x) => ['furnished', 'partial', 'unfurnished'].includes(x));
   const qtext = String(searchParams?.q || '').slice(0, 60).trim();
   const pr = PRICE[mode][searchParams?.pr] ? searchParams.pr : '';
@@ -77,7 +78,7 @@ export async function loadStay(searchParams: Record<string, string>) {
   const savedOnly = searchParams?.saved === '1';
   const beds = ['1', '2', '3', '4'].includes(searchParams?.beds || '') ? searchParams.beds : '';   // min bedrooms (apt/condo/house)
   const gender = ['female', 'male'].includes(searchParams?.gender || '') ? searchParams.gender : '';   // dorm/hostel
-  const bam = String(searchParams?.bam || '').split(',').map((x) => x.trim()).filter((x) => STAY_BUILDING.includes(x));   // common-area facilities (attrs.building[])
+  const bam = String(searchParams?.bam || '').split(',').map((x) => x.trim()).filter((x) => AKEY.test(x)).slice(0, 20);   // common-area facilities (attrs.building[])
 
   let rows: any[] = [];
   try {

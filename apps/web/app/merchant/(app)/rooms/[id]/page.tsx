@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
-import { BILLS, AMEN, FURNISHED_TH } from '../constants';
+import { FURNISHED_TH } from '../constants';
+import { amenityLabels } from '@/lib/amenities';
 import { updateVacancyAction, setStayUnitFlagAction, deleteStayUnitAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -33,8 +34,9 @@ export default async function RoomDetail({ params }: { params: { id: string } })
   const imgs: string[] | null = u.image_urls;
   const monthly = u.rental_mode === 'monthly';
   const hidden = u.status === 'hidden';
-  const billLabels = BILLS.filter(([k]) => (u.bills_included ?? []).includes(k)).map(([, l]) => l);
-  const amenLabels = AMEN.filter(([k]) => (u.unit_amenities ?? []).includes(k)).map(([, l]) => l);
+  const labels = await amenityLabels();
+  const billLabels: string[] = (u.bills_included ?? []).map((k: string) => labels[k] || k);
+  const amenLabels: string[] = (u.unit_amenities ?? []).map((k: string) => labels[k] || k);
   const facts: [string, string, string][] = [];
   if (u.capacity) facts.push(['users', 'รับได้', `${u.capacity} ท่าน`]);
   if (u.room_size_sqm) facts.push(['ruler', 'ขนาด', `${u.room_size_sqm} ตร.ม.`]);

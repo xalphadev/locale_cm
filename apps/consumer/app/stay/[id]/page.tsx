@@ -5,6 +5,7 @@ import { toggleSaveAction, submitBookingRequestAction } from '../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import { StayAvailability } from '../StayAvailability';
 import { facetLabel, STAY_KIND_TH } from '@/lib/facets';
+import { stayAmenityLabels } from '@/lib/amenities';
 import { parsePoint } from '@/lib/geo';
 import { RoomCard, rentText, roomVacancy, FURNISH_TH, fmtDate, stayDaysAgo } from '../../RoomCard';
 import { StayGallery } from '../../Lightbox';
@@ -108,6 +109,8 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
     : u.phone ? { href: `tel:${u.phone}`, label: 'โทรสอบถาม', icon: 'phone' as const, ext: false, cls: 'tel' } : null;
   const bills: string[] = u.bills_included ?? [];
   const amen: string[] = u.unit_amenities ?? [];
+  const aml = await stayAmenityLabels();           // catalog labels (incl admin-added) for display
+  const alabel = (k: string) => aml[k] || facetLabel(k);
 
   return (
     <>
@@ -207,13 +210,13 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
 
         {(amen.length > 0 || bills.length > 0) && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="sparkles" size={15} /></span>สิ่งอำนวยความสะดวก</h2>
-          {amen.length > 0 && <div className="chips">{amen.map((a) => <span className="chip" key={a}><Icon n="check" size={12} /> {facetLabel(a)}</span>)}</div>}
-          {bills.length > 0 && <div className="rbills"><Icon n="check" size={14} /> รวมในค่าเช่า: {bills.map((b) => facetLabel(b)).join(' · ')}</div>}
+          {amen.length > 0 && <div className="chips">{amen.map((a) => <span className="chip" key={a}><Icon n="check" size={12} /> {alabel(a)}</span>)}</div>}
+          {bills.length > 0 && <div className="rbills"><Icon n="check" size={14} /> รวมในค่าเช่า: {bills.map((b) => alabel(b)).join(' · ')}</div>}
         </>)}
 
         {isBuildingKind && u.attrs?.building?.length > 0 && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="sparkles" size={15} /></span>ส่วนกลาง / อาคาร</h2>
-          <div className="chips">{u.attrs.building.map((a: string) => <span className="chip" key={a}><Icon n="check" size={12} /> {facetLabel(a)}</span>)}</div>
+          <div className="chips">{u.attrs.building.map((a: string) => <span className="chip" key={a}><Icon n="check" size={12} /> {alabel(a)}</span>)}</div>
         </>)}
 
         {seasonalRates.length > 0 && (<>

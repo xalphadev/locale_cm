@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
+import { loadAmenityCatalog } from '@/lib/amenities';
 import { Icon, isUuid } from '../../../ui';
 import { RoomForm } from '../../RoomForm';
 import { updateStayUnitAction } from '../../../../actions';
@@ -17,13 +18,14 @@ export default async function EditRoom({ params, searchParams }: { params: { id:
     return (<><div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div><h1>ไม่พบห้องพัก</h1></>);
   }
   const typeNoun = acc.room_mode === 'unique' ? 'ห้อง' : 'รูปแบบห้อง';
+  const cat = await loadAmenityCatalog();
   return (
     <>
       <div className="mback"><Link href={`/merchant/rooms/${u.id}`}><Icon n="chevL" size={18} /> รายละเอียด{typeNoun}</Link></div>
       <h1>แก้ไข{typeNoun}</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
-      <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" managed={!!u.managed} noun={typeNoun} stayKind={acc.stay_kind} />
+      <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" managed={!!u.managed} noun={typeNoun} stayKind={acc.stay_kind} amenOpts={cat.amenity} buildOpts={cat.building} billOpts={cat.bills} />
     </>
   );
 }
