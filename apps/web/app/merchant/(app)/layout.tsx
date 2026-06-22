@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { currentAccount } from '@/lib/auth';
-import { i18n } from '@/lib/db';
+import { i18n, q } from '@/lib/db';
 import { logoutAction } from '../actions';
 import Switcher from './Switcher';
 
@@ -38,9 +38,20 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   // owner never faces two parallel room menus. The tab just renames ห้องพัก → ห้อง in 'unique' mode
   // (resort, no board). Reflects the ACTIVE branch (Switcher), so one account's dorm vs resort each fit.
   const mode = acc.room_mode || 'multi';
+  // new-lead count → an always-visible badge on the ห้องพัก tab (the in-app "new booking request" alert,
+  // since คำขอจอง has no nav tab of its own). Outbound delivery (LINE/email) is separate infra.
+  let newLeads = 0;
+  if (acc.place_id && (acc.offers_stay || acc.manages_stay)) {
+    const [lr] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_booking_request WHERE place_id=$1 AND status='new' AND deleted_at IS NULL`, [acc.place_id]);
+    newLeads = lr?.n || 0;
+  }
   const tabs = TABS
     .filter((t) => !t.cap || acc[t.cap])
-    .map((t) => (t.href === '/merchant/rooms' && mode === 'unique' ? { ...t, label: 'ห้อง' } : t));
+    .map((t) => {
+      let tt: any = (t.href === '/merchant/rooms' && mode === 'unique') ? { ...t, label: 'ห้อง' } : t;
+      if (t.href === '/merchant/rooms' && newLeads > 0) tt = { ...tt, badge: newLeads };
+      return tt;
+    });
   // The account header (avatar + brand switcher + status + logout) belongs only on top-level pages
   // (≤2 path segments: /merchant, /merchant/rooms…). Deep pages (detail/edit/new, ≥3 segments) carry
   // their own back-link + title, so the full header there is redundant chrome — drop it.
@@ -64,7 +75,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       )}
       <main className="mbody">{children}</main>
       <nav className="mtab">
-        {tabs.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} /><span>{t.label}</span></a>)}
+        {tabs.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} />{t.badge ? <span className="mtab-badge">{t.badge > 9 ? '9+' : t.badge}</span> : null}<span>{t.label}</span></a>)}
       </nav>
     </div>
   );

@@ -67,7 +67,7 @@ export default async function Dashboard() {
           <a className="menu-row" href="/merchant/leads">
             <span className="menu-ic"><Icon n="chat" size={20} /></span>
             <span className="menu-tx">คำขอจอง</span>
-            {(stats?.leads ?? 0) > 0 ? <span className="menu-val">{stats.leads}</span> : null}
+            {(stats?.leads ?? 0) > 0 ? <span className="menu-badge-new">ใหม่ {stats.leads}</span> : null}
             <Icon n="chevR" className="menu-go" size={18} />
           </a>
         )}

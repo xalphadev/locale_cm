@@ -971,3 +971,8 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .tcal-dn{font-size:.66rem;font-weight:600;color:var(--m-muted);line-height:1.1}
 .merchant-root .tcal-d.fr .tcal-c{font-size:.95rem;font-weight:800;color:#0E7A4F;line-height:1.1}
 .merchant-root .tcal-d.no .tcal-c{font-size:.62rem;font-weight:700;color:#9aa0a6;line-height:1.2}
+
+/* new-lead alert badges (merchant) — bottom-nav tab + home menu row */
+.mtab-i{position:relative}
+.mtab-badge{position:absolute;top:1px;left:calc(50% + 4px);min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:#e5484d;color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px #fff}
+.menu-badge-new{background:#e5484d;color:#fff;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;margin-left:auto}
