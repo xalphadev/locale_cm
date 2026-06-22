@@ -1302,11 +1302,13 @@ export async function createRoomsBulkAction(formData: FormData) {
   const pad = (!prefix && floorIsNum) ? 2 : 0;
   const codes: string[] = [];
   for (let n = start; n <= end; n++) codes.push(`${base}${pad ? String(n).padStart(pad, '0') : n}`);
+  const capV = s(formData, 'capacity');
+  const capacity = capV && Number.isFinite(Number(capV)) ? Math.max(0, Math.trunc(Number(capV))) : null;   // applied to every room in the run
   await q(
-    `INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind)
-       SELECT $1, $2, c, $4, 'room' FROM unnest($3::text[]) c
+    `INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind, capacity)
+       SELECT $1, $2, c, $4, 'room', $5 FROM unnest($3::text[]) c
      ON CONFLICT (place_id, code) WHERE deleted_at IS NULL DO NOTHING`,
-    [acc.place_id, okUnit, codes, floor]);
+    [acc.place_id, okUnit, codes, floor, capacity]);
   await refreshUnitVacancy(okUnit);
   revalidatePath('/merchant/units'); revalidatePath('/merchant');
   redirect('/merchant/units?ok=bulk');

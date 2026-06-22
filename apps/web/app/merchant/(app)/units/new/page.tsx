@@ -76,6 +76,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
             <div className="field"><label>เลขห้องเริ่ม *</label><input name="start" type="number" min="0" placeholder="1" required /></div>
             <div className="field"><label>ถึงเลข *</label><input name="end" type="number" min="0" placeholder="10" required /></div>
           </div>
+          <div className="field"><label>รับได้ (ท่าน) — ใช้กับทุกห้องในชุดนี้</label><input name="capacity" type="number" min="0" placeholder="เช่น 2" /></div>
           <button className="btn btn-primary" type="submit">+ เพิ่มหลายห้อง</button>
         </section>
       </form>

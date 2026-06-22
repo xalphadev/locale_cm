@@ -55,6 +55,13 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
        FROM stay_occupancy_block
        WHERE room_id=$1 AND status='active' AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE)
        ORDER BY start_date`, [r.id]);
+  const events = await q<any>(
+    `SELECT event_kind, meta, to_char(created_at,'DD/MM HH24:MI') at FROM stay_room_event WHERE room_id=$1 ORDER BY created_at DESC LIMIT 12`, [r.id]);
+  const evLabel = (e: any) =>
+    e.event_kind === 'status_change' ? `เปลี่ยนสถานะ → ${OCC[e.meta?.to]?.label || e.meta?.to || ''}${e.meta?.bulk ? ' (หลายห้อง)' : ''}`
+    : e.event_kind === 'move_in' ? `ย้ายเข้า${e.meta?.from_code ? ` (จากห้อง ${e.meta.from_code})` : ''}`
+    : e.event_kind === 'move_out' ? `ย้ายออก${e.meta?.to_code ? ` (ไปห้อง ${e.meta.to_code})` : ''}`
+    : e.event_kind;
   const occupiedNow = r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved';
   const vacantRooms = occupiedNow
     ? await q<any>(`SELECT id, code, floor FROM stay_room WHERE place_id=$1 AND deleted_at IS NULL AND status='active' AND occupancy_status='vacant' AND id<>$2 ORDER BY floor NULLS FIRST, code`, [acc.place_id, r.id])
@@ -183,6 +190,20 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
           <p className="note" style={{ margin: '6px 0 0' }}>ใส่ชื่อ = บันทึกเป็น “การจอง/ผู้เช่า” (เห็นในหน้าคำขอจอง) · เว้นว่าง = บล็อกเฉยๆ (ปิดซ่อม/กันห้อง)</p>
         </form>
       </details>
+
+      {events.length > 0 && (
+        <details className="usettings">
+          <summary><Icon n="clock" size={14} /> ประวัติการเปลี่ยนแปลง</summary>
+          <div className="mlist">
+            {events.map((e, i) => (
+              <div className="mrow" key={i}>
+                <span className="mrow-body"><span className="mrow-nm">{evLabel(e)}</span></span>
+                <span className="mrow-meta">{e.at}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
     </>
   );
 }

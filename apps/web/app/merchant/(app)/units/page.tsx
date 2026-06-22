@@ -107,7 +107,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
         <>
           <div className="occbar">
             <div className="occbar-top">
-              <span><b>{rooms.length}</b> ห้อง · <b style={{ color: ST.vacant.color }}>{vacant}</b> ว่าง</span>
+              <span><b>{rooms.length}</b> ห้อง · <b style={{ color: ST.vacant.color }}>{vacant}</b> ว่าง · <b>{rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</b> ใช้งาน</span>
               <span className="occbar-acts">
                 <a className="occbar-leads" href="/merchant/units/calendar"><Icon n="calendar" size={14} /> ปฏิทินรวม</a>
                 <a className="occbar-leads" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์</a>
