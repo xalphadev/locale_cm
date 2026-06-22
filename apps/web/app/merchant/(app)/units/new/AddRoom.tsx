@@ -5,11 +5,12 @@ import { createRoomAction, createRoomsBulkAction } from '../../../actions';
 import { InfoTip } from './InfoTip';
 
 // Add physical rooms to the board. Pick the room TYPE first (the gate) — only then does the add form appear,
-// so the load-bearing link is never missed. Long explanations live in per-field "?" tooltips; the bulk run
-// teaches itself with a live preview. Status/วันที่ว่าง/โน้ต let an owner backfill rooms that are ALREADY
-// occupied at setup (otherwise every new room shows as a fake vacancy in the customer's "ว่าง N").
-export function AddRoom({ types, term }: { types: { id: string; name: string; capacity: number | null }[]; term: string }) {
+// so the load-bearing link is never missed. dorm/hostel can add เตียง (room_kind='bed') instead of whole rooms;
+// beds are flat leaves so each counts as one vacancy (no parent hierarchy needed). Status/วันที่ว่าง/โน้ต let an
+// owner backfill rooms ALREADY occupied at setup (else every new room shows as a fake vacancy in "ว่าง N").
+export function AddRoom({ types, term, allowBeds }: { types: { id: string; name: string; capacity: number | null }[]; term: string; allowBeds?: boolean }) {
   const [mode, setMode] = useState<'single' | 'bulk'>('bulk');
+  const [kind, setKind] = useState<'room' | 'bed'>('room');
   const [typeId, setTypeId] = useState('');
   const [floor, setFloor] = useState('');
   const [prefix, setPrefix] = useState('');
@@ -19,13 +20,12 @@ export function AddRoom({ types, term }: { types: { id: string; name: string; ca
   const [status, setStatus] = useState('vacant');
   const [occUntil, setOccUntil] = useState('');
   const selected = types.find((t) => t.id === typeId);
+  const U = kind === 'bed' ? 'เตียง' : 'ห้อง';
 
-  // picking a type prefills capacity from the type (owners rarely override per room) — still editable
-  const pickType = (id: string) => {
-    setTypeId(id);
-    const t = types.find((x) => x.id === id);
-    setCap(t?.capacity != null ? String(t.capacity) : '');
-  };
+  const capFor = (k: 'room' | 'bed', t?: { capacity: number | null }) =>
+    k === 'bed' ? '1' : (t?.capacity != null ? String(t.capacity) : '');
+  const pickType = (id: string) => { setTypeId(id); setCap(capFor(kind, types.find((x) => x.id === id))); };
+  const pickKind = (k: 'room' | 'bed') => { setKind(k); setCap(capFor(k, selected)); };
 
   const preview = useMemo(() => {
     if (start === '' || end === '') return { state: 'empty' as const };
@@ -54,7 +54,7 @@ export function AddRoom({ types, term }: { types: { id: string; name: string; ca
           <option value="reserved">จองไว้</option>
           <option value="maintenance">ปิดปรับปรุง</option>
         </select>
-        <p className="fhint">เลือกอย่างอื่นถ้าห้องมีคนอยู่/ปิดอยู่แล้ว — จะได้ไม่ถูกนับเป็นห้องว่างให้ลูกค้า</p></div>
+        <p className="fhint">เลือกอย่างอื่นถ้า{U}มีคนอยู่/ปิดอยู่แล้ว — จะได้ไม่ถูกนับเป็น{U}ว่างให้ลูกค้า</p></div>
       {occupied && (
         <div className="field"><label>ว่างอีกครั้ง <span className="lbl-opt">(ถ้ารู้วันที่)</span></label>
           <input name="occupied_until" type="date" value={occUntil} onChange={(e) => setOccUntil(e.target.value)} /></div>
@@ -74,51 +74,64 @@ export function AddRoom({ types, term }: { types: { id: string; name: string; ca
           </select>
         </div>
         {typeId
-          ? <div className="addroom-on"><Icon n="check" size={14} /> กำลังเพิ่มห้องของ <b>{selected?.name}</b></div>
+          ? <div className="addroom-on"><Icon n="check" size={14} /> กำลังเพิ่ม{U}ของ <b>{selected?.name}</b></div>
           : <div className="addroom-hint"><Icon n="chevD" size={14} /> เลือกรูปแบบห้องก่อน แล้วฟอร์มเพิ่มห้องจะปรากฏ</div>}
       </section>
 
       {/* STEP 2 — appears only after a type is chosen */}
       {typeId && (
         <>
+          {allowBeds && (
+            <div className="field" style={{ marginBottom: 6 }}>
+              <label>หน่วยที่เพิ่ม</label>
+              <div className="roomseg" role="tablist">
+                <button type="button" className={`roomseg-i ${kind === 'room' ? 'on' : ''}`} onClick={() => pickKind('room')}>ทั้งห้อง</button>
+                <button type="button" className={`roomseg-i ${kind === 'bed' ? 'on' : ''}`} onClick={() => pickKind('bed')}>เตียง (ในห้องรวม)</button>
+              </div>
+              <p className="fhint">เลือก “เตียง” เพื่อปักหมุดทีละเตียงในหอพักรวม — แต่ละเตียงนับเป็นที่ว่าง 1 ที่</p>
+            </div>
+          )}
+
           <div className="roomseg" role="tablist">
-            <button type="button" className={`roomseg-i ${mode === 'single' ? 'on' : ''}`} onClick={() => setMode('single')}>ทีละห้อง</button>
-            <button type="button" className={`roomseg-i ${mode === 'bulk' ? 'on' : ''}`} onClick={() => setMode('bulk')}>หลายห้อง</button>
+            <button type="button" className={`roomseg-i ${mode === 'single' ? 'on' : ''}`} onClick={() => setMode('single')}>ทีละ{U}</button>
+            <button type="button" className={`roomseg-i ${mode === 'bulk' ? 'on' : ''}`} onClick={() => setMode('bulk')}>หลาย{U}</button>
           </div>
 
           {mode === 'single' ? (
             <form className="form mform" action={createRoomAction}>
               <section className="fsec">
                 <div className="fgrid">
-                  <div className="field"><label>เลข/ชื่อห้อง *</label><input name="code" placeholder="101" required /></div>
+                  <div className="field"><label>เลข/ชื่อ{U} *</label><input name="code" placeholder={kind === 'bed' ? 'A1' : '101'} required /></div>
                   <div className="field"><label>{term}</label><input name="floor" value={floor} onChange={(e) => setFloor(e.target.value)} placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
                 </div>
-                <div className="field"><label>รับได้ (ท่าน)</label><input name="capacity" type="number" min="0" max="50" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="2" />
-                  <p className="fhint">ดึงจากรูปแบบห้องให้ — แก้รายห้องได้</p></div>
+                <div className="field"><label>รับได้ (ท่าน)</label><input name="capacity" type="number" min="0" max="50" value={cap} onChange={(e) => setCap(e.target.value)} placeholder={kind === 'bed' ? '1' : '2'} />
+                  <p className="fhint">{kind === 'bed' ? 'ปกติเตียงละ 1 ท่าน' : 'ดึงจากรูปแบบห้องให้ — แก้รายห้องได้'}</p></div>
                 {statusFields}
                 <div className="field"><label>โน้ต <span className="lbl-opt">(เห็นเฉพาะคุณ)</span></label><input name="note" maxLength={300} placeholder="เช่น คุณสมชาย ถึง 31 ธ.ค." /></div>
                 <input type="hidden" name="stay_unit_id" value={typeId} />
-                <button className="btn btn-primary" type="submit">+ เพิ่มห้อง</button>
+                <input type="hidden" name="room_kind" value={kind} />
+                <button className="btn btn-primary" type="submit">+ เพิ่ม{U}</button>
               </section>
             </form>
           ) : (
             <form className="form mform" action={createRoomsBulkAction}>
               <section className="fsec">
-                <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มหลายห้องรวดเดียว<InfoTip title="วิธีตั้งเลขห้อง" body={`ใส่ช่วงเลข เช่น เริ่ม 1 ถึง 10 → สร้างทั้งชุดรวดเดียว\n${term}เป็นเลข เช่น “1” → ได้ 101–110\nถ้าเป็นชื่อ (เช่น ริมน้ำ) ใส่ “คำนำหน้า” เอง เช่น A → A1–A10\nเลขห้องที่มีอยู่แล้วจะถูกข้ามให้อัตโนมัติ (ระบบจะบอกว่าข้ามกี่ห้อง)`} /></div>
+                <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มหลาย{U}รวดเดียว<InfoTip title="วิธีตั้งเลข" body={`ใส่ช่วงเลข เช่น เริ่ม 1 ถึง 10 → สร้างทั้งชุดรวดเดียว\n${term}เป็นเลข เช่น “1” → ได้ 101–110\nถ้าเป็นชื่อ (เช่น ริมน้ำ) ใส่ “คำนำหน้า” เอง เช่น A → A1–A10\nเลขที่มีอยู่แล้วจะถูกข้ามให้อัตโนมัติ (ระบบจะบอกว่าข้ามกี่อัน)`} /></div>
                 <div className="fgrid">
                   <div className="field"><label>{term}</label><input name="floor" value={floor} onChange={(e) => setFloor(e.target.value)} placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
                   <div className="field"><label>คำนำหน้า (ถ้ามี)</label><input name="prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="เช่น A" /></div>
                 </div>
                 <div className="fgrid">
-                  <div className="field"><label>เลขห้องเริ่ม *</label><input name="start" type="number" min="0" value={start} onChange={(e) => setStart(e.target.value)} placeholder="1" required /></div>
+                  <div className="field"><label>เลขเริ่ม *</label><input name="start" type="number" min="0" value={start} onChange={(e) => setStart(e.target.value)} placeholder="1" required /></div>
                   <div className="field"><label>ถึงเลข *</label><input name="end" type="number" min="0" value={end} onChange={(e) => setEnd(e.target.value)} placeholder="10" required /></div>
                 </div>
-                {preview.state === 'ok' && <p style={previewStyle}>จะสร้าง {preview.count} ห้อง: {preview.text}</p>}
-                {preview.state === 'invalid' && <p className="fhint" style={{ margin: '2px 0 0', color: '#B25E00' }}>ช่วงเลขไม่ถูกต้อง — ใส่เลขเริ่มน้อยกว่าเลขสิ้นสุด (ไม่เกิน 200 ห้องต่อครั้ง)</p>}
-                <div className="field" style={{ marginTop: 10 }}><label>รับได้ (ท่าน) — ทุกห้องในชุดนี้</label><input name="capacity" type="number" min="0" max="50" value={cap} onChange={(e) => setCap(e.target.value)} placeholder="2" /></div>
+                {preview.state === 'ok' && <p style={previewStyle}>จะสร้าง {preview.count} {U}: {preview.text}</p>}
+                {preview.state === 'invalid' && <p className="fhint" style={{ margin: '2px 0 0', color: '#B25E00' }}>ช่วงเลขไม่ถูกต้อง — ใส่เลขเริ่มน้อยกว่าเลขสิ้นสุด (ไม่เกิน 200 ต่อครั้ง)</p>}
+                <div className="field" style={{ marginTop: 10 }}><label>รับได้ (ท่าน) — ทุก{U}ในชุดนี้</label><input name="capacity" type="number" min="0" max="50" value={cap} onChange={(e) => setCap(e.target.value)} placeholder={kind === 'bed' ? '1' : '2'} /></div>
                 {statusFields}
                 <input type="hidden" name="stay_unit_id" value={typeId} />
-                <button className="btn btn-primary" type="submit">+ เพิ่มหลายห้อง</button>
+                <input type="hidden" name="room_kind" value={kind} />
+                <button className="btn btn-primary" type="submit">+ เพิ่มหลาย{U}</button>
               </section>
             </form>
           )}

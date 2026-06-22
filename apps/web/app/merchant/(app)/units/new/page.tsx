@@ -38,7 +38,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
       {searchParams?.error === 'dupe' && <div className="banner-err">เลขห้องนี้มีอยู่แล้ว</div>}
       {searchParams?.error === 'range' && <div className="banner-err">ช่วงเลขห้องไม่ถูกต้อง — ใส่เลขเริ่ม–สิ้นสุด (ไม่เกิน 200 ห้อง)</div>}
       <h1 className="phead"><span className="phead-ic"><Icon n="plus" size={18} /></span> เพิ่มห้องจริงในผัง</h1>
-      <AddRoom types={types.map((t) => ({ id: t.id, name: i18n(t.name_i18n), capacity: t.capacity ?? null }))} term={term} />
+      <AddRoom types={types.map((t) => ({ id: t.id, name: i18n(t.name_i18n), capacity: t.capacity ?? null }))} term={term} allowBeds={['dorm', 'hostel'].includes(acc.stay_kind)} />
     </>
   );
 }
