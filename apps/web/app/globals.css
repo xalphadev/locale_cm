@@ -995,3 +995,4 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .lead-sched-f>summary::-webkit-details-marker{display:none}
 .lead-sched-f form{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
 .lead-sched-f input{border:1px solid #e3e6ea;border-radius:8px;padding:6px 8px;font:inherit}
+.bulkbar-del{background:none;border:none;color:#e5484d;font-weight:600;font-size:.84rem;cursor:pointer;display:inline-flex;align-items:center;gap:4px}

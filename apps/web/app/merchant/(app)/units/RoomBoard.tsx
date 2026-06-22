@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Icon } from '../ui';
-import { setRoomOccupancyAction, setRoomsOccupancyBulkAction } from '../../actions';
+import { setRoomOccupancyAction, setRoomsOccupancyBulkAction, deleteRoomsBulkAction } from '../../actions';
 
 // Scalable room board for 1 → 100s of rooms: status filter + search + density toggle (cards ⇄ compact
 // chips) + collapsible floors. Compact mode is the "room rack" view — dozens of rooms per screen,
@@ -55,6 +55,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
     startTransition(() => { setRoomsOccupancyBulkAction(prev.map((p) => ({ id: p.id, status }))); });
     setUndo({ items: prev, label }); exitSelect();
   };
+  const doDelete = () => { const ids = [...selected]; if (!ids.length) return; if (typeof window !== 'undefined' && !window.confirm(`ลบ ${ids.length} ห้อง? กู้คืนได้ในถังขยะ`)) return; startTransition(() => { deleteRoomsBulkAction(ids); }); exitSelect(); };
   const doUndo = () => { if (!undo) return; const u = undo; startTransition(() => { setRoomsOccupancyBulkAction(u.items); }); setUndo(null); };
 
   return (
@@ -142,6 +143,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
               <button key={s.k} type="button" onClick={() => applyBulk(s.k, s.label)}><i style={{ background: s.color }} /> {s.label}</button>
             ))}
           </div>
+          <button type="button" className="bulkbar-del" onClick={doDelete}><Icon n="trash" size={14} /> ลบ</button>
           <button type="button" className="bulkbar-x" onClick={exitSelect}>ยกเลิก</button>
         </div>
       )}

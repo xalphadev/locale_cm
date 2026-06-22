@@ -3,7 +3,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import {
-  restoreProductAction, restoreStayUnitAction, restorePostAction, restoreRewardAction,
+  restoreProductAction, restoreStayUnitAction, restoreRoomAction, restorePostAction, restoreRewardAction,
 } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -19,17 +19,18 @@ export default async function Trash({ searchParams }: { searchParams: { ok?: str
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
 
-  let products: any[] = [], rooms: any[] = [], posts: any[] = [], rewards: any[] = [];
+  let products: any[] = [], rooms: any[] = [], physRooms: any[] = [], posts: any[] = [], rewards: any[] = [];
   try {
     // products / rooms / posts are branch-scoped (place_id); rewards are brand-scoped (brand_id) — same
     // tenancy the rest of the portal uses. No capability gate so nothing becomes unrecoverable.
     products = await q<any>(`SELECT id, name_i18n, price_minor, deleted_at FROM shop_products WHERE place_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [acc.place_id]);
     rooms = await q<any>(`SELECT id, name_i18n, price_minor, rental_mode, deleted_at FROM stay_units WHERE place_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [acc.place_id]);
+    physRooms = await q<any>(`SELECT id, code, floor, deleted_at FROM stay_room WHERE place_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [acc.place_id]);
     posts = await q<any>(`SELECT id, body_i18n, deleted_at FROM feed_posts WHERE place_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [acc.place_id]);
     if (acc.brand_id) rewards = await q<any>(`SELECT id, title_i18n, kind, cost_stamps, deleted_at FROM stamp_rewards WHERE brand_id=$1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC`, [acc.brand_id]);
   } catch { /* db down */ }
 
-  const total = products.length + rooms.length + posts.length + rewards.length;
+  const total = products.length + rooms.length + physRooms.length + posts.length + rewards.length;
 
   return (
     <>
@@ -74,6 +75,24 @@ export default async function Trash({ searchParams }: { searchParams: { ok?: str
                     <div className="mrow-meta">{r.rental_mode === 'daily' ? 'รายวัน' : 'รายเดือน'} · {baht(r.price_minor)} · ลบเมื่อ {fmtDate(r.deleted_at)}</div>
                   </div>
                   <form action={restoreStayUnitAction.bind(null, r.id)}>
+                    <button className="dbtn primary sm" type="submit"><Icon n="restore" size={15} /> กู้คืน</button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </>)}
+
+          {physRooms.length > 0 && (<>
+            <div className="menu-label">ห้อง (ผังห้อง) ({physRooms.length})</div>
+            <div className="mlist">
+              {physRooms.map((r) => (
+                <div className="mrow" key={r.id}>
+                  <span className="mrow-img"><span className="ph"><Icon n="bed" size={24} /></span></span>
+                  <div className="mrow-body">
+                    <div className="mrow-nm">ห้อง {r.code}{r.floor ? ` · ${r.floor}` : ''}</div>
+                    <div className="mrow-meta">ห้องในผัง · ลบเมื่อ {fmtDate(r.deleted_at)}</div>
+                  </div>
+                  <form action={restoreRoomAction.bind(null, r.id)}>
                     <button className="dbtn primary sm" type="submit"><Icon n="restore" size={15} /> กู้คืน</button>
                   </form>
                 </div>

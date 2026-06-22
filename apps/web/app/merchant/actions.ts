@@ -508,6 +508,16 @@ export async function restoreStayUnitAction(unitId: string) {
   redirect('/merchant/trash?ok=restored');
 }
 
+/** Restore a soft-deleted physical room (parity with listing restore — deleted rooms were unrecoverable). */
+export async function restoreRoomAction(roomId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const [r] = await q<{ stay_unit_id: string | null }>(`UPDATE stay_room SET deleted_at=NULL, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NOT NULL RETURNING stay_unit_id`, [roomId, acc.place_id]);
+  if (r) await refreshUnitVacancy(r.stay_unit_id);
+  revalidatePath('/merchant/trash'); revalidatePath('/merchant/units', 'layout');
+  redirect('/merchant/trash?ok=restored');
+}
+
 // ── multi-entity navigation: switch active branch, add a brand ("ร้าน"), add a branch ("สาขา") ──
 
 /** Switch the portal's ACTIVE branch. Trust boundary: the UPDATE only lands when the target place
@@ -977,6 +987,19 @@ export async function deleteRoomAction(roomId: string) {
   if (r) await refreshUnitVacancy(r.stay_unit_id);
   revalidatePath('/merchant/units'); revalidatePath('/merchant');
   redirect('/merchant/units?ok=deleted');
+}
+
+/** Soft-delete many rooms at once from the board's multi-select (recoverable in ถังขยะ). */
+export async function deleteRoomsBulkAction(ids: string[]) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const list = (Array.isArray(ids) ? ids : []).filter((x) => typeof x === 'string').slice(0, 500);
+  if (!list.length) return;
+  const rows = await q<{ stay_unit_id: string | null }>(
+    `UPDATE stay_room SET deleted_at=now(), updated_at=now() WHERE id = ANY($1::uuid[]) AND place_id=$2 AND deleted_at IS NULL RETURNING stay_unit_id`, [list, acc.place_id]);
+  const affected = new Set<string>(); for (const r of rows) if (r.stay_unit_id) affected.add(r.stay_unit_id);
+  for (const uid of affected) await refreshUnitVacancy(uid);
+  revalidatePath('/merchant/units', 'layout');
 }
 
 /** Toggle whether a listing's marketplace vacancy is SYSTEM-computed from rooms (managed) or hand-typed. */
