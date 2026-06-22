@@ -104,7 +104,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
                     <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> ยืนยันการจอง</button></form>}
                   {b.rental_mode === 'monthly' && b.stay_unit_id && b.status !== 'converted' && b.status !== 'declined' &&
                     <form action={convertMonthlyLeadAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> รับเข้าพัก</button></form>}
-                  {b.status === 'converted' && <form action={markNoShowAction.bind(null, b.id)}><button className="dbtn sm" type="submit">ไม่มาเข้าพัก</button></form>}
+                  {b.status === 'converted' && b.rental_mode === 'daily' && <form action={markNoShowAction.bind(null, b.id)}><button className="dbtn sm" type="submit">ไม่มาเข้าพัก</button></form>}
                   {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn sm" type="submit">ติดต่อแล้ว</button></form>}
                   {b.status !== 'converted' && b.status !== 'declined' && (
                     <details className="lead-sched-f">
