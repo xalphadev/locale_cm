@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 import { FilterBar } from '../FilterBar';
@@ -23,13 +24,13 @@ export function ProductList({ items }: { items: Item[] }) {
     <>
       <div className="listhead">
         <h1>สินค้า <span className="listcount">{items.length}</span></h1>
-        <a className="addbtn" href="/merchant/products/new"><Icon n="plus" size={17} /> เพิ่มสินค้า</a>
+        <Link className="addbtn" href="/merchant/products/new"><Icon n="plus" size={17} /> เพิ่มสินค้า</Link>
       </div>
       {items.length === 0 ? (
         <div className="mempty">
           <span className="mempty-ic"><Icon n="box" size={30} /></span>
           <p>ยังไม่มีสินค้า — เพิ่มชิ้นแรกเพื่อโชว์ให้ลูกค้าเห็น</p>
-          <a className="btn btn-primary" href="/merchant/products/new">+ เพิ่มสินค้าชิ้นแรก</a>
+          <Link className="btn btn-primary" href="/merchant/products/new">+ เพิ่มสินค้าชิ้นแรก</Link>
         </div>
       ) : (
         <>
@@ -39,7 +40,7 @@ export function ProductList({ items }: { items: Item[] }) {
           ) : (
             <div className="mlist">
               {filtered.map((r) => (
-                <a className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/products/${r.id}`} key={r.id}>
+                <Link className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/products/${r.id}`} key={r.id}>
                   <span className="mrow-img"><Thumb images={r.image_urls} kind="product" alt={r.name} /></span>
                   <span className="mrow-body">
                     <span className="mrow-nm">{r.name}</span>
@@ -51,7 +52,7 @@ export function ProductList({ items }: { items: Item[] }) {
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />
-                </a>
+                </Link>
               ))}
             </div>
           )}

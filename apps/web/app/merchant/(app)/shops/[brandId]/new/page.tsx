@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -22,7 +23,7 @@ export default async function NewBranch({
 
   return (
     <>
-      <div className="mback"><a href="/merchant/shops"><Icon n="chevL" size={17} /> ร้านของฉัน</a></div>
+      <div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={17} /> ร้านของฉัน</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="store" size={18} /></span> เพิ่มสาขา</h1>
       <p className="note" style={{ margin: '.1rem 0 .9rem' }}>เพิ่มสาขา/ที่พักใหม่ให้ร้าน <b>{brandName}</b> — แต่ละสาขามีที่อยู่ เบอร์โทร และข้อมูลของตัวเอง</p>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อสาขา</div>}

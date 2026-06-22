@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 
@@ -27,7 +28,7 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
           <p>ยังไม่มีห้อง — เพิ่มห้องแรกเพื่อให้ลูกค้าเห็นห้องว่าง</p>
-          <a className="btn btn-primary" href="/merchant/rooms/new">+ เพิ่มห้องแรก</a>
+          <Link className="btn btn-primary" href="/merchant/rooms/new">+ เพิ่มห้องแรก</Link>
         </div>
       ) : (
         <>
@@ -57,7 +58,7 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
           ) : (
             <div className="mlist">
               {filtered.map((r) => (
-                <a className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/rooms/${r.id}`} key={r.id}>
+                <Link className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/rooms/${r.id}`} key={r.id}>
                   <span className="mrow-img"><Thumb images={r.image_urls} kind="room" alt={r.name} /></span>
                   <span className="mrow-body">
                     <span className="mrow-nm">{r.name}</span>
@@ -69,7 +70,7 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />
-                </a>
+                </Link>
               ))}
             </div>
           )}

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -19,7 +20,7 @@ export default async function Redeem({ searchParams }: { searchParams: { ok?: st
 
   return (
     <>
-      <div className="mback"><a href="/merchant/loyalty"><Icon n="chevL" size={17} /> แต้มสะสม</a></div>
+      <div className="mback"><Link href="/merchant/loyalty"><Icon n="chevL" size={17} /> แต้มสะสม</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="check" size={18} /></span> แลกแต้มที่เคาน์เตอร์</h1>
       <p className="note" style={{ margin: '.1rem 0 1rem' }}>ลูกค้ากดแลกในแอป → รายการขึ้นที่นี่ → กด “ยืนยัน” เพื่อตัดแต้มแล้วมอบของรางวัล</p>
       {searchParams?.ok && <div className="banner-ok">✓ ยืนยันการแลกแล้ว — มอบของรางวัลให้ลูกค้าได้เลย</div>}

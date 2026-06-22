@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -25,7 +26,7 @@ export default async function PrintBoard() {
 
   return (
     <div className="printsheet">
-      <div className="print-bar"><PrintTrigger /><a className="dbtn sm" href="/merchant/units">← กลับผังห้อง</a></div>
+      <div className="print-bar"><PrintTrigger /><Link className="dbtn sm" href="/merchant/units">← กลับผังห้อง</Link></div>
       <div className="print-head">
         <h1>{i18n(acc.place_name) || 'ผังห้อง'}</h1>
         <span>ผังห้อง · {new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })} · {rooms.length} ห้อง — ว่าง {counts.vacant} · มีผู้เช่า {counts.occupied} · จอง {counts.reserved} · ซ่อม {counts.maintenance}</span>

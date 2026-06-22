@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 import { FilterBar } from '../FilterBar';
@@ -21,14 +22,14 @@ export function PostList({ items }: { items: Item[] }) {
     <>
       <div className="listhead">
         <h1>โพสต์ <span className="listcount">{items.length}</span></h1>
-        <a className="addbtn" href="/merchant/post/new"><Icon n="plus" size={17} /> เขียนโพสต์</a>
+        <Link className="addbtn" href="/merchant/post/new"><Icon n="plus" size={17} /> เขียนโพสต์</Link>
       </div>
       <p className="note">โพสต์ข่าวสาร/โปรของร้านลงฟีดลูกค้า — กดถูกใจและคอมเมนต์ได้ทันที</p>
       {items.length === 0 ? (
         <div className="mempty">
           <span className="mempty-ic"><Icon n="feed" size={30} /></span>
           <p>ยังไม่มีโพสต์ — เขียนโพสต์แรกเพื่อบอกข่าวสาร/โปรโมชันให้ลูกค้า</p>
-          <a className="btn btn-primary" href="/merchant/post/new">+ เขียนโพสต์แรก</a>
+          <Link className="btn btn-primary" href="/merchant/post/new">+ เขียนโพสต์แรก</Link>
         </div>
       ) : (
         <>
@@ -38,7 +39,7 @@ export function PostList({ items }: { items: Item[] }) {
           ) : (
             <div className="mlist">
               {filtered.map((r) => (
-                <a className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/post/${r.id}`} key={r.id}>
+                <Link className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/post/${r.id}`} key={r.id}>
                   <span className="mrow-img"><Thumb images={r.image_urls} kind="post" /></span>
                   <span className="mrow-body">
                     <span className="mrow-nm post">{r.body}</span>
@@ -46,7 +47,7 @@ export function PostList({ items }: { items: Item[] }) {
                     {r.status === 'hidden' && <span className="mrow-tags"><span className="t off">ซ่อนอยู่</span></span>}
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />
-                </a>
+                </Link>
               ))}
             </div>
           )}

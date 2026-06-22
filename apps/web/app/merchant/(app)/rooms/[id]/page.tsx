@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -20,7 +21,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay) redirect('/merchant');
   const [u] = isUuid(params.id) ? await q<any>(`SELECT * FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
-  if (!u) return (<><div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div><h1>ไม่พบห้องพัก</h1></>);
+  if (!u) return (<><div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div><h1>ไม่พบห้องพัก</h1></>);
 
   // "ห้องในประเภทนี้": physical rooms grouped under this type — lets the owner browse rooms BY type, and
   // surfaces a type that has no rooms on the board ("ลอย") so it can be fixed instead of silently drifting.
@@ -43,7 +44,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
 
   return (
     <>
-      <div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</a></div>
+      <div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div>
 
       <div className="dhero">
         {imgs && imgs.length ? (
@@ -75,7 +76,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
             : <><Icon n="clock" size={12} /> อัปเดต {daysAgo(u.availability_updated_at)}</>}</div>
         </div>
         {u.managed ? (
-          <a className="dbtn sm" href="/merchant/units"><Icon n="grid" size={16} /> ผังห้องจริง</a>
+          <Link className="dbtn sm" href="/merchant/units"><Icon n="grid" size={16} /> ผังห้องจริง</Link>
         ) : monthly ? (
           <div className="stepper">
             <form action={updateVacancyAction.bind(null, u.id, -1)}><button className="step" type="submit" aria-label="ลดห้องว่าง"><Icon n="minus" size={18} /></button></form>
@@ -96,13 +97,13 @@ export default async function RoomDetail({ params }: { params: { id: string } })
           <div className="rmchips">
             {childRooms.slice(0, 48).map((r: any) => {
               const c = RST[r.occupancy_status]?.color || '#9aa0a6';
-              return <a key={r.id} className="rmchip" href={`/merchant/units/${r.id}`} style={{ background: `color-mix(in srgb,${c} 15%,#fff)`, color: `color-mix(in srgb,${c} 62%,#1a1a1a)`, boxShadow: `inset 0 0 0 1.5px color-mix(in srgb,${c} 32%,#fff)` }}>{r.code}</a>;
+              return <Link key={r.id} className="rmchip" href={`/merchant/units/${r.id}`} style={{ background: `color-mix(in srgb,${c} 15%,#fff)`, color: `color-mix(in srgb,${c} 62%,#1a1a1a)`, boxShadow: `inset 0 0 0 1.5px color-mix(in srgb,${c} 32%,#fff)` }}>{r.code}</Link>;
             })}
-            {childRooms.length > 48 && <a className="rmchip" href="/merchant/units" style={{ background: 'var(--m-soft)', color: 'var(--m-accent)' }}>+{childRooms.length - 48} →</a>}
+            {childRooms.length > 48 && <Link className="rmchip" href="/merchant/units" style={{ background: 'var(--m-soft)', color: 'var(--m-accent)' }}>+{childRooms.length - 48} →</Link>}
           </div>
           <p className="note" style={{ marginTop: 8 }}>แตะที่ห้องเพื่อดู/แก้สถานะในผังห้อง</p>
         </>) : (
-          <div className="banner-warn">ประเภทนี้ยังไม่มีห้องจริงในผัง — <a href="/merchant/units/new">+ เพิ่มห้องจริง</a> เพื่อให้นับห้องว่างอัตโนมัติ</div>
+          <div className="banner-warn">ประเภทนี้ยังไม่มีห้องจริงในผัง — <Link href="/merchant/units/new">+ เพิ่มห้องจริง</Link> เพื่อให้นับห้องว่างอัตโนมัติ</div>
         )}
       </>)}
 
@@ -129,7 +130,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="store" size={15} /></span> จัดการห้อง</h2>
       <div className="dbar">
-        <a className="dbtn primary" href={`/merchant/rooms/${u.id}/edit`}><Icon n="edit" size={18} /> แก้ไขห้อง</a>
+        <Link className="dbtn primary" href={`/merchant/rooms/${u.id}/edit`}><Icon n="edit" size={18} /> แก้ไขห้อง</Link>
         <form action={setStayUnitFlagAction.bind(null, u.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงให้ลูกค้าเห็น' : 'ซ่อนจากลูกค้า'}</button></form>
       </div>
       <form className="delwrap" action={deleteStayUnitAction.bind(null, u.id)}>

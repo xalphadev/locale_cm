@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -16,7 +17,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
   const types = await q<any>(`SELECT id, name_i18n FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at`, [acc.place_id]);
   const term = acc.room_group_term || 'ชั้น';
 
-  const back = <div className="mback"><a href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</a></div>;
+  const back = <div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</Link></div>;
   if (types.length === 0) {
     return (
       <>
@@ -24,7 +25,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
           <p>สร้าง “รูปแบบห้อง” (เช่น สตูดิโอ / เตียงในห้องรวม) ในเมนู “ห้องพัก” ก่อน แล้วค่อยเพิ่มห้องจริง</p>
-          <a className="btn btn-primary" href="/merchant/rooms/new">+ สร้างรูปแบบห้อง</a>
+          <Link className="btn btn-primary" href="/merchant/rooms/new">+ สร้างรูปแบบห้อง</Link>
         </div>
       </>
     );

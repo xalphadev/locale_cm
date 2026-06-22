@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -95,13 +96,13 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
           <p>ยังไม่มี “รูปแบบห้อง” — สร้างรูปแบบ (เช่น สตูดิโอ / เตียงในห้องรวม) ในเมนู “ห้องพัก” ก่อน แล้วค่อยวางห้องจริง</p>
-          <a className="btn btn-primary" href="/merchant/rooms/new">+ สร้างรูปแบบห้อง</a>
+          <Link className="btn btn-primary" href="/merchant/rooms/new">+ สร้างรูปแบบห้อง</Link>
         </div>
       ) : rooms.length === 0 ? (
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
           <p>ยังไม่มีห้องจริงในผัง — เพิ่มห้อง (ทีละห้อง หรือหลายห้องรวดเดียว) เพื่อเริ่มคุมห้องว่าง</p>
-          <a className="btn btn-primary" href="/merchant/units/new"><Icon n="plus" size={16} /> เพิ่มห้องแรก</a>
+          <Link className="btn btn-primary" href="/merchant/units/new"><Icon n="plus" size={16} /> เพิ่มห้องแรก</Link>
         </div>
       ) : (
         <>
@@ -109,9 +110,9 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             <div className="occbar-top">
               <span><b>{rooms.length}</b> ห้อง · <b style={{ color: ST.vacant.color }}>{vacant}</b> ว่าง · <b>{rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</b> ใช้งาน</span>
               <span className="occbar-acts">
-                <a className="occbar-leads" href="/merchant/units/calendar"><Icon n="calendar" size={14} /> ปฏิทินรวม</a>
-                <a className="occbar-leads" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์</a>
-                <a className="occbar-leads" href="/merchant/leads"><Icon n="chat" size={14} /> คำขอจอง</a>
+                <Link className="occbar-leads" href="/merchant/units/calendar"><Icon n="calendar" size={14} /> ปฏิทินรวม</Link>
+                <Link className="occbar-leads" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์</Link>
+                <Link className="occbar-leads" href="/merchant/leads"><Icon n="chat" size={14} /> คำขอจอง</Link>
               </span>
             </div>
             <div className="occbar-track">
@@ -145,7 +146,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                   <div className="soonbox-g" key={bi}>
                     <span className="soonbox-gl">{b}</span>
                     <div className="soonbox-items">
-                      {items.map((sr: any) => <a key={sr.id} href={`/merchant/units/${sr.id}`} className="soonpill">ห้อง {sr.code} · {fmtD(sr.occupied_until)}</a>)}
+                      {items.map((sr: any) => <Link key={sr.id} href={`/merchant/units/${sr.id}`} className="soonpill">ห้อง {sr.code} · {fmtD(sr.occupied_until)}</Link>)}
                     </div>
                   </div>
                 ) : null;
@@ -158,8 +159,8 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               <summary><Icon n="calendar" size={14} /> รายวัน · วันนี้ · เข้า {checkIns.length} / ออก {checkOuts.length}</summary>
               {(checkIns.length > 0 || checkOuts.length > 0) && (
                 <div className="soonbox-items" style={{ marginTop: 4 }}>
-                  {checkIns.map((t: any) => <a key={'i' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">เข้า · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
-                  {checkOuts.map((t: any) => <a key={'o' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">ออก · {t.code}{t.note ? ` (${t.note})` : ''}</a>)}
+                  {checkIns.map((t: any) => <Link key={'i' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">เข้า · {t.code}{t.note ? ` (${t.note})` : ''}</Link>)}
+                  {checkOuts.map((t: any) => <Link key={'o' + t.id} href={`/merchant/units/${t.id}`} className="soonpill">ออก · {t.code}{t.note ? ` (${t.note})` : ''}</Link>)}
                 </div>
               )}
               {dayAvail.length > 0 && <TypeCalendar days={dayAvail} />}
@@ -173,7 +174,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                   <div className="dailyresult">
                     <p className="fhint">ว่างช่วง {fmtD(fromQ)} – {fmtD(toQ)} · {freeRooms.length} ห้อง</p>
                     {freeRooms.length > 0
-                      ? <div className="soonbox-items">{freeRooms.map((fr: any) => <a key={fr.id} href={`/merchant/units/${fr.id}`} className="soonpill">{fr.code}</a>)}</div>
+                      ? <div className="soonbox-items">{freeRooms.map((fr: any) => <Link key={fr.id} href={`/merchant/units/${fr.id}`} className="soonpill">{fr.code}</Link>)}</div>
                       : <span className="fhint">ไม่มีห้องว่างในช่วงนี้</span>}
                   </div>
                 )}
@@ -196,11 +197,11 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               <p className="fhint">รวมโน้ตของห้องที่มีผู้เช่า/จอง — เห็นเฉพาะคุณ</p>
               <div className="roster">
                 {roster.map((r) => (
-                  <a key={r.id} href={`/merchant/units/${r.id}`} className="rosterrow">
+                  <Link key={r.id} href={`/merchant/units/${r.id}`} className="rosterrow">
                     <span className="rosterrow-rm">ห้อง {r.code}{r.floor ? ` · ${term} ${r.floor}` : ''}</span>
                     <span className="rosterrow-nt">{r.note || '—'}</span>
                     {r.occupied_until && <span className="rosterrow-un">ว่าง {fmtD(r.occupied_until)}</span>}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </details>

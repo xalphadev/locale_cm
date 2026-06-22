@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -25,7 +26,7 @@ export default async function ShopEdit() {
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   return (
     <>
-      <div className="mback"><a href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูลร้าน</a></div>
+      <div className="mback"><Link href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูลร้าน</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขข้อมูลร้าน</h1>
       <form className="form mform" action={updateShopAction}>
         <section className="fsec">

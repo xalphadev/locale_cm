@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -34,7 +35,7 @@ export default async function Trash({ searchParams }: { searchParams: { ok?: str
 
   return (
     <>
-      <div className="mback"><a href="/merchant"><Icon n="chevL" size={17} /> หน้าหลัก</a></div>
+      <div className="mback"><Link href="/merchant"><Icon n="chevL" size={17} /> หน้าหลัก</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="trash" size={18} /></span> ถังขยะ</h1>
       <p className="note" style={{ margin: '.1rem 0 1rem' }}>รายการที่ลบจะถูกเก็บไว้ที่นี่ ไม่ได้หายถาวร — กด “กู้คืน” เพื่อนำกลับมาแสดงเหมือนเดิม</p>
       {searchParams?.ok === 'restored' && <div className="banner-ok">✓ กู้คืนแล้ว — รายการกลับมาแสดงเหมือนเดิม</div>}

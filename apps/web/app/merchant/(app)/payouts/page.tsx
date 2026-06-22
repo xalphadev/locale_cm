@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
@@ -20,7 +21,7 @@ export default async function Payouts({ searchParams }: { searchParams: { ok?: s
       <>
         <h1 className="phead"><span className="phead-ic"><Icon n="lock" size={17} /></span> ถอนเงิน · รายได้</h1>
         <div className="banner-err">ฟีเจอร์นี้ล็อกอยู่ — ต้องยืนยันความเป็นเจ้าของร้านก่อน</div>
-        <a className="bigcta" href="/merchant/verify?need=payouts" style={{ marginTop: 12 }}><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</a>
+        <Link className="bigcta" href="/merchant/verify?need=payouts" style={{ marginTop: 12 }}><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</Link>
       </>
     );
   }

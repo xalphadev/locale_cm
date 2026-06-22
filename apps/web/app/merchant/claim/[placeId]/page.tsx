@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n } from '@/lib/db';
 import { claimPlaceAction } from '../../actions';
 
@@ -16,7 +17,7 @@ export default async function ClaimForm({
         <>
           <h1>เคลมไม่ได้</h1>
           <p className="note">ร้านนี้ถูกเคลมไปแล้ว หรือไม่พบ</p>
-          <p className="note"><a href="/merchant/claim">← ค้นหาร้านอื่น</a></p>
+          <p className="note"><Link href="/merchant/claim">← ค้นหาร้านอื่น</Link></p>
         </>
       ) : (
         <>
@@ -29,7 +30,7 @@ export default async function ClaimForm({
             <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
             <button className="btn btn-primary mform-save" type="submit">เคลมร้านนี้ →</button>
           </form>
-          <p className="note">ไม่ใช่ร้านของคุณ? <a href="/merchant/claim">ค้นหาใหม่</a></p>
+          <p className="note">ไม่ใช่ร้านของคุณ? <Link href="/merchant/claim">ค้นหาใหม่</Link></p>
         </>
       )}
     </div>

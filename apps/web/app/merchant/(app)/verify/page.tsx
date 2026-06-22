@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -28,7 +29,7 @@ export default async function Verify({ searchParams }: {
       <>
         <h1 className="phead"><span className="phead-ic"><Icon n="check" size={18} /></span> ยืนยันความเป็นเจ้าของแล้ว</h1>
         <div className="banner-ok">✓ “{name}” ได้รับการยืนยันแล้ว — เปิดแต้มสะสมและฟีเจอร์เต็มได้ทันที</div>
-        <a className="bigcta" href="/merchant/loyalty"><Icon n="spark" size={19} /> ไปตั้งค่าแต้มสะสม</a>
+        <Link className="bigcta" href="/merchant/loyalty"><Icon n="spark" size={19} /> ไปตั้งค่าแต้มสะสม</Link>
         <p className="note" style={{ marginTop: 12 }}>ลูกค้าจะเห็นตรา <b>“ยืนยันโดยเจ้าของร้าน”</b> บนหน้าร้านของคุณ</p>
       </>
     );

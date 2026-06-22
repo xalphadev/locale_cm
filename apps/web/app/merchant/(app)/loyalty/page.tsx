@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -22,7 +23,7 @@ export default async function Loyalty({ searchParams }: { searchParams: { ok?: s
         <p className="note" style={{ margin: '.4rem 0 1rem' }}>
           แต้มสะสมเป็นสิทธิ์ของเจ้าของร้านตัวจริง เพื่อกันการสวมสิทธิ์ — ยืนยันความเป็นเจ้าของ (รหัส OTP ทางเบอร์ร้าน หรือให้ทีมงานตรวจสอบ) แล้วเปิดใช้ได้ทันที
         </p>
-        <a className="bigcta" href="/merchant/verify?need=loyalty"><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</a>
+        <Link className="bigcta" href="/merchant/verify?need=loyalty"><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</Link>
       </>
     );
   }
@@ -71,7 +72,7 @@ export default async function Loyalty({ searchParams }: { searchParams: { ok?: s
   return (
     <>
       <div className="listhead"><h1>แต้มสะสมของร้าน</h1>
-        <a className="addbtn" href="/merchant/loyalty/rewards/new"><Icon n="plus" size={15} /> รางวัล</a>
+        <Link className="addbtn" href="/merchant/loyalty/rewards/new"><Icon n="plus" size={15} /> รางวัล</Link>
       </div>
       {searchParams?.ok === 'created' && <div className="banner-ok">✓ เริ่มโปรแกรมแล้ว — ลูกค้าเริ่มสะสมแต้มได้เลย</div>}
       {searchParams?.ok === 'reward' && <div className="banner-ok">✓ เพิ่มรางวัลแล้ว</div>}
@@ -83,14 +84,14 @@ export default async function Loyalty({ searchParams }: { searchParams: { ok?: s
         <div className="lstat"><div className="v">{stats?.redeemed ?? 0}</div><div className="l">แลกไปแล้ว (ครั้ง)</div></div>
       </div>
 
-      <a className="bigcta" href="/merchant/loyalty/redeem"><Icon n="check" size={19} /> แลกแต้มที่เคาน์เตอร์</a>
+      <Link className="bigcta" href="/merchant/loyalty/redeem"><Icon n="check" size={19} /> แลกแต้มที่เคาน์เตอร์</Link>
 
       <div className="menu" style={{ marginTop: 2 }}>
-        <a className="menu-row" href="/merchant/loyalty/insights">
+        <Link className="menu-row" href="/merchant/loyalty/insights">
           <span className="menu-ic"><Icon n="spark" size={20} /></span>
           <span className="menu-tx">สถิติร้าน · คนเข้าร้าน · ช่วงเวลาพีค</span>
           <Icon n="chevR" className="menu-go" size={18} />
-        </a>
+        </Link>
       </div>
 
       <div className="menu-label">ของรางวัล ({pointsName})</div>

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { loginAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,7 @@ export default function Login({ searchParams }: { searchParams: { error?: string
         <div className="field"><label>รหัสผ่าน</label><input name="password" type="password" required autoComplete="current-password" /></div>
         <button className="btn btn-primary mform-save" type="submit">เข้าสู่ระบบ</button>
       </form>
-      <p className="note">ยังไม่มีบัญชี? <a href="/merchant/signup">สมัครร้านใหม่</a> · <a href="/merchant/claim">เคลมร้านที่มีในระบบ</a></p>
+      <p className="note">ยังไม่มีบัญชี? <Link href="/merchant/signup">สมัครร้านใหม่</Link> · <Link href="/merchant/claim">เคลมร้านที่มีในระบบ</Link></p>
     </div>
   );
 }

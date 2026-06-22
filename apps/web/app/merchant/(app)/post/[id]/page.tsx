@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -14,13 +15,13 @@ export default async function PostDetail({ params }: { params: { id: string } })
     `SELECT fp.*, (SELECT count(*) FROM post_likes WHERE post_key='post:'||fp.id)::int likes,
             (SELECT count(*) FROM post_comments WHERE post_key='post:'||fp.id AND deleted_at IS NULL)::int comments
        FROM feed_posts fp WHERE fp.id=$1 AND fp.place_id=$2 AND fp.deleted_at IS NULL`, [params.id, acc.place_id]) : [];
-  if (!p) return (<><div className="mback"><a href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</a></div><h1>ไม่พบโพสต์</h1></>);
+  if (!p) return (<><div className="mback"><Link href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</Link></div><h1>ไม่พบโพสต์</h1></>);
 
   const imgs: string[] | null = p.image_urls;
   const hidden = p.status === 'hidden';
   return (
     <>
-      <div className="mback"><a href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</a></div>
+      <div className="mback"><Link href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</Link></div>
 
       <div className="dhero">
         {imgs && imgs.length ? (
@@ -46,7 +47,7 @@ export default async function PostDetail({ params }: { params: { id: string } })
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="feed" size={15} /></span> จัดการโพสต์</h2>
       <div className="dbar">
-        <a className="dbtn primary" href={`/merchant/post/${p.id}/edit`}><Icon n="edit" size={18} /> แก้ไขโพสต์</a>
+        <Link className="dbtn primary" href={`/merchant/post/${p.id}/edit`}><Icon n="edit" size={18} /> แก้ไขโพสต์</Link>
         <form action={setPostFlagAction.bind(null, p.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงในฟีดลูกค้า' : 'ซ่อนจากฟีด'}</button></form>
       </div>
       <form className="delwrap" action={deletePostAction.bind(null, p.id)}>

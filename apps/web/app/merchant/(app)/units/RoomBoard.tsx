@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Icon } from '../ui';
 import { setRoomOccupancyAction, setRoomsOccupancyBulkAction, deleteRoomsBulkAction } from '../../actions';
@@ -100,10 +101,10 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                 const S: number[] = ({ vacant: [42, 62], occupied: [26, 44], reserved: [44, 64], maintenance: [34, 52] } as Record<string, number[]>)[r.status] || [42, 62];
                 const fs = r.code.length <= 3 ? '1rem' : r.code.length <= 5 ? '.86rem' : '.74rem';  // shrink long names so they don't overflow
                 return (
-                  <a className={`rchip ${selected.has(r.id) ? 'rsel' : ''}`} key={r.id} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)} title={`${r.code} · ${st.label}`}
+                  <Link className={`rchip ${selected.has(r.id) ? 'rsel' : ''}`} key={r.id} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)} title={`${r.code} · ${st.label}`}
                     style={{ fontSize: fs, background: `color-mix(in srgb, ${st.color} ${S[0]}%, var(--m-surface,#fff))`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${st.color} ${S[1]}%, transparent)` } as any}>
                     {r.code}
-                  </a>
+                  </Link>
                 );
               })}
             </div>
@@ -113,20 +114,20 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                 const st = ST[r.status] || ST.vacant;
                 return (
                   <div className="rtile" key={r.id} style={{ '--st': st.color } as any}>
-                    <a className={`rtile-main ${selected.has(r.id) ? 'rsel' : ''}`} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)}>
+                    <Link className={`rtile-main ${selected.has(r.id) ? 'rsel' : ''}`} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)}>
                       <div className="rtile-top">
                         <span className="rtile-code">{r.code}{r.room_kind === 'bed' ? <span className="rtile-bed">เตียง</span> : null}</span>
                         <span className="rtile-chip" style={{ color: st.color, background: `color-mix(in srgb, ${st.color} 14%, transparent)` }}>{st.label}</span>
                       </div>
                       <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>
-                    </a>
+                    </Link>
                     {!selectMode && (r.monthly
                       ? (
                         <form className="rtile-act" action={setRoomOccupancyAction.bind(null, r.id, r.status === 'vacant' ? 'occupied' : 'vacant')}>
                           <button type="submit">{r.status === 'vacant' ? 'ตั้งมีผู้เช่า' : 'ตั้งว่าง'}</button>
                         </form>
                       )
-                      : <a className="rtile-act cal" href={`/merchant/units/${r.id}`}><Icon n="calendar" size={14} /> ปฏิทิน</a>)}
+                      : <Link className="rtile-act cal" href={`/merchant/units/${r.id}`}><Icon n="calendar" size={14} /> ปฏิทิน</Link>)}
                   </div>
                 );
               })}

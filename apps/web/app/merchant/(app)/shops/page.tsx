@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -32,7 +33,7 @@ export default async function ShopsPage() {
     <>
       <div className="listhead">
         <h1>ร้านของฉัน</h1>
-        <a className="addbtn" href="/merchant/shops/new"><Icon n="plus" size={15} /> เพิ่มร้าน</a>
+        <Link className="addbtn" href="/merchant/shops/new"><Icon n="plus" size={15} /> เพิ่มร้าน</Link>
       </div>
       <p className="note" style={{ margin: '-.3rem 0 .9rem' }}>บัญชีเดียวดูแลได้หลายร้าน แต่ละร้านมีหลายสาขา/ที่พักได้ — แตะสาขาเพื่อสลับไปจัดการ</p>
 
@@ -44,7 +45,7 @@ export default async function ShopsPage() {
               <div className="bcard-nm">{br.name}</div>
               <div className="bcard-sub">{br.branches.length ? `${br.branches.length} สาขา` : 'ยังไม่มีสาขา'}</div>
             </div>
-            <a className="bcard-add" href={`/merchant/shops/${br.id}/new`} aria-label="เพิ่มสาขา"><Icon n="plus" size={16} /></a>
+            <Link className="bcard-add" href={`/merchant/shops/${br.id}/new`} aria-label="เพิ่มสาขา"><Icon n="plus" size={16} /></Link>
           </div>
 
           <div className="bcard-branches">
@@ -72,7 +73,7 @@ export default async function ShopsPage() {
                 </>
               );
               return on ? (
-                <a className="brow on" href="/merchant" key={b.place_id}>{inner}</a>
+                <Link className="brow on" href="/merchant" key={b.place_id}>{inner}</Link>
               ) : (
                 <form action={setActiveContextAction.bind(null, b.place_id)} key={b.place_id}>
                   <button className="brow" type="submit">{inner}</button>

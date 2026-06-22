@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { signupAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -41,8 +42,8 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
         <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
         <button className="btn btn-primary mform-save" type="submit">สมัครและเริ่มใช้งาน →</button>
       </form>
-      <p className="note">ร้านมีอยู่ใน Locale แล้ว? <a href="/merchant/claim">เคลมร้านของคุณ</a></p>
-      <p className="note">มีบัญชีแล้ว? <a href="/merchant/login">เข้าสู่ระบบ</a></p>
+      <p className="note">ร้านมีอยู่ใน Locale แล้ว? <Link href="/merchant/claim">เคลมร้านของคุณ</Link></p>
+      <p className="note">มีบัญชีแล้ว? <Link href="/merchant/login">เข้าสู่ระบบ</Link></p>
     </div>
   );
 }

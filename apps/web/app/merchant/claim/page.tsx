@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -26,21 +27,21 @@ export default async function Claim({ searchParams }: { searchParams: { q?: stri
       {qq.length >= 2 && (results.length ? (
         <div className="mlist">
           {results.map((r) => (
-            <a className="mrow" href={`/merchant/claim/${r.id}`} key={r.id}>
+            <Link className="mrow" href={`/merchant/claim/${r.id}`} key={r.id}>
               <span className="mrow-img"><span className="ph">{(i18n(r.name_i18n) || 'ร').trim().charAt(0)}</span></span>
               <div className="mrow-body">
                 <div className="mrow-nm">{i18n(r.name_i18n)}</div>
                 <div className="mrow-meta">{r.subcategory || r.category} · ยังไม่มีเจ้าของดูแล</div>
               </div>
               <span className="mrow-go" aria-hidden>→</span>
-            </a>
+            </Link>
           ))}
         </div>
       ) : (
-        <p className="note">ไม่พบร้านที่ยังไม่ถูกเคลม — <a href="/merchant/signup">สร้างร้านใหม่</a> ได้เลย</p>
+        <p className="note">ไม่พบร้านที่ยังไม่ถูกเคลม — <Link href="/merchant/signup">สร้างร้านใหม่</Link> ได้เลย</p>
       ))}
 
-      <p className="note" style={{ marginTop: 16 }}>ไม่เจอร้าน? <a href="/merchant/signup">สร้างร้านใหม่</a> · มีบัญชีแล้ว? <a href="/merchant/login">เข้าสู่ระบบ</a></p>
+      <p className="note" style={{ marginTop: 16 }}>ไม่เจอร้าน? <Link href="/merchant/signup">สร้างร้านใหม่</Link> · มีบัญชีแล้ว? <Link href="/merchant/login">เข้าสู่ระบบ</Link></p>
     </div>
   );
 }

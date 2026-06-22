@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -21,7 +22,7 @@ export default async function Deals({ searchParams }: { searchParams: { ok?: str
       <>
         <h1 className="phead"><span className="phead-ic"><Icon n="lock" size={17} /></span> ดีล / โปรโมชั่น</h1>
         <div className="banner-err">ฟีเจอร์นี้ล็อกอยู่ — ต้องยืนยันความเป็นเจ้าของร้านก่อน</div>
-        <a className="bigcta" href="/merchant/verify?need=deals" style={{ marginTop: 12 }}><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</a>
+        <Link className="bigcta" href="/merchant/verify?need=deals" style={{ marginTop: 12 }}><Icon n="lock" size={18} /> ยืนยันความเป็นเจ้าของร้าน</Link>
       </>
     );
   }
@@ -35,7 +36,7 @@ export default async function Deals({ searchParams }: { searchParams: { ok?: str
   return (
     <>
       <div className="listhead"><h1>ดีล / โปรโมชั่น</h1>
-        <a className="addbtn" href="/merchant/deals/new"><Icon n="plus" size={15} /> ดีล</a>
+        <Link className="addbtn" href="/merchant/deals/new"><Icon n="plus" size={15} /> ดีล</Link>
       </div>
       {searchParams?.ok === 'created' && <div className="banner-ok">✓ สร้างดีลแล้ว — ลูกค้าเห็นในแอปทันที</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ อัปเดตสถานะดีลแล้ว</div>}

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
@@ -13,11 +14,11 @@ export default async function EditProduct({ params, searchParams }: { params: { 
   if (!acc.sells_products) redirect('/merchant');
   const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM shop_products WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!p) {
-    return (<><div className="mback"><a href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</a></div><h1>ไม่พบสินค้า</h1></>);
+    return (<><div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div><h1>ไม่พบสินค้า</h1></>);
   }
   return (
     <>
-      <div className="mback"><a href={`/merchant/products/${p.id}`}><Icon n="chevL" size={18} /> รายละเอียดสินค้า</a></div>
+      <div className="mback"><Link href={`/merchant/products/${p.id}`}><Icon n="chevL" size={18} /> รายละเอียดสินค้า</Link></div>
       <h1>แก้ไขสินค้า</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อสินค้า</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}

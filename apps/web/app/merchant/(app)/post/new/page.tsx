@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { Icon } from '../../ui';
@@ -11,7 +12,7 @@ export default async function NewPost({ searchParams }: { searchParams: { error?
   if (!acc?.place_id) redirect('/merchant/login');
   return (
     <>
-      <div className="mback"><a href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</a></div>
+      <div className="mback"><Link href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</Link></div>
       <h1>เขียนโพสต์</h1>
       {searchParams?.error === 'body' && <div className="banner-err">กรุณาพิมพ์ข้อความโพสต์</div>}
       <PostForm action={createMerchantPostAction} submitLabel="โพสต์เลย" />

@@ -1,6 +1,7 @@
 // Brand/branch context switcher (server component, no client JS — a native <details> dropdown).
 // One account owns many brands ("ร้าน"), each many branches/accommodations ("สาขา"/"ที่พัก").
 // Selecting a branch posts setActiveContextAction (ownership re-checked server-side).
+import Link from 'next/link';
 import { q, i18n } from '@/lib/db';
 import { setActiveContextAction } from '../actions';
 
@@ -46,7 +47,7 @@ export default async function Switcher({
             <div className="mswitch-bh">
               <span className="mswitch-bav">{(br.name || 'ร').trim().charAt(0)}</span>
               <span className="mswitch-bhn">{br.name}</span>
-              <a className="mswitch-addbr" href={`/merchant/shops/${br.id}/new`}>+ สาขา</a>
+              <Link className="mswitch-addbr" href={`/merchant/shops/${br.id}/new`}>+ สาขา</Link>
             </div>
             {br.branches.map((b) => {
               const on = b.place_id === activePlaceId;
@@ -65,8 +66,8 @@ export default async function Switcher({
           </div>
         ))}
         <div className="mswitch-foot">
-          <a className="mswitch-add" href="/merchant/shops/new">+ เพิ่มร้านใหม่</a>
-          <a className="mswitch-mng" href="/merchant/shops">จัดการทั้งหมด</a>
+          <Link className="mswitch-add" href="/merchant/shops/new">+ เพิ่มร้านใหม่</Link>
+          <Link className="mswitch-mng" href="/merchant/shops">จัดการทั้งหมด</Link>
         </div>
       </div>
     </details>

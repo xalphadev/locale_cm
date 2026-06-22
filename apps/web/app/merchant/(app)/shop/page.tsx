@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -49,14 +50,14 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
 
       <div className="listhead">
         <h1>ข้อมูลร้าน</h1>
-        <a className="addbtn" href="/merchant/shop/edit"><Icon n="edit" size={16} /> แก้ไข</a>
+        <Link className="addbtn" href="/merchant/shop/edit"><Icon n="edit" size={16} /> แก้ไข</Link>
       </div>
 
       <div className="dtitle">
         <div className="dtags">
           {acc.verified
             ? <span className="t season"><Icon n="check" size={12} /> ยืนยันเจ้าของแล้ว</span>
-            : <a className="t off" href="/merchant/verify">ยังไม่ยืนยัน · กดยืนยัน</a>}
+            : <Link className="t off" href="/merchant/verify">ยังไม่ยืนยัน · กดยืนยัน</Link>}
         </div>
         <h1>{i18n(p?.name_i18n) || 'ยังไม่ได้ตั้งชื่อร้าน'}</h1>
         {desc

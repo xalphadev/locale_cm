@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
@@ -44,7 +45,7 @@ export default async function PropertyCalendar() {
 
   return (
     <>
-      <div className="mback"><a href="/merchant/units"><Icon n="chevL" size={17} /> ผังห้อง</a></div>
+      <div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={17} /> ผังห้อง</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="calendar" size={18} /></span> ปฏิทินรวม</h1>
       <p className="note" style={{ margin: '.1rem 0 .8rem' }}>ภาพรวม 14 วันข้างหน้า — ห้องไหนมีคน / ห้องไหนว่าง ในจอเดียว (แตะห้องเพื่อจัดการ)</p>
 
@@ -60,7 +61,7 @@ export default async function PropertyCalendar() {
               <tbody>
                 {rooms.map((r) => (
                   <tr key={r.id}>
-                    <th className="caltl-rh"><a href={`/merchant/units/${r.id}`}>{r.code}{r.floor ? <span className="caltl-fl"> · {term} {r.floor}</span> : null}</a></th>
+                    <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}{r.floor ? <span className="caltl-fl"> · {term} {r.floor}</span> : null}</Link></th>
                     {days.map((d) => { const k = cellOf(r, d); return <td key={d} className="caltl-c" title={k ? KLABEL[k] || k : 'ว่าง'} style={k ? { background: KCOLOR[k] || '#3b82f6' } : undefined} />; })}
                   </tr>
                 ))}

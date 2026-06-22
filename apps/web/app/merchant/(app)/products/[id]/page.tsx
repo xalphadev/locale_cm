@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
@@ -14,14 +15,14 @@ export default async function ProductDetail({ params }: { params: { id: string }
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.sells_products) redirect('/merchant');
   const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM shop_products WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
-  if (!p) return (<><div className="mback"><a href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</a></div><h1>ไม่พบสินค้า</h1></>);
+  if (!p) return (<><div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div><h1>ไม่พบสินค้า</h1></>);
 
   const imgs: string[] | null = p.image_urls;
   const hidden = p.status === 'hidden';
   const price = p.price_minor != null ? `฿${Math.round(p.price_minor / 100).toLocaleString()}${p.price_unit ? '/' + p.price_unit : ''}` : 'สอบถามราคา';
   return (
     <>
-      <div className="mback"><a href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</a></div>
+      <div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div>
 
       <div className="dhero">
         {imgs && imgs.length ? (
@@ -52,7 +53,7 @@ export default async function ProductDetail({ params }: { params: { id: string }
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="store" size={15} /></span> จัดการสินค้า</h2>
       <div className="dbar">
-        <a className="dbtn primary" href={`/merchant/products/${p.id}/edit`}><Icon n="edit" size={18} /> แก้ไขสินค้า</a>
+        <Link className="dbtn primary" href={`/merchant/products/${p.id}/edit`}><Icon n="edit" size={18} /> แก้ไขสินค้า</Link>
         {!hidden && <form action={setProductFlagAction.bind(null, p.id, 'sold_out')}><button className="dbtn" type="submit"><Icon n="check" size={18} /> {p.sold_out ? 'มีของแล้ว' : 'ทำเป็นของหมด'}</button></form>}
         <form action={setProductFlagAction.bind(null, p.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงให้ลูกค้าเห็น' : 'ซ่อนจากลูกค้า'}</button></form>
       </div>

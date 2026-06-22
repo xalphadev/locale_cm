@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { Icon } from '../../ui';
@@ -14,7 +15,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
   const backLabel = acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก';
   return (
     <>
-      <div className="mback"><a href="/merchant/rooms"><Icon n="chevL" size={18} /> {backLabel}</a></div>
+      <div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> {backLabel}</Link></div>
       <h1>เพิ่ม{typeNoun}</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
       <RoomForm action={createStayUnitAction} submitLabel={`เพิ่ม${typeNoun}`} noun={typeNoun} stayKind={acc.stay_kind} />

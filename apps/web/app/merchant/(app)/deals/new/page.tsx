@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { Icon } from '../../ui';
@@ -14,7 +15,7 @@ export default async function NewDeal({ searchParams }: { searchParams: { error?
 
   return (
     <>
-      <div className="listhead"><h1>สร้างดีลใหม่</h1><a className="addbtn ghost" href="/merchant/deals">ยกเลิก</a></div>
+      <div className="listhead"><h1>สร้างดีลใหม่</h1><Link className="addbtn ghost" href="/merchant/deals">ยกเลิก</Link></div>
       {searchParams?.error && <div className="banner-err">{ERR[searchParams.error] || 'เกิดข้อผิดพลาด'}</div>}
 
       <form className="form mform" action={createMerchantDealAction}>
