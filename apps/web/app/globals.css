@@ -1092,3 +1092,5 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .setupstep.now{background:color-mix(in srgb,var(--m-sec) 7%,transparent);border-color:color-mix(in srgb,var(--m-sec) 28%,transparent)}
 .merchant-root .setupstep.now .setupstep-ic{background:var(--m-sec)}
 .merchant-root .setupstep-go{color:var(--m-sec)}
+/* roomseg control authored for <a>; allow <button> (the add-rooms mode switch) to use it cleanly */
+.merchant-root button.roomseg-i{border:0;background:transparent;cursor:pointer;font:inherit}

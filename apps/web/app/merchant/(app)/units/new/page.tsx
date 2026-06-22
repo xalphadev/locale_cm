@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
-import { createRoomAction, createRoomsBulkAction } from '../../../actions';
+import { AddRoom } from './AddRoom';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,50 +36,8 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
       {searchParams?.error === 'code' && <div className="banner-err">กรุณาใส่เลข/ชื่อห้อง</div>}
       {searchParams?.error === 'dupe' && <div className="banner-err">เลขห้องนี้มีอยู่แล้ว</div>}
       {searchParams?.error === 'range' && <div className="banner-err">ช่วงเลขห้องไม่ถูกต้อง — ใส่เลขเริ่ม–สิ้นสุด (ไม่เกิน 200 ห้อง)</div>}
-      <h1 className="phead"><span className="phead-ic"><Icon n="plus" size={18} /></span> เพิ่มห้อง</h1>
-
-      <form className="form mform" action={createRoomAction}>
-        <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> เพิ่มทีละห้อง</div>
-          <div className="fgrid">
-            <div className="field"><label>เลข/ชื่อห้อง *</label><input name="code" placeholder="101" required /></div>
-            <div className="field"><label>{term}</label><input name="floor" placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
-          </div>
-          <div className="fgrid">
-            <div className="field"><label>รูปแบบห้อง</label>
-              <select name="stay_unit_id" defaultValue="">
-                <option value="">— ไม่ระบุ —</option>
-                {types.map((t) => <option key={t.id} value={t.id}>{i18n(t.name_i18n)}</option>)}
-              </select>
-            </div>
-            <div className="field"><label>รับได้ (ท่าน)</label><input name="capacity" type="number" min="0" placeholder="2" /></div>
-          </div>
-          <button className="btn btn-primary" type="submit">+ เพิ่มห้อง</button>
-        </section>
-      </form>
-
-      <form className="form mform" action={createRoomsBulkAction}>
-        <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มหลายห้องรวดเดียว</div>
-          <p className="fhint">{term}เป็นเลข → ใส่ “1” + เลข 1–10 ได้ห้อง 101–110 · ถ้าเป็นชื่อ (เช่น ริมน้ำ) ใส่ “คำนำหน้า” เองได้ เช่น A → A1–A10 (เลขที่มีอยู่แล้วจะถูกข้าม)</p>
-          <div className="fgrid">
-            <div className="field"><label>{term}</label><input name="floor" placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
-            <div className="field"><label>รูปแบบห้อง</label>
-              <select name="stay_unit_id" defaultValue="">
-                <option value="">— ไม่ระบุ —</option>
-                {types.map((t) => <option key={t.id} value={t.id}>{i18n(t.name_i18n)}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="field"><label>คำนำหน้าเลขห้อง (ไม่บังคับ)</label><input name="prefix" placeholder="เช่น A, ริมน้ำ- · เว้นว่างได้ถ้าชั้นเป็นเลข" /></div>
-          <div className="fgrid">
-            <div className="field"><label>เลขห้องเริ่ม *</label><input name="start" type="number" min="0" placeholder="1" required /></div>
-            <div className="field"><label>ถึงเลข *</label><input name="end" type="number" min="0" placeholder="10" required /></div>
-          </div>
-          <div className="field"><label>รับได้ (ท่าน) — ใช้กับทุกห้องในชุดนี้</label><input name="capacity" type="number" min="0" placeholder="เช่น 2" /></div>
-          <button className="btn btn-primary" type="submit">+ เพิ่มหลายห้อง</button>
-        </section>
-      </form>
+      <h1 className="phead"><span className="phead-ic"><Icon n="plus" size={18} /></span> เพิ่มห้องจริงในผัง</h1>
+      <AddRoom types={types.map((t) => ({ id: t.id, name: i18n(t.name_i18n) }))} term={term} />
     </>
   );
 }
