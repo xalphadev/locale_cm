@@ -1316,29 +1316,40 @@ export async function deleteRateAction(rateId: string) {
   redirect('/merchant/pricing?ok=rate_deleted');
 }
 
-/** Bulk-add a numeric run of rooms (e.g. floor "1", 1–10 → rooms 101–110) — the fast way to lay out
- *  a dorm. Codes = floor + zero-padded number; existing codes are skipped (idempotent). */
+/** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for
+ *  non-sequential / named units) — the fast way to lay out a dorm. Existing codes are skipped + reported. */
 export async function createRoomsBulkAction(formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const floor = s(formData, 'floor') || null;
-  const prefix = s(formData, 'prefix').replace(/[^\p{L}\p{N}\-_ ]/gu, '').trim();
-  const start = parseInt(s(formData, 'start'), 10);
-  const end = parseInt(s(formData, 'end'), 10);
-  if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || end - start > 199) redirect('/merchant/units/new?error=range');
+  // Codes come EITHER from a free-typed list ("101, 102, A1" — non-sequential / named) OR a numeric range
+  // (start–end). A non-empty list wins. Both dedupe + cap at 200/run; existing codes are skipped + reported.
+  const listRaw = s(formData, 'codes').trim();
+  let codes: string[];
+  if (listRaw) {
+    codes = [...new Set(
+      listRaw.split(/[\s,]+/).map((x) => x.replace(/[^\p{L}\p{N}\-_]/gu, '').slice(0, 24)).filter(Boolean),
+    )].slice(0, 200);
+    if (!codes.length) redirect('/merchant/units/new?error=range');
+  } else {
+    const prefix = s(formData, 'prefix').replace(/[^\p{L}\p{N}\-_ ]/gu, '').trim();
+    const start = parseInt(s(formData, 'start'), 10);
+    const end = parseInt(s(formData, 'end'), 10);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || start < 0 || end < start || end - start > 199) redirect('/merchant/units/new?error=range');
+    // an explicit prefix wins; else a numeric floor keeps the dorm convention (floor 1 → 101–110, zero-padded),
+    // while a named group (โซน "ริมน้ำ") prefixes its own name unpadded ("ริมน้ำ1").
+    const floorIsNum = !!floor && /^\d+$/.test(floor);
+    const base = prefix || floor || '';
+    const pad = (!prefix && floorIsNum) ? 2 : 0;
+    codes = [];
+    for (let n = start; n <= end; n++) codes.push(`${base}${pad ? String(n).padStart(pad, '0') : n}`);
+  }
   const wantUnit = s(formData, 'stay_unit_id');
   let okUnit: string | null = null;
   if (UUID_RE.test(wantUnit)) {
     const [u] = await q<{ id: string }>(`SELECT id FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [wantUnit, acc.place_id]);
     okUnit = u?.id ?? null;
   }
-  // Code pattern: an explicit prefix wins; else a numeric group keeps the dorm convention (floor 1 →
-  // 101–110, zero-padded), while a named group (โซน "ริมน้ำ") prefixes its own name unpadded ("ริมน้ำ1").
-  const floorIsNum = !!floor && /^\d+$/.test(floor);
-  const base = prefix || floor || '';
-  const pad = (!prefix && floorIsNum) ? 2 : 0;
-  const codes: string[] = [];
-  for (let n = start; n <= end; n++) codes.push(`${base}${pad ? String(n).padStart(pad, '0') : n}`);
   const capV = s(formData, 'capacity');
   const capacity = capV && Number.isFinite(Number(capV)) ? Math.max(0, Math.trunc(Number(capV))) : null;   // applied to every room in the run
   const status = ROOM_STATUS.includes(s(formData, 'occupancy_status')) ? s(formData, 'occupancy_status') : 'vacant';

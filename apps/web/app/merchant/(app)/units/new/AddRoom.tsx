@@ -9,13 +9,14 @@ import { InfoTip } from './InfoTip';
 // beds are flat leaves so each counts as one vacancy (no parent hierarchy needed). Status/วันที่ว่าง/โน้ต let an
 // owner backfill rooms ALREADY occupied at setup (else every new room shows as a fake vacancy in "ว่าง N").
 export function AddRoom({ types, term, allowBeds }: { types: { id: string; name: string; capacity: number | null }[]; term: string; allowBeds?: boolean }) {
-  const [mode, setMode] = useState<'single' | 'bulk'>('bulk');
+  const [mode, setMode] = useState<'single' | 'bulk' | 'list'>('bulk');
   const [kind, setKind] = useState<'room' | 'bed'>('room');
   const [typeId, setTypeId] = useState('');
   const [floor, setFloor] = useState('');
   const [prefix, setPrefix] = useState('');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
+  const [codesText, setCodesText] = useState('');
   const [cap, setCap] = useState('');
   const [status, setStatus] = useState('vacant');
   const [occUntil, setOccUntil] = useState('');
@@ -40,6 +41,14 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
       : `${code(s)}, ${code(s + 1)}, ${code(s + 2)} … ${code(e)}`;
     return { state: 'ok' as const, count, text };
   }, [floor, prefix, start, end]);
+
+  // free-list preview — mirror the server parse (split on comma/space, sanitize, dedupe, cap 200)
+  const listPreview = useMemo(() => {
+    const codes = [...new Set(codesText.split(/[\s,]+/).map((x) => x.replace(/[^\p{L}\p{N}\-_]/gu, '').slice(0, 24)).filter(Boolean))].slice(0, 200);
+    if (!codes.length) return { state: 'empty' as const };
+    const text = codes.length <= 6 ? codes.join(', ') : `${codes.slice(0, 3).join(', ')} … ${codes[codes.length - 1]}`;
+    return { state: 'ok' as const, count: codes.length, text };
+  }, [codesText]);
 
   const previewStyle = { background: 'var(--m-sec-bg)', color: 'var(--m-sec)', padding: '10px 12px', borderRadius: 10, fontSize: '.85rem', fontWeight: 700, margin: '2px 0 0' } as const;
 
@@ -94,7 +103,8 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
 
           <div className="roomseg" role="tablist">
             <button type="button" className={`roomseg-i ${mode === 'single' ? 'on' : ''}`} onClick={() => setMode('single')}>ทีละ{U}</button>
-            <button type="button" className={`roomseg-i ${mode === 'bulk' ? 'on' : ''}`} onClick={() => setMode('bulk')}>หลาย{U}</button>
+            <button type="button" className={`roomseg-i ${mode === 'bulk' ? 'on' : ''}`} onClick={() => setMode('bulk')}>เป็นช่วง</button>
+            <button type="button" className={`roomseg-i ${mode === 'list' ? 'on' : ''}`} onClick={() => setMode('list')}>พิมพ์เอง</button>
           </div>
 
           {mode === 'single' ? (
@@ -113,7 +123,7 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
                 <button className="btn btn-primary" type="submit">+ เพิ่ม{U}</button>
               </section>
             </form>
-          ) : (
+          ) : mode === 'bulk' ? (
             <form className="form mform" action={createRoomsBulkAction}>
               <section className="fsec">
                 <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มหลาย{U}รวดเดียว<InfoTip title="วิธีตั้งเลข" body={`ใส่ช่วงเลข เช่น เริ่ม 1 ถึง 10 → สร้างทั้งชุดรวดเดียว\n${term}เป็นเลข เช่น “1” → ได้ 101–110\nถ้าเป็นชื่อ (เช่น ริมน้ำ) ใส่ “คำนำหน้า” เอง เช่น A → A1–A10\nเลขที่มีอยู่แล้วจะถูกข้ามให้อัตโนมัติ (ระบบจะบอกว่าข้ามกี่อัน)`} /></div>
@@ -132,6 +142,23 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
                 <input type="hidden" name="stay_unit_id" value={typeId} />
                 <input type="hidden" name="room_kind" value={kind} />
                 <button className="btn btn-primary" type="submit">+ เพิ่มหลาย{U}</button>
+              </section>
+            </form>
+          ) : (
+            <form className="form mform" action={createRoomsBulkAction}>
+              <section className="fsec">
+                <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> พิมพ์เลข{U}เอง<InfoTip title="พิมพ์เลขเอง" body={`พิมพ์เลข/ชื่อ${U}ที่ต้องการ คั่นด้วยจุลภาคหรือเว้นวรรค\nเช่น 101, 102, 105, 201 หรือ A1 A2 B1\nเหมาะกับเลขที่ไม่เรียงกัน หรือชื่อเฉพาะ\nเลขที่มีอยู่แล้วจะถูกข้ามให้ (ระบบบอกว่าข้ามกี่อัน)`} /></div>
+                <div className="field"><label>เลข/ชื่อ{U} *</label>
+                  <textarea name="codes" value={codesText} onChange={(e) => setCodesText(e.target.value)} placeholder={kind === 'bed' ? 'A1, A2, B1, B2' : '101, 102, 105, 201'} style={{ minHeight: 60 }} required /></div>
+                {listPreview.state === 'ok' && <p style={previewStyle}>จะสร้าง {listPreview.count} {U}: {listPreview.text}</p>}
+                <div className="fgrid">
+                  <div className="field"><label>{term}</label><input name="floor" value={floor} onChange={(e) => setFloor(e.target.value)} placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
+                  <div className="field"><label>รับได้ (ท่าน) — ทุก{U}ในชุดนี้</label><input name="capacity" type="number" min="0" max="50" value={cap} onChange={(e) => setCap(e.target.value)} placeholder={kind === 'bed' ? '1' : '2'} /></div>
+                </div>
+                {statusFields}
+                <input type="hidden" name="stay_unit_id" value={typeId} />
+                <input type="hidden" name="room_kind" value={kind} />
+                <button className="btn btn-primary" type="submit">+ เพิ่ม{U}</button>
               </section>
             </form>
           )}
