@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '../ui';
 import { HubInfo } from './HubInfo';
 
@@ -18,12 +19,12 @@ export function RoomHub({ active, showSeg, noun, addHref, addLabel }: {
       <div className="listhead">
         <h1>{noun}</h1>
         {showSeg && active === 'types' && <HubInfo />}
-        {addHref && <a className="addbtn" href={addHref}><Icon n="plus" size={17} /> {addLabel}</a>}
+        {addHref && <Link className="addbtn" href={addHref}><Icon n="plus" size={17} /> {addLabel}</Link>}
       </div>
       {showSeg && (
         <div className="roomseg" role="tablist">
-          <a className={`roomseg-i ${active === 'types' ? 'on' : ''}`} href="/merchant/rooms">ประเภท &amp; ราคา</a>
-          <a className={`roomseg-i ${active === 'board' ? 'on' : ''}`} href="/merchant/units">ผังห้อง</a>
+          <Link className={`roomseg-i ${active === 'types' ? 'on' : ''}`} href="/merchant/rooms">ประเภท &amp; ราคา</Link>
+          <Link className={`roomseg-i ${active === 'board' ? 'on' : ''}`} href="/merchant/units">ผังห้อง</Link>
         </div>
       )}
       <p className="roomhub-sub">{sub}</p>

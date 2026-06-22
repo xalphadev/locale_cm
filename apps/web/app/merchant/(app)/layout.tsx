@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { currentAccount } from '@/lib/auth';
@@ -84,7 +85,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       )}
       <main className={`mbody ${sec ? 'sec-' + sec : ''}`}>{children}</main>
       <nav className="mtab">
-        {tabs.map((t) => <a key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} />{t.badge ? <span className="mtab-badge">{t.badge > 9 ? '9+' : t.badge}</span> : null}<span>{t.label}</span></a>)}
+        {tabs.map((t) => <Link key={t.href} href={t.href} className={`mtab-i ${t.match(path) ? 'on' : ''}`}><MIcon n={t.icon} />{t.badge ? <span className="mtab-badge">{t.badge > 9 ? '9+' : t.badge}</span> : null}<span>{t.label}</span></Link>)}
       </nav>
     </div>
   );
