@@ -906,6 +906,10 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   .merchant-root .mtab-i{flex:none;flex-direction:row;justify-content:flex-start;align-items:center;gap:13px;width:100%;padding:11px 14px;border-radius:12px;font-size:.96rem;font-weight:600}
   .merchant-root .mtab-i svg{width:21px;height:21px}
   .merchant-root .mtab-i.on{background:var(--m-soft)}
+  .merchant-root .mtab-i[href="/merchant/products"].on{background:var(--m-sec-products-bg)}
+  .merchant-root .mtab-i[href="/merchant/rooms"].on{background:var(--m-sec-rooms-bg)}
+  .merchant-root .mtab-i[href="/merchant/loyalty"].on{background:var(--m-sec-loyalty-bg)}
+  .merchant-root .mtab-i[href="/merchant/shop"].on{background:var(--m-sec-shop-bg)}
   .merchant-root .mtab-i:hover{background:var(--m-sunk);color:var(--m-text)}
   .merchant-root .mtab-i.on:hover{background:var(--m-soft);color:var(--m-accent)}
   /* desktop hover affordances (mobile uses :active) */
@@ -1032,3 +1036,32 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .hubpop-k{font-weight:700;font-size:.86rem;color:#2b74ff}
 .merchant-root .hubpop-v{font-size:.85rem;line-height:1.5;color:var(--m-text)}
 .merchant-root .hubpop-foot{display:flex;align-items:center;gap:6px;margin:2px 0 0;padding:9px 11px;border-radius:10px;background:rgba(43,116,255,.09);color:#2b74ff;font-size:.82rem;font-weight:600;line-height:1.4}
+
+/* ── section color identity (muted pastel duotone) — variety, not loud; CTAs/forms/anchor stay blue ── */
+.merchant-root{
+  --m-soft:#E7EFFF;
+  --m-sec-products-bg:#E2F2EC; --m-sec-products:#2E9E78;   /* teal-jade */
+  --m-sec-rooms-bg:#EAE7FB;    --m-sec-rooms:#6C5CD4;       /* soft indigo */
+  --m-sec-loyalty-bg:#F8EFD6;  --m-sec-loyalty:#C68A12;     /* amber (value family) */
+  --m-sec-shop-bg:#E7EBF2;     --m-sec-shop:#5A6B8C;        /* calm slate */
+  --m-sec-leads-bg:#E0EFF3;    --m-sec-leads:#3389A6;       /* dusty cyan */
+  --m-sec-pricing-bg:#F8EFD6;  --m-sec-pricing:#C68A12;
+  --m-sec-deals-bg:#F6E7E4;    --m-sec-deals:#C06A57;       /* rose-clay (promo) */
+  --m-sec-payouts-bg:#F8EFD6;  --m-sec-payouts:#C68A12;
+  --m-sec-trash-bg:#ECECEF;    --m-sec-trash:#7A7A85;       /* dead gray */
+}
+/* home menu chips — colored by destination href (no JSX change). ring tints to match (was hardcoded blue) */
+.merchant-root .menu-row[href*="/merchant/products"] .menu-ic{background:var(--m-sec-products-bg);color:var(--m-sec-products);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-products) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/rooms"] .menu-ic{background:var(--m-sec-rooms-bg);color:var(--m-sec-rooms);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-rooms) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/leads"] .menu-ic{background:var(--m-sec-leads-bg);color:var(--m-sec-leads);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-leads) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/pricing"] .menu-ic{background:var(--m-sec-pricing-bg);color:var(--m-sec-pricing);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-pricing) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/loyalty"] .menu-ic,.merchant-root .menu-row[href*="need=loyalty"] .menu-ic{background:var(--m-sec-loyalty-bg);color:var(--m-sec-loyalty);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-loyalty) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/deals"] .menu-ic,.merchant-root .menu-row[href*="need=deals"] .menu-ic{background:var(--m-sec-deals-bg);color:var(--m-sec-deals);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-deals) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/payouts"] .menu-ic,.merchant-root .menu-row[href*="need=payouts"] .menu-ic{background:var(--m-sec-payouts-bg);color:var(--m-sec-payouts);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-payouts) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/shop"] .menu-ic,.merchant-root .menu-row[href*="/place/"] .menu-ic{background:var(--m-sec-shop-bg);color:var(--m-sec-shop);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-shop) 16%,transparent)}
+.merchant-root .menu-row[href*="/merchant/trash"] .menu-ic{background:var(--m-sec-trash-bg);color:var(--m-sec-trash);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-sec-trash) 16%,transparent)}
+/* bottom-nav active tab — colored per section (home /merchant keeps brand blue via the default .on rule) */
+.merchant-root .mtab-i[href="/merchant/products"].on{color:var(--m-sec-products)}
+.merchant-root .mtab-i[href="/merchant/rooms"].on{color:var(--m-sec-rooms)}
+.merchant-root .mtab-i[href="/merchant/loyalty"].on{color:var(--m-sec-loyalty)}
+.merchant-root .mtab-i[href="/merchant/shop"].on{color:var(--m-sec-shop)}
