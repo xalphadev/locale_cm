@@ -161,9 +161,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 
 /* checkbox chips (bills / amenities) */
 .merchant-root .checkrow{display:flex;flex-wrap:wrap;gap:8px}
-.merchant-root .cbox{display:inline-flex;align-items:center;gap:7px;font-size:.86rem;font-weight:700;color:var(--m-text);background:var(--m-surface);border:1.5px solid var(--m-line);border-radius:999px;padding:.42rem .8rem;cursor:pointer;user-select:none;transition:background .12s,border-color .12s,color .12s}
-.merchant-root .cbox input{width:15px;height:15px;accent-color:var(--m-accent);margin:0;flex:none}
+.merchant-root .cbox{position:relative;display:inline-flex;align-items:center;gap:7px;font-size:.86rem;font-weight:700;color:var(--m-text);background:var(--m-surface);border:1.5px solid var(--m-line);border-radius:999px;padding:.42rem .8rem;cursor:pointer;user-select:none;transition:background .12s,border-color .12s,color .12s}
+/* ONE custom checkbox everywhere: the native box is a11y-hidden (it rendered inconsistently — a styled blob
+   inside .field, a native square outside it, with drifting accent colours). The ::before square is the only
+   control, so every chip looks identical in every section, in or out of a .field wrapper. */
+.merchant-root .cbox input[type="checkbox"]{position:absolute;width:1px;height:1px;opacity:0;margin:0;padding:0;pointer-events:none}
+.merchant-root .cbox::before{content:"";width:16px;height:16px;flex:none;border-radius:5px;border:1.6px solid var(--m-line);background:var(--m-surface);transition:background .12s,border-color .12s}
 .merchant-root .cbox:has(input:checked){background:var(--m-soft);border-color:var(--m-accent);color:var(--m-accent)}
+.merchant-root .cbox:has(input:checked)::before{border-color:var(--m-accent);background:var(--m-accent) center/11px 11px no-repeat;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E")}
+.merchant-root .cbox:has(input:focus-visible){outline:2px solid color-mix(in srgb,var(--m-accent) 45%,transparent);outline-offset:2px}
 
 /* single full-width checkbox row (in_season / capability toggles) */
 .merchant-root .check{display:flex;align-items:flex-start;gap:10px;background:var(--m-sunk);border:1px solid var(--m-line);border-radius:12px;padding:.72rem .85rem;font-size:.88rem;font-weight:600;color:var(--m-text);line-height:1.45;cursor:pointer}
