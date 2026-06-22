@@ -996,3 +996,16 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .lead-sched-f form{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
 .lead-sched-f input{border:1px solid #e3e6ea;border-radius:8px;padding:6px 8px;font:inherit}
 .bulkbar-del{background:none;border:none;color:#e5484d;font-weight:600;font-size:.84rem;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+
+/* property-wide occupancy timeline (merchant) */
+.caltl{overflow-x:auto;border:1px solid #eceef2;border-radius:14px}
+.caltl-t{border-collapse:collapse;width:max-content;min-width:100%}
+.caltl-rh{position:sticky;left:0;background:#fff;text-align:left;padding:6px 10px;font-size:.82rem;white-space:nowrap;border-right:1px solid #eceef2;z-index:1}
+.caltl-rh a{color:#1a1a1a;text-decoration:none;font-weight:600}
+.caltl-fl{color:#9aa0a8;font-weight:400;font-size:.74rem}
+.caltl-dh{padding:5px 2px;min-width:30px;text-align:center;font-size:.64rem;color:#8a909a;border-bottom:1px solid #eceef2}
+.caltl-dh b{display:block;font-size:.82rem;color:#1a1a1a}
+.caltl-c{width:30px;height:30px;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;background:#f7f9fb}
+.callegend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 4px;font-size:.78rem;color:#555}
+.callegend span{display:inline-flex;align-items:center;gap:5px}
+.callegend i{width:14px;height:14px;border-radius:4px;display:inline-block}
