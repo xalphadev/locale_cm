@@ -211,6 +211,19 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mtab-i:active{transform:scale(.92)}
 .mtab-i.on{color:var(--m-accent);font-weight:700}
 
+/* ===== skeleton loading — shown inside the persistent shell during soft navigation (loading.tsx) ===== */
+@keyframes mskel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.merchant-root .skel{background:linear-gradient(90deg,var(--m-sunk) 25%,color-mix(in srgb,var(--m-sunk) 55%,#fff) 50%,var(--m-sunk) 75%);background-size:200% 100%;animation:mskel-shimmer 1.4s ease-in-out infinite;border-radius:8px}
+@media (prefers-reduced-motion:reduce){.merchant-root .skel{animation:none}}
+.merchant-root .mskel{padding:.2rem 0 1rem}
+.merchant-root .mskel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:.1rem 0 .6rem}
+.merchant-root .mskel-seg{display:flex;gap:8px;margin-top:4px}
+.merchant-root .mskel-list{display:flex;flex-direction:column;gap:10px}
+.merchant-root .mskel-row{height:62px;border-radius:16px}
+.merchant-root .mskel-card{height:108px;border-radius:18px}
+.merchant-root .mskel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;margin-top:8px}
+.merchant-root .mskel-chip{height:64px;border-radius:14px}
+
 /* ===== merchant portal: LIST + ADD/EDIT split (thumbnails, rows, forms) ===== */
 .merchant-root .listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:.1rem 0 .5rem}
 .merchant-root .listhead h1{margin:0;font-size:1.4rem}
