@@ -46,6 +46,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
       ]
     : [{ done: items.length > 0, label: 'เพิ่มห้อง', href: '/merchant/rooms/new' }];
   const setupDone = steps.every((st) => st.done);
+  const doneN = steps.filter((st) => st.done).length;
   return (
     <>
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
@@ -53,15 +54,22 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
       {!setupDone && (
         <div className="setupcard">
-          <div className="setupcard-h">เริ่มต้นใช้งาน · {steps.filter((st) => st.done).length}/{steps.length}</div>
+          <div className="setupcard-top">
+            <div className="setupcard-ttl"><span className="setupcard-spark"><Icon n="spark" size={15} /></span> เริ่มต้นใช้งาน</div>
+            <span className="setupcard-badge">{doneN}/{steps.length}</span>
+          </div>
+          <div className="setupbar"><span style={{ width: `${(doneN / steps.length) * 100}%` }} /></div>
           <div className="setupsteps">
-            {steps.map((st, i) => (
-              <a key={i} href={st.href} className={`setupstep ${st.done ? 'done' : ''}`}>
-                <span className="setupstep-ic">{st.done ? '✓' : i + 1}</span>
-                <span>{st.label}</span>
-                {!st.done && <Icon n="chevR" size={15} className="setupstep-go" />}
-              </a>
-            ))}
+            {steps.map((st, i) => {
+              const now = !st.done && steps.slice(0, i).every((s) => s.done);
+              return (
+                <a key={i} href={st.href} className={`setupstep ${st.done ? 'done' : ''} ${now ? 'now' : ''}`}>
+                  <span className="setupstep-ic">{st.done ? <Icon n="check" size={13} /> : i + 1}</span>
+                  <span className="setupstep-tx">{st.label}</span>
+                  {!st.done && <Icon n="chevR" size={16} className="setupstep-go" />}
+                </a>
+              );
+            })}
           </div>
         </div>
       )}
