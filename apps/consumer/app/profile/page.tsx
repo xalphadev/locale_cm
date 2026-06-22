@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, coins, cover, demoUserId } from '@/lib/db';
 import { sessionUserId } from '@/lib/auth';
 import { logoutAction } from '../auth/actions';
@@ -53,26 +54,26 @@ export default async function Profile() {
         {loggedIn ? (
           <form action={logoutAction}><button className="authstrip out" type="submit">ออกจากระบบ</button></form>
         ) : (
-          <a className="authstrip in" href="/login">เข้าสู่ระบบ / สมัครสมาชิก — เพื่อสะสมแต้มของคุณเอง <span aria-hidden>›</span></a>
+          <Link className="authstrip in" href="/login">เข้าสู่ระบบ / สมัครสมาชิก — เพื่อสะสมแต้มของคุณเอง <span aria-hidden>›</span></Link>
         )}
 
-        <div className="sec" style={{ padding: 0, marginTop: '.6rem' }}><h2>ที่บันทึกไว้</h2><a className="more" href="/community">ชุมชน ›</a></div>
+        <div className="sec" style={{ padding: 0, marginTop: '.6rem' }}><h2>ที่บันทึกไว้</h2><Link className="more" href="/community">ชุมชน ›</Link></div>
         {saved.map((p) => (
-          <a className="erow" key={p.id} href={`/place/${p.id}`}>
+          <Link className="erow" key={p.id} href={`/place/${p.id}`}>
             <div className="ethumb" style={{ background: 'none' }}><img src={cover(p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" /></div>
             <div><div className="nm">{i18n(p.name_i18n)}</div><div className="meta">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div></div>
             <span className="chev"><Icon n="chevR" size={18} /></span>
-          </a>
+          </Link>
         ))}
         {saved.length === 0 && <p className="empty">ยังไม่มีที่บันทึก — แตะ <Icon n="bookmark" size={14} className="flat-ico" /> ในหน้าร้านเพื่อเก็บไว้</p>}
 
         <div className="sec" style={{ padding: 0 }}><h2>เควสต์ของฉัน</h2></div>
         {quests.map((qu) => (
-          <a className="erow" key={qu.id} href="/passport">
+          <Link className="erow" key={qu.id} href="/passport">
             <div className="ethumb" style={{ background: 'linear-gradient(135deg,#E7C56A,#C9962A)' }}><Icon n="ticket" size={24} /></div>
             <div><div className="nm">{i18n(qu.title_i18n)}</div><div className="meta">{qu.status === 'in_progress' ? `เก็บแล้ว ${qu.done}/${qu.need} แสตมป์` : 'เก็บครบแล้ว'}</div></div>
             <span className="chev"><Icon n="chevR" size={18} /></span>
-          </a>
+          </Link>
         ))}
         {quests.length === 0 && <p className="empty">ยังไม่ได้เริ่มเควสต์</p>}
       </div>

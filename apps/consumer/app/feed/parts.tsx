@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { i18n, cover } from '@/lib/db';
 import { Icon } from '../icons';
 import { toggleLikeAction, addCommentAction } from '../actions';
@@ -60,14 +61,14 @@ export function Collage({ imgs, href }: { imgs: string[]; href: string }) {
   const cls = n <= 1 ? 'cg1' : n === 2 ? 'cg2' : n === 3 ? 'cg3' : 'cg4';
   const show = imgs.slice(0, 4); const extra = n - 4;
   return (
-    <a href={href} className={`collage ${cls}`}>
+    <Link href={href} className={`collage ${cls}`}>
       {show.map((u, k) => (
         <span className="ci" key={k}>
           <img src={u} alt="" loading="lazy" />
           {k === 3 && extra > 0 && <span className="more-ov">+{extra}</span>}
         </span>
       ))}
-    </a>
+    </Link>
   );
 }
 
@@ -104,10 +105,10 @@ export function PostCard({ it, lk, comments, commentCount, mode }: {
     <article className="post">
       <header className="ph">
         <span className="post-av ph-av" style={{ background: p.color }}>{p.av}</span>
-        <a className="ph-meta" href={href}>
+        <Link className="ph-meta" href={href}>
           <div className="ph-name">{p.name}{p.verified && <span className="vbadge"><Icon n="check" size={9} fill="#fff" /></span>}</div>
           <div className="ph-sub"><Icon n={it.kind === 'event' ? 'calendar' : 'pin'} size={11} /> {p.sub}</div>
-        </a>
+        </Link>
         <Icon n="dots" size={18} style={{ color: 'var(--hint)' }} />
       </header>
 
@@ -117,24 +118,26 @@ export function PostCard({ it, lk, comments, commentCount, mode }: {
         <form className="actf2" action={toggleLikeAction.bind(null, key)}>
           <button type="submit" className={`pa ${lk.liked ? 'liked' : ''}`} aria-label="ถูกใจ"><Icon n="heart" size={24} fill={lk.liked ? 'currentColor' : 'none'} /></button>
         </form>
-        <a className="pa" href={commentTarget} aria-label="คอมเมนต์"><Icon n="chat" size={23} /></a>
+        {commentTarget.startsWith('#')
+          ? <a className="pa" href={commentTarget} aria-label="คอมเมนต์"><Icon n="chat" size={23} /></a>
+          : <Link className="pa" href={commentTarget} aria-label="คอมเมนต์"><Icon n="chat" size={23} /></Link>}
         <ShareButton href={href} title={p.name} variant="icon" />
         <span className="pa-sp" />
-        <a className="pa" href={href} aria-label="บันทึก"><Icon n="bookmark" size={22} /></a>
+        <Link className="pa" href={href} aria-label="บันทึก"><Icon n="bookmark" size={22} /></Link>
       </div>
 
       {lk.c > 0 && (
         <div className="ph-likes"><span className="ph-faces"><i style={{ background: 'var(--accent)' }} /><i style={{ background: 'var(--spark)' }} /><i style={{ background: 'var(--gold)' }} /></span><span>ถูกใจ <b>{lk.c.toLocaleString()}</b> ครั้ง</span></div>
       )}
 
-      <a className="ph-cap" href={href}><Caption it={it} p={p} /></a>
+      <Link className="ph-cap" href={href}><Caption it={it} p={p} /></Link>
 
       <div className="ph-time">{relTime(it.ts)}</div>
 
       {mode === 'list' ? (
-        <a className="ph-vc" href={dhref}>
+        <Link className="ph-vc" href={dhref}>
           {commentCount > 0 ? `ดูความคิดเห็นทั้งหมด ${commentCount} รายการ` : 'แสดงความคิดเห็น'}
-        </a>
+        </Link>
       ) : (
         <div className="cthread">
           {(comments || []).length === 0 && <p className="cmt-empty">ยังไม่มีความคิดเห็น — มาเป็นคนแรกที่ทักทายร้านนี้สิ</p>}

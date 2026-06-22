@@ -1,3 +1,4 @@
+import Link from 'next/link';
 // Social sign-in row (ref-style circles) — the app's real providers: Google + LINE.
 // A provider without env credentials degrades gracefully (/auth/<p> → "ช่องทางนี้ยังไม่เปิด").
 
@@ -31,9 +32,9 @@ export function OAuthButtons({ mode = 'signin' }: { mode?: 'signin' | 'signup' }
       <div className="auth-or"><span>{mode === 'signup' ? 'หรือสมัครด้วย' : 'หรือเข้าสู่ระบบด้วย'}</span></div>
       <div className="auth-social">
         {SOCIALS.map(({ id, cls, href, label, Logo }) => (
-          <a key={id} className={`auth-soc ${cls}`} href={href} aria-label={`ดำเนินการต่อด้วย ${label}`}>
+          <Link key={id} className={`auth-soc ${cls}`} href={href} aria-label={`ดำเนินการต่อด้วย ${label}`}>
             <Logo />
-          </a>
+          </Link>
         ))}
       </div>
     </>

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '../../icons';
 import { q, i18n, demoUserId } from '@/lib/db';
 import { STAY_KIND_TH } from '@/lib/facets';
@@ -43,7 +44,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
   return (
     <div className="staybg">
       <div className="staytop">
-        <a className="back" href="/stay"><Icon n="back" size={18} /> ที่พัก</a>
+        <Link className="back" href="/stay"><Icon n="back" size={18} /> ที่พัก</Link>
       </div>
       <h1 style={{ padding: '0 16px', margin: '6px 0 2px', fontSize: '1.5rem' }}>คำขอที่พักของฉัน</h1>
       <p className="shopnote" style={{ margin: '2px 16px 12px' }}><Icon n="chat" size={13} /> คำขอติดต่อที่คุณส่งให้ที่พัก — ไม่ใช่การจอง/ชำระเงิน ที่พักจะติดต่อกลับโดยตรง</p>
@@ -53,7 +54,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
       {rows.length === 0 ? (
         <div className="empty" style={{ padding: '32px 16px', textAlign: 'center' }}>
           <p>ยังไม่มีคำขอที่พัก</p>
-          <a className="staymaplink" href="/stay" style={{ marginTop: 10 }}><Icon n="bed" size={16} /> ค้นหาที่พัก</a>
+          <Link className="staymaplink" href="/stay" style={{ marginTop: 10 }}><Icon n="bed" size={16} /> ค้นหาที่พัก</Link>
         </div>
       ) : (
         <div className="reqlist">
@@ -66,14 +67,14 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
             const canWithdraw = r.status !== 'converted' && r.status !== 'declined' && st.label !== 'หมดอายุแล้ว';
             return (
               <div className="reqcard" key={r.id}>
-                <a className="reqcard-h" href={href}>
+                <Link className="reqcard-h" href={href}>
                   <span className="reqkind-ic"><Icon n="bed" size={16} /></span>
                   <span className="reqcard-tx">
                     <b>{i18n(r.place_name)}</b>
                     <span>{STAY_KIND_TH[r.stay_kind] || 'ที่พัก'}{r.unit_name ? ` · ${i18n(r.unit_name)}` : ''}</span>
                   </span>
                   <Icon n="chevR" size={16} className="reqcard-go" />
-                </a>
+                </Link>
                 <div className="reqmeta">{KIND_TH[r.request_kind] || 'สอบถามข้อมูล'} · {dates}</div>
                 <div className={`reqbadge ${st.cls}`}><Icon n={st.ic} size={13} /> {st.label}</div>
                 <div className="reqfoot">

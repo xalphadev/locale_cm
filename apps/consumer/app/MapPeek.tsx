@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 
 type Pin = { lat: number; lng: number; cat: string };
@@ -30,9 +31,9 @@ export default function MapPeek({ pins }: { pins: Pin[] }) {
     return () => { dead = true; if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, []);
   return (
-    <a className="mappeek" href="/map">
+    <Link className="mappeek" href="/map">
       <div ref={ref} className="mappeek-host" />
       <div className="mappeek-cta"><span>สำรวจบนแผนที่</span><span className="mappeek-chip">{pins.length} ที่ใกล้คุณ</span></div>
-    </a>
+    </Link>
   );
 }

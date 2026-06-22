@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
@@ -19,10 +20,10 @@ export default function Nav() {
   return (
     <nav className="nav">
       {TABS.map((t) => (
-        <a key={t.href} href={t.href} className={t.match(p) ? 'active' : ''}>
+        <Link key={t.href} href={t.href} className={t.match(p) ? 'active' : ''}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">{t.icon}</svg>
           {t.label}
-        </a>
+        </Link>
       ))}
     </nav>
   );

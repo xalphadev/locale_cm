@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../icons';
 import { ProductCard, SUBTYPE_TH } from '../ProductCard';
@@ -35,7 +36,7 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
   return (
     <>
       <div className="top">
-        <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
+        <Link className="back" href="/"><Icon n="back" size={18} /> สำรวจ</Link>
         <div className="hi">ของสด ของฝาก จากร้านในนิมมาน</div><h1>ตลาดท้องถิ่น</h1>
       </div>
       <form className="staysearch" method="GET" action="/market">
@@ -43,12 +44,12 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
         {sort && <input type="hidden" name="sort" value={sort} />}
         <Icon n="search" size={17} />
         <input name="q" defaultValue={qtext} placeholder="ค้นหาสินค้า / ร้าน" autoComplete="off" />
-        {qtext && <a className="ss-x" href={href(sub, sort, '')} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
+        {qtext && <Link className="ss-x" href={href(sub, sort, '')} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></Link>}
       </form>
-      <div className="segmented">{SORTS.map((s) => <a key={s.k} href={href(sub, s.k)} className={`seg ${sort === s.k ? 'on' : ''}`}>{s.l}</a>)}</div>
+      <div className="segmented">{SORTS.map((s) => <Link key={s.k} href={href(sub, s.k)} className={`seg ${sort === s.k ? 'on' : ''}`}>{s.l}</Link>)}</div>
       <div className="facetbar">
-        <a href={href('', sort)} className={`facet ${!sub ? 'on' : ''}`}>ทั้งหมด</a>
-        {SUBS.map((s) => <a key={s} href={href(s, sort)} className={`facet ${sub === s ? 'on' : ''}`}>{SUBTYPE_TH[s]}</a>)}
+        <Link href={href('', sort)} className={`facet ${!sub ? 'on' : ''}`}>ทั้งหมด</Link>
+        {SUBS.map((s) => <Link key={s} href={href(s, sort)} className={`facet ${sub === s ? 'on' : ''}`}>{SUBTYPE_TH[s]}</Link>)}
       </div>
       <h2 style={{ padding: '0 16px', margin: '12px 0 2px' }}>{sub ? SUBTYPE_TH[sub] : 'สินค้าทั้งหมด'} ({rows.length})</h2>
       <div className="pgrid">

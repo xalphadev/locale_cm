@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { loginEmailAction } from '../auth/actions';
 import { OAuthButtons, AUTH_ERRORS } from '../auth/OAuthButtons';
 import { PasswordField } from '../auth/PasswordField';
@@ -29,7 +30,7 @@ export default function Login({ searchParams }: { searchParams: { error?: string
 
         <OAuthButtons mode="signin" />
 
-        <p className="auth-switch">ยังไม่มีบัญชี? <a href="/register">สมัครสมาชิก</a></p>
+        <p className="auth-switch">ยังไม่มีบัญชี? <Link href="/register">สมัครสมาชิก</Link></p>
       </div>
     </div>
   );

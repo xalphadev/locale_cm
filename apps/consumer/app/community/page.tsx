@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, cover } from '@/lib/db';
 import { Icon } from '../icons';
 
@@ -18,7 +19,7 @@ export default async function Community() {
 
   return (
     <>
-      <div className="top"><a className="back" href="/"><Icon n="back" size={18} /> กลับ</a>
+      <div className="top"><Link className="back" href="/"><Icon n="back" size={18} /> กลับ</Link>
         <div className="hi">ชาวซอยฮ็อปกำลังพูดถึง</div><h1>ชุมชน</h1></div>
 
       {down ? <div className="body"><p className="empty">ต่อฐานข้อมูลไม่ได้</p></div> : (
@@ -36,7 +37,7 @@ export default async function Community() {
 
           <div className="sec"><h2>รีวิวล่าสุด</h2></div>
           {recent.map((r, i) => (
-            <a className="crev" key={i} href={`/place/${r.pid}`}>
+            <Link className="crev" key={i} href={`/place/${r.pid}`}>
               <img className="cphoto" src={cover(r.pid, r.psub, r.pcat, 160, 160)} alt="" loading="lazy" />
               <div className="cw">
                 <div className="ctop"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="cname">{r.display_name || 'ผู้ใช้'}</span>
@@ -44,7 +45,7 @@ export default async function Community() {
                 <div className="cbody">{i18n(r.body_i18n)}</div>
                 <div className="cplace"><Icon n="pin" size={13} className="flat-ico" /> {i18n(r.pname)} · {r.d}</div>
               </div>
-            </a>
+            </Link>
           ))}
         </>
       )}

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './icons';
@@ -119,7 +120,7 @@ export function StayGallery({ images, backHref = '/stay' }: { images: string[]; 
         </div>
       </div>
 
-      <a className="rgallery-back" href={backHref}><Icon n="back" size={19} /></a>
+      <Link className="rgallery-back" href={backHref}><Icon n="back" size={19} /></Link>
 
       {n > 1 && (
         <>

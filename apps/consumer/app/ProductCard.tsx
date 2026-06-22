@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { i18n, cover, thumb } from '@/lib/db';
 import { Icon } from './icons';
 
@@ -47,12 +48,14 @@ export function ProductCard({ pr, line_id, phone, shopName, shopHref }: {
       </div>
       <div className="pcbody">
         {shopName && (shopHref
-          ? <a className="pcshop" href={shopHref}><Icon n="pin" size={11} /> {shopName}</a>
+          ? <Link className="pcshop" href={shopHref}><Icon n="pin" size={11} /> {shopName}</Link>
           : <span className="pcshop"><Icon n="pin" size={11} /> {shopName}</span>)}
         <div className="pcname">{i18n(pr.name_i18n)}</div>
         <div className="pcprice">{priceText(pr)}</div>
         {cta
-          ? <a className={`pcbuy ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={14} /> {cta.label}</a>
+          ? (cta.ext
+            ? <a className={`pcbuy ${cta.cls}`} href={cta.href} target="_blank" rel="noopener"><Icon n={cta.icon} size={14} /> {cta.label}</a>
+            : <Link className={`pcbuy ${cta.cls}`} href={cta.href}><Icon n={cta.icon} size={14} /> {cta.label}</Link>)
           : <span className="pcbuy off"><Icon n="chat" size={14} /> ติดต่อร้าน</span>}
       </div>
     </div>

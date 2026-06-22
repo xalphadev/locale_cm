@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, cover, demoUserId } from '@/lib/db';
 import { Icon, CAT_ICON } from '../../icons';
 import { toggleSaveAction, submitBookingRequestAction } from '../../actions';
@@ -71,7 +72,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
   } catch { /* db down */ }
 
   if (!u) {
-    return (<><div className="top"><a className="back" href="/stay"><Icon n="back" size={18} /> ที่พัก</a><h1>ไม่พบห้องพัก</h1></div>
+    return (<><div className="top"><Link className="back" href="/stay"><Icon n="back" size={18} /> ที่พัก</Link><h1>ไม่พบห้องพัก</h1></div>
       <div className="feed"><p className="empty">ห้องนี้อาจถูกปิดหรือที่พักยังไม่เผยแพร่</p></div></>);
   }
 
@@ -124,7 +125,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
         <div className="pcfresh" style={{ margin: '2px 0 10px' }}>อัปเดตห้องว่าง {stayDaysAgo(u.availability_updated_at) <= 0 ? 'วันนี้' : `${stayDaysAgo(u.availability_updated_at)} วันก่อน`}</div>
 
         {cta
-          ? <a className={`roomcta-btn ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={18} /> {cta.label}</a>
+          ? <Link className={`roomcta-btn ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={18} /> {cta.label}</Link>
           : <span className="roomcta-btn off"><Icon n="chat" size={18} /> ติดต่อที่พัก</span>}
         <div className="pcfresh" style={{ textAlign: 'center', margin: '6px 0 2px' }}>ไม่มีระบบจอง/จ่ายเงินในแอป — ติดต่อที่พักโดยตรง</div>
 
@@ -133,7 +134,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           <StayAvailability days={avail} />
         </>)}
 
-        {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ · <a href="/stay/requests">ดูคำขอของฉัน</a></div>}
+        {searchParams?.sent && <div className="booksent"><Icon n="check" size={16} /> ส่งคำขอแล้ว — ที่พักจะติดต่อกลับหาคุณ · <Link href="/stay/requests">ดูคำขอของฉัน</Link></div>}
         {searchParams?.err === 'contact' && <div className="bookerr">กรุณากรอกชื่อ และเบอร์โทรหรือไลน์อย่างน้อยหนึ่งช่อง</div>}
         {searchParams?.err === 'full' && <div className="bookerr">ช่วงวันที่นี้เต็มแล้ว — เลือกวันอื่น หรือดู “ปฏิทินคืนว่าง” ด้านบน</div>}
         {searchParams?.err === 'past' && <div className="bookerr">เลือกวันที่ในอนาคต — จองย้อนหลังไม่ได้</div>}
@@ -259,9 +260,9 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           {Object.keys(hours).length > 0 && <div className="info-row"><Icon n="clock" size={18} className="flat-ico" /><span className={openNow ? 'is-open' : 'is-closed'}>{openNow ? 'เปิดรับติดต่อตอนนี้' : 'นอกเวลาทำการ'}{thHr && thHr !== 'closed' ? ` · วันนี้ ${thHr}` : ''}</span></div>}
           {u.phone && <div className="info-row"><Icon n="phone" size={18} className="flat-ico" /><a href={`tel:${u.phone}`}>{u.phone}</a></div>}
           {u.line_id && <div className="info-row"><Icon n="chat" size={18} className="flat-ico" /><span>LINE: {u.line_id}</span></div>}
-          {u.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><a href={u.website}>{u.website}</a></div>}
+          {u.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><Link href={u.website}>{u.website}</Link></div>}
           {pt && <div className="info-row"><Icon n="directions" size={18} className="flat-ico" /><a href={mapUrl} target="_blank">เปิดใน Google Maps</a></div>}
-          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><a href={`/stay/map?focus=${u.place_id}`}>ดูบนแผนที่ที่พัก</a></div>
+          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><Link href={`/stay/map?focus=${u.place_id}`}>ดูบนแผนที่ที่พัก</Link></div>
           <div className="info-row"><Icon n="bookmark" size={18} className="flat-ico" />
             <form action={toggleSaveAction.bind(null, u.place_id)}><button className="linklike" type="submit">{u.saved ? 'บันทึกที่พักนี้แล้ว' : 'บันทึกที่พักนี้'}</button></form></div>
         </div>

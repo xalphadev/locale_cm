@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, demoUserId, i18n } from '@/lib/db';
 import { Icon } from '../icons';
 
@@ -26,12 +27,12 @@ export default async function Inbox() {
   return (
     <>
       <div className="top">
-        <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
+        <Link className="back" href="/"><Icon n="back" size={18} /> สำรวจ</Link>
         <h1>การแจ้งเตือน</h1>
         <p className="top-sub">ดีลจากร้านที่คุณบันทึก แต้ม และกิจกรรม</p>
       </div>
       {!uid ? (
-        <p className="empty">เข้าสู่ระบบเพื่อรับการแจ้งเตือน — <a href="/login">เข้าสู่ระบบ</a></p>
+        <p className="empty">เข้าสู่ระบบเพื่อรับการแจ้งเตือน — <Link href="/login">เข้าสู่ระบบ</Link></p>
       ) : rows.length === 0 ? (
         <p className="empty">ยังไม่มีการแจ้งเตือน — บันทึกร้านที่ชอบ แล้วเราจะเตือนเมื่อมีดีลใหม่</p>
       ) : (
@@ -41,7 +42,7 @@ export default async function Inbox() {
             const place = i18n(n.pname);
             const isDeal = n.event_type === 'deal_published';
             return (
-              <a className="nrow" key={n.id} href={n.pid ? `/place/${n.pid}` : '#'}>
+              <Link className="nrow" key={n.id} href={n.pid ? `/place/${n.pid}` : '#'}>
                 <span className="nic"><Icon n={isDeal ? 'tag' : 'sparkles'} size={18} /></span>
                 <div className="nbody">
                   <div className="ntx">
@@ -51,7 +52,7 @@ export default async function Inbox() {
                   <div className="ntime">{ago(n.created_at)}</div>
                 </div>
                 <Icon n="chevR" className="ngo" size={16} />
-              </a>
+              </Link>
             );
           })}
         </div>

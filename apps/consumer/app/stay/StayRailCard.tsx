@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
 
 const PERIOD_TH: Record<string, string> = { month: 'เดือน', night: 'คืน' };
@@ -10,7 +11,7 @@ export function StayRailCard({ p }: { p: any }) {
       : `฿${p.priceMin.toLocaleString()}+/${per}`;
   const scored = (p.ratingN ?? 0) >= 5;
   return (
-    <a className="rcard" href={`/place/${p.id}`}>
+    <Link className="rcard" href={`/place/${p.id}`}>
       <div className="rcard-img">
         <img src={p.img} alt="" loading="lazy" />
         {p.vac > 0 && <span className="pchip season">ว่าง {p.vac}</span>}
@@ -18,6 +19,6 @@ export function StayRailCard({ p }: { p: any }) {
       <div className="rcard-nm">{p.name}</div>
       <div className="rcard-meta">{KIND_TH[p.kind] || 'ที่พัก'}{p.district ? ` · ${p.district}` : ''}{scored ? ` · ★ ${p.rating}` : ''}</div>
       <div className="rcard-price">{price}</div>
-    </a>
+    </Link>
   );
 }

@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Icon } from '../../icons';
 import { submitReviewAction } from '../../actions';
@@ -20,7 +21,7 @@ export function ReviewForm({ placeId, loggedIn, canReview, mine, status, backTo 
       {status === 'visit' && <div className="bookerr">ต้องเช็คอินที่ร้านนี้ก่อนถึงเขียนรีวิวได้ — เพื่อรับเฉพาะรีวิวจากผู้มาเยือนจริง</div>}
 
       {!loggedIn ? (
-        <a className="rvform-gate" href="/login"><Icon n="star" size={15} /> เข้าสู่ระบบเพื่อเขียนรีวิว</a>
+        <Link className="rvform-gate" href="/login"><Icon n="star" size={15} /> เข้าสู่ระบบเพื่อเขียนรีวิว</Link>
       ) : !canReview ? (
         <div className="rvform-gate"><Icon n="pin" size={15} /> เช็คอินที่ร้านนี้ก่อนถึงเขียนรีวิวได้ — รับเฉพาะรีวิวจากผู้มาเยือนจริง</div>
       ) : (

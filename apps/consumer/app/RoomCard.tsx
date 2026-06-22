@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { i18n, cover, thumb } from '@/lib/db';
 import { Icon } from './icons';
 import { lineHref } from './ProductCard';
@@ -62,18 +63,20 @@ export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'gri
   if (variant === 'wide') {
     return (
       <div className="scard">
-        <a className="scard-img" href={href}>
+        <Link className="scard-img" href={href}>
           <img src={roomImg(u)} alt="" loading="lazy" />
           <span className={`pchip ${chip.cls}`}>{chip.label}</span>
-        </a>
+        </Link>
         <div className="scard-body">
-          <a className="scard-nm" href={href}>{i18n(u.name_i18n)}</a>
+          <Link className="scard-nm" href={href}>{i18n(u.name_i18n)}</Link>
           {shopName && <div className="scard-loc"><Icon n="pin" size={12} /> {shopName}</div>}
           {facts.length > 0 && <div className="scard-facts">{facts.join(' · ')}</div>}
           <div className="scard-foot">
             <span className="scard-price">{rentText(u)}</span>
             {cta
-              ? <a className={`pcbuy sm ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={14} /> {cta.label}</a>
+              ? (cta.ext
+                ? <a className={`pcbuy sm ${cta.cls}`} href={cta.href} target="_blank" rel="noopener"><Icon n={cta.icon} size={14} /> {cta.label}</a>
+                : <Link className={`pcbuy sm ${cta.cls}`} href={cta.href}><Icon n={cta.icon} size={14} /> {cta.label}</Link>)
               : <span className="pcbuy sm off"><Icon n="chat" size={14} /> ติดต่อ</span>}
           </div>
         </div>
@@ -88,20 +91,22 @@ export function RoomCard({ u, line_id, phone, shopName, shopHref, variant = 'gri
 
   return (
     <div className="prodcard">
-      <a className="pcimg" href={href}>
+      <Link className="pcimg" href={href}>
         <img src={roomImg(u)} alt="" loading="lazy" />
         <span className={`pchip ${chip.cls}`}>{chip.label}</span>
-      </a>
+      </Link>
       <div className="pcbody">
         {shopName && (shopHref
-          ? <a className="pcshop" href={shopHref}><Icon n="pin" size={11} /> {shopName}</a>
+          ? <Link className="pcshop" href={shopHref}><Icon n="pin" size={11} /> {shopName}</Link>
           : <span className="pcshop"><Icon n="pin" size={11} /> {shopName}</span>)}
-        <a className="pcname" href={href}>{i18n(u.name_i18n)}</a>
+        <Link className="pcname" href={href}>{i18n(u.name_i18n)}</Link>
         <div className="pcprice">{rentText(u)}</div>
         {facts.length > 0 && <div className="pcfacts">{facts.join(' · ')}</div>}
         <div className="pcfresh">{freshTxt}</div>
         {cta
-          ? <a className={`pcbuy ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={14} /> {cta.label}</a>
+          ? (cta.ext
+            ? <a className={`pcbuy ${cta.cls}`} href={cta.href} target="_blank" rel="noopener"><Icon n={cta.icon} size={14} /> {cta.label}</a>
+            : <Link className={`pcbuy ${cta.cls}`} href={cta.href}><Icon n={cta.icon} size={14} /> {cta.label}</Link>)
           : <span className="pcbuy off"><Icon n="chat" size={14} /> ติดต่อที่พัก</span>}
       </div>
     </div>

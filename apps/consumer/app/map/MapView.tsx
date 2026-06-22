@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
 import { cover } from '../../lib/img';
@@ -114,7 +115,7 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
 
       <div className="map-top">
         <div className="map-searchrow">
-          <a className="map-back" href="/"><Icon n="back" size={18} /></a>
+          <Link className="map-back" href="/"><Icon n="back" size={18} /></Link>
           <div className="map-search">
             <Icon n="search" size={17} />
             <input value={qtext} onChange={(e) => { setQtext(e.target.value); setSel(null); }} placeholder="ค้นหาร้าน / สถานที่" inputMode="search" aria-label="ค้นหาร้าน / สถานที่" />
@@ -135,7 +136,7 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
 
       <div className="map-rail">
         {shown.map((p) => (
-          <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}`}
+          <Link key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}`}
             className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
             <img src={cover(p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" />
             <div className="mc">
@@ -146,7 +147,7 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
                 {p.km != null ? <span><Icon n="locate" size={11} className="flat-ico" style={{ color: 'var(--muted)' }} /> เดิน {walkMin(p.km)} นาที</span> : <span>{catTH(p.category)}</span>}
               </div>
             </div>
-          </a>
+          </Link>
         ))}
         {shown.length === 0 && <div className="map-card" style={{ justifyContent: 'center', color: 'var(--muted)' }}>ไม่มีร้านในหมวดนี้</div>}
       </div>

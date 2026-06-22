@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, cover } from '@/lib/db';
 import { Icon } from '../../icons';
 import { collectionByKey } from '@/lib/collections';
@@ -11,7 +12,7 @@ const MIN_REVIEWS = 5;
 export default async function CollectionPage({ params }: { params: { key: string } }) {
   const col = collectionByKey(params.key);
   if (!col) {
-    return (<><div className="top"><a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a><h1>ไม่พบคอลเลกชัน</h1></div></>);
+    return (<><div className="top"><Link className="back" href="/"><Icon n="back" size={18} /> สำรวจ</Link><h1>ไม่พบคอลเลกชัน</h1></div></>);
   }
 
   let rows: any[] = [];
@@ -30,7 +31,7 @@ export default async function CollectionPage({ params }: { params: { key: string
   return (
     <>
       <div className="top">
-        <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
+        <Link className="back" href="/"><Icon n="back" size={18} /> สำรวจ</Link>
         <div className="hi"><Icon n={col.icon} size={15} /> ไกด์ท้องถิ่น</div>
         <h1>{col.th}</h1>
         <p className="top-sub">{col.sub} · {rows.length} ที่</p>
@@ -43,7 +44,7 @@ export default async function CollectionPage({ params }: { params: { key: string
           const open = openNow(p.opening_hours);
           const fresh = freshLabel(p.last_verified_at);
           return (
-            <a className="lrow" href={`/place/${p.id}`} key={p.id}>
+            <Link className="lrow" href={`/place/${p.id}`} key={p.id}>
               <span className="lthumb-wrap"><img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" /></span>
               <div className="lc">
                 <div className="lname">{i18n(p.name_i18n)}</div>
@@ -57,7 +58,7 @@ export default async function CollectionPage({ params }: { params: { key: string
                 {fresh && <div className="lfresh"><Icon n="check" size={11} /> {fresh}</div>}
               </div>
               {scored ? <span className={`score ${cls}`}>{p.rev_avg}</span> : <span className="newbadge">ใหม่<br />น่าลอง</span>}
-            </a>
+            </Link>
           );
         })}
         {rows.length === 0 && <p className="empty">ยังไม่มีร้านในคอลเลกชันนี้</p>}

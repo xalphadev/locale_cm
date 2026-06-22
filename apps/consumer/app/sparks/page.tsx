@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, demoUserId, i18n } from '@/lib/db';
 import { Icon } from '../icons';
 import { spendSparksAction } from '../actions';
@@ -21,13 +22,13 @@ export default async function SparksStore() {
     }
   } catch { down = true; }
 
-  if (down) return (<><div className="top"><a className="back" href="/wallet"><Icon n="back" size={18} /> กระเป๋า</a><h1>ร้านค้า Sparks</h1></div>
+  if (down) return (<><div className="top"><Link className="back" href="/wallet"><Icon n="back" size={18} /> กระเป๋า</Link><h1>ร้านค้า Sparks</h1></div>
     <div className="body"><p className="empty">ต่อฐานข้อมูลไม่ได้</p></div></>);
 
   return (
     <>
       <div className="top">
-        <a className="back" href="/wallet"><Icon n="back" size={18} /> กระเป๋า</a>
+        <Link className="back" href="/wallet"><Icon n="back" size={18} /> กระเป๋า</Link>
         <div className="hi">แต้มแอป · แลกของแต่ง</div>
         <h1>ร้านค้า Sparks</h1>
         <div className="sparkbal"><Icon n="sparkles" size={15} style={{ verticalAlign: '-.18em' }} /> {sparks} Sparks</div>

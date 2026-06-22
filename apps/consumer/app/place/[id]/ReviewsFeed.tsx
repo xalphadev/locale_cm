@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Icon } from '../../icons';
 import { reportReviewAction, fetchReviewsAction } from '../../actions';
@@ -36,7 +37,7 @@ export function ReviewsFeed({ placeId, initial, total, preview = false, reviewsH
 
       {preview
         ? (total > items.length && reviewsHref && (
-            <a className="rvmore" href={reviewsHref}>ดูรีวิวทั้งหมด ({total}) <Icon n="chevR" size={15} /></a>
+            <Link className="rvmore" href={reviewsHref}>ดูรีวิวทั้งหมด ({total}) <Icon n="chevR" size={15} /></Link>
           ))
         : (items.length < total && (
             <button className="rvmore" type="button" onClick={loadMore} disabled={pending}>

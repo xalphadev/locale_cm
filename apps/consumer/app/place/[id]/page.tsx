@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, cover, coverSet, demoUserId } from '@/lib/db';
 import { openNow as computeOpen, bkkNow } from '@/lib/local';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
@@ -109,7 +110,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   } catch { /* db down */ }
 
   if (!p) {
-    return (<><div className="top"><a className="back" href="/"><Icon n="back" size={18} /> กลับ</a><h1>ไม่พบสถานที่</h1></div>
+    return (<><div className="top"><Link className="back" href="/"><Icon n="back" size={18} /> กลับ</Link><h1>ไม่พบสถานที่</h1></div>
       <div className="body"><p className="empty">สถานที่นี้อาจยังไม่เผยแพร่</p></div></>);
   }
   const pt = parsePoint(p.geo);
@@ -176,7 +177,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         {videoUrl && <span className="vidtag frost"><Icon n="play" size={12} fill="currentColor" /> วิดีโอบรรยากาศ</span>}
         <div className="scrim" />
         {!videoUrl && <HeroZoom images={galleryImages} />}
-        <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
+        <Link className="back-fab" href="/"><Icon n="back" size={20} /></Link>
         <div className="dhero-fabs">
           <form action={toggleSaveAction.bind(null, p.id)}>
             <button className={`bm ${p.saved ? 'on' : ''}`} type="submit"><Icon n="bookmark" size={18} fill={p.saved ? 'currentColor' : 'none'} /></button>
@@ -273,11 +274,11 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
 
         {cross && (
-          <a className="crossref" href={`/place/${p.id}?view=${cross.to}`}>
+          <Link className="crossref" href={`/place/${p.id}?view=${cross.to}`}>
             <span className="crossref-ic"><Icon n={cross.icon} size={20} /></span>
             <div className="crossref-tx"><div className="crossref-t">{cross.t}</div><div className="crossref-s">{cross.s}</div></div>
             <span className="crossref-go"><Icon n="chevR" size={18} /></span>
-          </a>
+          </Link>
         )}
 
         {deals.length > 0 && (
@@ -321,9 +322,9 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           {(i18n(p.address_i18n) || p.district_name) && <div className="info-row"><Icon n="pin" size={18} className="flat-ico" /><span>{i18n(p.address_i18n) || `${i18n(p.district_name)} · เชียงใหม่`}</span></div>}
           {p.phone && <div className="info-row"><Icon n="phone" size={18} className="flat-ico" /><a href={`tel:${p.phone}`}>{p.phone}</a></div>}
           {p.line_id && <div className="info-row"><Icon n="chat" size={18} className="flat-ico" /><span>LINE: {p.line_id}</span></div>}
-          {p.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><a href={p.website}>{p.website}</a></div>}
+          {p.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><Link href={p.website}>{p.website}</Link></div>}
           {pt && <div className="info-row"><Icon n="directions" size={18} className="flat-ico" /><a href={mapUrl} target="_blank">เปิดใน Google Maps</a></div>}
-          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><a href={`/map?focus=${p.id}`}>ดูบนแผนที่ในแอป</a></div>
+          <div className="info-row"><Icon n="map" size={18} className="flat-ico" /><Link href={`/map?focus=${p.id}`}>ดูบนแผนที่ในแอป</Link></div>
         </div>
 
         {Object.keys(hours).length > 0 && (
@@ -349,14 +350,14 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
 
         {quests.length > 0 && (<>
           <h2>อยู่ในเควสต์</h2>
-          {quests.map((qu) => <a className="erow" key={qu.id} href="/passport"><div className="ethumb" style={{ background: 'linear-gradient(135deg,#E7C56A,#C9962A)' }}><Icon n="ticket" size={24} /></div>
-            <div><div className="nm">{i18n(qu.title_i18n)}</div><div className="meta">เช็คอินที่นี่เพื่อเก็บแสตมป์</div></div><span className="chev"><Icon n="chevR" size={18} /></span></a>)}
+          {quests.map((qu) => <Link className="erow" key={qu.id} href="/passport"><div className="ethumb" style={{ background: 'linear-gradient(135deg,#E7C56A,#C9962A)' }}><Icon n="ticket" size={24} /></div>
+            <div><div className="nm">{i18n(qu.title_i18n)}</div><div className="meta">เช็คอินที่นี่เพื่อเก็บแสตมป์</div></div><span className="chev"><Icon n="chevR" size={18} /></span></Link>)}
         </>)}
 
         {events.length > 0 && (<>
           <h2>กิจกรรมที่นี่</h2>
-          {events.map((e) => <a className="erow" key={e.id} href={`/event/${e.id}`}><div className="ethumb"><Icon n={KIND_ICON[e.kind] || 'sparkles'} size={24} /></div>
-            <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta"><Icon n="calendar" size={13} className="flat-ico" style={{ color: 'var(--muted)' }} /> {e.d} {THM[e.m - 1]}</div></div><span className="chev"><Icon n="chevR" size={18} /></span></a>)}
+          {events.map((e) => <Link className="erow" key={e.id} href={`/event/${e.id}`}><div className="ethumb"><Icon n={KIND_ICON[e.kind] || 'sparkles'} size={24} /></div>
+            <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta"><Icon n="calendar" size={13} className="flat-ico" style={{ color: 'var(--muted)' }} /> {e.d} {THM[e.m - 1]}</div></div><span className="chev"><Icon n="chevR" size={18} /></span></Link>)}
         </>)}
 
         {similar.length > 0 && (<>
@@ -365,11 +366,11 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             {similar.map((s) => {
               const sc = (s.rev_n || 0) >= 5;
               return (
-                <a className="openc" key={s.id} href={`/place/${s.id}`}>
+                <Link className="openc" key={s.id} href={`/place/${s.id}`}>
                   <div className="op"><img src={cover(s.id, s.subcategory, s.cat, 300, 200)} alt="" loading="lazy" /></div>
                   <div className="onm">{i18n(s.name_i18n)}</div>
                   <div className="ometa">{s.subcategory || catTH(s.cat)}{sc ? ` · ★ ${s.rev_avg}` : ''}{s.price_band ? ` · ${'฿'.repeat(Number(s.price_band))}` : ''}</div>
-                </a>
+                </Link>
               );
             })}
           </div>

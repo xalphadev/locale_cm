@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Icon } from '../icons';
 import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
@@ -100,7 +101,7 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
       {full && (
         <div className="map-top">
           <div className="map-searchrow">
-            <a className="map-back" href={backHref || '/stay'} aria-label="กลับไปรายการ"><Icon n="back" size={18} /></a>
+            <Link className="map-back" href={backHref || '/stay'} aria-label="กลับไปรายการ"><Icon n="back" size={18} /></Link>
             {children}
           </div>
         </div>
@@ -108,7 +109,7 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
       {!ready && <div className="map-loading">กำลังโหลดแผนที่…</div>}
       <div className="map-rail" ref={railRef} onScroll={onRailScroll}>
         {pins.map((p) => (
-          <a key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}${qs || ''}`}
+          <Link key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}${qs || ''}`}
             className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
             <img src={p.img} alt="" loading="lazy" />
             <div className="mc">
@@ -120,7 +121,7 @@ export default function StayMapView({ pins, focus, full, backHref, qs, children 
               {p.priceFrom != null && <div className="mc-price">เริ่ม ฿{p.priceFrom.toLocaleString()}</div>}
             </div>
             <Icon n="chevR" size={18} className="flat-ico" />
-          </a>
+          </Link>
         ))}
         {pins.length === 0 && <div className="map-card" style={{ justifyContent: 'center', color: 'var(--muted)' }}>ไม่มีที่พักที่ปักหมุดในตัวกรองนี้</div>}
       </div>

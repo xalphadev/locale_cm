@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, cover } from '@/lib/db';
 import { Icon, KIND_ICON } from '../../icons';
 
@@ -20,7 +21,7 @@ export default async function EventDetail({ params }: { params: { id: string } }
   } catch { /* db down */ }
 
   if (!e) {
-    return (<><div className="top"><a className="back" href="/"><Icon n="back" size={18} /> กลับ</a><h1>ไม่พบกิจกรรม</h1></div>
+    return (<><div className="top"><Link className="back" href="/"><Icon n="back" size={18} /> กลับ</Link><h1>ไม่พบกิจกรรม</h1></div>
       <div className="body"><p className="empty">กิจกรรมนี้อาจจบแล้วหรือยังไม่เผยแพร่</p></div></>);
   }
 
@@ -29,7 +30,7 @@ export default async function EventDetail({ params }: { params: { id: string } }
       <div className="detail-hero">
         <img src={cover('event' + e.id, e.kind, 'see', 760, 500)} alt="" />
         <div className="scrim" />
-        <a className="back-fab" href="/"><Icon n="back" size={20} /></a>
+        <Link className="back-fab" href="/"><Icon n="back" size={20} /></Link>
         <div className="dtitle">
           <span className="frost" style={{ marginBottom: 8 }}><Icon n={KIND_ICON[e.kind] || 'sparkles'} size={13} /> {eLabel(e.kind)}{e.is_recurring ? ' · จัดประจำ' : ''}</span>
           <h1>{i18n(e.title_i18n)}</h1>
@@ -47,11 +48,11 @@ export default async function EventDetail({ params }: { params: { id: string } }
 
         {e.place_id && (<>
           <h2>สถานที่จัด</h2>
-          <a className="erow" href={`/place/${e.place_id}`}>
+          <Link className="erow" href={`/place/${e.place_id}`}>
             <div className="ethumb" style={{ background: 'linear-gradient(135deg,#1E8E7E,#0F6E5F)' }}><Icon n="pin" size={24} /></div>
             <div><div className="nm">{i18n(e.place_name)}</div><div className="meta">ดูรายละเอียดสถานที่</div></div>
             <span className="chev"><Icon n="chevR" size={18} /></span>
-          </a>
+          </Link>
         </>)}
       </div>
     </>

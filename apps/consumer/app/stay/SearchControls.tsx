@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '../icons';
 import DateRangePicker from '../DateRangePicker';
 import StayGuests from './StayGuests';
@@ -17,8 +18,8 @@ export function SearchControls({ d, action = '/stay/search', tabsBase = '/stay/s
   return (
     <div className="staycard">
       <div className="staytabs">
-        <a href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' }, tabsBase)} className={`staytab ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</a>
-        <a href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' }, tabsBase)} className={`staytab ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</a>
+        <Link href={href({ mode: 'monthly', kind: '', sort: '', fr: '', pr: '' }, tabsBase)} className={`staytab ${mode === 'monthly' ? 'on' : ''}`}>เช่ารายเดือน</Link>
+        <Link href={href({ mode: 'daily', kind: '', sort: '', fr: '', pr: '' }, tabsBase)} className={`staytab ${mode === 'daily' ? 'on' : ''}`}>เช่ารายวัน</Link>
       </div>
       <form className="staysearch" method="GET" action={action}>
         {carry}
@@ -28,7 +29,7 @@ export function SearchControls({ d, action = '/stay/search', tabsBase = '/stay/s
         {rooms ? <input type="hidden" name="rooms" value={String(rooms)} /> : null}
         <span className="gf-ic"><Icon n="search" size={17} /></span>
         <span className="gf-cell"><span className="gf-l">ค้นหา</span><input name="q" defaultValue={qtext} placeholder="ชื่อที่พัก / ย่าน" autoComplete="off" /></span>
-        {qtext && <a className="ss-x" href={href({ q: '' }, action)} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></a>}
+        {qtext && <Link className="ss-x" href={href({ q: '' }, action)} aria-label="ล้างคำค้น"><Icon n="x" size={16} /></Link>}
       </form>
       {/* where/when/who in one form → one CTA. picker writes from/to; StayGuests writes ad/ch/rooms; hidden carries the rest. */}
       <form className="staydates" method="GET" action={action}>
@@ -36,7 +37,7 @@ export function SearchControls({ d, action = '/stay/search', tabsBase = '/stay/s
         {mode === 'daily' && <DateRangePicker mode="range" split fromName="from" toName="to" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" initialFrom={fromQ || undefined} initialTo={toQ || undefined} />}
         <StayGuests adultsName="ad" childrenName="ch" roomsName="rooms" initialAdults={adults} initialChildren={children} initialRooms={rooms || 1} showRooms={mode === 'daily'} roomsLive={dateMode} />
         <button type="submit" className="staydates-go"><Icon n="search" size={15} /> {mode === 'daily' ? 'ค้นหาวันว่าง' : 'ค้นหา'}</button>
-        {dateMode && <a className="staydates-clear" href={href({}, action)}>ล้างวันที่</a>}
+        {dateMode && <Link className="staydates-clear" href={href({}, action)}>ล้างวันที่</Link>}
       </form>
     </div>
   );

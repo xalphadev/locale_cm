@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '../icons';
 import { toggleSaveAction } from '../actions';
 import { STAY_KIND_TH as KIND_TH } from '@/lib/facets';
@@ -21,19 +22,19 @@ export function PlaceStayCard({ p, qs }: { p: StayPlace; qs?: string }) {
   const scored = (p.ratingN ?? 0) >= 5; // fairness: numeric score only once a place has ≥5 verified reviews
   return (
     <div className="scard">
-      <a className="scard-img" href={href}>
+      <Link className="scard-img" href={href}>
         <img src={p.img} alt="" loading="lazy" />
         <span className={`pchip ${chip.cls}`}>{chip.label}</span>
-      </a>
+      </Link>
       <div className="scard-body">
         <div className="scard-head">
-          <a className="scard-nm" href={href}>{p.name}</a>
+          <Link className="scard-nm" href={href}>{p.name}</Link>
           {scored && <span className="scard-rate"><Icon n="star" size={12} fill="currentColor" /> {p.rating}</span>}
         </div>
         <div className="scard-loc"><Icon n="pin" size={12} /> {KIND_TH[p.kind] || 'ที่พัก'}{p.district ? ` · ${p.district}` : ''}{p.units > 1 ? ` · ${p.units} แบบห้อง` : ''}</div>
         <div className="scard-foot">
           <span className="scard-price">{price}</span>
-          <a className="scard-go" href={href}>ดูห้องว่าง <Icon n="chevR" size={14} /></a>
+          <Link className="scard-go" href={href}>ดูห้องว่าง <Icon n="chevR" size={14} /></Link>
         </div>
       </div>
       <form className="scard-save" action={toggleSaveAction.bind(null, p.id)}>

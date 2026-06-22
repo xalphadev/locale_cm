@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n, cover } from '@/lib/db';
 import { Icon } from '../icons';
 import MapPeek from '../MapPeek';
@@ -48,7 +49,7 @@ function PlanForm({ areas, sel }: { areas: any[]; sel: { area: string; vibe: str
       {opts.map(([k, l]) => {
         const params = new URLSearchParams({ area: sel.area, vibe: sel.vibe, budget: sel.budget });
         params.set(name, k);
-        return <a key={k} href={`/plan?${params.toString()}`} className={`pl-chip ${cur === k ? 'on' : ''}`}>{l}</a>;
+        return <Link key={k} href={`/plan?${params.toString()}`} className={`pl-chip ${cur === k ? 'on' : ''}`}>{l}</Link>;
       })}
     </div>
   );
@@ -80,7 +81,7 @@ export default async function Plan({ searchParams }: { searchParams: { area?: st
 
   const header = (
     <div className="top">
-      <a className="back" href="/"><Icon n="back" size={18} /> สำรวจ</a>
+      <Link className="back" href="/"><Icon n="back" size={18} /> สำรวจ</Link>
       <div className="hi"><Icon n="sparkles" size={15} /> {dp.greet} · ไกด์ท้องถิ่น</div>
       <h1>วางแผนเที่ยวให้ฉัน</h1>
       <p className="top-sub">เลือกสไตล์ งบ และย่าน แล้วเราจัดเส้นทางจากร้านจริงให้</p>
@@ -159,7 +160,7 @@ export default async function Plan({ searchParams }: { searchParams: { area?: st
 
           <div className="pl-route">
             {stops.map((s, i) => (
-              <a className="pl-stop" key={s.id} href={`/place/${s.id}`}>
+              <Link className="pl-stop" key={s.id} href={`/place/${s.id}`}>
                 <div className="pl-num">{i + 1}</div>
                 <img className="pl-img" src={cover(s.id, s.subcategory, s.category, 130, 130)} alt="" loading="lazy" />
                 <div className="pl-body">
@@ -174,7 +175,7 @@ export default async function Plan({ searchParams }: { searchParams: { area?: st
                   <div className="pl-note">{s.slot.note} · ~฿{PB_COST[s.price_band] ?? 200}/คน</div>
                 </div>
                 <Icon n="chevR" size={18} className="pl-go" />
-              </a>
+              </Link>
             ))}
           </div>
           <p className="note" style={{ padding: '0 16px' }}>ประเมินค่าใช้จ่ายคร่าวๆ จากระดับราคาของร้าน — ใช้เป็นไกด์ ไม่ใช่ราคาจริง</p>

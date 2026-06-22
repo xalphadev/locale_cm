@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Icon } from '../icons';
 import { PlaceStayCard } from './PlaceStayCard';
@@ -13,7 +14,7 @@ function Rail({ title, items, more }: { title: string; items: any[]; more: strin
   if (!items.length) return null;
   return (
     <section className="staysec">
-      <div className="staysec-h"><h2>{title}</h2><a className="staysec-more" href={more}>ดูทั้งหมด <Icon n="chevR" size={14} /></a></div>
+      <div className="staysec-h"><h2>{title}</h2><Link className="staysec-more" href={more}>ดูทั้งหมด <Icon n="chevR" size={14} /></Link></div>
       <div className="stayrail">{items.map((p) => <StayRailCard key={p.id} p={p} />)}</div>
     </section>
   );
@@ -36,7 +37,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
   return (
     <div className="staybg">
       <div className="staytop">
-        <a className="back" href="/" aria-label="กลับ"><Icon n="back" size={19} /></a>
+        <Link className="back" href="/" aria-label="กลับ"><Icon n="back" size={19} /></Link>
         <div className="staytop-row">
           <span className="staytop-ic"><Icon n="bed" size={18} /></span>
           <div className="staytop-tx">
@@ -53,10 +54,10 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
           <div className="staysec-h"><h2>ตามประเภทที่พัก</h2></div>
           <div className="staytiles">
             {home.kinds.map((k) => (
-              <a key={k.kind} className="staytile" href={`/stay/search?${m}kind=${k.kind}`}>
+              <Link key={k.kind} className="staytile" href={`/stay/search?${m}kind=${k.kind}`}>
                 <span className="staytile-ic"><Icon n="bed" size={19} /></span>
                 <span className="staytile-tx"><b>{STAY_KIND_TH[k.kind] || 'ที่พัก'}</b><span>{k.n} ที่</span></span>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
@@ -69,7 +70,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
           <div className="staysec-h"><h2>ตามย่าน</h2></div>
           <div className="stayareas">
             {home.areas.map((a) => (
-              <a key={a.slug} className="stayarea" href={`/stay/search?${m}district=${a.slug}`}>{a.name} <span className="stayarea-n">{a.n}</span></a>
+              <Link key={a.slug} className="stayarea" href={`/stay/search?${m}district=${a.slug}`}>{a.name} <span className="stayarea-n">{a.n}</span></Link>
             ))}
           </div>
         </section>
@@ -81,15 +82,15 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
 
       {home.saved.length > 0 && (
         <section className="staysec">
-          <div className="staysec-h"><h2>บันทึกไว้</h2><a className="staysec-more" href="/stay/search?saved=1">ดูทั้งหมด <Icon n="chevR" size={14} /></a></div>
+          <div className="staysec-h"><h2>บันทึกไว้</h2><Link className="staysec-more" href="/stay/search?saved=1">ดูทั้งหมด <Icon n="chevR" size={14} /></Link></div>
           <div className="staylist">{home.saved.map((p: any) => <PlaceStayCard key={p.id} p={p} />)}</div>
         </section>
       )}
 
       <div className="staysec">
-        <a className="staymaplink" href="/stay/search"><Icon n="feed" size={16} /> ดูที่พักทั้งหมด (รายการ)</a>
-        <a className="staymaplink" href="/stay/map"><Icon n="map" size={16} /> ดูที่พักบนแผนที่</a>
-        <a className="staymaplink" href="/stay/requests"><Icon n="chat" size={16} /> คำขอที่พักของฉัน</a>
+        <Link className="staymaplink" href="/stay/search"><Icon n="feed" size={16} /> ดูที่พักทั้งหมด (รายการ)</Link>
+        <Link className="staymaplink" href="/stay/map"><Icon n="map" size={16} /> ดูที่พักบนแผนที่</Link>
+        <Link className="staymaplink" href="/stay/requests"><Icon n="chat" size={16} /> คำขอที่พักของฉัน</Link>
       </div>
       <p className="shopnote" style={{ margin: '12px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
     </div>

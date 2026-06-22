@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../../../icons';
 import { ReviewsFeed } from '../ReviewsFeed';
@@ -18,7 +19,7 @@ export default async function PlaceReviews({ params }: { params: { id: string } 
     }
   } catch { /* db down */ }
 
-  if (!p) return (<><div className="top"><a className="back" href="/"><Icon n="back" size={18} /> กลับ</a><h1>ไม่พบสถานที่</h1></div></>);
+  if (!p) return (<><div className="top"><Link className="back" href="/"><Icon n="back" size={18} /> กลับ</Link><h1>ไม่พบสถานที่</h1></div></>);
 
   const n = rev?.n ?? 0;
   const scored = n >= 5;
@@ -28,7 +29,7 @@ export default async function PlaceReviews({ params }: { params: { id: string } 
   return (
     <>
       <div className="top">
-        <a className="back" href={`/place/${p.id}`}><Icon n="back" size={18} /> {i18n(p.name_i18n)}</a>
+        <Link className="back" href={`/place/${p.id}`}><Icon n="back" size={18} /> {i18n(p.name_i18n)}</Link>
         <h1>รีวิว{n ? ` (${n})` : ''}</h1>
       </div>
       <div className="dbody">

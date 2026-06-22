@@ -1345,6 +1345,18 @@ a.pcname{color:var(--text)}
    inside a single shadowed .staycard. 3-step radius scale (20 card / 12 inner / 999 pills), rationed
    accent, fixed-height hairline chip row. This layer supersedes the scattered stay rules above. */
 /* /stay: white at the top, gently fading down to the page grey; header rides on it (transparent) */
+/* ===== skeleton loading (loading.tsx) — shimmer shown while a soft navigation resolves a route ===== */
+@keyframes cskel-sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.cskel{background:linear-gradient(90deg,#ECECEF 25%,#F4F4F7 50%,#ECECEF 75%);background-size:200% 100%;animation:cskel-sh 1.35s ease-in-out infinite;border-radius:10px}
+@media (prefers-reduced-motion:reduce){.cskel{animation:none}}
+.cskelpg{padding:14px 16px 96px}
+.cskel-top{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.cskel-list{display:flex;flex-direction:column;gap:16px}
+.cskel-card{display:flex;flex-direction:column;gap:8px}
+.cskel-chips{display:flex;gap:8px;margin:14px 0 16px;overflow:hidden}
+.cskel-hero{width:100%}
+.cskel-detail{padding:16px}
+
 .staybg{background:linear-gradient(180deg,#FFFFFF 0%,#FFFFFF 46vh,var(--bg) 100vh)}
 .staytop{background:transparent;padding:16px 16px 6px}
 .staytop-ic{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--navy));color:#fff;display:flex;align-items:center;justify-content:center;flex:none}

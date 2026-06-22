@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, demoUserId, i18n, cover, getLocale } from '@/lib/db';
 import { Icon, CAT_ICON } from './icons';
 import MapPeek from './MapPeek';
@@ -100,7 +101,7 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
   const open = openNow(p.opening_hours);
   const fresh = freshLabel(p.last_verified_at);
   return (
-    <a className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
+    <Link className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
       {rank != null && <span className="rank">{rank}</span>}
       <span className="lthumb-wrap">
         <img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
@@ -122,7 +123,7 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
       {scored
         ? <span className={`score ${cls}`}>{p.rev_avg}</span>
         : <span className="newbadge">ใหม่<br />น่าลอง</span>}
-    </a>
+    </Link>
   );
 }
 
@@ -162,7 +163,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       <div className="appbar">
         <div><div className="greet">สำรวจรอบตัวคุณ</div>
           <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> เชียงใหม่ <Icon n="chevD" size={15} /></div></div>
-        <div className="acts"><LangSwitch cur={getLocale()} /><a className="iconbtn" href="/inbox" aria-label="การแจ้งเตือน"><Icon n="bell" size={20} /></a><a className="avatar-btn" href="/profile">ก</a></div>
+        <div className="acts"><LangSwitch cur={getLocale()} /><Link className="iconbtn" href="/inbox" aria-label="การแจ้งเตือน"><Icon n="bell" size={20} /></Link><Link className="avatar-btn" href="/profile">ก</Link></div>
       </div>
       <form className="searchbar" action="/"><Icon n="search" size={20} />
         <input name="q" defaultValue={query} placeholder="ลองพิมพ์: คืนนี้มีแฟน งบ 1,000 แถวนิมมาน" /></form>
@@ -192,12 +193,12 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
             {interpChips.map((c, i) => <span className="ichip" key={i}>{c}</span>)}
           </div>
         )}
-        {nearMe && <a className="nearcta" href="/map"><Icon n="locate" size={16} /> เรียงตามระยะใกล้ฉันบนแผนที่ →</a>}
-        <div className="segmented">{FILTERS.map((f) => <a key={f.k} href={f.k ? `/?cat=${f.k}${area ? '&area=' + area : ''}` : (area ? `/?area=${area}` : '/')} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</a>)}</div>
+        {nearMe && <Link className="nearcta" href="/map"><Icon n="locate" size={16} /> เรียงตามระยะใกล้ฉันบนแผนที่ →</Link>}
+        <div className="segmented">{FILTERS.map((f) => <Link key={f.k} href={f.k ? `/?cat=${f.k}${area ? '&area=' + area : ''}` : (area ? `/?area=${area}` : '/')} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</Link>)}</div>
         {offered.length > 0 && (
           <div className="facetbar">
-            {offered.map((tok) => <a key={tok} href={facetHref(tok)} className={`facet ${fset.has(tok) ? 'on' : ''}`}>{facetLabel(tok)}</a>)}
-            {facets.length > 0 && <a className="facet-clear" href={facetHref(null)}>ล้าง</a>}
+            {offered.map((tok) => <Link key={tok} href={facetHref(tok)} className={`facet ${fset.has(tok) ? 'on' : ''}`}>{facetLabel(tok)}</Link>)}
+            {facets.length > 0 && <Link className="facet-clear" href={facetHref(null)}>ล้าง</Link>}
           </div>
         )}
         <h2 style={{ padding: '0 16px', margin: '10px 0 0' }}>{heading}</h2>
@@ -215,26 +216,26 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       {header}
 
       {/* time-aware hero — the "what now" moment + local planner entry */}
-      <a className={`lhero dp-${dp.key}`} href="/plan">
+      <Link className={`lhero dp-${dp.key}`} href="/plan">
         <div className="lhero-tx">
           <div className="lhero-g"><Icon n={dp.icon} size={16} /> {dp.greet}</div>
           <div className="lhero-t">{dp.tagline}</div>
           <div className="lhero-s">{openList.length > 0 ? `${openList.length} ที่ใกล้คุณเปิดอยู่ตอนนี้ · แตะให้ช่วยวางแผน` : dp.sub}</div>
         </div>
         <span className="lhero-cta"><Icon n="sparkles" size={15} /> วางแผนให้</span>
-      </a>
+      </Link>
 
       <div className="cats">
-        {CATS.map((c) => <a className="cat" key={c.l} href={(c as any).to || `/?${(c as any).qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></a>)}
+        {CATS.map((c) => <Link className="cat" key={c.l} href={(c as any).to || `/?${(c as any).qs}`}><span className="ci"><Icon n={c.i} size={25} /></span><span className="cl">{c.l}</span></Link>)}
       </div>
 
       {/* areas — browse by neighbourhood */}
       {d.areas?.length > 0 && (
         <div className="arearail">
           {d.areas.map((a: any) => (
-            <a className="areachip" key={a.slug} href={`/?area=${a.slug}`}>
+            <Link className="areachip" key={a.slug} href={`/?area=${a.slug}`}>
               <Icon n="pin" size={13} /> {i18n(a.name_i18n)} <span className="arean">{a.n}</span>
-            </a>
+            </Link>
           ))}
         </div>
       )}
@@ -249,12 +250,12 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
             {openList.map((p: any) => {
               const o = openNow(p.opening_hours);
               return (
-                <a className="openc" key={p.id} href={`/place/${p.id}`}>
+                <Link className="openc" key={p.id} href={`/place/${p.id}`}>
                   <div className="op"><img src={cover(p.id, p.subcategory, p.category, 300, 200)} alt="" loading="lazy" />
                     <span className={`opb ${o.closesSoon ? 'soon' : ''}`}>{o.label}</span></div>
                   <div className="onm">{i18n(p.name_i18n)}</div>
                   <div className="ometa">{p.subcategory || catTH(p.category)}{p.rev_avg ? ` · ★ ${p.rev_avg}` : ''}</div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -262,13 +263,13 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       )}
 
       {d.quest && (
-        <a className="qbanner" href="/passport" style={{ margin: '10px 16px 0' }}>
+        <Link className="qbanner" href="/passport" style={{ margin: '10px 16px 0' }}>
           <span className="qi"><Icon n="ticket" size={24} /></span>
           <div className="qt"><div className="qname">{i18n(d.quest.title_i18n)}</div>
             <div className="qbar"><div className="qfill" style={{ width: `${Math.round((d.stamps / need) * 100)}%` }} /></div>
             <div className="qsub">เก็บแล้ว {d.stamps}/{need} แสตมป์ · รับฟรีกาแฟ</div></div>
           <span className="qgo"><Icon n="chevR" size={20} /></span>
-        </a>
+        </Link>
       )}
 
       {d.deals.length > 0 && (
@@ -279,7 +280,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
               const left = dl.quota_total ? dl.quota_total - dl.quota_used : null;
               const dd = daysLeft(dl.ends_at);
               return (
-                <a className="dealc" key={dl.id} href={`/place/${dl.place_id}`}>
+                <Link className="dealc" key={dl.id} href={`/place/${dl.place_id}`}>
                   <div className="dp"><img src={cover(dl.place_id, dl.psub, dl.pcat, 360, 200)} alt="" loading="lazy" />
                     <span className="dbadge">{dealLabel(dl.deal_type, dl.value_pct, dl.value_minor)}</span></div>
                   <div className="db">
@@ -290,7 +291,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
                       {left != null && <span className="u2">เหลือ {left} สิทธิ์</span>}
                     </div>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -301,31 +302,31 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       <div className="sec"><h2>ไกด์ท้องถิ่น</h2><span className="more" style={{ color: 'var(--muted)' }}>คัดให้แล้ว</span></div>
       <div className="collrail">
         {COLLECTIONS.map((c) => (
-          <a className="collc" key={c.key} href={`/collection/${c.key}`}>
+          <Link className="collc" key={c.key} href={`/collection/${c.key}`}>
             <img src={cover('coll-' + c.key, c.repSub, 'eat', 320, 220)} alt="" loading="lazy" />
             <span className="collgr" />
             <span className="collic"><Icon n={c.icon} size={16} /></span>
             <span className="colltx"><span className="collt">{c.th}</span><span className="colls">{c.sub}</span></span>
-          </a>
+          </Link>
         ))}
       </div>
 
-      <div className="segmented">{SEGS.map((s) => <a key={s.k} href={s.k ? `/?tab=${s.k}` : '/'} className={`seg ${tab === s.k ? 'on' : ''}`}>{s.l}</a>)}</div>
+      <div className="segmented">{SEGS.map((s) => <Link key={s.k} href={s.k ? `/?tab=${s.k}` : '/'} className={`seg ${tab === s.k ? 'on' : ''}`}>{s.l}</Link>)}</div>
       <div className="llist">{d.places.map((p: any, i: number) => <LRow key={p.id} p={p} rank={i + 1} />)}</div>
 
       {d.community.length > 0 && (
         <>
-          <div className="sec"><h2>เพื่อนบ้านพูดถึง</h2><a className="more" href="/community">ดูทั้งหมด</a></div>
+          <div className="sec"><h2>เพื่อนบ้านพูดถึง</h2><Link className="more" href="/community">ดูทั้งหมด</Link></div>
           <div className="llist">
             {d.community.map((r: any, i: number) => (
-              <a className="act" key={i} href={`/place/${r.pid}`}>
+              <Link className="act" key={i} href={`/place/${r.pid}`}>
                 <span className="aav">{(r.display_name || 'ผ')[0]}</span>
                 <div className="aw">
                   <div className="al"><b>{r.display_name}</b> รีวิว <b>{i18n(r.pname)}</b></div>
                   <div className="ab">{i18n(r.body_i18n)}</div>
                   <div className="as">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={12} />)}</div>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </>
@@ -336,11 +337,11 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
           <div className="sec"><h2>กิจกรรมเร็วๆ นี้</h2></div>
           <div className="crail">
             {d.events.map((e: any) => (
-              <a className="emini" key={e.id} href={`/event/${e.id}`}>
+              <Link className="emini" key={e.id} href={`/event/${e.id}`}>
                 <div className="ep"><img src={cover('event' + e.id, e.kind, 'see', 320, 220)} alt="" loading="lazy" /></div>
                 <div className="eb"><div className="en">{i18n(e.title_i18n)}</div>
                   <div className="ed"><Icon n="calendar" size={12} className="flat-ico" style={{ color: 'var(--muted)' }} /> {e.d} {THM[e.m - 1]}</div></div>
-              </a>
+              </Link>
             ))}
           </div>
         </>

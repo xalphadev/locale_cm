@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { q, demoUserId } from '@/lib/db';
 import { Icon } from '../../icons';
 import { PostCard } from '../parts';
@@ -72,13 +73,13 @@ export default async function PostDetail({ params }: { params: { key: string } }
   } catch { /* db down */ }
 
   if (!it) {
-    return (<><div className="top"><a className="back" href="/feed"><Icon n="back" size={18} /> กลับ</a><h1>ไม่พบโพสต์</h1></div>
+    return (<><div className="top"><Link className="back" href="/feed"><Icon n="back" size={18} /> กลับ</Link><h1>ไม่พบโพสต์</h1></div>
       <div className="feed"><p className="empty">โพสต์นี้อาจถูกลบหรือหมดอายุแล้ว</p></div></>);
   }
 
   return (
     <>
-      <div className="top"><a className="back" href="/feed"><Icon n="back" size={18} /> ฟีด</a><h1>ความคิดเห็น</h1></div>
+      <div className="top"><Link className="back" href="/feed"><Icon n="back" size={18} /> ฟีด</Link><h1>ความคิดเห็น</h1></div>
       <div className="feed">
         <PostCard it={it} lk={lk} comments={comments} commentCount={comments.length} mode="detail" />
       </div>

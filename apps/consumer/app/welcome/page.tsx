@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Icon } from '../icons';
 
@@ -72,8 +73,8 @@ export default function Welcome() {
       <h1>เที่ยว กิน พัก <b>ในเชียงใหม่</b><br />ครบ จบ ในแอปเดียว</h1>
       <p className="welcome-sub">รวมคาเฟ่ ร้านอาหาร ที่เที่ยว และที่พัก — สะสมแต้มร้าน เก็บที่ชอบ และร่วมกิจกรรมในแอป</p>
 
-      <a className="welcome-cta" href="/">เริ่มใช้งาน</a>
-      <p className="welcome-signin">อยากสะสมแต้ม เก็บที่ชอบ? <a href="/register">สมัครสมาชิก</a> · <a href="/login">เข้าสู่ระบบ</a></p>
+      <Link className="welcome-cta" href="/">เริ่มใช้งาน</Link>
+      <p className="welcome-signin">อยากสะสมแต้ม เก็บที่ชอบ? <Link href="/register">สมัครสมาชิก</Link> · <Link href="/login">เข้าสู่ระบบ</Link></p>
     </div>
   );
 }
