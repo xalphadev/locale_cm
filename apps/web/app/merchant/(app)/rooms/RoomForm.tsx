@@ -1,10 +1,71 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../ui';
 import { BILLS, AMEN, BUILDING } from './constants';
 
 // local pure i18n (avoid importing the server-only @/lib/db into this client component)
 const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '' : '');
+
+const MAX_PHOTOS = 8; // keep in sync with MAX_UPLOADS in lib/storage.ts (server caps too)
+
+// Real photo picker — uploads go to MinIO via the `photos` field (saveUploads in the action). No URL pasting.
+// Files live in React state; a DataTransfer rebuilds the hidden <input>.files so add/remove before submit works.
+function PhotoUpload({ existing }: { existing?: string[] }) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [drag, setDrag] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => () => { previews.forEach((u) => URL.revokeObjectURL(u)); }, [previews]);
+
+  const apply = (next: File[]) => {
+    const capped = next.slice(0, MAX_PHOTOS);
+    const dt = new DataTransfer();
+    capped.forEach((f) => dt.items.add(f));
+    if (inputRef.current) inputRef.current.files = dt.files;
+    setFiles(capped);
+    setPreviews(capped.map((f) => URL.createObjectURL(f)));
+  };
+  const add = (list: FileList | null) => {
+    if (!list) return;
+    apply([...files, ...Array.from(list).filter((f) => f.type.startsWith('image/'))]);
+  };
+
+  return (
+    <>
+      <input ref={inputRef} type="file" name="photos" accept="image/*" multiple hidden onChange={(e) => add(e.target.files)} />
+      <div className={`upz ${drag ? 'on' : ''}`} role="button" tabIndex={0}
+        onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
+        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); add(e.dataTransfer.files); }}>
+        <span className="upz-ic"><Icon n="image" size={26} /></span>
+        <b>แตะเพื่อเลือกรูป หรือลากรูปมาวาง</b>
+        <span className="upz-sub">JPG · PNG · WEBP — สูงสุด {MAX_PHOTOS} รูป · ระบบย่อ + อัปโหลดให้อัตโนมัติ</span>
+      </div>
+      {files.length > 0 && (
+        <>
+          <div className="upz-grid">
+            {previews.map((src, i) => (
+              <div className="upz-thumb" key={src}>
+                <img src={src} alt="" />
+                <button type="button" className="upz-x" aria-label="ลบรูปนี้" onClick={() => apply(files.filter((_, j) => j !== i))}>×</button>
+                {i === 0 && <span className="upz-cover">รูปปก</span>}
+              </div>
+            ))}
+          </div>
+          <p className="fhint">เลือกแล้ว {files.length}/{MAX_PHOTOS} รูป · รูปแรกคือรูปปก — ลากเพิ่มหรือกด × เพื่อลบ</p>
+        </>
+      )}
+      {existing && existing.length > 0 && files.length === 0 && (
+        <div className="upz-existing">
+          <p className="fhint"><Icon n="image" size={13} /> รูปปัจจุบัน {existing.length} รูป — เลือกรูปใหม่เพื่อ<b>แทนที่ทั้งหมด</b></p>
+          <div className="upz-grid">{existing.slice(0, MAX_PHOTOS).map((u) => <div className="upz-thumb ro" key={u}><img src={u} alt="" /></div>)}</div>
+        </div>
+      )}
+    </>
+  );
+}
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id).
  *  Client component so the availability field + price/contract labels follow the chosen rental mode. */
@@ -28,11 +89,15 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> ข้อมูลห้อง</div>
         <div className="field"><label>ชื่อ{noun} *</label><input name="name_th" required defaultValue={u ? th(u.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
+        <div className="field"><label>รายละเอียด{noun} <span className="lbl-opt">(ลูกค้าเห็น)</span></label>
+          <textarea name="description_th" defaultValue={u ? th(u.description_i18n) : ''} placeholder="จุดเด่นที่ลูกค้าควรรู้ เช่น ห้องมุม วิวสวน ระเบียงกว้าง ใกล้ BTS เดิน 5 นาที เฟอร์ครบพร้อมเข้าอยู่" style={{ minHeight: 70 }} />
+          <p className="fhint">เว้นว่างได้ — ถ้าไม่กรอก ลูกค้าจะเห็นคำอธิบายรวมของร้านแทน</p></div>
         <div className="fgrid">
           <div className="field"><label>ประเภทเช่า</label>
             <select name="rental_mode" value={mode} onChange={(e) => setMode(e.target.value)}><option value="monthly">รายเดือน</option><option value="daily">รายวัน</option></select></div>
-          <div className="field"><label>ราคา (บาท/{monthly ? 'เดือน' : 'คืน'})</label><input name="price" type="number" min="0" defaultValue={baht(u?.price_minor)} placeholder="5500" /></div>
-          <div className="field"><label>รับกี่ท่าน</label><input name="capacity" type="number" min="1" defaultValue={u?.capacity ?? ''} placeholder="2" /></div>
+          <div className="field"><label>ราคา (บาท/{monthly ? 'เดือน' : 'คืน'})</label><input name="price" type="number" min="0" defaultValue={baht(u?.price_minor)} placeholder="5500" />
+            <p className="fhint">ไม่กรอก = ลูกค้าเห็น “สอบถามราคา”</p></div>
+          <div className="field"><label>รับกี่ท่าน</label><input name="capacity" type="number" min="1" max="50" defaultValue={u?.capacity ?? ''} placeholder="2" /></div>
           <div className="field"><label>ขนาด (ตร.ม.)</label><input name="room_size_sqm" type="number" min="0" defaultValue={u?.room_size_sqm ?? ''} placeholder="24" /></div>
         </div>
       </section>
@@ -43,8 +108,12 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
           // managed listing → vacancy is counted from the ผังห้อง board, not typed here
           <p className="fhint" style={{ margin: 0 }}><Icon n="grid" size={13} /> ห้องนี้นับจำนวนว่างจาก “ผังห้อง” อัตโนมัติ — แก้ที่ผังห้อง (เพิ่ม/ย้ายห้อง · ตั้งมีผู้เช่า) ไม่ใช่ที่นี่</p>
         ) : monthly ? (
-          <div className="field"><label>ตอนนี้ว่างกี่ห้อง</label><input name="available_units" type="number" min="0" defaultValue={u?.available_units ?? 1} />
-            <p className="fhint">ลูกค้าเห็นป้าย “ว่าง N ห้อง” — ปรับเร็วๆ ได้ที่หน้ารายละเอียดห้องด้วยปุ่ม +/−</p></div>
+          <div className="fgrid">
+            <div className="field"><label>ตอนนี้ว่างกี่ห้อง</label><input name="available_units" type="number" min="0" defaultValue={u?.available_units ?? 1} />
+              <p className="fhint">ลูกค้าเห็นป้าย “ว่าง N ห้อง” — ปรับเร็วๆ ได้ที่หน้ารายละเอียดห้องด้วยปุ่ม +/−</p></div>
+            <div className="field"><label>ว่างให้เข้าอยู่ตั้งแต่</label><input name="available_from" type="date" defaultValue={u?.available_from_ymd || ''} />
+              <p className="fhint">เว้นว่าง = เข้าอยู่ได้ทันที</p></div>
+          </div>
         ) : (
           <div className="field"><label>สถานะวันนี้</label><select name="daily_status" defaultValue={u?.daily_status || 'vacant'}><option value="vacant">ว่างวันนี้</option><option value="ask">สอบถามว่าง</option><option value="full">เต็มวันนี้</option></select>
             <p className="fhint">ลูกค้าเห็นสถานะว่าง/เต็มของวันนี้ — อัปเดตได้ที่หน้ารายละเอียดห้อง</p></div>
@@ -60,8 +129,8 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="wallet" size={15} /></span> ค่าใช้จ่าย & สัญญา</div>
         <div className="fgrid">
-          <div className="field"><label>มัดจำ (บาท)</label><input name="deposit" type="number" min="0" defaultValue={baht(u?.deposit_minor)} placeholder="5500" /></div>
-          <div className="field"><label>สัญญาขั้นต่ำ ({monthly ? 'เดือน' : 'คืน'})</label><input name="min_stay" type="number" min="0" defaultValue={u?.min_stay ?? ''} placeholder={monthly ? '3' : '1'} /></div>
+          {monthly && <div className="field"><label>มัดจำ (บาท)</label><input name="deposit" type="number" min="0" defaultValue={baht(u?.deposit_minor)} placeholder="5500" /></div>}
+          <div className="field"><label>{monthly ? 'สัญญาขั้นต่ำ (เดือน)' : 'เข้าพักขั้นต่ำ (คืน)'}</label><input name="min_stay" type="number" min="0" defaultValue={u?.min_stay ?? ''} placeholder={monthly ? '3' : '1'} /></div>
           <div className="field"><label>เฟอร์นิเจอร์</label><select name="furnished" defaultValue={u?.furnished || ''}><option value="">—</option><option value="furnished">เฟอร์ครบ</option><option value="partial">บางส่วน</option><option value="unfurnished">ไม่มี</option></select></div>
         </div>
         {monthly && (
@@ -114,11 +183,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> รูปห้อง</div>
-        <div className="field">
-          <div className="filewrap"><span className="fw-ic"><Icon n="image" size={18} /></span><input type="file" name="photos" accept="image/*" multiple /></div>
-          <p className="fhint">เลือกได้หลายรูป · JPG/PNG/WEBP ไม่เกิน 6MB ต่อรูป{u && u.image_urls?.length ? ` · มีอยู่แล้ว ${u.image_urls.length} รูป (อัปโหลดใหม่เพื่อแทนที่)` : ''}</p>
-        </div>
-        <div className="field"><label>หรือวางลิงก์รูป (ทีละบรรทัด)</label><textarea name="image_urls" placeholder="https://...jpg" style={{ minHeight: 44 }} /></div>
+        <PhotoUpload existing={u?.image_urls} />
       </section>
 
       <button className="btn btn-primary mform-save" type="submit">{submitLabel}</button>

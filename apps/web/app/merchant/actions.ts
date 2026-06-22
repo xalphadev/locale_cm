@@ -369,15 +369,19 @@ export async function createStayUnitAction(formData: FormData) {
   const period = mode === 'daily' ? 'night' : 'month';
   const num = (k: string) => { const v = s(formData, k); return v !== '' && Number.isFinite(Number(v)) ? Number(v) : null; };
   const priceMinor = num('price') != null ? Math.max(0, Math.round(num('price')! * 100)) : null;
-  const depositMinor = num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
+  // deposit is a monthly-tenancy concept; the daily form hides it, so never persist one for daily
+  const depositMinor = mode === 'monthly' && num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
+  const descTh = s(formData, 'description_th').slice(0, 2000).trim();
+  // available_from is monthly-only ("ว่างให้เข้าอยู่ตั้งแต่"); blank = available now (NULL)
+  const availFrom = mode === 'monthly' && /^\d{4}-\d{2}-\d{2}$/.test(s(formData, 'available_from')) ? s(formData, 'available_from') : null;
   // blank vacancy on create → 1 (matches the form default), never silently "full" (0)
   const availUnits = mode === 'monthly' ? Math.max(0, Math.round(num('available_units') ?? 1)) : 0;
   const dailyStatus = mode === 'daily' && ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
   const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
   const bills = formData.getAll('bills').map(String).filter(Boolean);
   const amen = formData.getAll('amenity').map(String).filter(Boolean);
-  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
-  const urls = [...await saveUploads(formData.getAll('photos') as File[], 'rooms'), ...pasted];
+  // photos upload to MinIO via saveUploads (resized to WebP); no URL pasting
+  const urls = await saveUploads(formData.getAll('photos') as File[], 'rooms');
   const gender = ['female', 'male'].includes(s(formData, 'gender_policy')) ? s(formData, 'gender_policy') : null;
   const reTime = /^\d{1,2}:\d{2}$/;
   const ci = mode === 'daily' && reTime.test(s(formData, 'check_in_time')) ? s(formData, 'check_in_time') : null;
@@ -389,16 +393,17 @@ export async function createStayUnitAction(formData: FormData) {
   const building = formData.getAll('building').map(String).filter((k) => ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'].includes(k));
   if (building.length) attrs.building = building;
   await q(
-    `INSERT INTO stay_units(place_id, name_i18n, rental_mode, price_minor, price_period, available_units, daily_status,
+    `INSERT INTO stay_units(place_id, name_i18n, description_i18n, rental_mode, price_minor, price_period, available_units, available_from, daily_status,
         capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
         bedrooms, bathrooms, gender_policy, check_in_time, check_out_time, attrs,
         image_urls, image_count, status, author_kind)
-     VALUES($1, jsonb_build_object('th',$2::text), $3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb,$21,$22,'published','merchant')`,
+     VALUES($1, jsonb_build_object('th',$2::text), CASE WHEN $23::text <> '' THEN jsonb_build_object('th',$23::text) END,
+        $3,$4,$5,$6,$24::date,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb,$21,$22,'published','merchant')`,
     [acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
       bills.length ? bills : null, amen.length ? amen : null,
       num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs),
-      urls.length ? urls : null, urls.length || 1]);
+      urls.length ? urls : null, urls.length || 1, descTh, availFrom]);
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=1');
 }
@@ -442,19 +447,22 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   const period = mode === 'daily' ? 'night' : 'month';
   const num = (k: string) => { const v = s(formData, k); return v !== '' && Number.isFinite(Number(v)) ? Number(v) : null; };
   const priceMinor = num('price') != null ? Math.max(0, Math.round(num('price')! * 100)) : null;
-  const depositMinor = num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
+  // deposit is monthly-only (daily form hides it) → clear it for daily, set it for monthly
+  const depositMinor = mode === 'monthly' && num('deposit') != null ? Math.max(0, Math.round(num('deposit')! * 100)) : null;
+  const descTh = s(formData, 'description_th').slice(0, 2000).trim();
+  const availFrom = mode === 'monthly' && /^\d{4}-\d{2}-\d{2}$/.test(s(formData, 'available_from')) ? s(formData, 'available_from') : null;
   // blank vacancy → null = "leave unchanged" (the SQL COALESCEs it), never silently zero to "full"
   const availUnits = num('available_units') != null ? Math.max(0, Math.round(num('available_units')!)) : null;
   const dailyStatus = ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
   const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
   const bills = formData.getAll('bills').map(String).filter(Boolean);
   const amen = formData.getAll('amenity').map(String).filter(Boolean);
-  const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
+  // new photos upload to MinIO and REPLACE image_urls; none → keep existing (CASE in SQL). No URL pasting.
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
   const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
   const saved = await saveUploads(photos, 'rooms');
   if (tried && saved.length < tried) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${tried - saved.length}`);
-  const urls = [...saved, ...pasted];
+  const urls = saved;
   const gender = ['female', 'male'].includes(s(formData, 'gender_policy')) ? s(formData, 'gender_policy') : null;
   const reTime = /^\d{1,2}:\d{2}$/;
   const ci = mode === 'daily' && reTime.test(s(formData, 'check_in_time')) ? s(formData, 'check_in_time') : null;
@@ -470,6 +478,8 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
     // rental_mode never zeroes the other mode's value; for monthly, COALESCE keeps the live count
     // when the vacancy box was left blank. ($4=mode, $7=availUnits|null, $8=dailyStatus.)
     `UPDATE stay_units SET name_i18n=jsonb_build_object('th',$3::text), rental_mode=$4, price_minor=$5, price_period=$6,
+       description_i18n = CASE WHEN $23::text <> '' THEN jsonb_build_object('th',$23::text) END,
+       available_from   = CASE WHEN $4='monthly' THEN $24::date ELSE available_from END,
        available_units = CASE WHEN $4='monthly' THEN COALESCE($7, available_units) ELSE available_units END,
        daily_status    = CASE WHEN $4='daily'   THEN $8 ELSE daily_status END,
        capacity=$9, deposit_minor=$10, min_stay=$11, room_size_sqm=$12, furnished=$13,
@@ -482,7 +492,7 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
     [unitId, acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
       bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null,
-      num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs)]);
+      num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs), descTh, availFrom]);
   // managed listings keep their ผังห้อง-derived vacancy — re-derive so the edit form can't override it
   // (fn no-ops for unmanaged listings, so hand-typed ones keep exactly what the form set).
   await q(`SELECT fn_stay_refresh_vacancy($1)`, [unitId]);

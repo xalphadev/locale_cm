@@ -12,7 +12,7 @@ export default async function EditRoom({ params, searchParams }: { params: { id:
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay) redirect('/merchant');
-  const [u] = isUuid(params.id) ? await q<any>(`SELECT * FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
+  const [u] = isUuid(params.id) ? await q<any>(`SELECT *, to_char(available_from,'YYYY-MM-DD') available_from_ymd FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!u) {
     return (<><div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div><h1>ไม่พบห้องพัก</h1></>);
   }
