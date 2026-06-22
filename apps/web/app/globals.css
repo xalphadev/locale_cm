@@ -982,3 +982,16 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mrow-d>.mrow{cursor:pointer;list-style:none}
 .mrow-d>.mrow::-webkit-details-marker{display:none}
 .mrow-editlink{color:#2b74ff;font-size:.8rem;font-weight:600;flex:none}
+
+/* leads inbox: filters + search + appointment (merchant) */
+.leadfilter{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}
+.leadfilter a{padding:5px 12px;border-radius:999px;background:#f1f3f5;color:#555;font-size:.82rem;text-decoration:none}
+.leadfilter a.on{background:#2b74ff;color:#fff}
+.leadsearch{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.leadsearch input{flex:1;border:1px solid #e3e6ea;border-radius:10px;padding:8px 12px;font:inherit}
+.lead-sched{margin-top:6px;font-size:.84rem;color:#2b74ff;font-weight:600;display:flex;align-items:center;gap:5px}
+.lead-sched-f{display:inline-block}
+.lead-sched-f>summary{list-style:none;cursor:pointer}
+.lead-sched-f>summary::-webkit-details-marker{display:none}
+.lead-sched-f form{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.lead-sched-f input{border:1px solid #e3e6ea;border-radius:8px;padding:6px 8px;font:inherit}

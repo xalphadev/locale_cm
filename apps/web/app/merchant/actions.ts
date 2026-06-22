@@ -1178,6 +1178,17 @@ export async function deleteLeadAction(leadId: string) {
   revalidatePath('/merchant/leads'); revalidatePath('/merchant');
 }
 
+/** Set a viewing appointment date+time on a lead (status → scheduled). The renter sees it in คำขอของฉัน. */
+export async function scheduleLeadAction(leadId: string, formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const whenRaw = s(formData, 'scheduled_at');                                        // datetime-local 'YYYY-MM-DDTHH:MM'
+  const when = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(whenRaw) ? whenRaw : null;
+  await q(`UPDATE stay_booking_request SET status='scheduled', scheduled_at=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id, when]);
+  revalidatePath('/merchant/leads'); revalidatePath('/merchant');
+  redirect('/merchant/leads?ok=scheduled');
+}
+
 // ── seasonal pricing (0035): DISPLAY-only rates per room-TYPE, by season window. NEVER joined to the
 //    ledger / coin_lots — these are numbers SHOWN to customers, no payment. A season is place-level;
 //    a rate overrides a type's base price (stay_units.price_minor) for that window. Place-scoped. ──
