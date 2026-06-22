@@ -1003,18 +1003,21 @@ export async function addRoomBlockAction(roomId: string, formData: FormData) {
   if (!isDate(from)) redirect(`/merchant/units/${roomId}?error=date`);
   const end = isDate(to) ? to : null;
   const note = s(formData, 'note') || null;
-  const [r] = await q<{ stay_unit_id: string | null }>(`SELECT stay_unit_id FROM stay_room WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [roomId, acc.place_id]);
+  const [r] = await q<{ stay_unit_id: string | null; rental_mode: string | null }>(`SELECT r.stay_unit_id, su.rental_mode FROM stay_room r LEFT JOIN stay_units su ON su.id=r.stay_unit_id WHERE r.id=$1 AND r.place_id=$2 AND r.deleted_at IS NULL`, [roomId, acc.place_id]);
   if (!r) redirect('/merchant/units');
+  const kindIn = s(formData, 'block_kind');
+  const blockKind = ['stay', 'tenancy', 'maintenance', 'hold'].includes(kindIn) ? kindIn : 'stay';   // monthly → tenancy/maintenance/hold
+  const leadMode = r.rental_mode === 'monthly' ? 'monthly' : 'daily';
   const guestName = s(formData, 'guest_name').slice(0, 80);
   const guestPhone = s(formData, 'guest_phone').slice(0, 40);
   try {
-    const [blk] = await q<{ id: string }>(`INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,'stay',$3,$4,$5) RETURNING id`,
-      [roomId, acc.place_id, from, end, note]);
+    const [blk] = await q<{ id: string }>(`INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [roomId, acc.place_id, blockKind, from, end, note]);
     // optional guest → a converted walk-in/phone lead, so the booking shows in the คำขอจอง roster (still no money)
     if (guestName && r.stay_unit_id) await q(
       `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, contact_name, contact_phone, channel, status, converted_block_id, expires_at)
-       VALUES($1,$2,'booking','daily',$3,$4,$5,$6,'walk_in','converted',$7, now() + interval '60 days')`,
-      [acc.place_id, r.stay_unit_id, from, end, guestName, guestPhone || null, blk.id]);
+       VALUES($1,$2,'booking',$3,$4,$5,$6,$7,'walk_in','converted',$8, now() + interval '60 days')`,
+      [acc.place_id, r.stay_unit_id, leadMode, from, end, guestName, guestPhone || null, blk.id]);
   } catch (e: any) {
     if (e?.code === '23P01') redirect(`/merchant/units/${roomId}?error=overlap`); // exclusion_violation (double-book)
     throw e;
@@ -1038,8 +1041,10 @@ export async function editRoomBlockAction(blockId: string, formData: FormData) {
   const to = s(formData, 'end_date');
   const end = isDate(to) ? to : null;
   const note = s(formData, 'note') || null;
+  const kindIn = s(formData, 'block_kind');
+  const blockKind = ['stay', 'tenancy', 'maintenance', 'hold'].includes(kindIn) ? kindIn : null;
   try {
-    await q(`UPDATE stay_occupancy_block SET start_date=$2, end_date=$3, note=$4, updated_at=now() WHERE id=$1`, [blockId, from, end, note]);
+    await q(`UPDATE stay_occupancy_block SET start_date=$2, end_date=$3, note=$4, block_kind=COALESCE($5, block_kind), updated_at=now() WHERE id=$1`, [blockId, from, end, note, blockKind]);
   } catch (e: any) {
     if (e?.code === '23P01') redirect(`/merchant/units/${b.room_id}?error=overlap`);
     throw e;

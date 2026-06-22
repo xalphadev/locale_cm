@@ -15,6 +15,7 @@ const OCC: Record<string, { cls: string; label: string }> = {
   maintenance: { cls: 'off', label: 'ปิดซ่อม' },
 };
 const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
+const BKIND: Record<string, string> = { tenancy: 'สัญญาเช่า', maintenance: 'ปิดซ่อม', hold: 'กันห้อง' };   // 'stay' = no prefix
 const STATUSES = [
   { k: 'vacant', label: 'ว่าง', color: '#12b76a' },
   { k: 'occupied', label: 'มีผู้เช่า', color: '#3b82f6' },
@@ -49,7 +50,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
   const monthly = r.rental_mode !== 'daily';
   const term = acc.room_group_term || 'ชั้น';
   const o = OCC[r.occupancy_status] || OCC.vacant;
-  const blocks = monthly ? [] : await q<any>(
+  const blocks = await q<any>(
     `SELECT id, to_char(start_date,'YYYY-MM-DD') start_date, to_char(end_date,'YYYY-MM-DD') end_date, note, block_kind
        FROM stay_occupancy_block
        WHERE room_id=$1 AND status='active' AND deleted_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE)
@@ -131,48 +132,57 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
             <form action={blockTonightAction.bind(null, r.id)}><button className="dbtn sm primary" type="submit"><Icon n="plus" size={14} /> บล็อกคืนนี้</button></form>
           </div>
           <RoomCalendar roomId={r.id} blocks={blocks} />
-          <details className="usettings">
-            <summary><Icon n="calendar" size={14} /> รายการช่วง + เพิ่มแบบกรอกวัน</summary>
-            {blocks.length === 0
-              ? <p className="note">ยังไม่มีช่วงจอง — ห้องนี้ว่างทุกวัน</p>
-              : (
-                <div className="mlist">
-                  {blocks.map((b) => (
-                    <details className="mrow-d" key={b.id}>
-                      <summary className="mrow">
-                        <span className="mrow-body">
-                          <span className="mrow-nm">{fmt(b.start_date)}{b.end_date ? ` – ${fmt(b.end_date)}` : ' เป็นต้นไป'}</span>
-                          {b.note && <span className="mrow-meta">{b.note}</span>}
-                        </span>
-                        <span className="mrow-editlink">แก้ไข</span>
-                      </summary>
-                      <form className="fsec" action={editRoomBlockAction.bind(null, b.id)} style={{ margin: '6px 0 4px' }}>
-                        <div className="fgrid">
-                          <div className="field"><label>เช็คอิน</label><input type="date" name="start_date" defaultValue={b.start_date} required /></div>
-                          <div className="field"><label>เช็คเอาท์</label><input type="date" name="end_date" defaultValue={b.end_date || ''} /></div>
-                        </div>
-                        <div className="field"><label>โน้ต</label><input name="note" defaultValue={b.note || ''} placeholder="เช่น จองผ่านไลน์" /></div>
-                        <button className="dbtn sm primary" type="submit">บันทึกการแก้ไข</button>
-                      </form>
-                      <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm danger" type="submit">เอาออก</button></form>
-                    </details>
-                  ))}
-                </div>
-              )}
-            <form className="fsec" action={addRoomBlockAction.bind(null, r.id)} style={{ marginTop: 10 }}>
-              <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> บันทึกการจอง / บล็อกช่วง (กรอกวัน)</div>
-              <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
-              <div className="fgrid">
-                <div className="field"><label>ชื่อผู้เข้าพัก (ถ้ามี)</label><input name="guest_name" placeholder="เช่น คุณสมชาย" /></div>
-                <div className="field"><label>เบอร์โทร</label><input name="guest_phone" placeholder="08x-xxx-xxxx" /></div>
-              </div>
-              <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์ / ปิดซ่อม" /></div>
-              <button className="btn btn-primary" type="submit">+ บันทึก</button>
-              <p className="note" style={{ margin: '6px 0 0' }}>ใส่ชื่อ = บันทึกเป็น “การจอง” (เห็นในหน้าคำขอจอง) · เว้นว่าง = บล็อกเฉยๆ (ปิดซ่อม/กันห้อง)</p>
-            </form>
-          </details>
         </>
       )}
+      {monthly && <h2 className="rsec"><span className="rsec-ic"><Icon n="calendar" size={15} /></span> ช่วงเวลา (สัญญาเช่า / ปิดซ่อม)</h2>}
+      <details className="usettings" {...(monthly && blocks.length ? { open: true } : {})}>
+        <summary><Icon n="calendar" size={14} /> {monthly ? 'รายการช่วง + เพิ่ม (กรอกวัน)' : 'รายการช่วง + เพิ่มแบบกรอกวัน'}</summary>
+        {blocks.length === 0
+          ? <p className="note">{monthly ? 'ยังไม่มีช่วงที่บันทึก — เพิ่มสัญญาเช่า / ช่วงปิดซ่อมได้' : 'ยังไม่มีช่วงจอง — ห้องนี้ว่างทุกวัน'}</p>
+          : (
+            <div className="mlist">
+              {blocks.map((b) => (
+                <details className="mrow-d" key={b.id}>
+                  <summary className="mrow">
+                    <span className="mrow-body">
+                      <span className="mrow-nm">{BKIND[b.block_kind] ? `${BKIND[b.block_kind]} · ` : ''}{fmt(b.start_date)}{b.end_date ? ` – ${fmt(b.end_date)}` : ' เป็นต้นไป'}</span>
+                      {b.note && <span className="mrow-meta">{b.note}</span>}
+                    </span>
+                    <span className="mrow-editlink">แก้ไข</span>
+                  </summary>
+                  <form className="fsec" action={editRoomBlockAction.bind(null, b.id)} style={{ margin: '6px 0 4px' }}>
+                    <div className="fgrid">
+                      <div className="field"><label>{monthly ? 'เริ่ม' : 'เช็คอิน'}</label><input type="date" name="start_date" defaultValue={b.start_date} required /></div>
+                      <div className="field"><label>{monthly ? 'สิ้นสุด' : 'เช็คเอาท์'}</label><input type="date" name="end_date" defaultValue={b.end_date || ''} /></div>
+                    </div>
+                    {monthly && (
+                      <div className="field"><label>ประเภท</label>
+                        <select name="block_kind" defaultValue={b.block_kind || 'tenancy'}><option value="tenancy">สัญญาเช่า / ผู้เช่า</option><option value="maintenance">ปิดซ่อม</option><option value="hold">กันห้อง</option></select></div>
+                    )}
+                    <div className="field"><label>โน้ต</label><input name="note" defaultValue={b.note || ''} placeholder="เช่น จองผ่านไลน์" /></div>
+                    <button className="dbtn sm primary" type="submit">บันทึกการแก้ไข</button>
+                  </form>
+                  <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm danger" type="submit">เอาออก</button></form>
+                </details>
+              ))}
+            </div>
+          )}
+        <form className="fsec" action={addRoomBlockAction.bind(null, r.id)} style={{ marginTop: 10 }}>
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> {monthly ? 'เพิ่มช่วง (สัญญาเช่า / ปิดซ่อม)' : 'บันทึกการจอง / บล็อกช่วง (กรอกวัน)'}</div>
+          <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom={monthly ? 'เริ่ม' : 'เช็คอิน'} labelTo={monthly ? 'สิ้นสุด' : 'เช็คเอาท์'} />
+          {monthly && (
+            <div className="field"><label>ประเภท</label>
+              <select name="block_kind" defaultValue="tenancy"><option value="tenancy">สัญญาเช่า / ผู้เช่า</option><option value="maintenance">ปิดซ่อม</option><option value="hold">กันห้อง</option></select></div>
+          )}
+          <div className="fgrid">
+            <div className="field"><label>{monthly ? 'ชื่อผู้เช่า (ถ้ามี)' : 'ชื่อผู้เข้าพัก (ถ้ามี)'}</label><input name="guest_name" placeholder="เช่น คุณสมชาย" /></div>
+            <div className="field"><label>เบอร์โทร</label><input name="guest_phone" placeholder="08x-xxx-xxxx" /></div>
+          </div>
+          <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์ / ปิดซ่อม" /></div>
+          <button className="btn btn-primary" type="submit">+ บันทึก</button>
+          <p className="note" style={{ margin: '6px 0 0' }}>ใส่ชื่อ = บันทึกเป็น “การจอง/ผู้เช่า” (เห็นในหน้าคำขอจอง) · เว้นว่าง = บล็อกเฉยๆ (ปิดซ่อม/กันห้อง)</p>
+        </form>
+      </details>
     </>
   );
 }
