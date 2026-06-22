@@ -23,7 +23,7 @@ const ST: Record<string, { label: string; color: string }> = {
 const fmtD = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 const BUCKETS = ['สัปดาห์นี้', 'ภายในเดือนนี้', 'เดือนหน้า'];
 
-export default async function Units({ searchParams }: { searchParams: { ok?: string; error?: string; from?: string; to?: string } }) {
+export default async function Units({ searchParams }: { searchParams: { ok?: string; error?: string; from?: string; to?: string; added?: string; skipped?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay || acc.room_mode === 'unique') redirect('/merchant');
@@ -86,7 +86,11 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   return (
     <>
       {searchParams?.ok === 'added' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
-      {searchParams?.ok === 'bulk' && <div className="banner-ok">✓ เพิ่มหลายห้องแล้ว</div>}
+      {searchParams?.ok === 'bulk' && (
+        <div className={Number(searchParams.skipped) > 0 ? 'banner-warn' : 'banner-ok'}>
+          ✓ เพิ่ม {searchParams.added ?? 0} ห้องแล้ว{Number(searchParams.skipped) > 0 ? ` · ข้าม ${searchParams.skipped} ห้องที่มีเลขซ้ำอยู่แล้ว` : ''}
+        </div>
+      )}
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
       {searchParams?.error === 'norooms' && <div className="banner-err">เพิ่มห้องจริงอย่างน้อย 1 ห้องก่อน แล้วค่อยเปิด “ใช้คำนวณ”</div>}
 

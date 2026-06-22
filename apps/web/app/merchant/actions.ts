@@ -883,6 +883,7 @@ export async function createPayoutRequestAction(formData: FormData) {
 //    (rooms) or re-proves the room's place ownership (blocks). Gated by the manages_stay capability. ──
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+const ROOM_STATUS = ['vacant', 'occupied', 'reserved', 'maintenance'];
 
 /** Recompute a managed listing's marketplace vacancy from its physical rooms (projection, 0033). No-op for unmanaged. */
 async function refreshUnitVacancy(stayUnitId: string | null | undefined) {
@@ -899,6 +900,11 @@ export async function createRoomAction(formData: FormData) {
   const kind = s(formData, 'room_kind') === 'bed' ? 'bed' : 'room';
   const capV = s(formData, 'capacity');
   const capacity = capV && Number.isFinite(Number(capV)) ? Math.max(0, Math.trunc(Number(capV))) : null;
+  // status at creation — so a board with already-occupied rooms can be backfilled (else every new room shows
+  // as a fake vacancy in the customer's "ว่าง N"). occupied_until only carries for occupied/reserved.
+  const status = ROOM_STATUS.includes(s(formData, 'occupancy_status')) ? s(formData, 'occupancy_status') : 'vacant';
+  const occUntil = (status === 'occupied' || status === 'reserved') && isDate(s(formData, 'occupied_until')) ? s(formData, 'occupied_until') : null;
+  const note = s(formData, 'note').slice(0, 300).trim() || null;
   // the linked listing must be the account's own (re-prove ownership); a forged stay_unit_id → null
   const wantUnit = s(formData, 'stay_unit_id');
   let okUnit: string | null = null;
@@ -907,8 +913,8 @@ export async function createRoomAction(formData: FormData) {
     okUnit = u?.id ?? null;
   }
   try {
-    await q(`INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind, capacity) VALUES($1,$2,$3,$4,$5,$6)`,
-      [acc.place_id, okUnit, code, floor, kind, capacity]);
+    await q(`INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind, capacity, occupancy_status, occupied_until, note) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [acc.place_id, okUnit, code, floor, kind, capacity, status, occUntil, note]);
   } catch (e: any) {
     if (e?.code === '23505') redirect('/merchant/units?error=dupe'); // unique (place_id, code)
     throw e;
@@ -1335,14 +1341,21 @@ export async function createRoomsBulkAction(formData: FormData) {
   for (let n = start; n <= end; n++) codes.push(`${base}${pad ? String(n).padStart(pad, '0') : n}`);
   const capV = s(formData, 'capacity');
   const capacity = capV && Number.isFinite(Number(capV)) ? Math.max(0, Math.trunc(Number(capV))) : null;   // applied to every room in the run
-  await q(
-    `INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind, capacity)
-       SELECT $1, $2, c, $4, 'room', $5 FROM unnest($3::text[]) c
-     ON CONFLICT (place_id, code) WHERE deleted_at IS NULL DO NOTHING`,
-    [acc.place_id, okUnit, codes, floor, capacity]);
+  const status = ROOM_STATUS.includes(s(formData, 'occupancy_status')) ? s(formData, 'occupancy_status') : 'vacant';
+  const occUntil = (status === 'occupied' || status === 'reserved') && isDate(s(formData, 'occupied_until')) ? s(formData, 'occupied_until') : null;
+  // RETURNING the codes actually inserted → existing codes are skipped by ON CONFLICT and reported back,
+  // so the owner never thinks all N were added when some already existed (silent-skip trap).
+  const made = await q<{ code: string }>(
+    `INSERT INTO stay_room(place_id, stay_unit_id, code, floor, room_kind, capacity, occupancy_status, occupied_until)
+       SELECT $1, $2, c, $4, 'room', $5, $6, $7 FROM unnest($3::text[]) c
+     ON CONFLICT (place_id, code) WHERE deleted_at IS NULL DO NOTHING
+     RETURNING code`,
+    [acc.place_id, okUnit, codes, floor, capacity, status, occUntil]);
+  const added = made.length;
+  const skipped = codes.length - added;
   await refreshUnitVacancy(okUnit);
   revalidatePath('/merchant/units'); revalidatePath('/merchant');
-  redirect('/merchant/units?ok=bulk');
+  redirect(`/merchant/units?ok=bulk&added=${added}&skipped=${skipped}`);
 }
 
 /** Set how this property labels its room groups (ชั้น / โซน / อาคาร / ตึก). Board headers + add-room
