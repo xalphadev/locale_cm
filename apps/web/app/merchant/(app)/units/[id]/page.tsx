@@ -16,6 +16,7 @@ const OCC: Record<string, { cls: string; label: string }> = {
 };
 const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 const BKIND: Record<string, string> = { tenancy: 'สัญญาเช่า', maintenance: 'ปิดซ่อม', hold: 'กันห้อง' };   // 'stay' = no prefix
+const ymd = (d: any) => (d ? (typeof d === 'string' ? d.slice(0, 10) : new Date(d).toLocaleDateString('en-CA')) : '');   // pg Date|string → YYYY-MM-DD for a date input
 const STATUSES = [
   { k: 'vacant', label: 'ว่าง', color: '#12b76a' },
   { k: 'occupied', label: 'มีผู้เช่า', color: '#3b82f6' },
@@ -104,7 +105,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
         {(r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved') && (
           <form className="untilform" action={setRoomOccupiedUntilAction.bind(null, r.id)}>
             <label><Icon n="clock" size={12} /> ว่างอีกครั้ง (ถ้ารู้)</label>
-            <input type="date" name="occupied_until" defaultValue={r.occupied_until ? String(r.occupied_until).slice(0, 10) : ''} />
+            <input type="date" name="occupied_until" defaultValue={ymd(r.occupied_until)} />
             <button className="dbtn sm" type="submit">บันทึก</button>
           </form>
         )}

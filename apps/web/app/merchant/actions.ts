@@ -1067,7 +1067,7 @@ export async function editRoomBlockAction(blockId: string, formData: FormData) {
   const kindIn = s(formData, 'block_kind');
   const blockKind = ['stay', 'tenancy', 'maintenance', 'hold'].includes(kindIn) ? kindIn : null;
   try {
-    await q(`UPDATE stay_occupancy_block SET start_date=$2, end_date=$3, note=$4, block_kind=COALESCE($5, block_kind), updated_at=now() WHERE id=$1`, [blockId, from, end, note, blockKind]);
+    await q(`UPDATE stay_occupancy_block SET start_date=$2, end_date=$3, note=$4, block_kind=COALESCE($5, block_kind), updated_at=now() WHERE id=$1 AND place_id=$6 AND deleted_at IS NULL`, [blockId, from, end, note, blockKind, acc.place_id]);
   } catch (e: any) {
     if (e?.code === '23P01') redirect(`/merchant/units/${b.room_id}?error=overlap`);
     throw e;
@@ -1101,14 +1101,16 @@ export async function moveTenantAction(srcId: string, formData: FormData) {
   requireCap(acc, 'manages_stay');
   const destId = s(formData, 'dest');
   if (!UUID_RE.test(destId) || destId === srcId) redirect(`/merchant/units/${srcId}?error=dest`);
-  const rows = await q<any>(`SELECT id, occupancy_status, note, occupied_until, stay_unit_id FROM stay_room WHERE id = ANY($1::uuid[]) AND place_id=$2 AND deleted_at IS NULL`, [[srcId, destId], acc.place_id]);
+  const rows = await q<any>(`SELECT id, code, occupancy_status, note, occupied_until, stay_unit_id FROM stay_room WHERE id = ANY($1::uuid[]) AND place_id=$2 AND deleted_at IS NULL`, [[srcId, destId], acc.place_id]);
   const src = rows.find((r: any) => r.id === srcId);
   const dest = rows.find((r: any) => r.id === destId);
   if (!src || !dest) redirect('/merchant/units');
   if (dest.occupancy_status !== 'vacant') redirect(`/merchant/units/${srcId}?error=occupied`);
   await q(`UPDATE stay_room SET occupancy_status='occupied', note=$3, occupied_until=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [destId, acc.place_id, src.note, src.occupied_until]);
   await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [srcId, acc.place_id]);
-  await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta) VALUES ($1,$3,'move_out',jsonb_build_object('to',$2::text)), ($2,$3,'move_in',jsonb_build_object('from',$1::text))`, [srcId, destId, acc.place_id]);
+  await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta) VALUES
+             ($1,$3,'move_out',jsonb_build_object('to',$2::text,'to_code',$5::text)),
+             ($2,$3,'move_in', jsonb_build_object('from',$1::text,'from_code',$4::text))`, [srcId, destId, acc.place_id, src.code, dest.code]);
   await refreshUnitVacancy(src.stay_unit_id);
   if (dest.stay_unit_id && dest.stay_unit_id !== src.stay_unit_id) await refreshUnitVacancy(dest.stay_unit_id);
   revalidatePath('/merchant/units', 'layout');

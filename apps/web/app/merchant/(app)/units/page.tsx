@@ -47,7 +47,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   }));
   const term = acc.room_group_term || 'ชั้น';
   const soonRows = await q<any>(
-    `SELECT r.id, r.code, r.floor, r.occupied_until,
+    `SELECT r.id, r.code, r.floor, to_char(r.occupied_until,'YYYY-MM-DD') occupied_until,
             (CASE WHEN r.occupied_until < CURRENT_DATE + 7 THEN 0 WHEN r.occupied_until < CURRENT_DATE + 31 THEN 1 ELSE 2 END) bucket
        FROM stay_room r WHERE r.place_id=$1 AND r.deleted_at IS NULL AND r.status='active'
          AND r.occupancy_status IN ('occupied','reserved') AND r.occupied_until IS NOT NULL
