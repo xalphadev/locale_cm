@@ -32,6 +32,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
     const expired = r.status !== 'converted' && r.expires_at && Date.parse(r.expires_at) < now;
     if (r.status === 'converted') return { label: 'ยืนยันการเข้าพักแล้ว', cls: 'ok', ic: 'check' };
     if (r.status === 'declined') return { label: 'ที่พักไม่สะดวกรับ', cls: 'muted', ic: 'x' };
+    if (r.status === 'no_show') return { label: 'ไม่ได้เข้าพัก (ไม่มาตามนัด)', cls: 'muted', ic: 'x' };
     if (expired) return { label: 'หมดอายุแล้ว', cls: 'muted', ic: 'clock' };
     if (r.status === 'confirmed') return { label: 'ที่พักยืนยันรับคำขอแล้ว', cls: 'ok', ic: 'check' };
     if (r.status === 'scheduled') return { label: r.scheduled_at ? `นัดเข้าชม ${fmt(r.scheduled_at)}` : 'นัดเข้าชมแล้ว', cls: 'ok', ic: 'calendar' };

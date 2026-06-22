@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
-import { setLeadStatusAction, scheduleLeadAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction } from '../../actions';
+import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +17,7 @@ const ST: Record<string, { cls: string; label: string }> = {
   declined: { cls: 'off', label: 'ปฏิเสธ' },
   expired: { cls: 'off', label: 'หมดอายุ' },
   converted: { cls: 'sold', label: 'เข้าพักแล้ว' },
+  no_show: { cls: 'off', label: 'ไม่มาเข้าพัก' },
 };
 const fmtDate = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 const fmtDT = (d: any) => (d ? new Date(d).toLocaleString('th-TH', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '');
@@ -59,6 +60,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
       {searchParams?.ok === 'converted' && <div className="banner-ok">✓ ยืนยันการจองแล้ว — กันห้องตามวันที่ขอในปฏิทิน</div>}
       {searchParams?.ok === 'converted_m' && <div className="banner-ok">✓ รับเข้าพักแล้ว — ตั้งห้องเป็นไม่ว่าง / ปรับจำนวนว่าง</div>}
       {searchParams?.ok === 'scheduled' && <div className="banner-ok">✓ บันทึกนัดหมายแล้ว — ลูกค้าเห็นเวลานัดในแอป</div>}
+      {searchParams?.ok === 'noshow' && <div className="banner-ok">✓ บันทึกไม่มาเข้าพัก — ปล่อยห้องคืนให้จองใหม่ได้แล้ว</div>}
       {searchParams?.error === 'full' && <div className="banner-err">ไม่มีห้องว่างในช่วงที่ขอ — เลือกห้อง/วันอื่น หรือบล็อกเองในผังห้อง</div>}
       {searchParams?.error === 'cvt' && <div className="banner-err">คำขอนี้ไม่มีวันที่ หรือไม่ใช่ห้องรายวันที่ผูกผัง จึงลงปฏิทินอัตโนมัติไม่ได้</div>}
 
@@ -102,6 +104,7 @@ export default async function Leads({ searchParams }: { searchParams: { ok?: str
                     <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> ยืนยันการจอง</button></form>}
                   {b.rental_mode === 'monthly' && b.stay_unit_id && b.status !== 'converted' && b.status !== 'declined' &&
                     <form action={convertMonthlyLeadAction.bind(null, b.id)}><button className="dbtn sm primary" type="submit"><Icon n="calendar" size={14} /> รับเข้าพัก</button></form>}
+                  {b.status === 'converted' && <form action={markNoShowAction.bind(null, b.id)}><button className="dbtn sm" type="submit">ไม่มาเข้าพัก</button></form>}
                   {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn sm" type="submit">ติดต่อแล้ว</button></form>}
                   {b.status !== 'converted' && b.status !== 'declined' && (
                     <details className="lead-sched-f">

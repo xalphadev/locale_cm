@@ -1203,6 +1203,25 @@ export async function deleteLeadAction(leadId: string) {
   revalidatePath('/merchant/leads'); revalidatePath('/merchant');
 }
 
+/** No-show: a confirmed booking whose guest never came. Free the held room (cancel the block) so it can be
+ *  rebooked, and close the request. No money, so this is the only commitment lever after confirmation. */
+export async function markNoShowAction(leadId: string) {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  const [b] = await q<{ converted_block_id: string | null }>(`SELECT converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND status='converted' AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  if (!b) redirect('/merchant/leads');
+  if (b.converted_block_id) {
+    const [blk] = await q<{ stay_unit_id: string | null }>(
+      `UPDATE stay_occupancy_block bk SET status='cancelled', deleted_at=now(), updated_at=now()
+         FROM stay_room r WHERE bk.id=$1 AND bk.room_id=r.id AND r.place_id=$2 AND bk.deleted_at IS NULL
+         RETURNING r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
+    if (blk) await refreshUnitVacancy(blk.stay_unit_id);
+  }
+  await q(`UPDATE stay_booking_request SET status='no_show', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  revalidatePath('/merchant/leads'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/leads?ok=noshow');
+}
+
 /** Set a viewing appointment date+time on a lead (status → scheduled). The renter sees it in คำขอของฉัน. */
 export async function scheduleLeadAction(leadId: string, formData: FormData) {
   const acc = await currentAccount();
