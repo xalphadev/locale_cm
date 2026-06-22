@@ -41,7 +41,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
   const steps = hasBoard
     ? [
         { done: items.length > 0, label: 'สร้างรูปแบบห้อง', href: '/merchant/rooms/new' },
-        { done: roomsN > 0, label: 'วางห้องจริงในผัง', href: '/merchant/units/new' },
+        { done: roomsN > 0, label: 'เพิ่มห้องจริงในผัง (101, 102…)', href: '/merchant/units/new' },
         { done: items.some((i) => i.managed), label: 'เปิดนับห้องว่างอัตโนมัติ', href: '/merchant/units' },
       ]
     : [{ done: items.length > 0, label: 'เพิ่มห้อง', href: '/merchant/rooms/new' }];

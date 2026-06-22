@@ -1,4 +1,5 @@
 import { Icon } from '../ui';
+import { HubInfo } from './HubInfo';
 
 // Shared header for the room "hub". Both /merchant/rooms (ประเภท & ราคา) and /merchant/units (ผังห้อง)
 // render this identically, so the two views read as two tabs of ONE section — not two parallel bottom-nav
@@ -16,6 +17,7 @@ export function RoomHub({ active, showSeg, noun, addHref, addLabel }: {
     <div className="roomhub">
       <div className="listhead">
         <h1>{noun}</h1>
+        {showSeg && active === 'types' && <HubInfo />}
         {addHref && <a className="addbtn" href={addHref}><Icon n="plus" size={17} /> {addLabel}</a>}
       </div>
       {showSeg && (
@@ -25,7 +27,6 @@ export function RoomHub({ active, showSeg, noun, addHref, addLabel }: {
         </div>
       )}
       <p className="roomhub-sub">{sub}</p>
-      {showSeg && active === 'types' && <p className="roomhub-sub" style={{ marginTop: 3 }}>รูปแบบห้อง = แบบ/ราคา (สตูดิโอ, เตียงรวม) · ห้องจริง = ห้องแต่ละห้อง (101, 102…) ในแท็บผังห้อง</p>}
     </div>
   );
 }

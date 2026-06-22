@@ -21,12 +21,8 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
   const [status, setStatus] = useState('all');
   const ql = q.trim().toLowerCase();
   const filtered = items.filter((i) => MTEST[mode](i) && STEST[status](i) && (!ql || i.name.toLowerCase().includes(ql)));
-  const floating = hasBoard ? items.filter((i) => i.physical === 0).length : 0;
   return (
     <>
-      {floating > 0 && (
-        <div className="banner-warn">มี {floating} ประเภทยังไม่มีห้องจริงในผัง — เพิ่มห้องในผังเพื่อให้นับห้องว่างอัตโนมัติ</div>
-      )}
       {items.length === 0 ? (
         <div className="mempty">
           <span className="mempty-ic"><Icon n="bed" size={30} /></span>
@@ -48,7 +44,11 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
                 <option value="daily">รายวัน</option>
               </select>
               <div className="fchips ffstatus">
-                {STATS.map(([k, l]) => <button type="button" key={k} className={`fchip ${status === k ? 'on' : ''}`} onClick={() => setStatus(k)}>{l}{k !== 'all' && <span className="fcount">{items.filter(STEST[k]).length}</span>}</button>)}
+                {STATS.map(([k, l]) => {
+                  const n = items.filter(STEST[k]).length;
+                  if (k !== 'all' && n === 0) return null;   // hide zero-count chips (เต็ม0 ซ่อน0 was noise)
+                  return <button type="button" key={k} className={`fchip ${status === k ? 'on' : ''}`} onClick={() => setStatus(k)}>{l}{k !== 'all' && <>{' '}<span className="fcount">{n}</span></>}</button>;
+                })}
               </div>
             </div>
           </div>
@@ -65,9 +65,7 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
                     <span className="mrow-tags">
                       {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
                       <span className={`t ${r.availCls}`}>{r.availLabel}</span>
-                      {hasBoard && (r.physical > 0
-                        ? <span className="t link"><Icon n="grid" size={11} /> {r.physical} ห้องในผัง</span>
-                        : <span className="t warn">⚠ ยังไม่มีห้องในผัง</span>)}
+                      {hasBoard && r.physical > 0 && <span className="t link"><Icon n="grid" size={11} /> {r.physical} ห้องในผัง</span>}
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />
@@ -76,9 +74,6 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
             </div>
           )}
         </>
-      )}
-      {hasBoard && items.some((i) => i.managed) && (
-        <p className="note" style={{ marginTop: 10 }}>รวมห้องจริงในผัง {items.reduce((s, i) => s + i.physical, 0)} ห้อง — ตรงกับแท็บ “ผังห้อง”</p>
       )}
     </>
   );

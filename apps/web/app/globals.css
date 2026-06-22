@@ -1009,3 +1009,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .callegend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 4px;font-size:.78rem;color:#555}
 .callegend span{display:inline-flex;align-items:center;gap:5px}
 .callegend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+
+/* rooms-hub: on-demand (?) concept popover — progressive disclosure, replaces 3 stacked explainers */
+.merchant-root .hubinfo-wrap{position:relative;margin-right:auto;margin-left:6px;display:inline-flex}
+.merchant-root .hubinfo{flex:none;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--m-sunk);color:var(--m-muted);border:none;cursor:pointer;font-weight:700;font-size:.82rem;line-height:1}
+.merchant-root .hubinfo:active{transform:scale(.94)}
+.merchant-root .hubpop{position:absolute;z-index:30;top:100%;left:0;margin-top:6px;max-width:300px;background:var(--m-surface);border:1px solid var(--m-line);border-radius:14px;box-shadow:var(--m-sh-soft);padding:12px 13px;font-size:.84rem;line-height:1.55;color:var(--m-text);white-space:pre-line}
