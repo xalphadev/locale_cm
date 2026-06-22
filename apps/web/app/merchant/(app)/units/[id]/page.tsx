@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import RoomCalendar from '../RoomCalendar';
 
@@ -64,6 +64,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       <div className="mback"><a href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</a></div>
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกแล้ว</div>}
       {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกช่วงไม่ว่างแล้ว</div>}
+      {searchParams?.ok === 'booked' && <div className="banner-ok">✓ บันทึกการจองแล้ว — ดูได้ในหน้า “คำขอจอง”</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ช่วงวันที่นี้ทับกับที่จองไว้แล้ว</div>}
       {searchParams?.error === 'date' && <div className="banner-err">กรุณาเลือกวันเริ่ม</div>}
       {searchParams?.ok === 'moved' && <div className="banner-ok">✓ ย้ายผู้เช่าแล้ว</div>}
@@ -137,21 +138,37 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
               : (
                 <div className="mlist">
                   {blocks.map((b) => (
-                    <div className="mrow" key={b.id}>
-                      <span className="mrow-body">
-                        <span className="mrow-nm">{fmt(b.start_date)}{b.end_date ? ` – ${fmt(b.end_date)}` : ' เป็นต้นไป'}</span>
-                        {b.note && <span className="mrow-meta">{b.note}</span>}
-                      </span>
-                      <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm" type="submit">เอาออก</button></form>
-                    </div>
+                    <details className="mrow-d" key={b.id}>
+                      <summary className="mrow">
+                        <span className="mrow-body">
+                          <span className="mrow-nm">{fmt(b.start_date)}{b.end_date ? ` – ${fmt(b.end_date)}` : ' เป็นต้นไป'}</span>
+                          {b.note && <span className="mrow-meta">{b.note}</span>}
+                        </span>
+                        <span className="mrow-editlink">แก้ไข</span>
+                      </summary>
+                      <form className="fsec" action={editRoomBlockAction.bind(null, b.id)} style={{ margin: '6px 0 4px' }}>
+                        <div className="fgrid">
+                          <div className="field"><label>เช็คอิน</label><input type="date" name="start_date" defaultValue={b.start_date} required /></div>
+                          <div className="field"><label>เช็คเอาท์</label><input type="date" name="end_date" defaultValue={b.end_date || ''} /></div>
+                        </div>
+                        <div className="field"><label>โน้ต</label><input name="note" defaultValue={b.note || ''} placeholder="เช่น จองผ่านไลน์" /></div>
+                        <button className="dbtn sm primary" type="submit">บันทึกการแก้ไข</button>
+                      </form>
+                      <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm danger" type="submit">เอาออก</button></form>
+                    </details>
                   ))}
                 </div>
               )}
             <form className="fsec" action={addRoomBlockAction.bind(null, r.id)} style={{ marginTop: 10 }}>
-              <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> เพิ่มช่วงไม่ว่าง (กรอกวัน)</div>
+              <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> บันทึกการจอง / บล็อกช่วง (กรอกวัน)</div>
               <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เช็คอิน" labelTo="เช็คเอาท์" />
-              <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์" /></div>
-              <button className="btn btn-primary" type="submit">+ บล็อกช่วงนี้</button>
+              <div className="fgrid">
+                <div className="field"><label>ชื่อผู้เข้าพัก (ถ้ามี)</label><input name="guest_name" placeholder="เช่น คุณสมชาย" /></div>
+                <div className="field"><label>เบอร์โทร</label><input name="guest_phone" placeholder="08x-xxx-xxxx" /></div>
+              </div>
+              <div className="field"><label>โน้ต</label><input name="note" placeholder="เช่น จองผ่านไลน์ / ปิดซ่อม" /></div>
+              <button className="btn btn-primary" type="submit">+ บันทึก</button>
+              <p className="note" style={{ margin: '6px 0 0' }}>ใส่ชื่อ = บันทึกเป็น “การจอง” (เห็นในหน้าคำขอจอง) · เว้นว่าง = บล็อกเฉยๆ (ปิดซ่อม/กันห้อง)</p>
             </form>
           </details>
         </>
