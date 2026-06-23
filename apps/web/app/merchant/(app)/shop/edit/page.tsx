@@ -30,6 +30,7 @@ export default async function ShopEdit() {
     <>
       <div className="mback"><Link href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูลร้าน</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขข้อมูลร้าน</h1>
+      <p className="note" style={{ margin: '-.3rem 0 .9rem' }}><Icon n="store" size={13} /> กำลังแก้สาขา <b>{i18n(acc.place_name) || acc.display_name || 'สาขานี้'}</b>{i18n(acc.brand_name) && i18n(acc.brand_name) !== i18n(acc.place_name) ? ` · แบรนด์ ${i18n(acc.brand_name)}` : ''}</p>
       <form className="form mform" action={updateShopAction} encType="multipart/form-data">
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูลร้าน</div>

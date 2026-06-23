@@ -12,7 +12,7 @@ export default async function ShopsPage() {
   const acc = await currentAccount();
   if (!acc) redirect('/merchant/login');
   const rows = await q<any>(
-    `SELECT b.id brand_id, b.name_i18n brand_name,
+    `SELECT b.id brand_id, b.name_i18n brand_name, b.logo_url,
             p.id place_id, p.name_i18n place_name, p.status::text place_status,
             p.offers_stay, p.sells_products,
             (SELECT count(*) FROM shop_products sp WHERE sp.place_id=p.id AND sp.status='published' AND sp.deleted_at IS NULL) nprod,
@@ -22,10 +22,10 @@ export default async function ShopsPage() {
       WHERE b.owner_account_id = $1 AND b.status = 'active' AND b.deleted_at IS NULL
       ORDER BY b.created_at, p.created_at`, [acc.id]);
 
-  const brands: { id: string; name: string; branches: any[] }[] = [];
+  const brands: { id: string; name: string; logo: string | null; branches: any[] }[] = [];
   const at = new Map<string, number>();
   for (const r of rows) {
-    if (!at.has(r.brand_id)) { at.set(r.brand_id, brands.length); brands.push({ id: r.brand_id, name: i18n(r.brand_name), branches: [] }); }
+    if (!at.has(r.brand_id)) { at.set(r.brand_id, brands.length); brands.push({ id: r.brand_id, name: i18n(r.brand_name), logo: r.logo_url, branches: [] }); }
     if (r.place_id) brands[at.get(r.brand_id)!].branches.push(r);
   }
 
@@ -40,11 +40,12 @@ export default async function ShopsPage() {
       {brands.map((br) => (
         <section className="bcard" key={br.id}>
           <div className="bcard-h">
-            <span className="bcard-av">{(br.name || 'ร').trim().charAt(0)}</span>
+            <span className="bcard-av">{br.logo ? <img src={br.logo} alt="" /> : (br.name || 'ร').trim().charAt(0)}</span>
             <div className="bcard-tx">
               <div className="bcard-nm">{br.name}</div>
               <div className="bcard-sub">{br.branches.length ? `${br.branches.length} สาขา` : 'ยังไม่มีสาขา'}</div>
             </div>
+            <Link className="bcard-edit" href={`/merchant/shops/${br.id}/edit`} aria-label="แก้ไขแบรนด์"><Icon n="edit" size={15} /></Link>
             <Link className="bcard-add" href={`/merchant/shops/${br.id}/new`} aria-label="เพิ่มสาขา"><Icon n="plus" size={16} /></Link>
           </div>
 

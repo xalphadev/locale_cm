@@ -592,6 +592,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .bcard-sub{font-size:.76rem;color:var(--m-muted);margin-top:1px}
 .merchant-root .bcard-add{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);transition:transform .12s}
 .merchant-root .bcard-add:active{transform:scale(.9)}
+.merchant-root .bcard-av{overflow:hidden}
+.merchant-root .bcard-av img{width:100%;height:100%;object-fit:cover}
+.merchant-root .bcard-tx{flex:1;min-width:0}
+.merchant-root .bcard-edit{flex:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--m-sunk);color:var(--m-muted);transition:transform .12s}
+.merchant-root .bcard-edit:active{transform:scale(.9)}
 .merchant-root .bcard-branches{display:flex;flex-direction:column;gap:2px;margin-top:5px}
 .merchant-root .bcard-branches form{margin:0}
 .merchant-root .brow{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:none;font:inherit;color:inherit;padding:9px 6px;border-radius:13px;cursor:pointer;transition:transform .12s,background .12s}

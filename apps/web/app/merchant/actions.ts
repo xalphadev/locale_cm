@@ -379,6 +379,31 @@ export async function updateShopAction(formData: FormData) {
   redirect('/merchant/shop?ok=1');
 }
 
+/** Edit a BRAND's shared identity (name / logo / story). Brand-level, applies across all its branches.
+ *  Ownership re-proven (owner_account_id) — never trust the brandId from the form alone. */
+export async function updateBrandAction(brandId: string, formData: FormData) {
+  const acc = await currentAccount();
+  if (!acc) redirect('/merchant/login');
+  if (!UUID_RE.test(brandId)) redirect('/merchant/shops');
+  const [b] = await q<{ id: string }>(`SELECT id FROM brands WHERE id=$1 AND owner_account_id=$2 AND deleted_at IS NULL`, [brandId, acc.id]);
+  if (!b) redirect('/merchant/shops');
+  const nameTh = s(formData, 'name_th');
+  const descTh = s(formData, 'desc_th').slice(0, 2000).trim();
+  // logo = a single image (first uploaded) → brands.logo_url; no new upload keeps the existing logo
+  const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const saved = await saveUploads(photos.slice(0, 1), 'brands');
+  const logo = saved[0] || '';
+  await q(
+    `UPDATE brands SET
+       name_i18n = CASE WHEN $2<>'' THEN jsonb_build_object('th',$2::text) ELSE name_i18n END,
+       description_i18n = CASE WHEN $3<>'' THEN jsonb_build_object('th',$3::text) ELSE NULL END,
+       logo_url = CASE WHEN $4<>'' THEN $4 ELSE logo_url END
+     WHERE id=$1`,
+    [brandId, nameTh, descTh, logo]);
+  revalidatePath('/merchant/shops'); revalidatePath('/merchant', 'layout');
+  redirect('/merchant/shops?ok=brand');
+}
+
 // ── stay units (rooms) — same tenancy discipline as products (place_id from session, never form) ──
 
 export async function createStayUnitAction(formData: FormData) {
