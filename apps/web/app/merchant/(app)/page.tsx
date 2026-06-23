@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from './ui';
+import { shopReadiness } from '@/lib/readiness';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,10 @@ export default async function Dashboard() {
     [acc.place_id, acc.brand_id ?? null]);
   const trashN = Number(trash?.n ?? 0);
   const live = acc.place_status === 'published';
+  // shop-completeness nudge (same 5-item check as /merchant/shop) — currentAccount() doesn't carry these fields
+  const [pl] = await q<any>(
+    `SELECT image_urls, address_i18n, opening_hours, phone, line_id, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+  const { missing, pct } = shopReadiness(pl);
 
   return (
     <>
@@ -37,6 +42,14 @@ export default async function Dashboard() {
         <span className="bigstatus-dot" />
         <span>{live ? 'ร้านเผยแพร่แล้ว ลูกค้าเห็นร้านคุณได้' : 'รอทีมงานตรวจ — ร้านยังไม่ขึ้นให้ลูกค้าเห็น'}</span>
       </div>
+
+      {missing.length > 0 && (
+        <Link className="banner-warn rstrip" href="/merchant/shop/edit">
+          <span className="rstrip-top"><Icon n="store" size={15} /> <b>ทำให้ร้านพร้อม — ขาดอีก {missing.length} อย่าง</b><span className="rstrip-go">เพิ่มข้อมูล →</span></span>
+          <span className="rstrip-sub">{missing.join(' · ')}</span>
+          <span className="rstrip-bar"><i style={{ width: pct + '%' }} /></span>
+        </Link>
+      )}
 
       {!acc.verified && (
         <Link className="verifybanner" href="/merchant/verify">

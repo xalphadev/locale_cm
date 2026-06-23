@@ -138,6 +138,8 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .info-row{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--hairline);font-size:.92rem;align-items:flex-start}
 .info-row:last-child{border-bottom:none}
 .info-row a{color:var(--accent);font-weight:500}
+.info-row a,.info-row span{min-width:0;overflow-wrap:anywhere}   /* long URLs / social handles must wrap, not overflow */
+.info-row>.flat-ico{flex:none}
 .hours{background:var(--surface);border-radius:var(--r-sm);padding:4px 16px;box-shadow:var(--shadow-sm)}
 .hour-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--hairline);font-size:.9rem}
 .hour-row:last-child{border-bottom:none}

@@ -334,7 +334,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           {(i18n(p.address_i18n) || p.district_name) && <div className="info-row"><Icon n="pin" size={18} className="flat-ico" /><span>{i18n(p.address_i18n) || `${i18n(p.district_name)} · เชียงใหม่`}</span></div>}
           {p.phone && <div className="info-row"><Icon n="phone" size={18} className="flat-ico" /><a href={`tel:${p.phone}`}>{p.phone}</a></div>}
           {p.line_id && <div className="info-row"><Icon n="chat" size={18} className="flat-ico" /><span>LINE: {p.line_id}</span></div>}
-          {p.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><Link href={p.website}>{p.website}</Link></div>}
+          {p.website && <div className="info-row"><Icon n="globe" size={18} className="flat-ico" /><a href={p.website} target="_blank" rel="noopener">{p.website.replace(/^https?:\/\//, '')}</a></div>}
           {p.socials && SOCIAL_CHANNELS.filter((ch) => p.socials[ch.key]).map((ch) => (
             <div className="info-row" key={ch.key}><Icon n={ch.icon} size={18} className="flat-ico" /><a href={socialHref(ch.key, p.socials[ch.key])} target="_blank" rel="noopener">{ch.label}: {String(p.socials[ch.key]).replace(/^https?:\/\//, '')}</a></div>
           ))}

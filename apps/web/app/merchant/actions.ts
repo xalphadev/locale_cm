@@ -323,7 +323,14 @@ export async function updateShopAction(formData: FormData) {
   const descTh = s(formData, 'desc_th');
   const phone = s(formData, 'phone');
   const lineId = s(formData, 'line_id');
-  const website = s(formData, 'website');
+  // website: block non-http(s) schemes (javascript:/data: → stored XSS on the public consumer page) and
+  // normalize a bare domain to https. NULLIF in the query turns '' back to NULL.
+  let website = s(formData, 'website');
+  if (website) {
+    if (/^https?:\/\//i.test(website)) { /* already a safe absolute URL */ }
+    else if (/^[a-z][a-z0-9+.-]*:/i.test(website)) website = '';   // some other scheme → drop it
+    else website = 'https://' + website;                            // bare domain → assume https
+  }
   const sells = !!formData.get('sells_products');
   const offersStay = !!formData.get('offers_stay');
   const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing

@@ -4,17 +4,12 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
+import { shopReadiness } from '@/lib/readiness';
 
 export const dynamic = 'force-dynamic';
 
 const CONSUMER = process.env.CONSUMER_BASE ?? 'http://127.0.0.1:3003';
-const NIMMAN_LNG = 98.967, NIMMAN_LAT = 18.796;
 const DAYS: [string, string][] = [['mon', 'จันทร์'], ['tue', 'อังคาร'], ['wed', 'พุธ'], ['thu', 'พฤหัสบดี'], ['fri', 'ศุกร์'], ['sat', 'เสาร์'], ['sun', 'อาทิตย์']];
-function parsePoint(geo: string | null) {
-  if (!geo) return null;
-  const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/i.exec(geo);
-  return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
-}
 
 // READ-ONLY branch detail — mirrors what the customer sees (cover, address, hours, contact) and leads with a
 // readiness strip that nudges an incomplete branch to "พร้อมเผยแพร่". Editing is on /merchant/shop/edit.
@@ -25,8 +20,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
     `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials,
             sells_products, offers_stay, manages_stay, room_mode, geo::text geo
        FROM places WHERE id=$1`, [acc.place_id]);
-  const pt = parsePoint(p?.geo);
-  const pinned = !!pt && !(Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
+  const { pt, pinned, missing, pct } = shopReadiness(p);   // shared with the dashboard nudge
   const noun = (acc.branch_count ?? 1) > 1 ? 'สาขา' : 'ร้าน';
   const desc = i18n(p?.description_i18n);
   const addr = i18n(p?.address_i18n);
@@ -39,17 +33,6 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
     p?.offers_stay && 'มีห้องพัก (เผยแพร่)',
     p?.manages_stay && 'ใช้ระบบจัดการห้อง',
   ].filter(Boolean) as string[];
-
-  // readiness: the 5 things a branch needs to look complete to customers
-  const ready = [
-    { ok: imgs.length > 0, label: 'รูป' },
-    { ok: !!addr, label: 'ที่อยู่' },
-    { ok: pinned, label: 'ปักหมุด' },
-    { ok: hasHours, label: 'เวลาเปิด-ปิด' },
-    { ok: !!(p?.phone || p?.line_id), label: 'ช่องทางติดต่อ' },
-  ];
-  const missing = ready.filter((r) => !r.ok).map((r) => r.label);
-  const pct = Math.round(((ready.length - missing.length) / ready.length) * 100);
   const today = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', weekday: 'short' }).format(new Date()).toLowerCase().slice(0, 3);
   const hr = (k: string) => (hours[k] && hours[k] !== 'closed' ? hours[k].replace('-', '–') : 'ปิด');
 
