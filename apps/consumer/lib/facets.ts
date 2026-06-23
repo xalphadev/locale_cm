@@ -26,11 +26,8 @@ export const FACET_LABELS: Record<string, string> = {
   garden: 'สวน', coworking: 'โต๊ะทำงานส่วนกลาง', laundry_room: 'ห้องซักผ้า',
 };
 
-/** Unit amenities offered as filter chips on /stay (match stay_units.unit_amenities[]). */
-export const STAY_AMENITIES = ['aircon', 'private_bath', 'kitchen', 'washing_machine', 'parking', 'pets_ok', 'fiber_wifi', 'balcony'];
-
-/** Building / common-area facilities (stay_units.attrs.building[]) — surfaced for multi-unit kinds. */
-export const STAY_BUILDING = ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'];
+// Stay amenities / building facilities are now the admin-managed catalog (stay_amenity, migration 0044),
+// loaded via apps/consumer/lib/amenities.ts — the old hardcoded STAY_AMENITIES/STAY_BUILDING lived here.
 
 /** Accommodation types (places.stay_kind). Shown for both rental modes — a place's type is
  *  independent of whether its rooms rent monthly or daily. */

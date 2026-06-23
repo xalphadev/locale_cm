@@ -378,8 +378,8 @@ export async function createStayUnitAction(formData: FormData) {
   const availUnits = mode === 'monthly' ? Math.max(0, Math.round(num('available_units') ?? 1)) : 0;
   const dailyStatus = mode === 'daily' && ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
   const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
-  const bills = formData.getAll('bills').map(String).filter(Boolean);
-  const amen = formData.getAll('amenity').map(String).filter(Boolean);
+  const bills = formData.getAll('bills').map(String).filter((k) => KEY_RE.test(k)).slice(0, 20);
+  const amen = formData.getAll('amenity').map(String).filter((k) => KEY_RE.test(k)).slice(0, 40);
   // photos upload to MinIO via saveUploads (resized to WebP); no URL pasting
   const urls = await saveUploads(formData.getAll('photos') as File[], 'rooms');
   const gender = ['female', 'male'].includes(s(formData, 'gender_policy')) ? s(formData, 'gender_policy') : null;
@@ -390,7 +390,7 @@ export async function createStayUnitAction(formData: FormData) {
   if (formData.get('attr_breakfast')) attrs.breakfast = true;
   const canc = s(formData, 'attr_cancellation'); if (['flexible', 'moderate', 'strict'].includes(canc)) attrs.cancellation = canc;
   const hostInfo = s(formData, 'attr_host').slice(0, 500).trim(); if (hostInfo) attrs.host = hostInfo;
-  const building = formData.getAll('building').map(String).filter((k) => ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'].includes(k));
+  const building = formData.getAll('building').map(String).filter((k) => KEY_RE.test(k)).slice(0, 40);
   if (building.length) attrs.building = building;
   await q(
     `INSERT INTO stay_units(place_id, name_i18n, description_i18n, rental_mode, price_minor, price_period, available_units, available_from, daily_status,
@@ -455,8 +455,8 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   const availUnits = num('available_units') != null ? Math.max(0, Math.round(num('available_units')!)) : null;
   const dailyStatus = ['vacant', 'full', 'ask'].includes(s(formData, 'daily_status')) ? s(formData, 'daily_status') : 'ask';
   const furnished = ['furnished', 'partial', 'unfurnished'].includes(s(formData, 'furnished')) ? s(formData, 'furnished') : null;
-  const bills = formData.getAll('bills').map(String).filter(Boolean);
-  const amen = formData.getAll('amenity').map(String).filter(Boolean);
+  const bills = formData.getAll('bills').map(String).filter((k) => KEY_RE.test(k)).slice(0, 20);
+  const amen = formData.getAll('amenity').map(String).filter((k) => KEY_RE.test(k)).slice(0, 40);
   // new photos upload to MinIO and REPLACE image_urls; none → keep existing (CASE in SQL). No URL pasting.
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
   const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
@@ -471,7 +471,7 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   if (formData.get('attr_breakfast')) attrs.breakfast = true;
   const canc = s(formData, 'attr_cancellation'); if (['flexible', 'moderate', 'strict'].includes(canc)) attrs.cancellation = canc;
   const hostInfo = s(formData, 'attr_host').slice(0, 500).trim(); if (hostInfo) attrs.host = hostInfo;
-  const building = formData.getAll('building').map(String).filter((k) => ['pool', 'gym', 'lift', 'security', 'cctv', 'garden', 'coworking', 'laundry_room'].includes(k));
+  const building = formData.getAll('building').map(String).filter((k) => KEY_RE.test(k)).slice(0, 40);
   if (building.length) attrs.building = building;
   await q(
     // available_units/daily_status are written only for the row's ACTIVE mode, so toggling
@@ -884,6 +884,7 @@ export async function createPayoutRequestAction(formData: FormData) {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 const ROOM_STATUS = ['vacant', 'occupied', 'reserved', 'maintenance'];
+const KEY_RE = /^[a-z0-9_]+$/;   // amenity/building/bills keys are the admin catalog (0044) — accept any well-formed key
 
 /** Recompute a managed listing's marketplace vacancy from its physical rooms (projection, 0033). No-op for unmanaged. */
 async function refreshUnitVacancy(stayUnitId: string | null | undefined) {

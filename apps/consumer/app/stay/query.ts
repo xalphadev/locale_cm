@@ -1,8 +1,9 @@
 import { q, i18n, demoUserId } from '@/lib/db';
 import { roomVacancy, roomImg } from '../RoomCard';
 import { STAY_KINDS } from '@/lib/facets';
-const AKEY = /^[a-z0-9_]+$/;   // amenity/building keys are an admin catalog now — accept any well-formed key
 import { parsePoint, isDefaultGeo } from '@/lib/geo';
+
+const AKEY = /^[a-z0-9_]+$/;   // amenity/building keys are an admin catalog now — accept any well-formed key
 
 // Shared stay-search data loader for BOTH the list (/stay) and the full-screen map (/stay/map) routes,
 // so the two views are one continuous search: identical SQL, grouping, pins, filters, and URL state.

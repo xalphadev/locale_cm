@@ -230,4 +230,5 @@ export async function addAmenityAction(formData: FormData) {
 export async function toggleAmenityAction(grp: string, key: string) {
   await q(`UPDATE stay_amenity SET active = NOT active, updated_at=now() WHERE grp=$1 AND key=$2`, [grp, key]);
   revalidatePath('/reports/amenities');
+  redirect('/reports/amenities?ok=saved');
 }
