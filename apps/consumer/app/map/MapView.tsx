@@ -2,9 +2,9 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '../icons';
-import { cover } from '../../lib/img';
+import { cover, pickCover } from '../../lib/img';   // pure module — NOT @/lib/db (db pulls server-only auth into this client component)
 
-type Place = { id: string; name: string; category: string; subcategory: string | null; lat: number; lng: number; rev_n: number; rev_avg: string | null };
+type Place = { id: string; name: string; category: string; subcategory: string | null; lat: number; lng: number; rev_n: number; rev_avg: string | null; image_urls?: string[] | null };
 
 const NIMMAN: [number, number] = [18.7965, 98.9685];
 const COLORS: Record<string, string> = { eat: '#F4A52B', see: '#2B74FF', do: '#8A5CF6' };
@@ -72,7 +72,7 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
     shown.forEach((p) => {
       const c = COLORS[p.category] || '#6B6862';
       const on = p.id === sel;
-      const img = cover(p.id, p.subcategory, p.category, 80, 80);
+      const img = pickCover(p.image_urls, p.id, p.subcategory, p.category, 80, 80);
       const kmText = p.km == null ? '' : p.km < 1 ? `${Math.round(p.km * 1000)} ม.` : `${p.km.toFixed(1)} กม.`;
       const icon = L.divIcon({
         className: 'pinx-wrap',
@@ -138,7 +138,7 @@ export default function MapView({ places, focus }: { places: Place[]; focus?: st
         {shown.map((p) => (
           <Link key={p.id} ref={(el) => { cardById.current[p.id] = el; }} href={`/place/${p.id}`}
             className={`map-card ${p.id === sel ? 'on' : ''}`} onMouseEnter={() => select(p.id, false)}>
-            <img src={cover(p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" />
+            <img src={pickCover(p.image_urls, p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" />
             <div className="mc">
               <div className="mc-nm">{p.name}</div>
               <div className="mc-meta">

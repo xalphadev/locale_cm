@@ -42,4 +42,4 @@ export async function demoUserId(): Promise<string | null> {
 export { i18n, getLocale } from './i18n';
 /** coin-minor → whole Coins (1 COIN = 100 minor). NEVER shown next to a ฿ value (e-money rule). */
 export const coins = (minor: number | string | null | undefined) => Math.round(Number(minor ?? 0) / 100);
-export { cover, coverSet, thumb } from './img';
+export { cover, coverSet, thumb, pickCover } from './img';

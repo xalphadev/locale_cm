@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, i18n, cover, coverSet, demoUserId } from '@/lib/db';
+import { q, i18n, cover, coverSet, pickCover, demoUserId } from '@/lib/db';
 import { openNow as computeOpen, bkkNow } from '@/lib/local';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
@@ -111,7 +111,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
       }
       // similar places: same category + nature (shop vs stay), same area first, then by popularity
       similar = await q<any>(
-        `SELECT p.id, p.name_i18n, p.subcategory, p.category::text cat, p.price_band::text price_band, p.offers_stay,
+        `SELECT p.id, p.name_i18n, p.subcategory, p.category::text cat, p.price_band::text price_band, p.offers_stay, p.image_urls,
                 rv.n::int rev_n, rv.avg::text rev_avg
            FROM places p
            LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
@@ -405,7 +405,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
               const sc = (s.rev_n || 0) >= 5;
               return (
                 <Link className="openc" key={s.id} href={`/place/${s.id}`}>
-                  <div className="op"><img src={cover(s.id, s.subcategory, s.cat, 300, 200)} alt="" loading="lazy" /></div>
+                  <div className="op"><img src={pickCover(s.image_urls, s.id, s.subcategory, s.cat, 300, 200)} alt="" loading="lazy" /></div>
                   <div className="onm">{i18n(s.name_i18n)}</div>
                   <div className="ometa">{s.subcategory || catTH(s.cat)}{sc ? ` · ★ ${s.rev_avg}` : ''}{s.price_band ? ` · ${'฿'.repeat(Number(s.price_band))}` : ''}</div>
                 </Link>

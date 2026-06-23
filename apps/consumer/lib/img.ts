@@ -60,6 +60,12 @@ export function cover(seed: string, sub?: string | null, cat?: string | null, w 
   return unsplash(id, w, h);
 }
 
+/** Display cover for a card: the venue's OWN uploaded first photo (the cover the owner set), else a
+ *  deterministic stock cover so a place with no uploads still looks complete. */
+export function pickCover(imageUrls: string[] | null | undefined, seed: string, sub?: string | null, cat?: string | null, w = 640, h = 480): string {
+  return (imageUrls && imageUrls[0]) || cover(seed, sub, cat, w, h);
+}
+
 /** A SET of distinct cover photos for a venue's gallery (atmosphere + theme variety), so a place
  *  with no uploaded media still shows several relevant images. Deterministic per seed. */
 export function coverSet(seed: string, sub?: string | null, cat?: string | null, count = 5, w = 1280, h = 860): string[] {

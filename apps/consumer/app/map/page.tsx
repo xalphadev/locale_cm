@@ -13,7 +13,7 @@ export default async function MapPage({ searchParams }: { searchParams: { focus?
   let rows: any[] = [];
   try {
     rows = await q<any>(
-      `SELECT p.id, p.name_i18n, p.category::text category, p.subcategory, p.geo::text geo,
+      `SELECT p.id, p.name_i18n, p.category::text category, p.subcategory, p.geo::text geo, p.image_urls,
               rv.n::int rev_n, rv.avg::text rev_avg
        FROM places p
        LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
@@ -24,7 +24,7 @@ export default async function MapPage({ searchParams }: { searchParams: { focus?
   const places = rows
     .map((r) => { const pt = parsePoint(r.geo); return pt ? {
       id: r.id, name: i18n(r.name_i18n), category: r.category, subcategory: r.subcategory,
-      lat: pt.lat, lng: pt.lng, rev_n: r.rev_n ?? 0, rev_avg: r.rev_avg,
+      lat: pt.lat, lng: pt.lng, rev_n: r.rev_n ?? 0, rev_avg: r.rev_avg, image_urls: r.image_urls,
     } : null; })
     .filter(Boolean) as any[];
 

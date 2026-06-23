@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, i18n, cover } from '@/lib/db';
+import { q, i18n, pickCover } from '@/lib/db';
 import { Icon } from '../icons';
 import MapPeek from '../MapPeek';
 import { daypart, bkkNow, openNow } from '@/lib/local';
@@ -102,7 +102,7 @@ export default async function Plan({ searchParams }: { searchParams: { area?: st
     const subs = slot.subs ?? [];
     const rows = await q<any>(
       `SELECT p.id, p.name_i18n, p.subcategory, p.category::text category, p.price_band::text price_band,
-              p.opening_hours, p.geo::text geo, rv.n::int rev_n, rv.avg::text rev_avg
+              p.image_urls, p.opening_hours, p.geo::text geo, rv.n::int rev_n, rv.avg::text rev_avg
          FROM places p
          LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
            WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
@@ -119,7 +119,7 @@ export default async function Plan({ searchParams }: { searchParams: { area?: st
     if (!pick && area) {
       const r2 = await q<any>(
         `SELECT p.id, p.name_i18n, p.subcategory, p.category::text category, p.price_band::text price_band,
-                p.opening_hours, p.geo::text geo, rv.n::int rev_n, rv.avg::text rev_avg
+                p.image_urls, p.opening_hours, p.geo::text geo, rv.n::int rev_n, rv.avg::text rev_avg
            FROM places p
            LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
              WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
@@ -162,7 +162,7 @@ export default async function Plan({ searchParams }: { searchParams: { area?: st
             {stops.map((s, i) => (
               <Link className="pl-stop" key={s.id} href={`/place/${s.id}`}>
                 <div className="pl-num">{i + 1}</div>
-                <img className="pl-img" src={cover(s.id, s.subcategory, s.category, 130, 130)} alt="" loading="lazy" />
+                <img className="pl-img" src={pickCover(s.image_urls, s.id, s.subcategory, s.category, 130, 130)} alt="" loading="lazy" />
                 <div className="pl-body">
                   <div className="pl-slot">{s.slot.label}</div>
                   <div className="pl-name">{i18n(s.name_i18n)}</div>

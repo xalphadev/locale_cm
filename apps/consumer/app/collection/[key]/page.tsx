@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, i18n, cover } from '@/lib/db';
+import { q, i18n, cover, pickCover } from '@/lib/db';
 import { Icon } from '../../icons';
 import { collectionByKey } from '@/lib/collections';
 import { openNow, freshLabel } from '@/lib/local';
@@ -18,7 +18,7 @@ export default async function CollectionPage({ params }: { params: { key: string
   let rows: any[] = [];
   try {
     rows = await q<any>(
-      `SELECT p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band,
+      `SELECT p.id, p.name_i18n, p.image_urls, p.category::text category, p.subcategory, p.price_band::text price_band,
               p.opening_hours, fr.last_verified_at, rv.n::int rev_n, rv.avg::text rev_avg
          FROM places p
          LEFT JOIN data_freshness fr ON fr.place_id=p.id
@@ -45,7 +45,7 @@ export default async function CollectionPage({ params }: { params: { key: string
           const fresh = freshLabel(p.last_verified_at);
           return (
             <Link className="lrow" href={`/place/${p.id}`} key={p.id}>
-              <span className="lthumb-wrap"><img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" /></span>
+              <span className="lthumb-wrap"><img className="lthumb" src={pickCover(p.image_urls, p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" /></span>
               <div className="lc">
                 <div className="lname">{i18n(p.name_i18n)}</div>
                 <div className="lmeta">

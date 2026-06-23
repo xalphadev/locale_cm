@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, i18n, coins, cover, demoUserId } from '@/lib/db';
+import { q, i18n, coins, pickCover, demoUserId } from '@/lib/db';
 import { sessionUserId } from '@/lib/auth';
 import { logoutAction } from '../auth/actions';
 import { Icon } from '../icons';
@@ -26,7 +26,7 @@ export default async function Profile() {
       const [c] = await q<any>(`SELECT COALESCE(SUM(remaining_minor),0) m FROM coin_lots WHERE user_id=$1 AND state='active'`, [uid]); coinMinor = c ? Number(c.m) : 0;
       const [sv] = await q<any>(`SELECT count(*) n FROM saved_places WHERE user_id=$1`, [uid]); nSaved = Number(sv.n);
       const [rv] = await q<any>(`SELECT count(*) n FROM reviews WHERE user_id=$1`, [uid]); nReviews = Number(rv.n);
-      saved = await q<any>(`SELECT p.id, p.name_i18n, p.category::text category, p.subcategory FROM saved_places s JOIN places p ON p.id=s.place_id WHERE s.user_id=$1 ORDER BY s.created_at DESC`, [uid]);
+      saved = await q<any>(`SELECT p.id, p.name_i18n, p.category::text category, p.subcategory, p.image_urls FROM saved_places s JOIN places p ON p.id=s.place_id WHERE s.user_id=$1 ORDER BY s.created_at DESC`, [uid]);
       quests = await q<any>(`SELECT qu.id, qu.title_i18n, qp.status::text status, COALESCE(jsonb_array_length(qp.steps_completed),0) done, qu.min_steps_required need FROM quest_progress qp JOIN quests qu ON qu.id=qp.quest_id WHERE qp.user_id=$1 ORDER BY (qp.status='in_progress') DESC, qp.created_at DESC LIMIT 5`, [uid]);
     }
   } catch { down = true; }
@@ -60,7 +60,7 @@ export default async function Profile() {
         <div className="sec" style={{ padding: 0, marginTop: '.6rem' }}><h2>ที่บันทึกไว้</h2><Link className="more" href="/community">ชุมชน ›</Link></div>
         {saved.map((p) => (
           <Link className="erow" key={p.id} href={`/place/${p.id}`}>
-            <div className="ethumb" style={{ background: 'none' }}><img src={cover(p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" /></div>
+            <div className="ethumb" style={{ background: 'none' }}><img src={pickCover(p.image_urls, p.id, p.subcategory, p.category, 160, 160)} alt="" loading="lazy" /></div>
             <div><div className="nm">{i18n(p.name_i18n)}</div><div className="meta">{catTH(p.category)}{p.subcategory ? ` · ${p.subcategory}` : ''}</div></div>
             <span className="chev"><Icon n="chevR" size={18} /></span>
           </Link>

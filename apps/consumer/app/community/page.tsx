@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, i18n, cover } from '@/lib/db';
+import { q, i18n, pickCover } from '@/lib/db';
 import { Icon } from '../icons';
 
 export const dynamic = 'force-dynamic';
@@ -11,7 +11,7 @@ export default async function Community() {
       `SELECT pr.display_name, count(*)::int n FROM reviews r JOIN profiles pr ON pr.user_id=r.user_id
        WHERE r.moderation_status='approved' GROUP BY pr.display_name ORDER BY n DESC, pr.display_name LIMIT 12`);
     recent = await q<any>(
-      `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat,
+      `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname, p.subcategory psub, p.category::text pcat, p.image_urls pimg,
               to_char(r.created_at,'YYYY-MM-DD') d
        FROM reviews r JOIN profiles pr ON pr.user_id=r.user_id JOIN places p ON p.id=r.place_id
        WHERE r.moderation_status='approved' ORDER BY r.created_at DESC LIMIT 24`);
@@ -38,7 +38,7 @@ export default async function Community() {
           <div className="sec"><h2>รีวิวล่าสุด</h2></div>
           {recent.map((r, i) => (
             <Link className="crev" key={i} href={`/place/${r.pid}`}>
-              <img className="cphoto" src={cover(r.pid, r.psub, r.pcat, 160, 160)} alt="" loading="lazy" />
+              <img className="cphoto" src={pickCover(r.pimg, r.pid, r.psub, r.pcat, 160, 160)} alt="" loading="lazy" />
               <div className="cw">
                 <div className="ctop"><span className="avatar">{(r.display_name || 'ผ')[0]}</span><span className="cname">{r.display_name || 'ผู้ใช้'}</span>
                   <span className="cstars">{Array.from({ length: r.rating }).map((_, k) => <Icon key={k} n="star" fill="currentColor" size={12} />)}</span></div>

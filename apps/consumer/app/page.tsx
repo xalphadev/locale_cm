@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { q, demoUserId, i18n, cover, getLocale } from '@/lib/db';
+import { q, demoUserId, i18n, cover, pickCover, getLocale } from '@/lib/db';
 import { Icon, CAT_ICON } from './icons';
 import MapPeek from './MapPeek';
 import LangSwitch from './LangSwitch';
@@ -45,7 +45,7 @@ function venueBadge(n: number, avg: number): { l: string; c: string } | null {
   return null;
 }
 const PCOLS = `p.id, p.name_i18n, p.category::text category, p.subcategory, p.price_band::text price_band,
-  p.opening_hours, fr.last_verified_at, dist.slug area_slug,
+  p.image_urls, p.opening_hours, fr.last_verified_at, dist.slug area_slug,
   rv.n::int rev_n, rv.avg::text rev_avg, dl.deal_type::text deal_type, dl.value_pct, dl.value_minor, (vid.x IS NOT NULL) has_video`;
 const PJOIN = `FROM places p
   LEFT JOIN districts dist ON dist.id=p.district_id
@@ -86,7 +86,7 @@ async function load(tab: string, cat: string, sub: string, query: string, facets
   const pins = pinRows.map((r) => { const pt = parsePoint(r.geo); return pt ? { lat: pt.lat, lng: pt.lng, cat: r.cat } : null; }).filter(Boolean);
   const deals = await q<any>(
     `SELECT d.id, d.place_id, d.deal_type::text deal_type, d.value_pct, d.value_minor, d.title_i18n,
-            d.ends_at, d.quota_total, d.quota_used, p.name_i18n pname, p.subcategory psub, p.category::text pcat
+            d.ends_at, d.quota_total, d.quota_used, p.name_i18n pname, p.subcategory psub, p.category::text pcat, p.image_urls
      FROM deals d JOIN places p ON p.id=d.place_id
      WHERE d.status='active' AND (d.ends_at IS NULL OR d.ends_at>=now()) ORDER BY d.ends_at NULLS LAST LIMIT 8`);
   return { mode: 'home' as const, places, areas, community, quest, stamps, events, pins, deals };
@@ -104,7 +104,7 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
     <Link className="lrow" href={`/place/${p.id}`} style={rank != null ? { animationDelay: `${Math.min(rank, 14) * 26}ms` } : undefined}>
       {rank != null && <span className="rank">{rank}</span>}
       <span className="lthumb-wrap">
-        <img className="lthumb" src={cover(p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
+        <img className="lthumb" src={pickCover(p.image_urls, p.id, p.subcategory, p.category, 170, 170)} alt="" loading="lazy" />
         {p.has_video && <span className="vidbadge"><Icon n="play" size={11} fill="currentColor" /></span>}
       </span>
       <div className="lc">
@@ -251,7 +251,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
               const o = openNow(p.opening_hours);
               return (
                 <Link className="openc" key={p.id} href={`/place/${p.id}`}>
-                  <div className="op"><img src={cover(p.id, p.subcategory, p.category, 300, 200)} alt="" loading="lazy" />
+                  <div className="op"><img src={pickCover(p.image_urls, p.id, p.subcategory, p.category, 300, 200)} alt="" loading="lazy" />
                     <span className={`opb ${o.closesSoon ? 'soon' : ''}`}>{o.label}</span></div>
                   <div className="onm">{i18n(p.name_i18n)}</div>
                   <div className="ometa">{p.subcategory || catTH(p.category)}{p.rev_avg ? ` · ★ ${p.rev_avg}` : ''}</div>
@@ -281,7 +281,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
               const dd = daysLeft(dl.ends_at);
               return (
                 <Link className="dealc" key={dl.id} href={`/place/${dl.place_id}`}>
-                  <div className="dp"><img src={cover(dl.place_id, dl.psub, dl.pcat, 360, 200)} alt="" loading="lazy" />
+                  <div className="dp"><img src={pickCover(dl.image_urls, dl.place_id, dl.psub, dl.pcat, 360, 200)} alt="" loading="lazy" />
                     <span className="dbadge">{dealLabel(dl.deal_type, dl.value_pct, dl.value_minor)}</span></div>
                   <div className="db">
                     <div className="dnm">{i18n(dl.pname)}</div>

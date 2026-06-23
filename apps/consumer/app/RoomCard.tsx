@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { i18n, cover, thumb } from '@/lib/db';
+import { i18n, cover, pickCover, thumb } from '@/lib/db';
 import { Icon } from './icons';
 import { lineHref } from './ProductCard';
 import { toggleSaveAction } from './actions';
@@ -21,7 +21,7 @@ export function rentText(u: any): string {
 }
 export function roomImg(u: any): string {
   if (u.image_urls && u.image_urls.length) return thumb(u.image_urls[0]);
-  return cover(`stay-${u.id}`, u.stay_kind || 'stay', 'stay', 360, 360);
+  return pickCover(u.image_urls, `stay-${u.id}`, u.stay_kind || 'stay', 'stay', 360, 360);
 }
 export function roomImages(u: any): string[] {
   return (u.image_urls && u.image_urls.length) ? u.image_urls : [roomImg(u)];
