@@ -43,10 +43,18 @@ export default function GeoPicker({ lat0, lng0 }: { lat0?: number | null; lng0?:
   }
   function locate() {
     if (!navigator.geolocation) { setErr('อุปกรณ์นี้ไม่รองรับการหาตำแหน่ง'); return; }
+    // Browsers only expose geolocation in a secure context (HTTPS or localhost). Over a plain-HTTP LAN address
+    // (e.g. testing on a phone at http://192.168.x.x) it is blocked outright — say so instead of "denied".
+    if (!window.isSecureContext) { setErr('ดึงตำแหน่งอัตโนมัติต้องเปิดผ่าน HTTPS (บนแอป/เว็บจริงใช้ได้) — ระหว่างนี้เลื่อนแผนที่ปักเองได้เลย'); return; }
     setErr(''); setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (pos) => { setLocating(false); const a = pos.coords.latitude, b = pos.coords.longitude; setLat(a.toFixed(6)); setLng(b.toFixed(6)); recenter(a, b); },
-      (e) => { setLocating(false); setErr(e.code === 1 ? 'ไม่ได้อนุญาตให้เข้าถึงตำแหน่ง — เปิดสิทธิ์ใน Settings หรือเลื่อนแผนที่เอง' : 'หาตำแหน่งไม่สำเร็จ ลองใหม่อีกครั้ง'); },
+      (e) => {
+        setLocating(false);
+        setErr(e.code === 1 ? 'ไม่ได้อนุญาตให้เข้าถึงตำแหน่ง — เปิดสิทธิ์ตำแหน่งให้เบราว์เซอร์ แล้วลองใหม่ (หรือเลื่อนแผนที่ปักเอง)'
+          : e.code === 2 ? 'หาตำแหน่งไม่ได้ (สัญญาณ GPS) — เลื่อนแผนที่ปักเอง'
+            : 'หมดเวลาหาตำแหน่ง — ลองใหม่ หรือเลื่อนแผนที่ปักเอง');
+      },
       { enableHighAccuracy: true, timeout: 8000 });
   }
 
