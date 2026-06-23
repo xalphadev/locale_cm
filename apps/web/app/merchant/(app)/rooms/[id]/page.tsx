@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 import { ShopGallery } from '../../ShopGallery';
 import { FURNISHED_TH } from '../constants';
 import { amenityLabels } from '@/lib/amenities';
@@ -23,7 +24,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay) redirect('/merchant');
   const [u] = isUuid(params.id) ? await q<any>(`SELECT * FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
-  if (!u) return (<><div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div><h1>ไม่พบห้องพัก</h1></>);
+  if (!u) return (<><MTopbar back="/merchant/rooms" backLabel="ห้องพัก" title="ไม่พบห้องพัก" /></>);
 
   // "ห้องในประเภทนี้": physical rooms grouped under this type — lets the owner browse rooms BY type, and
   // surfaces a type that has no rooms on the board ("ลอย") so it can be fixed instead of silently drifting.
@@ -47,7 +48,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
 
   return (
     <>
-      <div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div>
+      <MTopbar back="/merchant/rooms" backLabel="ห้องพัก" title={i18n(u.name_i18n)} action={<Link href={`/merchant/rooms/${u.id}/edit`} aria-label="แก้ไข"><Icon n="edit" size={19} /></Link>} />
 
       {imgs && imgs.filter(Boolean).length
         ? <ShopGallery images={imgs.filter(Boolean)} />
@@ -58,7 +59,6 @@ export default async function RoomDetail({ params }: { params: { id: string } })
           <span className="t cat"><Icon n="bed" size={12} /> {monthly ? 'เช่ารายเดือน' : 'เช่ารายวัน'}</span>
           {hidden && <span className="t off">ซ่อนอยู่</span>}
         </div>
-        <h1>{i18n(u.name_i18n)}</h1>
         {u.price_minor != null && <div className="dprice">{baht(u.price_minor)}<span>/{monthly ? 'เดือน' : 'คืน'}</span></div>}
       </div>
 

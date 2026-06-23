@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import RoomCalendar from '../RoomCalendar';
@@ -47,7 +48,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       `SELECT r.*, su.name_i18n unit_name, su.rental_mode FROM stay_room r LEFT JOIN stay_units su ON su.id = r.stay_unit_id
          WHERE r.id=$1 AND r.place_id=$2 AND r.deleted_at IS NULL`, [params.id, acc.place_id])
     : [];
-  if (!r) return (<><div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</Link></div><h1>ไม่พบห้อง</h1></>);
+  if (!r) return (<MTopbar back="/merchant/units" backLabel="ผังห้อง" title="ไม่พบห้อง" />);
 
   const monthly = r.rental_mode !== 'daily';
   const term = acc.room_group_term || 'ชั้น';
@@ -71,7 +72,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
 
   return (
     <>
-      <div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</Link></div>
+      <MTopbar back="/merchant/units" backLabel="ผังห้อง" title={`ห้อง ${r.code}`} action={<Link href={`/merchant/units/${r.id}/edit`} aria-label="แก้ไข"><Icon n="edit" size={19} /></Link>} />
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกแล้ว</div>}
       {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกช่วงไม่ว่างแล้ว</div>}
       {searchParams?.ok === 'booked' && <div className="banner-ok">✓ บันทึกการจองแล้ว — ดูได้ในหน้า “คำขอจอง”</div>}
@@ -81,10 +82,6 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.error === 'occupied' && <div className="banner-err">ห้องปลายทางไม่ว่าง</div>}
       {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
 
-      <div className="listhead">
-        <h1>ห้อง {r.code}</h1>
-        <Link className="addbtn" href={`/merchant/units/${r.id}/edit`}><Icon n="edit" size={16} /> แก้ไข</Link>
-      </div>
       <div className="dtags" style={{ marginBottom: 14 }}>
         <span className="t cat"><Icon n="bed" size={12} /> {r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'}</span>
         <span className={`t ${o.cls}`}>{o.label}</span>

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 import { SUBTYPES } from '../ProductForm';
 import { setProductFlagAction, deleteProductAction } from '../../../actions';
 
@@ -15,14 +16,14 @@ export default async function ProductDetail({ params }: { params: { id: string }
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.sells_products) redirect('/merchant');
   const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM shop_products WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
-  if (!p) return (<><div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div><h1>ไม่พบสินค้า</h1></>);
+  if (!p) return (<MTopbar back="/merchant/products" backLabel="สินค้า" title="ไม่พบสินค้า" />);
 
   const imgs: string[] | null = p.image_urls;
   const hidden = p.status === 'hidden';
   const price = p.price_minor != null ? `฿${Math.round(p.price_minor / 100).toLocaleString()}${p.price_unit ? '/' + p.price_unit : ''}` : 'สอบถามราคา';
   return (
     <>
-      <div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div>
+      <MTopbar back="/merchant/products" backLabel="สินค้า" title={i18n(p.name_i18n)} action={<Link href={`/merchant/products/${p.id}/edit`} aria-label="แก้ไข"><Icon n="edit" size={19} /></Link>} />
 
       <div className="dhero">
         {imgs && imgs.length ? (
@@ -40,7 +41,6 @@ export default async function ProductDetail({ params }: { params: { id: string }
           {!hidden && p.sold_out && <span className="t sold">หมด</span>}
           {!hidden && p.in_season && <span className="t season"><Icon n="spark" size={11} /> ในฤดู</span>}
         </div>
-        <h1>{i18n(p.name_i18n)}</h1>
         <div className="dprice">{price}</div>
       </div>
 

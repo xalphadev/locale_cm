@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 import { setPostFlagAction, deletePostAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -15,13 +16,13 @@ export default async function PostDetail({ params }: { params: { id: string } })
     `SELECT fp.*, (SELECT count(*) FROM post_likes WHERE post_key='post:'||fp.id)::int likes,
             (SELECT count(*) FROM post_comments WHERE post_key='post:'||fp.id AND deleted_at IS NULL)::int comments
        FROM feed_posts fp WHERE fp.id=$1 AND fp.place_id=$2 AND fp.deleted_at IS NULL`, [params.id, acc.place_id]) : [];
-  if (!p) return (<><div className="mback"><Link href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</Link></div><h1>ไม่พบโพสต์</h1></>);
+  if (!p) return (<><MTopbar back="/merchant/post" backLabel="โพสต์" title="ไม่พบโพสต์" /></>);
 
   const imgs: string[] | null = p.image_urls;
   const hidden = p.status === 'hidden';
   return (
     <>
-      <div className="mback"><Link href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</Link></div>
+      <MTopbar back="/merchant/post" backLabel="โพสต์" title="โพสต์" action={<Link href={`/merchant/post/${p.id}/edit`} aria-label="แก้ไข"><Icon n="edit" size={19} /></Link>} />
 
       <div className="dhero">
         {imgs && imgs.length ? (
