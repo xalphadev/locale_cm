@@ -243,7 +243,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mtop-status.on{color:var(--m-jade);background:#E4F6EC}
 .mtop-out{flex:none;align-self:center;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-muted);border-radius:999px;padding:.42rem .9rem;font:inherit;font-weight:700;font-size:.8rem;cursor:pointer}
 .mtop-out:active{transform:scale(.96)}
-.mbody{padding:1.25rem 1.05rem 1rem}
+.mbody{padding:1.25rem 1.05rem 1rem;--mb-pt:1.25rem;--mb-px:1.05rem}
+/* centered top app-bar for deep pages (MTopbar) — mirrors the brand bar (.mtop), breaks out of .mbody padding */
+.merchant-root .mtopbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:calc(-1*var(--mb-pt,1.25rem)) calc(-1*var(--mb-px,1.05rem)) 1.1rem;padding:10px 8px;background:rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);border-bottom:1px solid var(--m-line)}
+.merchant-root .mtopbar-back{flex:none;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--m-text)}
+.merchant-root .mtopbar-back:hover{background:var(--m-sunk);color:var(--m-accent)}
+.merchant-root .mtopbar-back:active{background:var(--m-sunk);transform:scale(.92)}
+.merchant-root .mtopbar-title{flex:1;min-width:0;text-align:center;font-size:1.14rem;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.merchant-root .mtopbar-act{flex:none;min-width:40px;display:flex;align-items:center;justify-content:flex-end;gap:6px}
 .mbody h1{font-size:1.6rem;font-weight:800;margin:.1rem 0 .75rem;letter-spacing:-.03em}
 /* bottom tabs — airy frosted glass bar, color-only active (matches the consumer app's floating nav) */
 .mtab{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 36px);max-width:404px;height:64px;z-index:40;display:flex;align-items:center;justify-content:space-around;background:rgba(255,255,255,.82);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.65);border-radius:30px;box-shadow:0 10px 34px -8px rgba(16,20,12,.24)}
@@ -963,7 +970,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .printsheet .pc-un{width:118px;color:#444}
 .printsheet .pc-nt{color:#444}
 @media print{
-  .merchant-root .mtop,.merchant-root .mtab,.printbtn,.printsheet .print-bar{display:none !important}
+  .merchant-root .mtop,.merchant-root .mtopbar,.merchant-root .mtab,.printbtn,.printsheet .print-bar{display:none !important}
   .merchant-root .mbody{padding:0 !important}
   .printsheet{max-width:none}
 }
@@ -1016,7 +1023,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 @media (min-width:768px) and (max-width:1023px){
   .merchant-root .mshell{max-width:740px;box-shadow:0 0 80px rgba(16,20,12,.10)}
   .merchant-root .mtab{max-width:560px}
-  .merchant-root .mbody{padding:1.5rem 1.7rem 1.2rem}
+  .merchant-root .mbody{padding:1.5rem 1.7rem 1.2rem;--mb-pt:1.5rem;--mb-px:1.7rem}
   .merchant-root .factgrid{grid-template-columns:repeat(3,1fr)}
 }
 /* iPad landscape + desktop (≥1024): bottom pill → LEFT SIDEBAR, wide centered content, hover states */
@@ -1028,7 +1035,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
     grid-template-areas:"side top" "side main";
   }
   .merchant-root .mtop{grid-area:top;z-index:30}
-  .merchant-root .mbody{grid-area:main;max-width:1000px;width:100%;margin:0 auto;padding:1.9rem 2.4rem 3.2rem}
+  .merchant-root .mbody{grid-area:main;max-width:1000px;width:100%;margin:0 auto;padding:1.9rem 2.4rem 3.2rem;--mb-pt:1.9rem;--mb-px:2.4rem}
   /* the bottom pill nav becomes a full-height left sidebar */
   .merchant-root .mtab{
     grid-area:side;position:sticky;top:0;align-self:start;height:100vh;width:256px;left:auto;transform:none;

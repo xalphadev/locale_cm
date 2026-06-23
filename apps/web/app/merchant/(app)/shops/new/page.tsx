@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Icon } from '../../ui';
 import { ShopTypeSelect } from '../../ShopTypeSelect';
+import { MTopbar } from '../../MTopbar';
 import { addShopAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -9,8 +10,7 @@ export const dynamic = 'force-dynamic';
 export default function NewShop({ searchParams }: { searchParams: { error?: string } }) {
   return (
     <>
-      <div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={17} /> ร้านของฉัน</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="store" size={18} /></span> เพิ่มร้านใหม่</h1>
+      <MTopbar back="/merchant/shops" backLabel="ร้านของฉัน" title="เพิ่มร้านใหม่" />
       <p className="note" style={{ margin: '.1rem 0 .9rem' }}>สร้างร้านใหม่ภายใต้บัญชีเดิม — ไม่ต้องสมัครบัญชีใหม่ และเพิ่มสาขาทีหลังได้</p>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อร้าน</div>}
       {searchParams?.error === 'city' && <div className="banner-err">ระบบยังไม่พร้อมในเมืองนี้ กรุณาติดต่อทีมงาน</div>}

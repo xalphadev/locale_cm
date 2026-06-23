@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../../../ui';
+import { MTopbar } from '../../../MTopbar';
 import { createRewardAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -16,8 +17,7 @@ export default async function NewReward({ searchParams }: { searchParams: { erro
 
   return (
     <>
-      <div className="mback"><Link href="/merchant/loyalty"><Icon n="chevL" size={17} /> แต้มสะสม</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="spark" size={18} /></span> เพิ่มของรางวัล</h1>
+      <MTopbar back="/merchant/loyalty" backLabel="แต้มสะสม" title="เพิ่มของรางวัล" />
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อรางวัล</div>}
       <form className="form mform" action={createRewardAction}>
         <section className="fsec">

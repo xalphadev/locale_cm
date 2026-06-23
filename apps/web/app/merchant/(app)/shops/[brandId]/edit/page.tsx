@@ -5,6 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../../ui';
 import { PhotoUpload } from '../../../PhotoUpload';
 import { updateBrandAction } from '../../../../actions';
+import { MTopbar } from '../../../MTopbar';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,12 +17,11 @@ export default async function EditBrand({ params }: { params: { brandId: string 
   const [b] = isUuid(params.brandId)
     ? await q<any>(`SELECT id, name_i18n, logo_url, description_i18n FROM brands WHERE id=$1 AND owner_account_id=$2 AND deleted_at IS NULL`, [params.brandId, acc.id])
     : [];
-  if (!b) return (<><div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={18} /> ร้านของฉัน</Link></div><h1>ไม่พบร้าน</h1></>);
+  if (!b) return (<><MTopbar back="/merchant/shops" backLabel="ร้านของฉัน" title="ไม่พบร้าน" /></>);
 
   return (
     <>
-      <div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={18} /> ร้านของฉัน</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> ชื่อ &amp; โลโก้ร้าน</h1>
+      <MTopbar back="/merchant/shops" backLabel="ร้านของฉัน" title="ชื่อ & โลโก้ร้าน" />
       <p className="note" style={{ margin: '-.3rem 0 .9rem' }}>ชื่อ · โลโก้ · เรื่องราว นี้<b>ใช้ร่วมทุกสาขา</b> — ส่วนที่อยู่ · รูป · เวลา ของแต่ละสาขาแก้ที่ “ข้อมูลสาขา”</p>
       <form className="form mform" action={updateBrandAction.bind(null, b.id)} encType="multipart/form-data">
         <section className="fsec">

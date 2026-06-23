@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,8 +81,7 @@ export default async function Insights() {
 
   return (
     <>
-      <div className="mback"><Link href="/merchant/loyalty"><Icon n="chevL" size={17} /> แต้มสะสม</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="spark" size={18} /></span> สถิติร้าน</h1>
+      <MTopbar back="/merchant/loyalty" backLabel="แต้มสะสม" title="สถิติร้าน" />
       <p className="note" style={{ margin: '.1rem 0 1rem' }}>ข้อมูลรวมจากการเช็คอินที่ร้านยืนยัน — เป็นภาพรวม ไม่เจาะรายบุคคล (ซ่อนถ้าข้อมูลน้อยกว่า {K} คน)</p>
 
       {/* P1 — the honest headline */}

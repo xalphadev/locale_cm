@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { Icon, isUuid } from '../../../ui';
+import { MTopbar } from '../../../MTopbar';
 import { updateRoomAction, deleteRoomAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -16,13 +17,12 @@ export default async function EditRoomUnit({ params, searchParams }: { params: {
   const [r] = isUuid(params.id)
     ? await q<any>(`SELECT r.*, su.rental_mode FROM stay_room r LEFT JOIN stay_units su ON su.id = r.stay_unit_id WHERE r.id=$1 AND r.place_id=$2 AND r.deleted_at IS NULL`, [params.id, acc.place_id])
     : [];
-  if (!r) return (<><div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</Link></div><h1>ไม่พบห้อง</h1></>);
+  if (!r) return (<><MTopbar back="/merchant/units" backLabel="ผังห้อง" title="ไม่พบห้อง" /></>);
   const monthly = r.rental_mode !== 'daily';
   const term = acc.room_group_term || 'ชั้น';
   return (
     <>
-      <div className="mback"><Link href={`/merchant/units/${r.id}`}><Icon n="chevL" size={18} /> รายละเอียดห้อง</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขห้อง {r.code}</h1>
+      <MTopbar back={`/merchant/units/`} backLabel="รายละเอียดห้อง" title={`แก้ไขห้อง `} />
       {searchParams?.error === 'code' && <div className="banner-err">กรุณาใส่เลข/ชื่อห้อง</div>}
       <form className="form mform" action={updateRoomAction.bind(null, r.id)}>
         <section className="fsec">

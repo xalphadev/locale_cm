@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { loadAmenityCatalog } from '@/lib/amenities';
 import { Icon } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 import { RoomForm } from '../RoomForm';
 import { createStayUnitAction } from '../../../actions';
 
@@ -17,8 +18,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
   const cat = await loadAmenityCatalog();
   return (
     <>
-      <div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> {backLabel}</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="bed" size={18} /></span> เพิ่ม{typeNoun}</h1>
+      <MTopbar back="/merchant/rooms" backLabel={backLabel} title={`เพิ่ม${typeNoun}`} />
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
       <RoomForm action={createStayUnitAction} submitLabel={`เพิ่ม${typeNoun}`} noun={typeNoun} stayKind={acc.stay_kind} amenOpts={cat.amenity} buildOpts={cat.building} billOpts={cat.bills} />
     </>

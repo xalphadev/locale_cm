@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { Icon } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,8 +46,7 @@ export default async function PropertyCalendar() {
 
   return (
     <>
-      <div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={17} /> ผังห้อง</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="calendar" size={18} /></span> ปฏิทินรวม</h1>
+      <MTopbar back="/merchant/units" backLabel="ผังห้อง" title="ปฏิทินรวม" />
       <p className="note" style={{ margin: '.1rem 0 .8rem' }}>ภาพรวม 14 วันข้างหน้า — ห้องไหนมีคน / ห้องไหนว่าง ในจอเดียว (แตะห้องเพื่อจัดการ)</p>
 
       {rooms.length === 0 ? (

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
+import { MTopbar } from '../../MTopbar';
 import { AddRoom } from './AddRoom';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,7 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
   const types = await q<any>(`SELECT id, name_i18n, capacity FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at`, [acc.place_id]);
   const term = acc.room_group_term || 'ชั้น';
 
-  const back = <div className="mback"><Link href="/merchant/units"><Icon n="chevL" size={18} /> ผังห้อง</Link></div>;
+  const back = <MTopbar back="/merchant/units" backLabel="ผังห้อง" title="เพิ่มห้องจริงในผัง" />;
   if (types.length === 0) {
     return (
       <>
@@ -37,7 +38,6 @@ export default async function NewRoom({ searchParams }: { searchParams: { error?
       {searchParams?.error === 'code' && <div className="banner-err">กรุณาใส่เลข/ชื่อห้อง</div>}
       {searchParams?.error === 'dupe' && <div className="banner-err">เลขห้องนี้มีอยู่แล้ว</div>}
       {searchParams?.error === 'range' && <div className="banner-err">ช่วงเลขห้องไม่ถูกต้อง — ใส่เลขเริ่ม–สิ้นสุด (ไม่เกิน 200 ห้อง)</div>}
-      <h1 className="phead"><span className="phead-ic"><Icon n="plus" size={18} /></span> เพิ่มห้องจริงในผัง</h1>
       <AddRoom types={types.map((t) => ({ id: t.id, name: i18n(t.name_i18n), capacity: t.capacity ?? null }))} term={term} allowBeds={['dorm', 'hostel'].includes(acc.stay_kind)} />
     </>
   );

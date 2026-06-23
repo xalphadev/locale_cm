@@ -5,6 +5,7 @@ import { q } from '@/lib/db';
 import { Icon, isUuid } from '../../../ui';
 import { ProductForm } from '../../ProductForm';
 import { updateMerchantProductAction } from '../../../../actions';
+import { MTopbar } from '../../../MTopbar';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,12 +15,11 @@ export default async function EditProduct({ params, searchParams }: { params: { 
   if (!acc.sells_products) redirect('/merchant');
   const [p] = isUuid(params.id) ? await q<any>(`SELECT * FROM shop_products WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!p) {
-    return (<><div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div><h1>ไม่พบสินค้า</h1></>);
+    return (<><MTopbar back="/merchant/products" backLabel="สินค้า" title="ไม่พบสินค้า" /></>);
   }
   return (
     <>
-      <div className="mback"><Link href={`/merchant/products/${p.id}`}><Icon n="chevL" size={18} /> รายละเอียดสินค้า</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขสินค้า</h1>
+      <MTopbar back={`/merchant/products/${p.id}`} backLabel="รายละเอียดสินค้า" title="แก้ไขสินค้า" />
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อสินค้า</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
       <ProductForm action={updateMerchantProductAction.bind(null, p.id)} p={p} submitLabel="บันทึกการแก้ไข" />
