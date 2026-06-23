@@ -329,6 +329,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .flat-ico{color:var(--m-accent);flex:none}
 .merchant-root .info-row>span{color:var(--m-muted)}
 .merchant-root .info-row b{margin-left:auto;color:var(--m-text);font-weight:700;text-align:right}
+.merchant-root .info-row b a{color:var(--m-accent)}
+
+/* readiness strip (branch-view "ขาดอีก N อย่างจะพร้อม") — sits on .banner-warn, whole strip taps to edit */
+.merchant-root .rstrip{display:block;text-decoration:none}
+.merchant-root .rstrip-top{display:flex;align-items:center;gap:6px;font-size:.9rem}
+.merchant-root .rstrip-go{margin-left:auto;color:var(--m-accent);font-weight:800;font-size:.84rem;white-space:nowrap}
+.merchant-root .rstrip-sub{display:block;font-size:.8rem;margin-top:3px;opacity:.85}
+.merchant-root .rstrip-bar{display:block;height:5px;border-radius:999px;background:rgba(0,0,0,.09);overflow:hidden;margin-top:8px}
+.merchant-root .rstrip-bar>i{display:block;height:100%;background:var(--m-accent);border-radius:999px}
 
 .merchant-root .rsec{display:flex;align-items:center;gap:9px;font-size:1.1rem;font-weight:800;margin:1.5rem 0 .75rem}
 .merchant-root .rsec-ic{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:var(--m-soft);color:var(--m-accent);flex:none}
