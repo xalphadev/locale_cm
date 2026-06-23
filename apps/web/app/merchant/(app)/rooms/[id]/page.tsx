@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
+import { ShopGallery } from '../../ShopGallery';
 import { FURNISHED_TH } from '../constants';
 import { amenityLabels } from '@/lib/amenities';
 import { updateVacancyAction, setStayUnitFlagAction, deleteStayUnitAction } from '../../../actions';
@@ -48,14 +49,9 @@ export default async function RoomDetail({ params }: { params: { id: string } })
     <>
       <div className="mback"><Link href="/merchant/rooms"><Icon n="chevL" size={18} /> ห้องพัก</Link></div>
 
-      <div className="dhero">
-        {imgs && imgs.length ? (
-          <div className="dgal">{imgs.map((src, i) => <img key={i} src={src} alt="" loading={i ? 'lazy' : 'eager'} />)}</div>
-        ) : (
-          <span className="dhero-ph"><Thumb images={null} kind="room" /><span>ยังไม่มีรูป — เพิ่มรูปในหน้าแก้ไข</span></span>
-        )}
-        {imgs && imgs.length > 1 && <span className="dcount"><Icon n="image" size={12} /> {imgs.length} รูป</span>}
-      </div>
+      {imgs && imgs.filter(Boolean).length
+        ? <ShopGallery images={imgs.filter(Boolean)} />
+        : <div className="dhero"><span className="dhero-ph"><Thumb images={null} kind="room" /><span>ยังไม่มีรูป — เพิ่มรูปในหน้าแก้ไข</span></span></div>}
 
       <div className="dtitle">
         <div className="dtags">
