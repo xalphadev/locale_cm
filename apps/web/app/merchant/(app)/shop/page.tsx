@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
+import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website,
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials,
             sells_products, offers_stay, manages_stay, room_mode, geo::text geo
        FROM places WHERE id=$1`, [acc.place_id]);
   const pt = parsePoint(p?.geo);
@@ -31,6 +32,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const addr = i18n(p?.address_i18n);
   const imgs: string[] = (p?.image_urls || []).filter(Boolean);
   const hours: Record<string, string> = p?.opening_hours || {};
+  const socials: Record<string, string> = p?.socials || {};
   const hasHours = Object.keys(hours).length > 0;
   const caps = [
     p?.sells_products && 'ขายสินค้า',
@@ -100,6 +102,9 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
         <div className="info-row"><Icon n="phone" className="flat-ico" size={17} /><span>เบอร์โทร</span>{p?.phone ? <b><a href={`tel:${p.phone}`}>{p.phone}</a></b> : <b style={{ color: 'var(--m-muted)', fontWeight: 600 }}>ยังไม่ได้ใส่</b>}</div>
         <div className="info-row"><Icon n="chat" className="flat-ico" size={17} /><span>LINE</span>{p?.line_id ? <b>{p.line_id}</b> : <b style={{ color: 'var(--m-muted)', fontWeight: 600 }}>ยังไม่ได้ใส่</b>}</div>
         {p?.website && <div className="info-row"><Icon n="globe" className="flat-ico" size={17} /><span>เว็บไซต์</span><b><a href={p.website} target="_blank" rel="noopener">เปิดเว็บ</a></b></div>}
+        {SOCIAL_CHANNELS.filter((ch) => socials[ch.key]).map((ch) => (
+          <div className="info-row" key={ch.key}><Icon n={ch.icon} className="flat-ico" size={17} /><span>{ch.label}</span><b><a href={socialHref(ch.key, socials[ch.key])} target="_blank" rel="noopener">{socials[ch.key].replace(/^https?:\/\//, '')}</a></b></div>
+        ))}
       </div>
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="clock" size={15} /></span> เวลาเปิด-ปิด</h2>

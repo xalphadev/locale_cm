@@ -7,6 +7,7 @@ import { updateShopAction } from '../../../actions';
 import GeoPicker from '../GeoPicker';
 import { PhotoUpload } from '../../PhotoUpload';
 import { HoursEditor } from '../../HoursEditor';
+import { SOCIAL_CHANNELS } from '@/lib/socials';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +24,8 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+  const socials: Record<string, string> = p?.socials || {};
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   // word adapts to the account's reality: a single-location owner sees "ร้าน"; a multi-branch owner sees
@@ -57,6 +59,12 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
           </div>
           <div className="field"><label>เว็บไซต์</label><input name="website" defaultValue={p?.website || ''} placeholder="https://..." /></div>
           <p className="fhint">LINE / เบอร์โทรคือช่องทางที่ลูกค้าใช้ติดต่อสั่งซื้อหรือจองโดยตรง</p>
+          <div className="fsub">โซเชียล <span className="lbl-opt">(ใส่เท่าที่มี — วางลิงก์หรือ @ชื่อก็ได้)</span></div>
+          <div className="fgrid">
+            {SOCIAL_CHANNELS.map((ch) => (
+              <div className="field" key={ch.key}><label>{ch.label}</label><input name={'s_' + ch.key} defaultValue={socials[ch.key] || ''} placeholder={ch.ph} /></div>
+            ))}
+          </div>
         </section>
 
         <section className="fsec">

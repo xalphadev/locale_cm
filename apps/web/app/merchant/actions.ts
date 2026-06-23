@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { q, withTx, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 import { hashPassword, verifyPassword, setSession, clearSession, currentAccount } from '@/lib/auth';
 import { saveUploads, MAX_UPLOADS } from '@/lib/storage';
+import { SOCIAL_CHANNELS } from '@/lib/socials';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: 98.967, lat: 18.796 };
@@ -343,6 +344,11 @@ export async function updateShopAction(formData: FormData) {
     else if (/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/.test(v)) hrs[k] = v;
   }
   const hrsJson = Object.values(hrs).some((v) => v !== 'closed') ? JSON.stringify(hrs) : null;
+  // extra contact channels (FB/IG/TikTok/WhatsApp → places.socials jsonb, 0046). The form is the single
+  // editor and always submits these inputs, so an empty field = the owner cleared it → store NULL.
+  const socials: Record<string, string> = {};
+  for (const ch of SOCIAL_CHANNELS) { const v = s(formData, 's_' + ch.key).slice(0, 200); if (v) socials[ch.key] = v; }
+  const socialsJson = Object.keys(socials).length ? JSON.stringify(socials) : null;
   // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
   // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
   const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
@@ -356,9 +362,10 @@ export async function updateShopAction(formData: FormData) {
        image_urls  = CASE WHEN $12::text[] IS NOT NULL THEN $12 ELSE image_urls END,
        image_count = CASE WHEN $12::text[] IS NOT NULL THEN COALESCE(array_length($12,1),0) ELSE image_count END,
        opening_hours = CASE WHEN $13::jsonb IS NOT NULL THEN $13::jsonb ELSE opening_hours END,
+       socials = $14::jsonb,
        updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null, hrsJson]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null, hrsJson, socialsJson]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.

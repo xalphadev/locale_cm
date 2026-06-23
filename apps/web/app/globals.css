@@ -338,6 +338,8 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .rstrip-sub{display:block;font-size:.8rem;margin-top:3px;opacity:.85}
 .merchant-root .rstrip-bar{display:block;height:5px;border-radius:999px;background:rgba(0,0,0,.09);overflow:hidden;margin-top:8px}
 .merchant-root .rstrip-bar>i{display:block;height:100%;background:var(--m-accent);border-radius:999px}
+/* sub-heading inside a form section (e.g. "โซเชียล" under ช่องทางติดต่อ) */
+.merchant-root .fsub{font-size:.82rem;font-weight:800;color:var(--m-muted);margin:1rem 0 .5rem;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
 
 .merchant-root .rsec{display:flex;align-items:center;gap:9px;font-size:1.1rem;font-weight:800;margin:1.5rem 0 .75rem}
 .merchant-root .rsec-ic{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:var(--m-soft);color:var(--m-accent);flex:none}
