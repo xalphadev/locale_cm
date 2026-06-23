@@ -337,12 +337,30 @@ export async function updateShopAction(formData: FormData) {
   const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing
   const roomMode = ['multi', 'unique'].includes(s(formData, 'room_mode')) ? s(formData, 'room_mode') : 'multi';
   const addressTh = s(formData, 'address_th').slice(0, 300).trim();
-  // shop gallery photos → MinIO (kind 'places'); new uploads REPLACE the set, none → keep existing
+  // shop gallery: new files → MinIO, then rebuild image_urls from the PhotoManager order manifest (photo_order:
+  // a JSON array of existing-URL | "new:k"). Existing URLs are validated against this place's own set so a
+  // forged manifest can't inject arbitrary image URLs. Absent manifest → legacy "new uploads replace" behaviour.
   const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
   const tried = Math.min(photos.length, MAX_UPLOADS);
   const saved = await saveUploads(photos, 'places');
   if (tried && saved.length < tried) redirect('/merchant/shop/edit?error=upload');
-  const urls = saved;
+  let imageUrls: string[] | null = null;
+  const rawOrder = s(formData, 'photo_order');
+  if (rawOrder) {
+    const [curImg] = await q<{ image_urls: string[] | null }>(`SELECT image_urls FROM places WHERE id=$1`, [acc.place_id]);
+    const allowed = new Set(curImg?.image_urls || []);
+    let order: unknown[] = [];
+    try { order = JSON.parse(rawOrder); } catch { order = []; }
+    const final: string[] = [];
+    for (const tok of Array.isArray(order) ? order : []) {
+      if (typeof tok !== 'string') continue;
+      if (tok.startsWith('new:')) { const k = parseInt(tok.slice(4), 10); if (saved[k]) final.push(saved[k]); }
+      else if (allowed.has(tok)) final.push(tok);
+    }
+    imageUrls = final.slice(0, MAX_UPLOADS);   // [] = owner removed every photo (intended)
+  } else if (saved.length) {
+    imageUrls = saved;
+  }
   // opening hours from the per-day editor (h_mon … h_sun → "HH:MM-HH:MM" | "closed"). Only persist if the
   // owner set at least one OPEN day, so saving the form for an unrelated edit can't wipe hours to all-closed.
   const hrs: Record<string, string> = {};
@@ -377,7 +395,7 @@ export async function updateShopAction(formData: FormData) {
        amenities = $15::text[],
        updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null, hrsJson, socialsJson, amen.length ? amen : null]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, imageUrls, hrsJson, socialsJson, amen.length ? amen : null]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.

@@ -5,7 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
 import { updateShopAction } from '../../../actions';
 import GeoPicker from '../GeoPicker';
-import { PhotoUpload } from '../../PhotoUpload';
+import { PhotoManager } from '../../PhotoUpload';
 import { HoursEditor } from '../../HoursEditor';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
 import { facetsFor, facetLabel } from '@/lib/facets';
@@ -47,7 +47,7 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
 
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> รูป{noun} <span className="lbl-opt">(ลูกค้าเห็นเป็นแกลเลอรี)</span></div>
-          <PhotoUpload existing={p?.image_urls} label={`แตะเพื่อเลือกรูป${noun} หรือลากมาวาง`} />
+          <PhotoManager existing={p?.image_urls} label={`แตะเพื่อเพิ่มรูป${noun} หรือลากมาวาง`} />
           <p className="fhint">รูปหน้าร้าน/ตึก · ล็อบบี้ · ส่วนกลาง/สระ · บรรยากาศ — รูปแรกเป็นรูปปกที่ลูกค้าเห็นก่อน (รูปห้องแยกใส่ที่ “ห้องพัก”)</p>
         </section>
 

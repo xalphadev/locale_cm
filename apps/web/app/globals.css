@@ -280,6 +280,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .upz-x{position:absolute;top:4px;right:4px;width:23px;height:23px;border-radius:999px;border:none;background:rgba(16,20,12,.6);color:#fff;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .merchant-root .upz-x:active{transform:scale(.9)}
 .merchant-root .upz-cover{position:absolute;left:4px;bottom:4px;font-size:.6rem;font-weight:800;color:#fff;background:var(--m-accent);border-radius:6px;padding:.1rem .4rem}
+.merchant-root .upz-thumb.is-cover{border-color:var(--m-accent);box-shadow:0 0 0 2px var(--m-accent)}
+.merchant-root .upz-setcover{position:absolute;left:4px;bottom:4px;border:none;background:rgba(16,20,12,.62);color:#fff;border-radius:6px;padding:.13rem .4rem;font-size:.6rem;font-weight:800;cursor:pointer}
+.merchant-root .upz-setcover:active{transform:scale(.94)}
+.merchant-root .upz-move{position:absolute;right:4px;bottom:4px;display:flex;gap:3px}
+.merchant-root .upz-move button{width:21px;height:21px;border-radius:6px;border:none;background:rgba(16,20,12,.62);color:#fff;font-size:.9rem;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.merchant-root .upz-move button:disabled{opacity:.3;cursor:default}
+.merchant-root .upz-move button:active:not(:disabled){transform:scale(.9)}
 .merchant-root .upz-existing{margin-top:10px}
 .merchant-root .lbl-opt{font-weight:500;color:var(--m-muted);font-size:.82em}
 
