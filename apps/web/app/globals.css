@@ -352,7 +352,30 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .dhero-ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;aspect-ratio:3/2;color:var(--m-accent);background:linear-gradient(140deg,var(--m-soft),var(--m-surface))}
 .merchant-root .dhero-ph .ph{width:62px;height:62px;border-radius:16px;background:rgba(255,255,255,.55);flex:none}
 .merchant-root .dhero-ph>span{font-size:.82rem;font-weight:700;color:var(--m-muted)}
-.merchant-root .dcount{position:absolute;right:10px;bottom:10px;display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;color:#fff;background:rgba(16,24,40,.6);border-radius:999px;padding:.2rem .55rem}
+.merchant-root .dcount{position:absolute;right:10px;bottom:10px;display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:700;color:#fff;background:rgba(16,24,40,.6);border-radius:999px;padding:.2rem .55rem;pointer-events:none}
+/* merchant branch gallery: cover button + thumbnail strip (tap → fullscreen .mlb viewer) */
+.merchant-root .shopgal-cover{display:block;width:100%;border:none;padding:0;margin:0;background:none;cursor:pointer}
+.merchant-root .shopgal-cover img{width:100%;aspect-ratio:3/2;object-fit:cover;display:block}
+.merchant-root .shopgal-thumbs{display:flex;gap:7px;overflow-x:auto;margin:8px 0 2px;padding-bottom:2px;scrollbar-width:none}
+.merchant-root .shopgal-thumbs::-webkit-scrollbar{display:none}
+.merchant-root .shopgal-thumb{flex:0 0 auto;width:62px;height:62px;border-radius:9px;overflow:hidden;border:2px solid transparent;background:var(--m-sunk);padding:0;cursor:pointer}
+.merchant-root .shopgal-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.merchant-root .shopgal-thumb.on{border-color:var(--m-accent)}
+/* fullscreen photo viewer (portaled to <body> → NOT .merchant-root scoped) */
+.mlb{position:fixed;inset:0;z-index:9999;background:rgba(8,10,14,.94);display:flex;align-items:center;justify-content:center}
+.mlb-img{max-width:96vw;max-height:86vh;object-fit:contain;border-radius:6px;user-select:none;-webkit-user-drag:none}
+.mlb-btn{position:absolute;background:rgba(255,255,255,.16);color:#fff;border:none;border-radius:999px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.mlb-btn:active{transform:scale(.94)}
+.mlb-arrow{transform:translateY(-50%)}
+.mlb-arrow:active{transform:translateY(-50%) scale(.94)}
+.mlb-close{top:14px;right:14px;width:42px;height:42px}
+.mlb-arrow{top:50%;width:44px;height:44px}
+.mlb-prev{left:10px}
+.mlb-next{right:10px}
+.mlb-count{position:absolute;top:18px;left:50%;transform:translateX(-50%);color:#fff;font-size:.85rem;font-weight:700;background:rgba(0,0,0,.45);border-radius:999px;padding:.2rem .7rem}
+.mlb-dots{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:7px}
+.mlb-dot{width:8px;height:8px;border-radius:50%;border:none;background:rgba(255,255,255,.4);cursor:pointer;padding:0}
+.mlb-dot.on{background:#fff}
 .merchant-root .dtitle{margin-bottom:1.1rem}
 .merchant-root .dtags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.5rem}
 .merchant-root .dtags .t{font-size:.72rem;padding:.18rem .52rem}

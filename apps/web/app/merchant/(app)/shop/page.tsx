@@ -6,6 +6,7 @@ import { Icon } from '../ui';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
 import { shopReadiness } from '@/lib/readiness';
 import { facetLabel } from '@/lib/facets';
+import { ShopGallery } from '../ShopGallery';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,17 +57,10 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
         </Link>
       )}
 
-      {/* cover + gallery (what customers see first) */}
-      <div className="dhero">
-        {imgs.length > 0 ? (
-          <>
-            <div className="dgal">{imgs.map((u) => <img key={u} src={u} alt="" />)}</div>
-            <span className="dcount"><Icon n="image" size={13} /> {imgs.length} รูป</span>
-          </>
-        ) : (
-          <div className="dhero-ph"><span className="ph" /><span>ยังไม่มีรูป{noun}</span></div>
-        )}
-      </div>
+      {/* cover + gallery (what customers see first) — tap any photo to view fullscreen */}
+      {imgs.length > 0
+        ? <ShopGallery images={imgs} />
+        : <div className="dhero"><div className="dhero-ph"><span className="ph" /><span>ยังไม่มีรูป{noun}</span></div></div>}
 
       <div className="dtitle">
         <div className="dtags">
