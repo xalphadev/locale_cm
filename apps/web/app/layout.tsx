@@ -4,6 +4,9 @@ import { headers } from 'next/headers';
 import { Icon } from './adm-ui';
 
 export const metadata = { title: 'Locale · Admin', description: 'Back-office over the verified ledger' };
+// Emit a SINGLE viewport meta with viewport-fit=cover (so iOS WebView env(safe-area-inset-*) is non-zero).
+// Without this, Next injects its own default viewport WITHOUT viewport-fit, which wins over a manual <meta>.
+export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' as const };
 
 // Sidebar IA, grouped by job-to-be-done. cap-free; staff see all sections.
 const NAV: { grp: string; items: { href: string; icon: string; label: string; match: (p: string) => boolean }[] }[] = [
@@ -39,7 +42,6 @@ function FontHead({ merchant }: { merchant?: boolean }) {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link href={href} rel="stylesheet" />
-      <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     </head>
   );
 }

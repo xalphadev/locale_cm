@@ -21,7 +21,8 @@ button{font-family:inherit}
 
 /* phone frame */
 .phone{max-width:440px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;
-  padding-bottom:104px;box-shadow:0 0 60px rgba(0,0,0,.14);overflow-x:hidden}
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:calc(104px + env(safe-area-inset-bottom));box-shadow:0 0 60px rgba(0,0,0,.14);overflow-x:hidden}
 
 /* header */
 .top{padding:22px 20px 4px}
@@ -210,7 +211,7 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .balcard .note{font-size:.72rem;opacity:.92;margin-top:.5rem;line-height:1.4}
 
 /* ===== floating glass bottom nav ===== */
-.nav{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 36px);max-width:404px;
+.nav{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100% - 36px);max-width:404px;
   height:64px;border-radius:30px;background:rgba(255,255,255,.8);backdrop-filter:blur(22px) saturate(150%);
   -webkit-backdrop-filter:blur(22px) saturate(150%);box-shadow:var(--shadow-nav);
   border:1px solid rgba(255,255,255,.65);display:flex;align-items:center;justify-content:space-around;z-index:60}
@@ -552,7 +553,7 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 .dhead-nav{flex:none;width:52px;height:52px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(43,116,255,.36)}
 .dhead-nav:active{transform:scale(.95)}
 /* tabs — ref-style: dark inactive, blue active with a short centered underline */
-.ptabs{display:flex;padding:0 8px;margin-top:14px;border-bottom:1px solid var(--hairline);position:sticky;top:0;z-index:5;background:var(--surface,#fff)}
+.ptabs{display:flex;padding:0 8px;margin-top:14px;border-bottom:1px solid var(--hairline);position:sticky;top:env(safe-area-inset-top);z-index:5;background:var(--surface,#fff)}
 .ptab{flex:1;background:none;border:none;padding:.95rem 0;font-size:1rem;font-weight:600;color:var(--text);cursor:pointer;position:relative}
 .ptab.on{color:var(--accent);font-weight:700}
 .ptab.on::after{content:'';position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:46px;height:3px;border-radius:3px 3px 0 0;background:var(--accent)}
@@ -1311,7 +1312,7 @@ a.pcname{color:var(--text)}
 /* nightly date search bar on /stay */
 /* OTA collapsing search: when a search exists the form folds into a sticky recap pill (tap to re-open).
    Pure <details> — zero new client JS. bg matches --bg so the sticky band is seamless on scroll. */
-.staysearchbox{position:sticky;top:0;z-index:30;background:var(--bg);padding:6px 0 2px}
+.staysearchbox{position:sticky;top:env(safe-area-inset-top);z-index:30;background:var(--bg);padding:6px 0 2px}
 .staysearchbox>summary{list-style:none;cursor:pointer}
 .staysearchbox>summary::-webkit-details-marker{display:none}
 .staypill{display:flex;align-items:center;gap:11px;margin:2px 16px;padding:10px 13px;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;box-shadow:0 2px 8px -4px rgba(16,20,12,.12)}
@@ -1329,8 +1330,8 @@ a.pcname{color:var(--text)}
 
 /* P2: sticky results toolbar — count + view toggle, then a scrollable quick-filter chip row.
    Sticks at top:0 normally; when a search exists it stacks under the collapsed pill (.stk → top:60). */
-.staytools{position:sticky;top:0;z-index:20;padding:8px 0 6px}
-.staytools.stk{top:60px}
+.staytools{position:sticky;top:env(safe-area-inset-top);z-index:20;padding:8px 0 6px}
+.staytools.stk{top:calc(60px + env(safe-area-inset-top))}
 .staytools-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 16px 7px}
 .staycount{font-size:.9rem;color:var(--muted);font-weight:600}
 .staycount b{color:var(--text);font-weight:800}
