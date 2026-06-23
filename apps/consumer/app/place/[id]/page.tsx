@@ -136,7 +136,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     : searchParams?.view === 'stay' && offersStay ? 'stay'
       : (offersStay ? 'stay' : 'shop');
   const isStay = view === 'stay';
-  const noun = isStay ? 'ที่พัก' : 'ร้าน';
+  const noun = isStay ? 'ที่พัก' : p.category === 'eat' ? 'ร้าน' : 'สถานที่';   // see/do = สถานที่ (not ร้าน)
   const typeLabel = isStay ? (STAY_TH[p.stay_kind] || 'ที่พัก') : (p.subcategory || catTH(p.category));
   // cross-ref: surface the OTHER service this place offers (only when it has real content there)
   const cross = isStay
@@ -180,7 +180,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   const primary = line
     ? { kind: 'line' as const, href: line, label: 'ทักทาง LINE', icon: 'chat' as const, ext: true }
     : p.phone
-      ? { kind: 'phone' as const, href: `tel:${p.phone}`, label: isStay ? 'โทรหาที่พัก' : 'โทรหาร้าน', icon: 'phone' as const, ext: false }
+      ? { kind: 'phone' as const, href: `tel:${p.phone}`, label: isStay ? 'โทรหาที่พัก' : p.category === 'eat' ? 'โทรหาร้าน' : 'โทรสอบถาม', icon: 'phone' as const, ext: false }
       : { kind: 'directions' as const, href: mapUrl, label: 'ดูเส้นทาง', icon: 'directions' as const, ext: true };
 
   return (
@@ -213,7 +213,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         <div className="dhead-main">
           <div className="dhead-tx">
             <h1 className="dhead-name">{i18n(p.name_i18n)}{p.owner_verified && (
-              <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
+              <span className="verifychip" title={`เจ้าของ${noun}ยืนยันตัวตนแล้ว`}><Icon n="check" size={12} /> ยืนยันโดยเจ้าของ{noun}</span>
             )}</h1>
             <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
             {brand && (brand.logo_url || siblings.length > 0) && (
@@ -245,7 +245,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
                   ))}</div>
                 </div>
               ) : (
-                <p className="muted" style={{ margin: '0 0 12px' }}>ร้านนี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับร้านใหม่)</p>
+                <p className="muted" style={{ margin: '0 0 12px' }}>{noun}นี้ยังใหม่ — มีรีวิวจากผู้มาเยือนจริง {rev?.n} คน (ยังไม่พอแสดงคะแนนเฉลี่ย เพื่อความเป็นธรรมกับ{noun}ใหม่)</p>
               )}
               <ReviewsFeed placeId={p.id} total={rev?.n ?? 0}
                 initial={reviews.map((r) => ({ id: r.id, rating: r.rating, body: i18n(r.body_i18n), name: r.display_name, d: r.d }))} />
@@ -257,7 +257,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
 
         {stamp && (
           <section className="pstamp">
-            <div className="pstamp-h"><span className="pstamp-ic"><Icon n="sparkles" size={17} /></span> สะสม{stamp.pointsName}{siblings.length > 0 ? ' · ใช้ได้ทุกสาขา' : 'ที่ร้านนี้'}</div>
+            <div className="pstamp-h"><span className="pstamp-ic"><Icon n="sparkles" size={17} /></span> สะสม{stamp.pointsName}{siblings.length > 0 ? ' · ใช้ได้ทุกสาขา' : `ที่${noun}นี้`}</div>
             <div className="pstamp-sub">คุณมี <span className="pstamp-bal">{stamp.balance} {stamp.pointsName}</span>{stamp.rewards[0] ? ` · ครบ ${stamp.rewards[0].cost_stamps} แลก${i18n(stamp.rewards[0].title_i18n)}` : ''} — ดูบัตรทั้งหมดในกระเป๋า</div>
             <CheckInButton placeId={p.id} pointsName={stamp.pointsName} />
           </section>
@@ -267,7 +267,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           <div className="trust">
             <span className="ti"><Icon n="check" size={18} /></span>
             <div className="tt"><b>ตรวจสอบโดยทีมงานท้องถิ่น</b> · {vText}<br />
-              <span className="muted">ข้อมูลร้านนี้การันตีความสด — ไม่ใช่ข้อมูลเก่าที่ไม่มีใครดูแล</span></div>
+              <span className="muted">ข้อมูล{noun}นี้การันตีความสด — ไม่ใช่ข้อมูลเก่าที่ไม่มีใครดูแล</span></div>
             <span className="tflag">แจ้งไม่ตรง</span>
           </div>
         )}
@@ -325,11 +325,11 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         )}
 
         {!isStay && products.length > 0 && (<>
-          <h2>{p.category === 'eat' ? 'เมนูแนะนำ' : 'สินค้าในร้าน'}</h2>
+          <h2>{p.category === 'eat' ? 'เมนูแนะนำ' : p.category === 'do' ? 'กิจกรรม / คอร์ส' : 'สินค้า / ของฝาก'}</h2>
           <div className="prail">
             {products.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
           </div>
-          <p className="shopnote"><Icon n="chat" size={13} /> สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ</p>
+          <p className="shopnote"><Icon n="chat" size={13} /> {p.category === 'eat' ? 'สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ' : `สนใจ? ทักได้เลย — Locale ไม่มีระบบจ่ายเงินในแอป ติดต่อ${noun}โดยตรงเพื่อสอบถาม`}</p>
         </>)}
 
         {isStay && units.length > 0 && (<>
@@ -399,7 +399,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         </>)}
 
         {similar.length > 0 && (<>
-          <h2>{isStay ? 'ที่พักใกล้เคียง' : 'ร้านใกล้เคียง'}</h2>
+          <h2>{isStay ? 'ที่พักใกล้เคียง' : `${noun}ใกล้เคียง`}</h2>
           <div className="openrail">
             {similar.map((s) => {
               const sc = (s.rev_n || 0) >= 5;
