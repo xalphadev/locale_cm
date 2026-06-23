@@ -5,6 +5,7 @@ import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
+import { detailFields } from '@/lib/placedetails';
 import { ProductCard, lineHref } from '../../ProductCard';
 import { RoomCard } from '../../RoomCard';
 import { HeroZoom, HeroThumbs, GalleryGrid } from '../../Lightbox';
@@ -64,7 +65,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     const uid = await demoUserId();
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category, p.image_urls,
-              p.subcategory, p.phone, p.line_id, p.website, p.socials, p.price_band::text price_band,
+              p.subcategory, p.phone, p.line_id, p.website, p.socials, p.details, p.price_band::text price_band,
               p.offers_stay, p.stay_kind, p.brand_id, p.district_id, (p.claim_verified_at IS NOT NULL) AS owner_verified,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
@@ -149,6 +150,8 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
     : (offersStay && units.length > 0 ? { to: 'stay', icon: 'bed', t: 'ที่นี่มีที่พักด้วย', s: 'ดูห้องพักและราคาที่พัก' } : null);
   const hours = p.opening_hours ?? {};
   const amen: string[] = p.amenities ?? [];
+  const pdetails: Record<string, string> = p.details ?? {};
+  const dfields = detailFields(p.category).filter((f) => pdetails[f.key]);   // เที่ยว/กิจกรรม extra info, only the filled ones
   const goodfor = GOODFOR.filter((g) => g.keys.some((k) => amen.includes(k))).map((g) => g.label).slice(0, 6);
   // open-now computed in Chiang Mai time (Asia/Bangkok), independent of the server's timezone,
   // and tolerant of multi-range / 24h / "closed" days — was previously wrong on a non-TH host.
@@ -299,6 +302,17 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
         )}
 
         {i18n(p.description_i18n) && <p className="desc">{i18n(p.description_i18n)}</p>}
+
+        {dfields.length > 0 && (
+          <div className="pdetails">
+            {dfields.map((f) => (
+              <div className="pd-row" key={f.key}>
+                <span className="pd-ic"><Icon n={f.icon} size={16} /></span>
+                <div className="pd-tx"><div className="pd-l">{f.label}</div><div className="pd-v">{pdetails[f.key]}</div></div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {cross && (
           <Link className="crossref" href={`/place/${p.id}?view=${cross.to}`}>

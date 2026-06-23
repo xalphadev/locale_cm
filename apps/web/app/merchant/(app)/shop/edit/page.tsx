@@ -10,6 +10,7 @@ import { PhotoManager } from '../../PhotoUpload';
 import { HoursEditor } from '../../HoursEditor';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
 import { facetsFor, facetLabel } from '@/lib/facets';
+import { detailFields } from '@/lib/placedetails';
 import { parsePoint } from '@/lib/geo';
 
 export const dynamic = 'force-dynamic';
@@ -21,9 +22,11 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
     `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials,
-            category::text category, subcategory, amenities, sells_products, offers_stay, manages_stay, room_mode, geo::text geo
+            category::text category, subcategory, amenities, details, sells_products, offers_stay, manages_stay, room_mode, geo::text geo
        FROM places WHERE id=$1`, [acc.place_id]);
   const socials: Record<string, string> = p?.socials || {};
+  const details: Record<string, string> = p?.details || {};
+  const dfields = detailFields(p?.category);   // เที่ยว/กิจกรรม get extra info fields; eat/stay get none
   // place facilities/highlights (places.amenities token[]): offer the facets relevant to this place's
   // category, plus any tokens already set (so an existing/legacy token is never silently dropped on save).
   const curAmen: string[] = p?.amenities || [];
@@ -82,6 +85,16 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
               ))}
             </div>
             <p className="fhint">ติ๊กสิ่งที่{noun}มี — แสดงเป็นชิปในหน้าของลูกค้า และช่วยให้ลูกค้ากรองหา{noun}เจอง่ายขึ้น</p>
+          </section>
+        )}
+
+        {dfields.length > 0 && (
+          <section className="fsec">
+            <div className="fsec-h"><span className="fsec-ic"><Icon n="feed" size={15} /></span> ข้อมูลเพิ่มเติม <span className="lbl-opt">(ลูกค้าเห็น)</span></div>
+            {dfields.map((f) => (
+              <div className="field" key={f.key}><label>{f.label}</label><textarea name={'detail_' + f.key} defaultValue={details[f.key] || ''} placeholder={f.ph} style={{ minHeight: 58 }} /></div>
+            ))}
+            <p className="fhint">ช่วยให้ลูกค้าวางแผนมาง่ายขึ้น — เว้นว่างได้ถ้ายังไม่มี</p>
           </section>
         )}
 

@@ -6,6 +6,7 @@ import { hashPassword, verifyPassword, setSession, clearSession, currentAccount 
 import { saveUploads, MAX_UPLOADS } from '@/lib/storage';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
 import { NIMMAN_LNG, NIMMAN_LAT, inCmBbox } from '@/lib/geo';
+import { PLACE_DETAILS } from '@/lib/placedetails';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: NIMMAN_LNG, lat: NIMMAN_LAT };
@@ -378,6 +379,11 @@ export async function updateShopAction(formData: FormData) {
   // place facilities/highlights (places.amenities token[]): the edit form renders a checkbox for every offered
   // facet AND every currently-set token, so a normal save re-submits all current ones → nothing is dropped.
   const amen = [...new Set((formData.getAll('amenity') as string[]).map(String).filter((t) => /^[a-z0-9_]+$/.test(t)))].slice(0, 40);
+  // per-category extra info (places.details jsonb, 0047) — the form renders only the category's fields, so only
+  // those submit; read every known key + keep the non-empty ones. The form is the single editor → empty = cleared.
+  const details: Record<string, string> = {};
+  for (const k of [...new Set(Object.values(PLACE_DETAILS).flat().map((f) => f.key))]) { const v = s(formData, 'detail_' + k).slice(0, 400); if (v) details[k] = v; }
+  const detailsJson = Object.keys(details).length ? JSON.stringify(details) : null;
   // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
   // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
   const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
@@ -393,9 +399,10 @@ export async function updateShopAction(formData: FormData) {
        opening_hours = CASE WHEN $13::jsonb IS NOT NULL THEN $13::jsonb ELSE opening_hours END,
        socials = $14::jsonb,
        amenities = $15::text[],
+       details = $16::jsonb,
        updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, imageUrls, hrsJson, socialsJson, amen.length ? amen : null]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, imageUrls, hrsJson, socialsJson, amen.length ? amen : null, detailsJson]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.
