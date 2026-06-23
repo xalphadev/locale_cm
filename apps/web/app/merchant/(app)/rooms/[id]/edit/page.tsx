@@ -22,7 +22,7 @@ export default async function EditRoom({ params, searchParams }: { params: { id:
   return (
     <>
       <div className="mback"><Link href={`/merchant/rooms/${u.id}`}><Icon n="chevL" size={18} /> รายละเอียด{typeNoun}</Link></div>
-      <h1>แก้ไข{typeNoun}</h1>
+      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไข{typeNoun}</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อ{typeNoun}</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
       <RoomForm action={updateStayUnitAction.bind(null, u.id)} u={u} submitLabel="บันทึกการแก้ไข" managed={!!u.managed} noun={typeNoun} stayKind={acc.stay_kind} amenOpts={cat.amenity} buildOpts={cat.building} billOpts={cat.bills} />

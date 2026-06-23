@@ -14,7 +14,7 @@ export default async function NewProduct({ searchParams }: { searchParams: { err
   return (
     <>
       <div className="mback"><Link href="/merchant/products"><Icon n="chevL" size={18} /> สินค้า</Link></div>
-      <h1>เพิ่มสินค้า</h1>
+      <h1 className="phead"><span className="phead-ic"><Icon n="tag" size={18} /></span> เพิ่มสินค้า</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อสินค้า</div>}
       <ProductForm action={createMerchantProductAction} submitLabel="เพิ่มสินค้า" />
     </>

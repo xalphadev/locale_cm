@@ -13,7 +13,7 @@ export default async function NewPost({ searchParams }: { searchParams: { error?
   return (
     <>
       <div className="mback"><Link href="/merchant/post"><Icon n="chevL" size={18} /> โพสต์</Link></div>
-      <h1>เขียนโพสต์</h1>
+      <h1 className="phead"><span className="phead-ic"><Icon n="feed" size={18} /></span> เขียนโพสต์</h1>
       {searchParams?.error === 'body' && <div className="banner-err">กรุณาพิมพ์ข้อความโพสต์</div>}
       <PostForm action={createMerchantPostAction} submitLabel="โพสต์เลย" />
     </>

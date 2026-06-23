@@ -334,11 +334,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mempty-ic{display:inline-flex;align-items:center;justify-content:center;width:60px;height:60px;border-radius:50%;background:var(--m-soft);color:var(--m-accent);margin-bottom:.9rem}
 .merchant-root .mempty p{color:var(--m-muted);margin:0 0 1rem;font-size:.92rem}
 
-.merchant-root .phead{display:flex;align-items:center;gap:10px}
-.merchant-root .phead-ic{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:var(--m-soft);color:var(--m-accent);flex:none}
-.merchant-root .mback{margin:.1rem 0 .6rem}
-.merchant-root .mback a{display:inline-flex;align-items:center;gap:2px;color:var(--m-accent);font-weight:600;font-size:.9rem}
-.merchant-root .mback a:active{color:var(--m-accent)}
+.merchant-root .phead{display:flex;align-items:center;gap:11px}
+.merchant-root .phead-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);flex:none}
+/* back: a tactile soft pill (accent chevron + muted label) sitting in clear hierarchy above the title */
+.merchant-root .mback{margin:0 0 .7rem}
+.merchant-root .mback a{display:inline-flex;align-items:center;gap:3px;color:var(--m-muted);font-weight:700;font-size:.82rem;background:var(--m-sunk);border:1px solid var(--m-line);border-radius:999px;padding:.34rem .74rem .34rem .5rem;transition:background .12s,border-color .12s,color .12s}
+.merchant-root .mback a svg{color:var(--m-accent)}
+.merchant-root .mback a:hover{background:var(--m-soft);border-color:#BCD4F7;color:var(--m-accent)}
+.merchant-root .mback a:active{transform:scale(.97)}
 .merchant-root .mform{margin-top:.3rem}
 .merchant-root .mform-save{width:100%;margin-top:.5rem;padding:.98rem;border-radius:999px;font-size:1rem}
 .merchant-root .delwrap{margin-top:.9rem}

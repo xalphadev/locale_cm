@@ -19,7 +19,7 @@ export default async function EditProduct({ params, searchParams }: { params: { 
   return (
     <>
       <div className="mback"><Link href={`/merchant/products/${p.id}`}><Icon n="chevL" size={18} /> รายละเอียดสินค้า</Link></div>
-      <h1>แก้ไขสินค้า</h1>
+      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขสินค้า</h1>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อสินค้า</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
       <ProductForm action={updateMerchantProductAction.bind(null, p.id)} p={p} submitLabel="บันทึกการแก้ไข" />
