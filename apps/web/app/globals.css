@@ -173,10 +173,24 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .cbox:has(input:checked)::before{border-color:var(--m-accent);background:var(--m-accent) center/11px 11px no-repeat;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-7'/%3E%3C/svg%3E")}
 .merchant-root .cbox:has(input:focus-visible){outline:2px solid color-mix(in srgb,var(--m-accent) 45%,transparent);outline-offset:2px}
 
-/* single full-width checkbox row (in_season / capability toggles) */
-.merchant-root .check{display:flex;align-items:flex-start;gap:10px;background:var(--m-sunk);border:1px solid var(--m-line);border-radius:12px;padding:.72rem .85rem;font-size:.88rem;font-weight:600;color:var(--m-text);line-height:1.45;cursor:pointer}
-.merchant-root .check input{margin-top:1px;width:17px;height:17px;accent-color:var(--m-accent);flex:none}
+/* single full-width toggle row (in_season / capability toggles) — settings-row: label left, switch right */
+.merchant-root .check{display:flex;align-items:center;gap:12px;background:var(--m-sunk);border:1px solid var(--m-line);border-radius:12px;padding:.72rem .85rem;font-size:.88rem;font-weight:600;color:var(--m-text);line-height:1.4;cursor:pointer}
 .merchant-root .check:has(input:checked){background:var(--m-soft);border-color:#BCD4F7}
+.merchant-root .check input[type=checkbox]{order:2;margin-left:auto}
+
+/* iOS-style slide switch — restyles the native checkbox in TOGGLE contexts (.check rows + per-day hours).
+   Multi-select lists keep the .cbox chip look (a switch per item doesn't suit picking many). Pure CSS on the
+   existing <input type=checkbox> → form names/values & the wrapping <label> stay, so no JS/action changes. */
+.merchant-root .check input[type=checkbox],
+.merchant-root .hrs-day input[type=checkbox]{-webkit-appearance:none;appearance:none;margin:0;flex:none;cursor:pointer;position:relative;width:44px;height:26px;border-radius:999px;background:var(--m-line);transition:background .18s}
+.merchant-root .check input[type=checkbox]::after,
+.merchant-root .hrs-day input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(16,24,40,.35);transition:transform .18s}
+.merchant-root .check input[type=checkbox]:checked,
+.merchant-root .hrs-day input[type=checkbox]:checked{background:var(--m-accent)}
+.merchant-root .check input[type=checkbox]:checked::after,
+.merchant-root .hrs-day input[type=checkbox]:checked::after{transform:translateX(18px)}
+.merchant-root .check input[type=checkbox]:focus-visible,
+.merchant-root .hrs-day input[type=checkbox]:focus-visible{outline:2px solid color-mix(in srgb,var(--m-accent) 45%,transparent);outline-offset:2px}
 /* banners */
 .merchant-root .banner-ok{background:var(--m-soft);color:var(--m-accent);border-radius:11px;font-weight:600}
 .merchant-root .banner-err{background:#FDECEC;color:#C0392B;border-radius:11px}
@@ -254,7 +268,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .hrs{display:flex;flex-direction:column;gap:6px}
 .merchant-root .hrs-row{display:flex;align-items:center;gap:10px;min-height:38px}
 .merchant-root .hrs-row.off{opacity:.72}
-.merchant-root .hrs-day{display:inline-flex;align-items:center;gap:7px;width:104px;flex:none;font-size:.9rem;font-weight:600;cursor:pointer}
+.merchant-root .hrs-day{display:inline-flex;align-items:center;gap:9px;width:124px;flex:none;font-size:.9rem;font-weight:600;cursor:pointer}
 .merchant-root .hrs-times{display:inline-flex;align-items:center;gap:8px}
 .merchant-root .hrs-times input[type=time]{border:1.5px solid var(--m-line);border-radius:10px;background:var(--m-surface);padding:.42rem .55rem;font:inherit;font-size:.92rem;color:var(--m-text)}
 .merchant-root .hrs-dash{color:var(--m-muted)}
