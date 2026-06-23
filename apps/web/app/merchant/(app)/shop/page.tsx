@@ -6,6 +6,7 @@ import { Icon } from '../ui';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
 import { shopReadiness } from '@/lib/readiness';
 import { facetLabel } from '@/lib/facets';
+import { detailFields } from '@/lib/placedetails';
 import { ShopGallery } from '../ShopGallery';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials, amenities,
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials, amenities, category::text category, details,
             sells_products, offers_stay, manages_stay, room_mode, geo::text geo
        FROM places WHERE id=$1`, [acc.place_id]);
   const { pt, pinned, missing, pct } = shopReadiness(p);   // shared with the dashboard nudge
@@ -30,6 +31,8 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const hours: Record<string, string> = p?.opening_hours || {};
   const socials: Record<string, string> = p?.socials || {};
   const amen: string[] = p?.amenities || [];
+  const details: Record<string, string> = p?.details || {};
+  const dfields = detailFields(p?.category).filter((f) => details[f.key]);
   const hasHours = Object.keys(hours).length > 0;
   const caps = [
     p?.sells_products && 'ขายสินค้า',
@@ -107,6 +110,20 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
       {amen.length > 0 && <>
         <h2 className="rsec"><span className="rsec-ic"><Icon n="spark" size={15} /></span> สิ่งอำนวยความสะดวก &amp; จุดเด่น</h2>
         <div className="chips">{amen.map((t) => <span className="chip" key={t}><Icon n="check" size={12} /> {facetLabel(t)}</span>)}</div>
+      </>}
+
+      {dfields.length > 0 && <>
+        <h2 className="rsec"><span className="rsec-ic"><Icon n="feed" size={15} /></span> ข้อมูลเพิ่มเติม</h2>
+        <div className="info">
+          {dfields.map((f) => (
+            <div className="info-row" key={f.key}><Icon n={f.icon} className="flat-ico" size={17} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '.76rem', color: 'var(--m-muted)', fontWeight: 700 }}>{f.label}</div>
+                <div style={{ color: 'var(--m-text)', whiteSpace: 'pre-wrap' }}>{details[f.key]}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </>}
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="pin" size={15} /></span> ตำแหน่งบนแผนที่</h2>
