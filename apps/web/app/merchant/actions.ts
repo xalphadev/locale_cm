@@ -334,6 +334,15 @@ export async function updateShopAction(formData: FormData) {
   const saved = await saveUploads(photos, 'places');
   if (tried && saved.length < tried) redirect('/merchant/shop/edit?error=upload');
   const urls = saved;
+  // opening hours from the per-day editor (h_mon … h_sun → "HH:MM-HH:MM" | "closed"). Only persist if the
+  // owner set at least one OPEN day, so saving the form for an unrelated edit can't wipe hours to all-closed.
+  const hrs: Record<string, string> = {};
+  for (const k of ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']) {
+    const v = s(formData, 'h_' + k);
+    if (v === 'closed') hrs[k] = 'closed';
+    else if (/^\d{1,2}:\d{2}-\d{1,2}:\d{2}$/.test(v)) hrs[k] = v;
+  }
+  const hrsJson = Object.values(hrs).some((v) => v !== 'closed') ? JSON.stringify(hrs) : null;
   // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
   // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
   const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
@@ -346,9 +355,10 @@ export async function updateShopAction(formData: FormData) {
        sells_products = $7, offers_stay = $8, manages_stay = $9, room_mode = $10,
        image_urls  = CASE WHEN $12::text[] IS NOT NULL THEN $12 ELSE image_urls END,
        image_count = CASE WHEN $12::text[] IS NOT NULL THEN COALESCE(array_length($12,1),0) ELSE image_count END,
+       opening_hours = CASE WHEN $13::jsonb IS NOT NULL THEN $13::jsonb ELSE opening_hours END,
        updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null, hrsJson]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.

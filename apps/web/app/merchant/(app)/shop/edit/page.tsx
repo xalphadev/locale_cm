@@ -6,6 +6,7 @@ import { Icon } from '../../ui';
 import { updateShopAction } from '../../../actions';
 import GeoPicker from '../GeoPicker';
 import { PhotoUpload } from '../../PhotoUpload';
+import { HoursEditor } from '../../HoursEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export default async function ShopEdit() {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, address_i18n, image_urls, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   return (
@@ -50,6 +51,12 @@ export default async function ShopEdit() {
           </div>
           <div className="field"><label>เว็บไซต์</label><input name="website" defaultValue={p?.website || ''} placeholder="https://..." /></div>
           <p className="fhint">LINE / เบอร์โทรคือช่องทางที่ลูกค้าใช้ติดต่อสั่งซื้อหรือจองโดยตรง</p>
+        </section>
+
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="clock" size={15} /></span> เวลาเปิด-ปิด <span className="lbl-opt">(ลูกค้าเห็น “เปิดอยู่/ปิด”)</span></div>
+          <HoursEditor value={p?.opening_hours} />
+          <p className="fhint">ติ๊กวันที่เปิด แล้วใส่เวลา — ลูกค้าจะเห็นสถานะ “เปิดอยู่ตอนนี้/ปิด” อัตโนมัติตามเวลาเชียงใหม่</p>
         </section>
 
         <section className="fsec">

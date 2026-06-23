@@ -250,6 +250,18 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .upz-existing{margin-top:10px}
 .merchant-root .lbl-opt{font-weight:500;color:var(--m-muted);font-size:.82em}
 
+/* ===== opening-hours editor (per-day open/close) ===== */
+.merchant-root .hrs{display:flex;flex-direction:column;gap:6px}
+.merchant-root .hrs-row{display:flex;align-items:center;gap:10px;min-height:38px}
+.merchant-root .hrs-row.off{opacity:.72}
+.merchant-root .hrs-day{display:inline-flex;align-items:center;gap:7px;width:104px;flex:none;font-size:.9rem;font-weight:600;cursor:pointer}
+.merchant-root .hrs-times{display:inline-flex;align-items:center;gap:8px}
+.merchant-root .hrs-times input[type=time]{border:1.5px solid var(--m-line);border-radius:10px;background:var(--m-surface);padding:.42rem .55rem;font:inherit;font-size:.92rem;color:var(--m-text)}
+.merchant-root .hrs-dash{color:var(--m-muted)}
+.merchant-root .hrs-closed{color:var(--m-muted);font-size:.86rem}
+.merchant-root .hrs-copy{margin-top:8px;align-self:flex-start;background:var(--m-sunk);border:1px solid var(--m-line);border-radius:999px;padding:.42rem .85rem;font-size:.82rem;font-weight:700;color:var(--m-accent);cursor:pointer}
+.merchant-root .hrs-copy:active{transform:scale(.97)}
+
 /* ===== merchant portal: LIST + ADD/EDIT split (thumbnails, rows, forms) ===== */
 .merchant-root .listhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:.1rem 0 .5rem}
 .merchant-root .listhead h1{margin:0;font-size:1.4rem}
