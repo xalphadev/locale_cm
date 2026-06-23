@@ -128,9 +128,10 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
         <h1 className="rtitle">{i18n(u.name_i18n)}</h1>
         <div className="rmeta"><Icon n="pin" size={13} /> <Link href={`/place/${u.place_id}`} style={{ color: 'inherit' }}>{i18n(u.shop_name)}</Link>{u.district_name ? ` · ${i18n(u.district_name)}` : ''}</div>
         {brand && (brand.logo_url || branchCount > 0) && (
-          <Link className="dhead-brand" href={`/place/${u.place_id}`} style={{ textDecoration: 'none' }}>
+          <Link className="dhead-brand" href={`/brand/${u.brand_id}`} style={{ textDecoration: 'none' }}>
             {brand.logo_url && <img src={brand.logo_url} alt="" />}
             {branchCount > 0 ? `สาขาของ ${i18n(brand.name_i18n)} · อีก ${branchCount} สาขา` : i18n(brand.name_i18n)}
+            {branchCount > 0 && <Icon n="chevR" size={14} />}
           </Link>
         )}
 

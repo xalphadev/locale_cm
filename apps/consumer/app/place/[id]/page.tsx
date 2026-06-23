@@ -213,10 +213,11 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             )}</h1>
             <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
             {brand && (brand.logo_url || siblings.length > 0) && (
-              <div className="dhead-brand">
+              <Link className="dhead-brand" href={`/brand/${p.brand_id}`} style={{ textDecoration: 'none' }}>
                 {brand.logo_url && <img src={brand.logo_url} alt="" />}
                 {siblings.length > 0 ? `สาขาของ ${i18n(brand.name_i18n)}` : i18n(brand.name_i18n)}
-              </div>
+                {siblings.length > 0 && <Icon n="chevR" size={14} />}
+              </Link>
             )}
           </div>
           <a className="dhead-nav" href={pt ? mapUrl : primary.href} target="_blank" rel="noopener" aria-label="นำทาง"><Icon n="send" size={20} /></a>
