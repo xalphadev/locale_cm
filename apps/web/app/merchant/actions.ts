@@ -327,6 +327,13 @@ export async function updateShopAction(formData: FormData) {
   const offersStay = !!formData.get('offers_stay');
   const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing
   const roomMode = ['multi', 'unique'].includes(s(formData, 'room_mode')) ? s(formData, 'room_mode') : 'multi';
+  const addressTh = s(formData, 'address_th').slice(0, 300).trim();
+  // shop gallery photos → MinIO (kind 'places'); new uploads REPLACE the set, none → keep existing
+  const photos = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const tried = Math.min(photos.length, MAX_UPLOADS);
+  const saved = await saveUploads(photos, 'places');
+  if (tried && saved.length < tried) redirect('/merchant/shop/edit?error=upload');
+  const urls = saved;
   // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
   // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
   const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
@@ -334,10 +341,14 @@ export async function updateShopAction(formData: FormData) {
     `UPDATE places SET
        name_i18n = CASE WHEN $2<>'' THEN jsonb_set(COALESCE(name_i18n,'{}'),'{th}',to_jsonb($2::text)) ELSE name_i18n END,
        description_i18n = CASE WHEN $3<>'' THEN jsonb_set(COALESCE(description_i18n,'{}'),'{th}',to_jsonb($3::text)) ELSE description_i18n END,
+       address_i18n = CASE WHEN $11<>'' THEN jsonb_build_object('th',$11::text) ELSE NULL END,
        phone = NULLIF($4,''), line_id = NULLIF($5,''), website = NULLIF($6,''),
-       sells_products = $7, offers_stay = $8, manages_stay = $9, room_mode = $10, updated_at = now()
+       sells_products = $7, offers_stay = $8, manages_stay = $9, room_mode = $10,
+       image_urls  = CASE WHEN $12::text[] IS NOT NULL THEN $12 ELSE image_urls END,
+       image_count = CASE WHEN $12::text[] IS NOT NULL THEN COALESCE(array_length($12,1),0) ELSE image_count END,
+       updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.

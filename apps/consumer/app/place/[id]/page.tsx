@@ -57,7 +57,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   try {
     const uid = await demoUserId();
     [p] = await q<any>(
-      `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category,
+      `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category, p.image_urls,
               p.subcategory, p.phone, p.line_id, p.website, p.price_band::text price_band,
               p.offers_stay, p.stay_kind, p.brand_id, p.district_id, (p.claim_verified_at IS NOT NULL) AS owner_verified,
               p.opening_hours, p.amenities, p.geo::text geo, d.name_i18n district_name,
@@ -149,6 +149,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   // media + menu/room shots), then themed atmosphere fillers so even an un-photographed place shows
   // a proper multi-image gallery (atmosphere + a hint of the menu) instead of a lone cover.
   const realPhotos: string[] = [
+    ...(p.image_urls || []),                       // dedicated place gallery (facade/lobby/common) first
     ...mediaImgs.map((m) => m.storage_path),
     ...products.flatMap((pr) => pr.image_urls || []),
     ...units.flatMap((u) => u.image_urls || []),

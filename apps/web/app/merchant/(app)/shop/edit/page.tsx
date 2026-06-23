@@ -5,6 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
 import { updateShopAction } from '../../../actions';
 import GeoPicker from '../GeoPicker';
+import { PhotoUpload } from '../../PhotoUpload';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,18 +22,24 @@ export default async function ShopEdit() {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   return (
     <>
       <div className="mback"><Link href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูลร้าน</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขข้อมูลร้าน</h1>
-      <form className="form mform" action={updateShopAction}>
+      <form className="form mform" action={updateShopAction} encType="multipart/form-data">
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูลร้าน</div>
           <div className="field"><label>ชื่อร้าน</label><input name="name_th" defaultValue={i18n(p?.name_i18n)} /></div>
           <div className="field"><label>รายละเอียดร้าน</label><textarea name="desc_th" defaultValue={i18n(p?.description_i18n)} style={{ minHeight: 84 }} placeholder="เล่าเรื่องร้าน จุดเด่น เมนู/สินค้าแนะนำ" /></div>
+        </section>
+
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> รูปร้าน <span className="lbl-opt">(ลูกค้าเห็นเป็นแกลเลอรี)</span></div>
+          <PhotoUpload existing={p?.image_urls} label="แตะเพื่อเลือกรูปร้าน หรือลากมาวาง" />
+          <p className="fhint">รูปหน้าร้าน/ตึก · ล็อบบี้ · ส่วนกลาง/สระ · บรรยากาศ — รูปแรกเป็นรูปปกที่ลูกค้าเห็นก่อน (รูปห้องแยกใส่ที่ “ห้องพัก”)</p>
         </section>
 
         <section className="fsec">
@@ -68,7 +75,8 @@ export default async function ShopEdit() {
         </section>
 
         <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="pin" size={15} /></span> ตำแหน่งร้านบนแผนที่</div>
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="pin" size={15} /></span> ที่อยู่ & ตำแหน่งบนแผนที่</div>
+          <div className="field"><label>ที่อยู่ <span className="lbl-opt">(ลูกค้าเห็น)</span></label><input name="address_th" defaultValue={i18n(p?.address_i18n)} placeholder="เช่น 12/3 ถ.นิมมานเหมินท์ ซ.9 ต.สุเทพ อ.เมือง เชียงใหม่ 50200" /></div>
           {unpinned && <div className="banner-err" style={{ marginBottom: 8 }}>ยังไม่ได้ปักหมุด — ลูกค้าจะหาคุณบนแผนที่ “ที่พัก” ไม่เจอ</div>}
           <GeoPicker lat0={pt?.lat ?? null} lng0={pt?.lng ?? null} />
         </section>
