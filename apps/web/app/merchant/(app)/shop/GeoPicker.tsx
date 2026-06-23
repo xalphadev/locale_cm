@@ -27,7 +27,7 @@ export default function GeoPicker({ lat0, lng0 }: { lat0?: number | null; lng0?:
       const L = w.L;
       const start: [number, number] = [lat0 ?? NIMMAN_LAT, lng0 ?? NIMMAN_LNG];
       const map = L.map(hostRef.current, { attributionControl: false, zoomControl: true }).setView(start, 16);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 19, subdomains: 'abcd' }).addTo(map);
       // coords = the map centre (where the fixed pin points). Settle on moveend to avoid re-rendering per frame.
       const sync = () => { const c = map.getCenter(); setLat(c.lat.toFixed(6)); setLng(c.lng.toFixed(6)); };
       map.on('moveend', sync);
