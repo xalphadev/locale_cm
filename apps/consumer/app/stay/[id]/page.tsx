@@ -24,6 +24,7 @@ function Fact({ icon, label, value }: { icon: string; label: string; value: stri
 export default async function StayUnitDetail({ params, searchParams }: { params: { id: string }; searchParams: { sent?: string; err?: string; from?: string; to?: string; reviewed?: string } }) {
   let u: any = null; let others: any[] = []; let seasonalRates: any[] = []; let avail: any[] = [];
   let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let canReview = false; let myReview: any = null; let loggedIn = false;
+  let brand: any = null; let branchCount = 0;
   try {
     const uid = await demoUserId();
     [u] = await q<any>(
@@ -31,7 +32,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
               su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at, su.managed,
               su.capacity, su.deposit_minor, su.min_stay, su.room_size_sqm, su.furnished, su.bills_included, su.unit_amenities,
               su.bedrooms, su.bathrooms, su.gender_policy, su.check_in_time, su.check_out_time, su.attrs,
-              p.id place_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website,
+              p.id place_id, p.brand_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website,
               p.opening_hours, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -45,6 +46,12 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
            FROM stay_units WHERE place_id=$1 AND id<>$2 AND status='published' AND deleted_at IS NULL
           ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 8`,
         [u.place_id, u.id]);
+      // brand identity + count of OTHER published branches of the same chain (self-activates only for a real chain)
+      if (u.brand_id) {
+        [brand] = await q<any>(`SELECT name_i18n, logo_url FROM brands WHERE id=$1 AND deleted_at IS NULL`, [u.brand_id]);
+        const [bc] = await q<any>(`SELECT count(*)::int n FROM places WHERE brand_id=$1 AND id<>$2 AND status='published'`, [u.brand_id, u.place_id]);
+        branchCount = bc?.n ?? 0;
+      }
       seasonalRates = await q<any>(
         `SELECT r.price_minor, r.price_period, r.start_date, r.end_date, r.season_id, s.label_i18n season_label
            FROM stay_rate r LEFT JOIN stay_season s ON s.id = r.season_id
@@ -119,7 +126,13 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
       <div className="dbody">
         <span className="rkind"><Icon n={CAT_ICON[u.stay_kind] || 'bed'} size={13} /> {STAY_KIND_TH[u.stay_kind] || 'ที่พัก'}</span>
         <h1 className="rtitle">{i18n(u.name_i18n)}</h1>
-        <div className="rmeta"><Icon n="pin" size={13} /> {i18n(u.shop_name)}{u.district_name ? ` · ${i18n(u.district_name)}` : ''}</div>
+        <div className="rmeta"><Icon n="pin" size={13} /> <Link href={`/place/${u.place_id}`} style={{ color: 'inherit' }}>{i18n(u.shop_name)}</Link>{u.district_name ? ` · ${i18n(u.district_name)}` : ''}</div>
+        {brand && (brand.logo_url || branchCount > 0) && (
+          <Link className="dhead-brand" href={`/place/${u.place_id}`} style={{ textDecoration: 'none' }}>
+            {brand.logo_url && <img src={brand.logo_url} alt="" />}
+            {branchCount > 0 ? `สาขาของ ${i18n(brand.name_i18n)} · อีก ${branchCount} สาขา` : i18n(brand.name_i18n)}
+          </Link>
+        )}
 
         <div className="rhead">
           <span className="rprice">{rentText(u)}</span>

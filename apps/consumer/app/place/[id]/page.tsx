@@ -212,7 +212,12 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
               <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
             )}</h1>
             <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
-            {brand?.logo_url && <div className="dhead-brand"><img src={brand.logo_url} alt="" /> {i18n(brand.name_i18n)}</div>}
+            {brand && (brand.logo_url || siblings.length > 0) && (
+              <div className="dhead-brand">
+                {brand.logo_url && <img src={brand.logo_url} alt="" />}
+                {siblings.length > 0 ? `สาขาของ ${i18n(brand.name_i18n)}` : i18n(brand.name_i18n)}
+              </div>
+            )}
           </div>
           <a className="dhead-nav" href={pt ? mapUrl : primary.href} target="_blank" rel="noopener" aria-label="นำทาง"><Icon n="send" size={20} /></a>
         </div>
@@ -247,7 +252,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
 
         {stamp && (
           <section className="pstamp">
-            <div className="pstamp-h"><span className="pstamp-ic"><Icon n="sparkles" size={17} /></span> สะสม{stamp.pointsName}ที่ร้านนี้</div>
+            <div className="pstamp-h"><span className="pstamp-ic"><Icon n="sparkles" size={17} /></span> สะสม{stamp.pointsName}{siblings.length > 0 ? ' · ใช้ได้ทุกสาขา' : 'ที่ร้านนี้'}</div>
             <div className="pstamp-sub">คุณมี <span className="pstamp-bal">{stamp.balance} {stamp.pointsName}</span>{stamp.rewards[0] ? ` · ครบ ${stamp.rewards[0].cost_stamps} แลก${i18n(stamp.rewards[0].title_i18n)}` : ''} — ดูบัตรทั้งหมดในกระเป๋า</div>
             <CheckInButton placeId={p.id} pointsName={stamp.pointsName} />
           </section>
