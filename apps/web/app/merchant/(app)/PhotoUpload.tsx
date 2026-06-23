@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from './ui';
 
-export const MAX_PHOTOS = 8; // keep in sync with MAX_UPLOADS in lib/storage.ts (server caps too)
+export const MAX_PHOTOS = 15; // keep in sync with MAX_UPLOADS in lib/storage.ts (server caps too)
 
 // Real photo picker — uploads go to MinIO via the `photos` field (saveUploads in the action). No URL pasting.
 // Files live in React state; a DataTransfer rebuilds the hidden <input>.files so add/remove before submit works.

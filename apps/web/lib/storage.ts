@@ -12,7 +12,7 @@ import sharp from 'sharp';
 export type UploadKind = 'places' | 'products' | 'rooms' | 'posts' | 'brands';
 
 const MAX_BYTES = 12 * 1024 * 1024;   // accept large phone originals — we downscale them anyway
-export const MAX_UPLOADS = 8;          // saveUploads persists at most this many per call
+export const MAX_UPLOADS = 15;         // saveUploads persists at most this many per call
 const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 const DISPLAY_W = 1280;                // detail / lightbox
 const THUMB_W = 400;                   // cards / grids
