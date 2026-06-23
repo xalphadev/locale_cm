@@ -44,29 +44,36 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
         </div>
       </section>
 
-      <section className="fsec">
-        <div className="fsec-h"><span className="fsec-ic"><Icon n="check" size={15} /></span> สถานะห้องว่าง</div>
-        {managed ? (
-          // managed listing → vacancy is counted from the ผังห้อง board, not typed here
-          <p className="fhint" style={{ margin: 0 }}><Icon n="grid" size={13} /> ห้องนี้นับจำนวนว่างจาก “ผังห้อง” อัตโนมัติ — แก้ที่ผังห้อง (เพิ่ม/ย้ายห้อง · ตั้งมีผู้เช่า) ไม่ใช่ที่นี่</p>
-        ) : monthly ? (
-          <div className="fgrid">
-            <div className="field"><label>ตอนนี้ว่างกี่ห้อง</label><input name="available_units" type="number" min="0" defaultValue={u?.available_units ?? 1} />
-              <p className="fhint">ลูกค้าเห็นป้าย “ว่าง N ห้อง” — ปรับเร็วๆ ได้ที่หน้ารายละเอียดห้องด้วยปุ่ม +/−</p></div>
-            <div className="field"><label>ว่างให้เข้าอยู่ตั้งแต่</label><input name="available_from" type="date" defaultValue={u?.available_from_ymd || ''} />
-              <p className="fhint">เว้นว่าง = เข้าอยู่ได้ทันที</p></div>
-          </div>
-        ) : (
-          <div className="field"><label>สถานะวันนี้</label><select name="daily_status" defaultValue={u?.daily_status || 'vacant'}><option value="vacant">ว่างวันนี้</option><option value="ask">สอบถามว่าง</option><option value="full">เต็มวันนี้</option></select>
-            <p className="fhint">ลูกค้าเห็นสถานะว่าง/เต็มของวันนี้ — อัปเดตได้ที่หน้ารายละเอียดห้อง</p></div>
-        )}
-        {/* always submit both values; the action re-derives vacancy for managed listings (fn no-ops otherwise) */}
-        {managed
-          ? <><input type="hidden" name="available_units" value={u?.available_units ?? 1} /><input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} /></>
-          : monthly
-            ? <input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} />
-            : <input type="hidden" name="available_units" value={u?.available_units ?? 1} />}
-      </section>
+      {/* Vacancy is set/managed AFTER a room exists — not on the add form. On create we ship the same
+          defaults the form used to (ว่าง 1 ห้อง · เข้าได้ทันที) and let the owner adjust later via the
+          +/− on the room detail page or the edit form (which keeps the full controls below). */}
+      {u ? (
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="check" size={15} /></span> สถานะห้องว่าง</div>
+          {managed ? (
+            // managed listing → vacancy is counted from the ผังห้อง board, not typed here
+            <p className="fhint" style={{ margin: 0 }}><Icon n="grid" size={13} /> ห้องนี้นับจำนวนว่างจาก “ผังห้อง” อัตโนมัติ — แก้ที่ผังห้อง (เพิ่ม/ย้ายห้อง · ตั้งมีผู้เช่า) ไม่ใช่ที่นี่</p>
+          ) : monthly ? (
+            <div className="fgrid">
+              <div className="field"><label>ตอนนี้ว่างกี่ห้อง</label><input name="available_units" type="number" min="0" defaultValue={u?.available_units ?? 1} />
+                <p className="fhint">ลูกค้าเห็นป้าย “ว่าง N ห้อง” — ปรับเร็วๆ ได้ที่หน้ารายละเอียดห้องด้วยปุ่ม +/−</p></div>
+              <div className="field"><label>ว่างให้เข้าอยู่ตั้งแต่</label><input name="available_from" type="date" defaultValue={u?.available_from_ymd || ''} />
+                <p className="fhint">เว้นว่าง = เข้าอยู่ได้ทันที</p></div>
+            </div>
+          ) : (
+            <div className="field"><label>สถานะวันนี้</label><select name="daily_status" defaultValue={u?.daily_status || 'vacant'}><option value="vacant">ว่างวันนี้</option><option value="ask">สอบถามว่าง</option><option value="full">เต็มวันนี้</option></select>
+              <p className="fhint">ลูกค้าเห็นสถานะว่าง/เต็มของวันนี้ — อัปเดตได้ที่หน้ารายละเอียดห้อง</p></div>
+          )}
+          {/* always submit both values; the action re-derives vacancy for managed listings (fn no-ops otherwise) */}
+          {managed
+            ? <><input type="hidden" name="available_units" value={u?.available_units ?? 1} /><input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} /></>
+            : monthly
+              ? <input type="hidden" name="daily_status" value={u?.daily_status || 'vacant'} />
+              : <input type="hidden" name="available_units" value={u?.available_units ?? 1} />}
+        </section>
+      ) : (
+        <><input type="hidden" name="available_units" value={1} /><input type="hidden" name="daily_status" value="vacant" /></>
+      )}
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="wallet" size={15} /></span> ค่าใช้จ่าย & สัญญา</div>
