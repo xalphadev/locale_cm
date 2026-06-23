@@ -28,7 +28,7 @@ export default async function EditRoomUnit({ params, searchParams }: { params: {
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="edit" size={15} /></span> ข้อมูลห้อง</div>
           <div className="fgrid">
-            <div className="field"><label>เลข/ชื่อห้อง *</label><input name="code" defaultValue={r.code} required /></div>
+            <div className="field"><label>เลข/ชื่อห้อง <span className="req">*</span></label><input name="code" defaultValue={r.code} required /></div>
             <div className="field"><label>{term}</label><input name="floor" defaultValue={r.floor || ''} placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
           </div>
           <div className="fgrid">

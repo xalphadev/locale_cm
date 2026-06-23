@@ -26,8 +26,8 @@ export default async function ClaimForm({
           {searchParams?.error && <div className="banner-err">{searchParams.error}</div>}
           <form className="form" action={claimPlaceAction}>
             <input type="hidden" name="place_id" value={pl.id} />
-            <div className="field"><label>อีเมล *</label><input name="email" type="email" required autoComplete="email" /></div>
-            <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
+            <div className="field"><label>อีเมล <span className="req">*</span></label><input name="email" type="email" required autoComplete="email" /></div>
+            <div className="field"><label>รหัสผ่าน <span className="req">*</span> (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
             <button className="btn btn-primary mform-save" type="submit">เคลมร้านนี้ →</button>
           </form>
           <p className="note">ไม่ใช่ร้านของคุณ? <Link href="/merchant/claim">ค้นหาใหม่</Link></p>

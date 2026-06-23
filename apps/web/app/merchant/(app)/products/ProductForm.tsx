@@ -13,7 +13,7 @@ export function ProductForm({ action, p, submitLabel }: { action: (fd: FormData)
     <form className="form mform" action={action}>
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> ข้อมูลสินค้า</div>
-        <div className="field"><label>ชื่อสินค้า *</label><input name="name_th" required defaultValue={p ? i18n(p.name_i18n) : ''} placeholder="เช่น มะม่วงน้ำดอกไม้สุก" /></div>
+        <div className="field"><label>ชื่อสินค้า <span className="req">*</span></label><input name="name_th" required defaultValue={p ? i18n(p.name_i18n) : ''} placeholder="เช่น มะม่วงน้ำดอกไม้สุก" /></div>
         <div className="field"><label>หมวดสินค้า</label><select name="subtype" defaultValue={p?.subtype || 'fruit'}>{SUBTYPES.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
         <div className="fgrid">
           <div className="field"><label>ราคา (บาท)</label><input name="price" type="number" min="0" step="1" defaultValue={p?.price_minor != null ? Math.round(p.price_minor / 100) : ''} placeholder="80" /></div>

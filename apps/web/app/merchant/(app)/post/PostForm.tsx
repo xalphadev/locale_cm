@@ -7,7 +7,7 @@ export function PostForm({ action, post, submitLabel }: { action: (fd: FormData)
     <form className="form mform" action={action}>
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="feed" size={15} /></span> ข้อความโพสต์</div>
-        <div className="field"><label>ข้อความ *</label>
+        <div className="field"><label>ข้อความ <span className="req">*</span></label>
           <textarea name="body" required maxLength={500} defaultValue={post ? i18n(post.body_i18n) : ''} style={{ minHeight: 130 }} placeholder="เช่น เมล็ดกาแฟล็อตใหม่มาแล้ว! วันนี้ดริปให้ลองฟรี ☕" /></div>
         <p className="fhint">บอกข่าวสาร โปรโมชัน หรือเมนูใหม่ของร้าน · สูงสุด 500 ตัวอักษร</p>
       </section>

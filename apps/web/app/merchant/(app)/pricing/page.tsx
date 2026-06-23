@@ -56,7 +56,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
             </div>
           )}
         <form className="pricesub" action={createSeasonAction}>
-          <div className="field"><label>ชื่อช่วง *</label><input name="label" placeholder="ไฮซีซั่น" required /></div>
+          <div className="field"><label>ชื่อช่วง <span className="req">*</span></label><input name="label" placeholder="ไฮซีซั่น" required /></div>
           <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เริ่ม" labelTo="ถึง" allowPast />
           <label className="check"><input type="checkbox" name="recurs_yearly" defaultChecked /> ใช้ช่วงนี้ทุกปี</label>
           <button className="btn btn-primary" type="submit">+ เพิ่มช่วง</button>
@@ -93,7 +93,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
                     {seasons.map((se) => <option key={se.id} value={se.id}>{i18n(se.label_i18n)}</option>)}
                   </select>
                 </div>
-                <div className="field"><label>ราคา/{per} *</label><input name="price" type="number" min="0" placeholder="1500" required /></div>
+                <div className="field"><label>ราคา/{per} <span className="req">*</span></label><input name="price" type="number" min="0" placeholder="1500" required /></div>
               </div>
               <DateRangePicker mode="range" fromName="start_date" toName="end_date" labelFrom="เริ่ม (ถ้าไม่เลือกช่วง)" labelTo="ถึง" allowPast />
               <button className="btn btn-primary" type="submit">+ เพิ่มราคาช่วงนี้</button>

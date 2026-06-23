@@ -41,7 +41,7 @@ export default async function NewDeal({ searchParams }: { searchParams: { error?
 
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> รายละเอียด</div>
-          <div className="field"><label>ชื่อดีล *</label><input name="title" required placeholder="เช่น Happy Hour เครื่องดื่มทุกแก้ว" /></div>
+          <div className="field"><label>ชื่อดีล <span className="req">*</span></label><input name="title" required placeholder="เช่น Happy Hour เครื่องดื่มทุกแก้ว" /></div>
           <div className="field"><label>เงื่อนไข (ไม่บังคับ)</label><input name="terms" placeholder="เช่น เฉพาะหน้าร้าน 14:00–17:00" /></div>
           <div className="lset">
             <span>จำนวนสิทธิ์</span>

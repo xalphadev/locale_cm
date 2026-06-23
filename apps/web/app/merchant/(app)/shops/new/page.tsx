@@ -17,8 +17,8 @@ export default function NewShop({ searchParams }: { searchParams: { error?: stri
       <form className="form mform" action={addShopAction}>
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูลร้าน</div>
-          <div className="field"><label>ชื่อร้าน *</label><input name="shop_name" required placeholder="เช่น ครัวเหนือ" /></div>
-          <div className="field"><label>ประเภทร้าน *</label>
+          <div className="field"><label>ชื่อร้าน <span className="req">*</span></label><input name="shop_name" required placeholder="เช่น ครัวเหนือ" /></div>
+          <div className="field"><label>ประเภทร้าน <span className="req">*</span></label>
             <ShopTypeSelect />
             <p className="fhint">ระบบจะเปิดเมนูให้ตรงประเภท — เพิ่ม “สินค้า” หรือ “ห้องพัก” ทีหลังได้ที่หน้า “ร้าน”</p>
           </div>

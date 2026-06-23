@@ -31,8 +31,8 @@ export default async function NewBranch({
         <input type="hidden" name="brand_id" value={brand.id} />
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูลสาขา</div>
-          <div className="field"><label>ชื่อสาขา *</label><input name="shop_name" required placeholder={`เช่น ${brandName} สาขานิมมาน`} /></div>
-          <div className="field"><label>ประเภท *</label>
+          <div className="field"><label>ชื่อสาขา <span className="req">*</span></label><input name="shop_name" required placeholder={`เช่น ${brandName} สาขานิมมาน`} /></div>
+          <div className="field"><label>ประเภท <span className="req">*</span></label>
             <ShopTypeSelect />
             <p className="fhint">สาขาหนึ่งจะเป็นที่พักก็ได้ — เลือกประเภทให้ตรงกับสาขานี้</p>
           </div>

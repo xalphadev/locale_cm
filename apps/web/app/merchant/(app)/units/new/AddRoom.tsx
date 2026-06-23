@@ -76,7 +76,7 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
       {/* STEP 1 — pick the type (the gate). The why lives in the "?" tooltip, not on the page. */}
       <section className="fsec">
         <div className="field">
-          <label>รูปแบบห้อง (สำคัญ) *<InfoTip title="รูปแบบห้อง คืออะไร" body={'“รูปแบบห้อง” = แบบ & ราคาที่ลูกค้าเห็น — เช่น ดีลักซ์, สวีท, เตียงรวม\n“ห้องจริง” = ห้องแต่ละห้อง (101, 102…) ที่คุณจัดในผัง\nเลือกว่าห้องจริงนี้เป็นรูปแบบไหน ระบบจะนับห้องว่างของรูปแบบนั้นให้อัตโนมัติ'} /></label>
+          <label>รูปแบบห้อง (สำคัญ) <span className="req">*</span><InfoTip title="รูปแบบห้อง คืออะไร" body={'“รูปแบบห้อง” = แบบ & ราคาที่ลูกค้าเห็น — เช่น ดีลักซ์, สวีท, เตียงรวม\n“ห้องจริง” = ห้องแต่ละห้อง (101, 102…) ที่คุณจัดในผัง\nเลือกว่าห้องจริงนี้เป็นรูปแบบไหน ระบบจะนับห้องว่างของรูปแบบนั้นให้อัตโนมัติ'} /></label>
           <select value={typeId} onChange={(e) => pickType(e.target.value)}>
             <option value="">— เลือกรูปแบบห้อง —</option>
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -111,7 +111,7 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
             <form className="form mform" action={createRoomAction}>
               <section className="fsec">
                 <div className="fgrid">
-                  <div className="field"><label>เลข/ชื่อ{U} *</label><input name="code" placeholder={kind === 'bed' ? 'A1' : '101'} required /></div>
+                  <div className="field"><label>เลข/ชื่อ{U} <span className="req">*</span></label><input name="code" placeholder={kind === 'bed' ? 'A1' : '101'} required /></div>
                   <div className="field"><label>{term}</label><input name="floor" value={floor} onChange={(e) => setFloor(e.target.value)} placeholder={term === 'ชั้น' ? '1' : 'เช่น ริมน้ำ'} /></div>
                 </div>
                 <div className="field"><label>รับได้ (ท่าน)</label><input name="capacity" type="number" min="0" max="50" value={cap} onChange={(e) => setCap(e.target.value)} placeholder={kind === 'bed' ? '1' : '2'} />
@@ -132,8 +132,8 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
                   <div className="field"><label>คำนำหน้า (ถ้ามี)</label><input name="prefix" value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="เช่น A" /></div>
                 </div>
                 <div className="fgrid">
-                  <div className="field"><label>เลขเริ่ม *</label><input name="start" type="number" min="0" value={start} onChange={(e) => setStart(e.target.value)} placeholder="1" required /></div>
-                  <div className="field"><label>ถึงเลข *</label><input name="end" type="number" min="0" value={end} onChange={(e) => setEnd(e.target.value)} placeholder="10" required /></div>
+                  <div className="field"><label>เลขเริ่ม <span className="req">*</span></label><input name="start" type="number" min="0" value={start} onChange={(e) => setStart(e.target.value)} placeholder="1" required /></div>
+                  <div className="field"><label>ถึงเลข <span className="req">*</span></label><input name="end" type="number" min="0" value={end} onChange={(e) => setEnd(e.target.value)} placeholder="10" required /></div>
                 </div>
                 {preview.state === 'ok' && <p style={previewStyle}>จะสร้าง {preview.count} {U}: {preview.text}</p>}
                 {preview.state === 'invalid' && <p className="fhint" style={{ margin: '2px 0 0', color: '#B25E00' }}>ช่วงเลขไม่ถูกต้อง — ใส่เลขเริ่มน้อยกว่าเลขสิ้นสุด (ไม่เกิน 200 ต่อครั้ง)</p>}
@@ -148,7 +148,7 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
             <form className="form mform" action={createRoomsBulkAction}>
               <section className="fsec">
                 <div className="fsec-h"><span className="fsec-ic"><Icon n="plus" size={15} /></span> พิมพ์เลข{U}เอง<InfoTip title="พิมพ์เลขเอง" body={`พิมพ์เลข/ชื่อ${U}ที่ต้องการ คั่นด้วยจุลภาคหรือเว้นวรรค\nเช่น 101, 102, 105, 201 หรือ A1 A2 B1\nเหมาะกับเลขที่ไม่เรียงกัน หรือชื่อเฉพาะ\nเลขที่มีอยู่แล้วจะถูกข้ามให้ (ระบบบอกว่าข้ามกี่อัน)`} /></div>
-                <div className="field"><label>เลข/ชื่อ{U} *</label>
+                <div className="field"><label>เลข/ชื่อ{U} <span className="req">*</span></label>
                   <textarea name="codes" value={codesText} onChange={(e) => setCodesText(e.target.value)} placeholder={kind === 'bed' ? 'A1, A2, B1, B2' : '101, 102, 105, 201'} style={{ minHeight: 60 }} required /></div>
                 {listPreview.state === 'ok' && <p style={previewStyle}>จะสร้าง {listPreview.count} {U}: {listPreview.text}</p>}
                 <div className="fgrid">

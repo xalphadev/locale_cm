@@ -22,9 +22,9 @@ export default async function NewReward({ searchParams }: { searchParams: { erro
       <form className="form mform" action={createRewardAction}>
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="spark" size={15} /></span> ของรางวัล / สิทธิพิเศษ</div>
-          <div className="field"><label>รางวัล *</label><input name="title" required placeholder="เช่น เค้ก 1 ชิ้น / ส่วนลด 20% / ลัดคิว VIP" /></div>
+          <div className="field"><label>รางวัล <span className="req">*</span></label><input name="title" required placeholder="เช่น เค้ก 1 ชิ้น / ส่วนลด 20% / ลัดคิว VIP" /></div>
           <div className="fgrid">
-            <div className="field"><label>ใช้กี่ {pointsName} *</label><input name="cost" type="number" defaultValue="6" min="1" inputMode="numeric" required /></div>
+            <div className="field"><label>ใช้กี่ {pointsName} <span className="req">*</span></label><input name="cost" type="number" defaultValue="6" min="1" inputMode="numeric" required /></div>
             <div className="field"><label>ประเภท</label>
               <select name="kind" defaultValue="free_item">
                 <option value="free_item">ของแถม (ของฟรี)</option>

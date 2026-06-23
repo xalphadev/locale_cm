@@ -30,7 +30,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
     <form className="form mform" action={action}>
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> ข้อมูลห้อง</div>
-        <div className="field"><label>ชื่อ{noun} *</label><input name="name_th" required defaultValue={u ? th(u.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
+        <div className="field"><label>ชื่อ{noun} <span className="req">*</span></label><input name="name_th" required defaultValue={u ? th(u.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
         <div className="field"><label>รายละเอียด{noun} <span className="lbl-opt">(ลูกค้าเห็น)</span></label>
           <textarea name="description_th" defaultValue={u ? th(u.description_i18n) : ''} placeholder="จุดเด่นที่ลูกค้าควรรู้ เช่น ห้องมุม วิวสวน ระเบียงกว้าง ใกล้ BTS เดิน 5 นาที เฟอร์ครบพร้อมเข้าอยู่" style={{ minHeight: 70 }} />
           <p className="fhint">เว้นว่างได้ — ถ้าไม่กรอก ลูกค้าจะเห็นคำอธิบายรวมของร้านแทน</p></div>

@@ -11,8 +11,8 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
       <p className="note">สมัครเพื่อลงข้อมูลร้าน โพสต์ลงฟีด และโชว์สินค้าให้ลูกค้าเห็น — เราไม่ยุ่งเรื่องการขาย ลูกค้าติดต่อร้านโดยตรง</p>
       {searchParams?.error && <div className="banner-err">{searchParams.error}</div>}
       <form className="form" action={signupAction}>
-        <div className="field"><label>ชื่อร้าน *</label><input name="shop_name" required placeholder="เช่น รากเหง้า สโลว์บาร์" /></div>
-        <div className="field"><label>ประเภทร้าน *</label>
+        <div className="field"><label>ชื่อร้าน <span className="req">*</span></label><input name="shop_name" required placeholder="เช่น รากเหง้า สโลว์บาร์" /></div>
+        <div className="field"><label>ประเภทร้าน <span className="req">*</span></label>
           <select name="shop_type" defaultValue="cafe">
             <optgroup label="ร้านอาหาร / เครื่องดื่ม (มีเมนู/สินค้า)">
               <option value="cafe">คาเฟ่</option><option value="restaurant">ร้านอาหาร</option>
@@ -38,8 +38,8 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
           <div className="field"><label>LINE ID</label><input name="line_id" placeholder="@yourshop" /></div>
         </div>
         <hr className="phr" />
-        <div className="field"><label>อีเมล *</label><input name="email" type="email" required autoComplete="email" /></div>
-        <div className="field"><label>รหัสผ่าน * (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
+        <div className="field"><label>อีเมล <span className="req">*</span></label><input name="email" type="email" required autoComplete="email" /></div>
+        <div className="field"><label>รหัสผ่าน <span className="req">*</span> (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
         <button className="btn btn-primary mform-save" type="submit">สมัครและเริ่มใช้งาน →</button>
       </form>
       <p className="note">ร้านมีอยู่ใน Locale แล้ว? <Link href="/merchant/claim">เคลมร้านของคุณ</Link></p>
