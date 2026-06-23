@@ -11,11 +11,15 @@ const th = (j: any) => (j ? j.th || j.en || (Object.values(j)[0] as string) || '
 
 /** Add/edit room form — `action` is createStayUnitAction or updateStayUnitAction.bind(id).
  *  Client component so the availability field + price/contract labels follow the chosen rental mode. */
-export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง', stayKind, amenOpts, buildOpts, billOpts }: { action: (fd: FormData) => void; u?: any; submitLabel: string; managed?: boolean; noun?: string; stayKind?: string; amenOpts: AmenOpt[]; buildOpts: AmenOpt[]; billOpts: AmenOpt[] }) {
-  const [mode, setMode] = useState<string>(u?.rental_mode || 'monthly');
+export function RoomForm({ action, u, tmpl, cloneSources, submitLabel, managed, noun = 'ห้อง', stayKind, amenOpts, buildOpts, billOpts }: { action: (fd: FormData) => void; u?: any; tmpl?: any; cloneSources?: { id: string; label: string }[]; submitLabel: string; managed?: boolean; noun?: string; stayKind?: string; amenOpts: AmenOpt[]; buildOpts: AmenOpt[]; billOpts: AmenOpt[] }) {
+  // On create we can prefill from another branch's room type (`tmpl`); editing always wins. Field defaults read
+  // from `d`, but create/edit behaviour (e.g. the vacancy section + photos) stays keyed on `u` only — a prefilled
+  // create is still a create: no vacancy section, no copied photos (those are per-location).
+  const d = u ?? tmpl;
+  const [mode, setMode] = useState<string>(d?.rental_mode || 'monthly');
   const monthly = mode === 'monthly';
-  const bills: string[] = u?.bills_included ?? [];
-  const amen: string[] = u?.unit_amenities ?? [];
+  const bills: string[] = d?.bills_included ?? [];
+  const amen: string[] = d?.unit_amenities ?? [];
   const baht = (m: any) => (m != null ? Math.round(m / 100) : '');
   // per-type fields (audit wrxdo62qb): each accommodation kind surfaces the subset it needs
   const kind = stayKind || '';
@@ -25,22 +29,31 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
   const wantCancel = ['hotel', 'guesthouse', 'homestay', 'hostel'].includes(kind);
   const wantHost = ['homestay', 'guesthouse'].includes(kind);
   const wantBuilding = ['dorm', 'hostel', 'apartment', 'condo', 'mansion', 'hotel', 'guesthouse'].includes(kind);   // common/shared facilities
-  const at = u?.attrs || {};
+  const at = d?.attrs || {};
   return (
     <form className="form mform" action={action}>
+      {!u && cloneSources && cloneSources.length > 0 && (
+        <section className="fsec">
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ทำสำเนาจากสาขาอื่น</div>
+          {tmpl
+            ? <p className="fhint" style={{ margin: '0 0 .55rem' }}><Icon n="check" size={13} /> เติมค่าจาก “{th(tmpl.name_i18n)}” แล้ว — แก้ได้ตามต้องการ แล้วกดเพิ่ม (รูป/ห้องว่าง ตั้งใหม่)</p>
+            : <p className="fhint" style={{ margin: '0 0 .55rem' }}>เลือกห้องจากสาขาอื่นเพื่อคัดลอก ชื่อ · รายละเอียด · ราคา · สิ่งอำนวยความสะดวก มาเป็นค่าตั้งต้น</p>}
+          <div className="checkrow">{cloneSources.map((s) => <a key={s.id} className="cbox" href={`/merchant/rooms/new?from=${s.id}`}>{s.label}</a>)}</div>
+        </section>
+      )}
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> ข้อมูลห้อง</div>
-        <div className="field"><label>ชื่อ{noun} <span className="req">*</span></label><input name="name_th" required defaultValue={u ? th(u.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
+        <div className="field"><label>ชื่อ{noun} <span className="req">*</span></label><input name="name_th" required defaultValue={d ? th(d.name_i18n) : ''} placeholder="เช่น ห้องสตูดิโอ แอร์ / ห้องเตียงคู่ วิวสวน" /></div>
         <div className="field"><label>รายละเอียด{noun} <span className="lbl-opt">(ลูกค้าเห็น)</span></label>
-          <textarea name="description_th" defaultValue={u ? th(u.description_i18n) : ''} placeholder="จุดเด่นที่ลูกค้าควรรู้ เช่น ห้องมุม วิวสวน ระเบียงกว้าง ใกล้ BTS เดิน 5 นาที เฟอร์ครบพร้อมเข้าอยู่" style={{ minHeight: 70 }} />
+          <textarea name="description_th" defaultValue={d ? th(d.description_i18n) : ''} placeholder="จุดเด่นที่ลูกค้าควรรู้ เช่น ห้องมุม วิวสวน ระเบียงกว้าง ใกล้ BTS เดิน 5 นาที เฟอร์ครบพร้อมเข้าอยู่" style={{ minHeight: 70 }} />
           <p className="fhint">เว้นว่างได้ — ถ้าไม่กรอก ลูกค้าจะเห็นคำอธิบายรวมของร้านแทน</p></div>
         <div className="fgrid">
           <div className="field"><label>ประเภทเช่า</label>
             <select name="rental_mode" value={mode} onChange={(e) => setMode(e.target.value)}><option value="monthly">รายเดือน</option><option value="daily">รายวัน</option></select></div>
-          <div className="field"><label>ราคา (บาท/{monthly ? 'เดือน' : 'คืน'})</label><input name="price" type="number" min="0" defaultValue={baht(u?.price_minor)} placeholder="5500" />
+          <div className="field"><label>ราคา (บาท/{monthly ? 'เดือน' : 'คืน'})</label><input name="price" type="number" min="0" defaultValue={baht(d?.price_minor)} placeholder="5500" />
             <p className="fhint">ไม่กรอก = ลูกค้าเห็น “สอบถามราคา”</p></div>
-          <div className="field"><label>รับกี่ท่าน</label><input name="capacity" type="number" min="1" max="50" defaultValue={u?.capacity ?? ''} placeholder="2" /></div>
-          <div className="field"><label>ขนาด (ตร.ม.)</label><input name="room_size_sqm" type="number" min="0" defaultValue={u?.room_size_sqm ?? ''} placeholder="24" /></div>
+          <div className="field"><label>รับกี่ท่าน</label><input name="capacity" type="number" min="1" max="50" defaultValue={d?.capacity ?? ''} placeholder="2" /></div>
+          <div className="field"><label>ขนาด (ตร.ม.)</label><input name="room_size_sqm" type="number" min="0" defaultValue={d?.room_size_sqm ?? ''} placeholder="24" /></div>
         </div>
       </section>
 
@@ -93,18 +106,18 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
           <div className="fsec-h"><span className="fsec-ic"><Icon n="bed" size={15} /></span> รายละเอียดตามประเภท</div>
           {wantRooms && (
             <div className="fgrid">
-              <div className="field"><label>ห้องนอน</label><input name="bedrooms" type="number" min="0" defaultValue={u?.bedrooms ?? ''} placeholder="1" /></div>
-              <div className="field"><label>ห้องน้ำ</label><input name="bathrooms" type="number" min="0" defaultValue={u?.bathrooms ?? ''} placeholder="1" /></div>
+              <div className="field"><label>ห้องนอน</label><input name="bedrooms" type="number" min="0" defaultValue={d?.bedrooms ?? ''} placeholder="1" /></div>
+              <div className="field"><label>ห้องน้ำ</label><input name="bathrooms" type="number" min="0" defaultValue={d?.bathrooms ?? ''} placeholder="1" /></div>
             </div>
           )}
           {wantGender && (
             <div className="field"><label>เพศผู้เข้าพัก</label>
-              <select name="gender_policy" defaultValue={u?.gender_policy || ''}><option value="">ทุกเพศ</option><option value="female">หญิงล้วน</option><option value="male">ชายล้วน</option></select></div>
+              <select name="gender_policy" defaultValue={d?.gender_policy || ''}><option value="">ทุกเพศ</option><option value="female">หญิงล้วน</option><option value="male">ชายล้วน</option></select></div>
           )}
           {!monthly && (
             <div className="fgrid">
-              <div className="field"><label>เวลาเช็คอิน</label><input name="check_in_time" type="time" defaultValue={u?.check_in_time || ''} /></div>
-              <div className="field"><label>เวลาเช็คเอาท์</label><input name="check_out_time" type="time" defaultValue={u?.check_out_time || ''} /></div>
+              <div className="field"><label>เวลาเช็คอิน</label><input name="check_in_time" type="time" defaultValue={d?.check_in_time || ''} /></div>
+              <div className="field"><label>เวลาเช็คเอาท์</label><input name="check_out_time" type="time" defaultValue={d?.check_out_time || ''} /></div>
             </div>
           )}
           {!monthly && wantBreakfast && (
