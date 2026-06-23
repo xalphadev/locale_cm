@@ -101,9 +101,13 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
       if (p.brand_id) {
         [brand] = await q<any>(`SELECT name_i18n, logo_url FROM brands WHERE id=$1 AND deleted_at IS NULL`, [p.brand_id]);
         siblings = await q<any>(
-          `SELECT id, name_i18n, address_i18n, image_urls, subcategory, category::text cat, offers_stay
-             FROM places WHERE brand_id=$1 AND id<>$2 AND status='published'
-            ORDER BY created_at LIMIT 6`, [p.brand_id, params.id]);
+          `SELECT p.id, p.name_i18n, p.address_i18n, p.image_urls, p.subcategory, p.category::text cat, p.offers_stay,
+                  rv.n::int rev_n, rv.avg::text rev_avg
+             FROM places p
+             LEFT JOIN LATERAL (SELECT count(*) n, round(avg(rating),1) avg FROM reviews r
+               WHERE r.place_id=p.id AND r.moderation_status='approved') rv ON true
+            WHERE p.brand_id=$1 AND p.id<>$2 AND p.status='published'
+            ORDER BY rv.n DESC NULLS LAST, p.created_at LIMIT 6`, [p.brand_id, params.id]);
       }
       // similar places: same category + nature (shop vs stay), same area first, then by popularity
       similar = await q<any>(
@@ -388,7 +392,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
               <Link className="openc" key={s.id} href={`/place/${s.id}`}>
                 <div className="op"><img src={(s.image_urls && s.image_urls[0]) || cover(s.id, s.subcategory, s.cat, 300, 200)} alt="" loading="lazy" /></div>
                 <div className="onm">{i18n(s.name_i18n)}</div>
-                <div className="ometa">{i18n(s.address_i18n) || (s.offers_stay ? 'ที่พัก' : 'สาขา')}</div>
+                <div className="ometa">{i18n(s.address_i18n) || (s.offers_stay ? 'ที่พัก' : 'สาขา')}{(s.rev_n || 0) >= 5 ? ` · ★ ${s.rev_avg}` : ''}</div>
               </Link>
             ))}
           </div>
