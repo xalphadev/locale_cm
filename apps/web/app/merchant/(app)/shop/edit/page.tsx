@@ -9,15 +9,9 @@ import { PhotoUpload } from '../../PhotoUpload';
 import { HoursEditor } from '../../HoursEditor';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
 import { facetsFor, facetLabel } from '@/lib/facets';
+import { parsePoint } from '@/lib/geo';
 
 export const dynamic = 'force-dynamic';
-
-const NIMMAN_LNG = 98.967, NIMMAN_LAT = 18.796;
-function parsePoint(geo: string | null) {
-  if (!geo) return null;
-  const m = /POINT\(([-\d.]+)\s+([-\d.]+)\)/i.exec(geo);
-  return m ? { lng: parseFloat(m[1]), lat: parseFloat(m[2]) } : null;
-}
 
 // Edit form for the shop info — kept separate from the read-only /merchant/shop view so opening the
 // page doesn't drop the owner straight into editable fields. updateShopAction redirects back to the view.
@@ -34,7 +28,6 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   const curAmen: string[] = p?.amenities || [];
   const amenShown = [...new Set([...facetsFor(p?.category, p?.subcategory), ...curAmen])];
   const pt = parsePoint(p?.geo);
-  const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   // word adapts to the account's reality: a single-location owner sees "ร้าน"; a multi-branch owner sees
   // "สาขา" for the location being edited (the business itself stays "ร้าน") — one vocabulary, never mixed.
   const noun = (acc.branch_count ?? 1) > 1 ? 'สาขา' : 'ร้าน';
@@ -117,7 +110,6 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="pin" size={15} /></span> ที่อยู่ & ตำแหน่งบนแผนที่</div>
           <div className="field"><label>ที่อยู่ <span className="lbl-opt">(ลูกค้าเห็น)</span></label><input name="address_th" defaultValue={i18n(p?.address_i18n)} placeholder="เช่น 12/3 ถ.นิมมานเหมินท์ ซ.9 ต.สุเทพ อ.เมือง เชียงใหม่ 50200" /></div>
-          {unpinned && <div className="banner-err" style={{ marginBottom: 8 }}>ยังไม่ได้ปักหมุด — ลูกค้าจะหาคุณบนแผนที่ “ที่พัก” ไม่เจอ</div>}
           <GeoPicker lat0={pt?.lat ?? null} lng0={pt?.lng ?? null} />
         </section>
 

@@ -212,9 +212,23 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .pa-brand{color:var(--m-accent);font-weight:800}
 .merchant-root .portal-auth h1{font-size:1.7rem;margin:.35rem 0 1rem;letter-spacing:-.02em}
 .merchant-root .phr{border-top:1px solid var(--m-line)}
-/* geo picker */
-.merchant-root .geopick-map{border-radius:13px;border:1px solid var(--m-line)}
-.merchant-root .geopick-row input{border:1.5px solid var(--m-line);border-radius:9px}
+/* geo picker — "drag the map, pin stays centred" */
+.merchant-root .geopick-mapwrap{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--m-line);box-shadow:var(--m-sh);touch-action:none}
+.merchant-root .geopick-map{height:300px;border:none;border-radius:0;background:var(--m-sunk)}
+.merchant-root .geopick-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--m-muted);font-size:.86rem;font-weight:600;pointer-events:none;z-index:400}
+.merchant-root .geopick-pin{position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);z-index:500;pointer-events:none;filter:drop-shadow(0 3px 4px rgba(16,24,40,.3))}
+.merchant-root .geopick-pin::after{content:"";position:absolute;left:50%;bottom:-3px;width:7px;height:3px;border-radius:50%;background:rgba(16,24,40,.35);transform:translateX(-50%)}
+.merchant-root .geopick-gps{position:absolute;right:10px;bottom:10px;z-index:600;display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--m-line);border-radius:999px;padding:.46rem .82rem;font:inherit;font-size:.82rem;font-weight:700;color:var(--m-accent);box-shadow:0 1px 5px rgba(16,24,40,.2);cursor:pointer}
+.merchant-root .geopick-gps:active{transform:scale(.97)}
+.merchant-root .geopick-gps:disabled{opacity:.6;cursor:default}
+.merchant-root .geopick-status{margin-top:9px;font-size:.86rem;font-weight:700;color:var(--m-muted);line-height:1.4}
+.merchant-root .geopick-status.ok{color:#15803d}
+.merchant-root .geopick-err{margin-top:6px;font-size:.82rem;color:#C0392B;font-weight:600}
+.merchant-root .geopick-manual{margin-top:10px}
+.merchant-root .geopick-manual summary{font-size:.82rem;color:var(--m-accent);font-weight:700;cursor:pointer;width:fit-content}
+.merchant-root .geopick-row{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:.6rem}
+.merchant-root .geopick-row label{display:flex;flex-direction:column;gap:.2rem;font-size:.76rem;color:var(--m-muted);font-weight:600}
+.merchant-root .geopick-row input{padding:.5rem .6rem;border:1.5px solid var(--m-line);border-radius:9px;background:var(--m-surface);font:inherit;width:140px}
 
 /* ===== merchant portal: MOBILE APP SHELL (phone frame + bottom tab bar, responsive) ===== */
 .merchant-root{background:#E4E8EF}                       /* soft tint behind the shell so it pops on desktop (matches consumer) */

@@ -5,9 +5,10 @@ import { q, withTx, DEMO_AGENT, DEMO_ADMIN } from '@/lib/db';
 import { hashPassword, verifyPassword, setSession, clearSession, currentAccount } from '@/lib/auth';
 import { saveUploads, MAX_UPLOADS } from '@/lib/storage';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
+import { NIMMAN_LNG, NIMMAN_LAT, inCmBbox } from '@/lib/geo';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
-const NIMMAN = { lng: 98.967, lat: 18.796 };
+const NIMMAN = { lng: NIMMAN_LNG, lat: NIMMAN_LAT };
 // Shop-type → (category, subcategory) + DEFAULT capabilities. The type chosen at signup sets
 // whether the shop sells products and/or has rooms — which drives the portal tabs. All editable
 // later in /merchant/shop. `general` = a plain shop/service (no products, no rooms): feed + info only.
@@ -389,7 +390,7 @@ export async function updateShopAction(formData: FormData) {
   // Location pin: write only when both coords are finite AND inside the Chiang Mai bbox.
   // Clamp-and-skip — a save of just name/phone must never zero an existing good geo.
   const lat = Number(s(formData, 'lat')), lng = Number(s(formData, 'lng'));
-  if (isFinite(lat) && isFinite(lng) && lng >= 98.6 && lng <= 99.3 && lat >= 18.5 && lat <= 19.2) {
+  if (inCmBbox(lat, lng)) {
     await q(`SELECT fn_set_place_geo($1, $2, $3)`, [acc.place_id, String(lng), String(lat)]);
   }
 
