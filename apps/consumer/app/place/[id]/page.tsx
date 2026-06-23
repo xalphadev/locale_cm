@@ -53,7 +53,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   const reD = /^\d{4}-\d{2}-\d{2}$/;
   const dq = { from: reD.test(searchParams?.from || '') ? searchParams.from! : '', to: reD.test(searchParams?.to || '') ? searchParams.to! : '' };
   const dateQs = dq.from && dq.to && dq.to > dq.from ? `?from=${dq.from}&to=${dq.to}` : '';
-  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = []; let canReview = false; let myReview: any = null; let loggedIn = false;
+  let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = []; let canReview = false; let myReview: any = null; let loggedIn = false; let brand: any = null; let siblings: any[] = [];
   try {
     const uid = await demoUserId();
     [p] = await q<any>(
@@ -95,6 +95,15 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
         FROM stay_units WHERE place_id=$1 AND status='published' AND deleted_at IS NULL
         ORDER BY (CASE WHEN (rental_mode='monthly' AND available_units=0) OR (rental_mode='daily' AND daily_status='full') THEN 1 ELSE 0 END), sort, price_minor LIMIT 20`, [params.id]);
+      // brand identity (logo) + sibling branches of the same brand — surfaces a chain; sibling list is a no-op
+      // for a single-branch place (query returns nothing), so it self-activates only when a brand has 2+ places.
+      if (p.brand_id) {
+        [brand] = await q<any>(`SELECT name_i18n, logo_url FROM brands WHERE id=$1 AND deleted_at IS NULL`, [p.brand_id]);
+        siblings = await q<any>(
+          `SELECT id, name_i18n, address_i18n, image_urls, subcategory, category::text cat, offers_stay
+             FROM places WHERE brand_id=$1 AND id<>$2 AND status='published'
+            ORDER BY created_at LIMIT 6`, [p.brand_id, params.id]);
+      }
       // similar places: same category + nature (shop vs stay), same area first, then by popularity
       similar = await q<any>(
         `SELECT p.id, p.name_i18n, p.subcategory, p.category::text cat, p.price_band::text price_band, p.offers_stay,
@@ -202,6 +211,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
               <span className="verifychip" title="เจ้าของร้านยืนยันตัวตนแล้ว"><Icon n="check" size={12} /> ยืนยันโดยเจ้าของร้าน</span>
             )}</h1>
             <div className="dhead-sub"><Icon n={isStay ? 'bed' : (CAT_ICON[p.subcategory] || CAT_ICON[p.category])} size={14} /> {isStay ? `ที่พัก${p.stay_kind ? ' · ' + typeLabel : ''}` : `${catTH(p.category)}${p.subcategory ? ' · ' + p.subcategory : ''}`}{p.district_name ? ` · ${i18n(p.district_name)}` : ''}</div>
+            {brand?.logo_url && <div className="dhead-brand"><img src={brand.logo_url} alt="" /> {i18n(brand.name_i18n)}</div>}
           </div>
           <a className="dhead-nav" href={pt ? mapUrl : primary.href} target="_blank" rel="noopener" aria-label="นำทาง"><Icon n="send" size={20} /></a>
         </div>
@@ -359,6 +369,19 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           <h2>กิจกรรมที่นี่</h2>
           {events.map((e) => <Link className="erow" key={e.id} href={`/event/${e.id}`}><div className="ethumb"><Icon n={KIND_ICON[e.kind] || 'sparkles'} size={24} /></div>
             <div><div className="nm">{i18n(e.title_i18n)}</div><div className="meta"><Icon n="calendar" size={13} className="flat-ico" style={{ color: 'var(--muted)' }} /> {e.d} {THM[e.m - 1]}</div></div><span className="chev"><Icon n="chevR" size={18} /></span></Link>)}
+        </>)}
+
+        {siblings.length > 0 && (<>
+          <h2>สาขาอื่นของแบรนด์นี้</h2>
+          <div className="openrail">
+            {siblings.map((s) => (
+              <Link className="openc" key={s.id} href={`/place/${s.id}`}>
+                <div className="op"><img src={(s.image_urls && s.image_urls[0]) || cover(s.id, s.subcategory, s.cat, 300, 200)} alt="" loading="lazy" /></div>
+                <div className="onm">{i18n(s.name_i18n)}</div>
+                <div className="ometa">{i18n(s.address_i18n) || (s.offers_stay ? 'ที่พัก' : 'สาขา')}</div>
+              </Link>
+            ))}
+          </div>
         </>)}
 
         {similar.length > 0 && (<>
