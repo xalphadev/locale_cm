@@ -43,13 +43,14 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
     p?.offers_stay && 'มีห้องพัก (เผยแพร่)',
     p?.manages_stay && 'ใช้ระบบจัดการห้อง',
   ].filter(Boolean) as string[];
+  const noun = (acc.branch_count ?? 1) > 1 ? 'สาขา' : 'ร้าน';
 
   return (
     <>
       {searchParams?.ok && <div className="banner-ok">✓ บันทึกแล้ว</div>}
 
       <div className="listhead">
-        <h1>ข้อมูลร้าน</h1>
+        <h1>ข้อมูล{noun}</h1>
         <Link className="addbtn" href="/merchant/shop/edit"><Icon n="edit" size={16} /> แก้ไข</Link>
       </div>
 
@@ -59,10 +60,11 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
             ? <span className="t season"><Icon n="check" size={12} /> ยืนยันเจ้าของแล้ว</span>
             : <Link className="t off" href="/merchant/verify">ยังไม่ยืนยัน · กดยืนยัน</Link>}
         </div>
-        <h1>{i18n(p?.name_i18n) || 'ยังไม่ได้ตั้งชื่อร้าน'}</h1>
+        <h1>{i18n(p?.name_i18n) || `ยังไม่ได้ตั้งชื่อ${noun}`}</h1>
+        {(acc.branch_count ?? 1) > 1 && <p className="fhint" style={{ margin: '2px 0 0' }}><Icon n="store" size={12} /> สาขาของแบรนด์ {i18n(acc.brand_name) || '—'}</p>}
         {desc
           ? <p style={{ color: 'var(--muted,#6b7280)', fontSize: '.95rem', lineHeight: 1.6, margin: '4px 0 0' }}>{desc}</p>
-          : <p className="fhint" style={{ margin: '4px 0 0' }}>ยังไม่ได้ใส่รายละเอียดร้าน</p>}
+          : <p className="fhint" style={{ margin: '4px 0 0' }}>ยังไม่ได้ใส่รายละเอียด{noun}</p>}
       </div>
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="chat" size={15} /></span> ช่องทางติดต่อ</h2>
@@ -72,7 +74,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
         {p?.website && <Fact ic="globe" label="เว็บไซต์" value={p.website} link={p.website} />}
       </div>
 
-      <h2 className="rsec"><span className="rsec-ic"><Icon n="tag" size={15} /></span> ร้านนี้มี</h2>
+      <h2 className="rsec"><span className="rsec-ic"><Icon n="tag" size={15} /></span> {noun}นี้มี</h2>
       {caps.length > 0
         ? <div className="chips">{caps.map((c) => <span className="chip" key={c}><Icon n="check" size={12} /> {c}</span>)}</div>
         : <p className="note">ร้านทั่วไป — ยังไม่ได้เปิด “สินค้า” หรือ “ห้องพัก” (เปิดได้ที่ปุ่มแก้ไข)</p>}

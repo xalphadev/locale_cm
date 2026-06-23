@@ -610,7 +610,9 @@ export async function addShopAction(formData: FormData) {
   });
   await q(`UPDATE merchant_accounts SET active_place_id=$2 WHERE id=$1`, [acc.id, placeId]);
   revalidatePath('/merchant', 'layout');
-  redirect('/merchant');
+  // land in the FULL branch editor so the rest of the branch data (address/photos/hours/map) gets filled —
+  // the create form only captures name/type/contact, so add → edit is one continuous "complete the branch" flow.
+  redirect('/merchant/shop/edit?new=1');
 }
 
 /** "เพิ่มสาขา" — add a NEW branch to an EXISTING brand the account owns, then switch to it.
@@ -632,7 +634,9 @@ export async function addBranchAction(formData: FormData) {
     createBranchPlace(c, { cityId, distId: dist?.id ?? null, brandId, shopName: branchName, type, phone, lineId }));
   await q(`UPDATE merchant_accounts SET active_place_id=$2 WHERE id=$1`, [acc.id, placeId]);
   revalidatePath('/merchant', 'layout');
-  redirect('/merchant');
+  // land in the FULL branch editor so the rest of the branch data (address/photos/hours/map) gets filled —
+  // the create form only captures name/type/contact, so add → edit is one continuous "complete the branch" flow.
+  redirect('/merchant/shop/edit?new=1');
 }
 
 // ── loyalty: per-brand Stamp program (0023). Non-money, in-kind. Scoped to the account's active brand. ──

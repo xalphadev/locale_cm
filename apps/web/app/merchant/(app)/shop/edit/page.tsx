@@ -19,28 +19,33 @@ function parsePoint(geo: string | null) {
 
 // Edit form for the shop info — kept separate from the read-only /merchant/shop view so opening the
 // page doesn't drop the owner straight into editable fields. updateShopAction redirects back to the view.
-export default async function ShopEdit() {
+export default async function ShopEdit({ searchParams }: { searchParams: { new?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
     `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
+  // word adapts to the account's reality: a single-location owner sees "ร้าน"; a multi-branch owner sees
+  // "สาขา" (and the brand is "แบรนด์") — so the page never mixes ร้าน/สาขา/แบรนด์ ambiguously.
+  const noun = (acc.branch_count ?? 1) > 1 ? 'สาขา' : 'ร้าน';
   return (
     <>
-      <div className="mback"><Link href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูลร้าน</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขข้อมูลร้าน</h1>
-      <p className="note" style={{ margin: '-.3rem 0 .9rem' }}><Icon n="store" size={13} /> กำลังแก้สาขา <b>{i18n(acc.place_name) || acc.display_name || 'สาขานี้'}</b>{i18n(acc.brand_name) && i18n(acc.brand_name) !== i18n(acc.place_name) ? ` · แบรนด์ ${i18n(acc.brand_name)}` : ''}</p>
+      <div className="mback"><Link href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูล{noun}</Link></div>
+      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขข้อมูล{noun}</h1>
+      {(acc.branch_count ?? 1) > 1 && <p className="note" style={{ margin: '-.3rem 0 .9rem' }}><Icon n="store" size={13} /> กำลังแก้สาขา <b>{i18n(acc.place_name) || acc.display_name || 'สาขานี้'}</b> · แบรนด์ {i18n(acc.brand_name) || '—'}</p>}
+      {searchParams?.new && <div className="banner-ok">✓ เพิ่ม{noun}แล้ว — กรอก <b>ที่อยู่ · รูป{noun} · เวลาเปิด-ปิด</b> ให้ครบ เพื่อให้ลูกค้าเห็นข้อมูลเต็ม</div>}
+      {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปบางรูปไม่สำเร็จ — ลองใหม่ (JPG/PNG/WEBP)</div>}
       <form className="form mform" action={updateShopAction} encType="multipart/form-data">
         <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูลร้าน</div>
-          <div className="field"><label>ชื่อร้าน</label><input name="name_th" defaultValue={i18n(p?.name_i18n)} /></div>
-          <div className="field"><label>รายละเอียดร้าน</label><textarea name="desc_th" defaultValue={i18n(p?.description_i18n)} style={{ minHeight: 84 }} placeholder="เล่าเรื่องร้าน จุดเด่น เมนู/สินค้าแนะนำ" /></div>
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ข้อมูล{noun}</div>
+          <div className="field"><label>ชื่อ{noun}</label><input name="name_th" defaultValue={i18n(p?.name_i18n)} /></div>
+          <div className="field"><label>รายละเอียด{noun}</label><textarea name="desc_th" defaultValue={i18n(p?.description_i18n)} style={{ minHeight: 84 }} placeholder={`เล่าเรื่อง${noun} จุดเด่น เมนู/สินค้าแนะนำ`} /></div>
         </section>
 
         <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> รูปร้าน <span className="lbl-opt">(ลูกค้าเห็นเป็นแกลเลอรี)</span></div>
-          <PhotoUpload existing={p?.image_urls} label="แตะเพื่อเลือกรูปร้าน หรือลากมาวาง" />
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> รูป{noun} <span className="lbl-opt">(ลูกค้าเห็นเป็นแกลเลอรี)</span></div>
+          <PhotoUpload existing={p?.image_urls} label={`แตะเพื่อเลือกรูป${noun} หรือลากมาวาง`} />
           <p className="fhint">รูปหน้าร้าน/ตึก · ล็อบบี้ · ส่วนกลาง/สระ · บรรยากาศ — รูปแรกเป็นรูปปกที่ลูกค้าเห็นก่อน (รูปห้องแยกใส่ที่ “ห้องพัก”)</p>
         </section>
 
@@ -61,7 +66,7 @@ export default async function ShopEdit() {
         </section>
 
         <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> ร้านนี้มีอะไรบ้าง</div>
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> {noun}นี้มีอะไรบ้าง</div>
           <label className="check"><input type="checkbox" name="sells_products" defaultChecked={!!p?.sells_products} /> ร้านมีสินค้าขาย — เปิดเมนู “สินค้า” + แสดงแถบสินค้าให้ลูกค้า</label>
           <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — เปิดเมนู “ห้องพัก” + ขึ้นในหน้า “ที่พัก” ของลูกค้า</label>
           <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> ใช้ระบบจัดการห้อง — เปิดเมนู “ผังห้อง” (วางห้องจริง · คุมห้องว่าง · ปฏิทินรายวัน)</label>
