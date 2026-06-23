@@ -27,7 +27,7 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   // word adapts to the account's reality: a single-location owner sees "ร้าน"; a multi-branch owner sees
-  // "สาขา" (and the brand is "แบรนด์") — so the page never mixes ร้าน/สาขา/แบรนด์ ambiguously.
+  // "สาขา" for the location being edited (the business itself stays "ร้าน") — one vocabulary, never mixed.
   const noun = (acc.branch_count ?? 1) > 1 ? 'สาขา' : 'ร้าน';
   return (
     <>
