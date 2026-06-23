@@ -8,6 +8,7 @@ import GeoPicker from '../GeoPicker';
 import { PhotoUpload } from '../../PhotoUpload';
 import { HoursEditor } from '../../HoursEditor';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
+import { facetsFor, facetLabel } from '@/lib/facets';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +25,14 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials, sells_products, offers_stay, manages_stay, room_mode, geo::text geo FROM places WHERE id=$1`, [acc.place_id]);
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials,
+            category::text category, subcategory, amenities, sells_products, offers_stay, manages_stay, room_mode, geo::text geo
+       FROM places WHERE id=$1`, [acc.place_id]);
   const socials: Record<string, string> = p?.socials || {};
+  // place facilities/highlights (places.amenities token[]): offer the facets relevant to this place's
+  // category, plus any tokens already set (so an existing/legacy token is never silently dropped on save).
+  const curAmen: string[] = p?.amenities || [];
+  const amenShown = [...new Set([...facetsFor(p?.category, p?.subcategory), ...curAmen])];
   const pt = parsePoint(p?.geo);
   const unpinned = !pt || (Math.abs(pt.lng - NIMMAN_LNG) < 1e-4 && Math.abs(pt.lat - NIMMAN_LAT) < 1e-4);
   // word adapts to the account's reality: a single-location owner sees "ร้าน"; a multi-branch owner sees
@@ -72,6 +79,18 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
           <HoursEditor value={p?.opening_hours} />
           <p className="fhint">ติ๊กวันที่เปิด แล้วใส่เวลา — ลูกค้าจะเห็นสถานะ “เปิดอยู่ตอนนี้/ปิด” อัตโนมัติตามเวลาเชียงใหม่</p>
         </section>
+
+        {amenShown.length > 0 && (
+          <section className="fsec">
+            <div className="fsec-h"><span className="fsec-ic"><Icon n="spark" size={15} /></span> สิ่งอำนวยความสะดวก &amp; จุดเด่น <span className="lbl-opt">(ลูกค้าใช้กรองค้นหา)</span></div>
+            <div className="checkrow">
+              {amenShown.map((t) => (
+                <label key={t} className="cbox"><input type="checkbox" name="amenity" value={t} defaultChecked={curAmen.includes(t)} /> {facetLabel(t)}</label>
+              ))}
+            </div>
+            <p className="fhint">ติ๊กสิ่งที่{noun}มี — แสดงเป็นชิปในหน้าของลูกค้า และช่วยให้ลูกค้ากรองหา{noun}เจอง่ายขึ้น</p>
+          </section>
+        )}
 
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> {noun}นี้มีอะไรบ้าง</div>

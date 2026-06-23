@@ -5,6 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
 import { shopReadiness } from '@/lib/readiness';
+import { facetLabel } from '@/lib/facets';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
-    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials,
+    `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials, amenities,
             sells_products, offers_stay, manages_stay, room_mode, geo::text geo
        FROM places WHERE id=$1`, [acc.place_id]);
   const { pt, pinned, missing, pct } = shopReadiness(p);   // shared with the dashboard nudge
@@ -27,6 +28,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const imgs: string[] = (p?.image_urls || []).filter(Boolean);
   const hours: Record<string, string> = p?.opening_hours || {};
   const socials: Record<string, string> = p?.socials || {};
+  const amen: string[] = p?.amenities || [];
   const hasHours = Object.keys(hours).length > 0;
   const caps = [
     p?.sells_products && 'ขายสินค้า',
@@ -107,6 +109,11 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
         ? <div className="chips">{caps.map((c) => <span className="chip" key={c}><Icon n="check" size={12} /> {c}</span>)}</div>
         : <p className="note">{noun}ทั่วไป — ยังไม่ได้เปิด “สินค้า” หรือ “ห้องพัก” (เปิดได้ที่ปุ่มแก้ไข)</p>}
       {p?.offers_stay && <p className="note" style={{ marginTop: 6 }}>รูปแบบห้อง: <b>{p.room_mode === 'unique' ? 'แต่ละห้องไม่เหมือนกัน (รีสอร์ท/เกสต์เฮาส์)' : 'หลายห้องเหมือนกัน (หอพัก/อพาร์ตเมนต์)'}</b></p>}
+
+      {amen.length > 0 && <>
+        <h2 className="rsec"><span className="rsec-ic"><Icon n="spark" size={15} /></span> สิ่งอำนวยความสะดวก &amp; จุดเด่น</h2>
+        <div className="chips">{amen.map((t) => <span className="chip" key={t}><Icon n="check" size={12} /> {facetLabel(t)}</span>)}</div>
+      </>}
 
       <h2 className="rsec"><span className="rsec-ic"><Icon n="pin" size={15} /></span> ตำแหน่งบนแผนที่</h2>
       {pinned ? (

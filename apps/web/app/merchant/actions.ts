@@ -356,6 +356,9 @@ export async function updateShopAction(formData: FormData) {
   const socials: Record<string, string> = {};
   for (const ch of SOCIAL_CHANNELS) { const v = s(formData, 's_' + ch.key).slice(0, 200); if (v) socials[ch.key] = v; }
   const socialsJson = Object.keys(socials).length ? JSON.stringify(socials) : null;
+  // place facilities/highlights (places.amenities token[]): the edit form renders a checkbox for every offered
+  // facet AND every currently-set token, so a normal save re-submits all current ones → nothing is dropped.
+  const amen = [...new Set((formData.getAll('amenity') as string[]).map(String).filter((t) => /^[a-z0-9_]+$/.test(t)))].slice(0, 40);
   // read the capability flags BEFORE the update so we can react to a toggle (off→on republishes child
   // rows, on→off hides them) without disturbing per-listing hide/show when the capability is unchanged.
   const [prev] = await q<{ sells_products: boolean; offers_stay: boolean }>(`SELECT sells_products, offers_stay FROM places WHERE id=$1`, [acc.place_id]);
@@ -370,9 +373,10 @@ export async function updateShopAction(formData: FormData) {
        image_count = CASE WHEN $12::text[] IS NOT NULL THEN COALESCE(array_length($12,1),0) ELSE image_count END,
        opening_hours = CASE WHEN $13::jsonb IS NOT NULL THEN $13::jsonb ELSE opening_hours END,
        socials = $14::jsonb,
+       amenities = $15::text[],
        updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null, hrsJson, socialsJson]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, urls.length ? urls : null, hrsJson, socialsJson, amen.length ? amen : null]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.
