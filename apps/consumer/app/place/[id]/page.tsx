@@ -42,6 +42,11 @@ const GOODFOR: { keys: string[]; label: string }[] = [
   { keys: ['group_friendly'], label: 'มาเป็นกลุ่ม' },
   { keys: ['halal', 'halal_options'], label: 'ฮาลาล' },
   { keys: ['late_night'], label: 'เปิดดึก' },
+  // see / do highlights (so attractions & activities also get the quick-scan row, not just cafes)
+  { keys: ['beginner_friendly', 'drop_in'], label: 'มือใหม่ก็ได้' },
+  { keys: ['couple_room'], label: 'มาเป็นคู่' },
+  { keys: ['english_speaking'], label: 'นักท่องเที่ยวต่างชาติ' },
+  { keys: ['guided_tour'], label: 'มีไกด์นำชม' },
 ];
 
 function parsePoint(geo: string | null) {

@@ -127,7 +127,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .pquick .btn.ghost{background:transparent;box-shadow:none}
 /* forms */
 .merchant-root .form{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;box-shadow:var(--m-sh);padding:1.3rem 1.2rem;max-width:none}
-.merchant-root .field label{color:var(--m-text);font-weight:700;font-size:.84rem;letter-spacing:0}
+.merchant-root .field label{color:color-mix(in srgb,var(--m-text) 68%,var(--m-muted));font-weight:700;font-size:.84rem;letter-spacing:0}
 /* required-field marker (the * after a label) */
 .req{color:#dc2626;font-weight:800;margin-left:1px}
 /* soft "filled" fields — a gentle sunk fill + transparent border that lifts to white with an accent ring on focus.
