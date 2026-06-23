@@ -545,7 +545,25 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   const tried = Math.min(photos.length, MAX_UPLOADS); // saveUploads caps at MAX_UPLOADS — don't count the overflow as a rejection
   const saved = await saveUploads(photos, 'rooms');
   if (tried && saved.length < tried) redirect(`/merchant/rooms/${unitId}/edit?error=upload&rej=${tried - saved.length}`);
-  const urls = saved;
+  // rebuild image_urls from the PhotoManager order manifest (photo_order: existing-URL | "new:k"); existing URLs
+  // are validated against this unit's own set (anti-injection). Absent manifest → legacy replace-on-upload.
+  let imageUrls: string[] | null = null;
+  const rawOrder = s(formData, 'photo_order');
+  if (rawOrder) {
+    const [curImg] = await q<{ image_urls: string[] | null }>(`SELECT image_urls FROM stay_units WHERE id=$1 AND place_id=$2`, [unitId, acc.place_id]);
+    const allowed = new Set(curImg?.image_urls || []);
+    let order: unknown[] = [];
+    try { order = JSON.parse(rawOrder); } catch { order = []; }
+    const final: string[] = [];
+    for (const tok of Array.isArray(order) ? order : []) {
+      if (typeof tok !== 'string') continue;
+      if (tok.startsWith('new:')) { const k = parseInt(tok.slice(4), 10); if (saved[k]) final.push(saved[k]); }
+      else if (allowed.has(tok)) final.push(tok);
+    }
+    imageUrls = final.slice(0, MAX_UPLOADS);   // [] = owner removed every photo (intended)
+  } else if (saved.length) {
+    imageUrls = saved;
+  }
   const gender = ['female', 'male'].includes(s(formData, 'gender_policy')) ? s(formData, 'gender_policy') : null;
   const reTime = /^\d{1,2}:\d{2}$/;
   const ci = mode === 'daily' && reTime.test(s(formData, 'check_in_time')) ? s(formData, 'check_in_time') : null;
@@ -574,7 +592,7 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
      WHERE id=$1 AND place_id=$2`,
     [unitId, acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
-      bills.length ? bills : null, amen.length ? amen : null, urls.length ? urls : null,
+      bills.length ? bills : null, amen.length ? amen : null, imageUrls,
       num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs), descTh, availFrom]);
   // managed listings keep their ผังห้อง-derived vacancy — re-derive so the edit form can't override it
   // (fn no-ops for unmanaged listings, so hand-typed ones keep exactly what the form set).

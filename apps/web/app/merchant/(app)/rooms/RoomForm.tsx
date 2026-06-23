@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '../ui';
-import { PhotoUpload } from '../PhotoUpload';
+import { PhotoManager } from '../PhotoUpload';
 
 type AmenOpt = { key: string; label: string };   // amenity catalog options (passed from the server page)
 
@@ -125,7 +125,7 @@ export function RoomForm({ action, u, submitLabel, managed, noun = 'ห้อง
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> รูปห้อง</div>
-        <PhotoUpload existing={u?.image_urls} />
+        <PhotoManager existing={u?.image_urls} />
       </section>
 
       <button className="btn btn-primary mform-save" type="submit">{submitLabel}</button>
