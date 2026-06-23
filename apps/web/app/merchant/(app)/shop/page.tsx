@@ -61,7 +61,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
             : <Link className="t off" href="/merchant/verify">ยังไม่ยืนยัน · กดยืนยัน</Link>}
         </div>
         <h1>{i18n(p?.name_i18n) || `ยังไม่ได้ตั้งชื่อ${noun}`}</h1>
-        {(acc.branch_count ?? 1) > 1 && <p className="fhint" style={{ margin: '2px 0 0' }}><Icon n="store" size={12} /> สาขาของแบรนด์ {i18n(acc.brand_name) || '—'}</p>}
+        {(acc.branch_count ?? 1) > 1 && <p className="fhint" style={{ margin: '2px 0 0' }}><Icon n="store" size={12} /> สาขาของร้าน {i18n(acc.brand_name) || '—'}</p>}
         {desc
           ? <p style={{ color: 'var(--muted,#6b7280)', fontSize: '.95rem', lineHeight: 1.6, margin: '4px 0 0' }}>{desc}</p>
           : <p className="fhint" style={{ margin: '4px 0 0' }}>ยังไม่ได้ใส่รายละเอียด{noun}</p>}

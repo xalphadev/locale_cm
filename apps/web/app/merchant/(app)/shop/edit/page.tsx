@@ -33,7 +33,7 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
     <>
       <div className="mback"><Link href="/merchant/shop"><Icon n="chevL" size={18} /> ข้อมูล{noun}</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขข้อมูล{noun}</h1>
-      {(acc.branch_count ?? 1) > 1 && <p className="note" style={{ margin: '-.3rem 0 .9rem' }}><Icon n="store" size={13} /> กำลังแก้สาขา <b>{i18n(acc.place_name) || acc.display_name || 'สาขานี้'}</b> · แบรนด์ {i18n(acc.brand_name) || '—'}</p>}
+      {(acc.branch_count ?? 1) > 1 && <p className="note" style={{ margin: '-.3rem 0 .9rem' }}><Icon n="store" size={13} /> กำลังแก้สาขา <b>{i18n(acc.place_name) || acc.display_name || 'สาขานี้'}</b> · ร้าน {i18n(acc.brand_name) || '—'}</p>}
       {searchParams?.new && <div className="banner-ok">✓ เพิ่ม{noun}แล้ว — กรอก <b>ที่อยู่ · รูป{noun} · เวลาเปิด-ปิด</b> ให้ครบ เพื่อให้ลูกค้าเห็นข้อมูลเต็ม</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปบางรูปไม่สำเร็จ — ลองใหม่ (JPG/PNG/WEBP)</div>}
       <form className="form mform" action={updateShopAction} encType="multipart/form-data">

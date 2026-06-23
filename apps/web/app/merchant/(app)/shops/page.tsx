@@ -45,7 +45,7 @@ export default async function ShopsPage() {
               <div className="bcard-nm">{br.name}</div>
               <div className="bcard-sub">{br.branches.length ? `${br.branches.length} สาขา` : 'ยังไม่มีสาขา'}</div>
             </div>
-            <Link className="bcard-edit" href={`/merchant/shops/${br.id}/edit`} aria-label="แก้ไขแบรนด์"><Icon n="edit" size={15} /></Link>
+            <Link className="bcard-edit" href={`/merchant/shops/${br.id}/edit`} aria-label="แก้ไขข้อมูลร้าน"><Icon n="edit" size={15} /></Link>
             <Link className="bcard-add" href={`/merchant/shops/${br.id}/new`} aria-label="เพิ่มสาขา"><Icon n="plus" size={16} /></Link>
           </div>
 

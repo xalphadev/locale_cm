@@ -16,23 +16,23 @@ export default async function EditBrand({ params }: { params: { brandId: string 
   const [b] = isUuid(params.brandId)
     ? await q<any>(`SELECT id, name_i18n, logo_url, description_i18n FROM brands WHERE id=$1 AND owner_account_id=$2 AND deleted_at IS NULL`, [params.brandId, acc.id])
     : [];
-  if (!b) return (<><div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={18} /> ร้านของฉัน</Link></div><h1>ไม่พบแบรนด์</h1></>);
+  if (!b) return (<><div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={18} /> ร้านของฉัน</Link></div><h1>ไม่พบร้าน</h1></>);
 
   return (
     <>
       <div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={18} /> ร้านของฉัน</Link></div>
-      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> แก้ไขแบรนด์</h1>
-      <p className="note" style={{ margin: '-.3rem 0 .9rem' }}>ข้อมูลแบรนด์ใช้ร่วมกันทุกสาขา — ส่วนที่อยู่/รูป/เวลาของแต่ละสาขาแก้ที่ “ข้อมูลร้าน”</p>
+      <h1 className="phead"><span className="phead-ic"><Icon n="edit" size={18} /></span> ชื่อ &amp; โลโก้ร้าน</h1>
+      <p className="note" style={{ margin: '-.3rem 0 .9rem' }}>ชื่อ · โลโก้ · เรื่องราว นี้<b>ใช้ร่วมทุกสาขา</b> — ส่วนที่อยู่ · รูป · เวลา ของแต่ละสาขาแก้ที่ “ข้อมูลสาขา”</p>
       <form className="form mform" action={updateBrandAction.bind(null, b.id)} encType="multipart/form-data">
         <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> อัตลักษณ์แบรนด์</div>
-          <div className="field"><label>ชื่อแบรนด์</label><input name="name_th" defaultValue={i18n(b.name_i18n)} placeholder="เช่น ครัวเหนือ" /></div>
-          <div className="field"><label>เรื่องราวแบรนด์ <span className="lbl-opt">(ลูกค้าเห็น)</span></label><textarea name="desc_th" defaultValue={i18n(b.description_i18n)} style={{ minHeight: 80 }} placeholder="ที่มา จุดยืน สิ่งที่แบรนด์อยากให้ลูกค้าจำ" /></div>
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="store" size={15} /></span> ชื่อ &amp; เรื่องราว</div>
+          <div className="field"><label>ชื่อร้าน</label><input name="name_th" defaultValue={i18n(b.name_i18n)} placeholder="เช่น ครัวเหนือ" /></div>
+          <div className="field"><label>เรื่องราวร้าน <span className="lbl-opt">(ลูกค้าเห็น)</span></label><textarea name="desc_th" defaultValue={i18n(b.description_i18n)} style={{ minHeight: 80 }} placeholder="ที่มา จุดยืน สิ่งที่อยากให้ลูกค้าจำ" /></div>
         </section>
         <section className="fsec">
-          <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> โลโก้แบรนด์</div>
+          <div className="fsec-h"><span className="fsec-ic"><Icon n="image" size={15} /></span> โลโก้ร้าน</div>
           <PhotoUpload existing={b.logo_url ? [b.logo_url] : undefined} label="แตะเพื่อเลือกโลโก้ หรือลากมาวาง" />
-          <p className="fhint">ใช้รูปเดียวเป็นโลโก้ — แสดงบนหัวร้าน/การ์ดแบรนด์ (เลือกหลายรูปจะใช้รูปแรก)</p>
+          <p className="fhint">ใช้รูปเดียวเป็นโลโก้ — แสดงบนหัวร้าน/การ์ดร้าน (เลือกหลายรูปจะใช้รูปแรก)</p>
         </section>
         <button className="btn btn-primary mform-save" type="submit">บันทึก</button>
       </form>

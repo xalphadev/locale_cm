@@ -11,7 +11,7 @@ export default function NewShop({ searchParams }: { searchParams: { error?: stri
     <>
       <div className="mback"><Link href="/merchant/shops"><Icon n="chevL" size={17} /> ร้านของฉัน</Link></div>
       <h1 className="phead"><span className="phead-ic"><Icon n="store" size={18} /></span> เพิ่มร้านใหม่</h1>
-      <p className="note" style={{ margin: '.1rem 0 .9rem' }}>สร้างร้าน/แบรนด์ใหม่ภายใต้บัญชีเดิม — ไม่ต้องสมัครบัญชีใหม่ และเพิ่มสาขาทีหลังได้</p>
+      <p className="note" style={{ margin: '.1rem 0 .9rem' }}>สร้างร้านใหม่ภายใต้บัญชีเดิม — ไม่ต้องสมัครบัญชีใหม่ และเพิ่มสาขาทีหลังได้</p>
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อร้าน</div>}
       {searchParams?.error === 'city' && <div className="banner-err">ระบบยังไม่พร้อมในเมืองนี้ กรุณาติดต่อทีมงาน</div>}
       <form className="form mform" action={addShopAction}>
