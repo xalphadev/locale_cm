@@ -102,22 +102,26 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
           <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> {noun}นี้มีอะไรบ้าง</div>
           <label className="check"><input type="checkbox" name="sells_products" defaultChecked={!!p?.sells_products} /> ร้านมีสินค้าขาย — เปิดเมนู “สินค้า” + แสดงแถบสินค้าให้ลูกค้า</label>
           <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — เปิดเมนู “ห้องพัก” + ขึ้นในหน้า “ที่พัก” ของลูกค้า</label>
-          <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> ใช้ระบบจัดการห้อง — เปิดเมนู “ผังห้อง” (วางห้องจริง · คุมห้องว่าง · ปฏิทินรายวัน)</label>
-          <p className="fhint">ปิดอันไหน เมนูนั้นจะถูกซ่อน และรายการที่เผยแพร่ไว้จะถูกซ่อนจากลูกค้า · “ผังห้อง” ใช้บริหารห้องภายใน ไม่บังคับว่าต้องเผยแพร่</p>
-          <div className="field" style={{ marginTop: 12 }}>
-            <label>รูปแบบห้องของที่พักนี้</label>
-            <div className="modecards">
-              <label className="modecard">
-                <input type="radio" name="room_mode" value="multi" defaultChecked={(p?.room_mode || 'multi') !== 'unique'} />
-                <span className="modecard-b"><b>หลายห้องเหมือนกัน</b><span>หอพัก · อพาร์ตเมนต์ — ตั้งราคา/รูปทีละแบบ + มีผังห้องคุมห้องว่าง</span></span>
-              </label>
-              <label className="modecard">
-                <input type="radio" name="room_mode" value="unique" defaultChecked={p?.room_mode === 'unique'} />
-                <span className="modecard-b"><b>แต่ละห้องไม่เหมือนกัน</b><span>รีสอร์ท · เกสต์เฮาส์ — แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</span></span>
-              </label>
+          {/* room-management + room-mode are details of "มีห้องพัก" — nested under it, auto-hidden when offers_stay is off (pure CSS :has, no JS). manages_stay value persists either way so a manage-only owner is never silently wiped. */}
+          <div className="staygrp">
+            <label className="check"><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> ใช้ระบบจัดการห้อง — เปิดเมนู “ผังห้อง” (วางห้องจริง · คุมห้องว่าง · ปฏิทินรายวัน)</label>
+            <p className="fhint">“ผังห้อง” ใช้บริหารห้องภายใน (เช็คอิน · ห้องว่าง · ปฏิทินรายวัน) — ไม่บังคับว่าต้องเผยแพร่ให้ลูกค้า</p>
+            <div className="field" style={{ marginTop: 12 }}>
+              <label>รูปแบบห้องของที่พักนี้</label>
+              <div className="modecards">
+                <label className="modecard">
+                  <input type="radio" name="room_mode" value="multi" defaultChecked={(p?.room_mode || 'multi') !== 'unique'} />
+                  <span className="modecard-b"><b>หลายห้องเหมือนกัน</b><span>หอพัก · อพาร์ตเมนต์ — ตั้งราคา/รูปทีละแบบ + มีผังห้องคุมห้องว่าง</span></span>
+                </label>
+                <label className="modecard">
+                  <input type="radio" name="room_mode" value="unique" defaultChecked={p?.room_mode === 'unique'} />
+                  <span className="modecard-b"><b>แต่ละห้องไม่เหมือนกัน</b><span>รีสอร์ท · เกสต์เฮาส์ — แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</span></span>
+                </label>
+              </div>
+              <p className="fhint">ตั้งได้ต่อสาขา · “หลายห้องเหมือนกัน” = ราคาเดียวหลายห้อง (เปิดผังห้อง) · “แต่ละห้องไม่เหมือนกัน” = แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</p>
             </div>
-            <p className="fhint">ตั้งได้ต่อสาขา · “หลายห้องเหมือนกัน” = ราคาเดียวหลายห้อง (เปิดผังห้อง) · “แต่ละห้องไม่เหมือนกัน” = แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</p>
           </div>
+          <p className="fhint">ปิดเมนูไหน เมนูนั้นและรายการที่เผยแพร่ไว้จะถูกซ่อนจากลูกค้า</p>
         </section>
 
         <section className="fsec">
