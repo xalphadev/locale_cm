@@ -10,18 +10,21 @@ import { MTopbar } from '../MTopbar';
 export function RoomHub({ active, title, addHref, addLabel }: {
   active: 'bookings' | 'board' | 'types'; title: string; addHref?: string; addLabel?: string;
 }) {
+  // board carries its meaning in the occupancy hero card below — keep its subtitle empty (less text)
   const sub = active === 'bookings'
     ? 'คำขอจอง + การจอง + ตรวจสลิปชำระเงินของที่พัก'
     : active === 'types'
       ? 'ราคา รูป ห้องว่าง — สิ่งที่ลูกค้าเห็น'
-      : 'ห้องจริงของคุณ — ว่างกี่ห้อง · ตั้งสถานะเอง (ไม่โชว์ลูกค้า)';
+      : '';
   return (
     <>
       <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title={title} />
-      <div className="roomhub-subrow">
-        <p className="roomhub-sub">{sub}</p>
-        {active === 'types' && <HubInfo />}
-      </div>
+      {(sub || active === 'types') && (
+        <div className="roomhub-subrow">
+          <p className="roomhub-sub">{sub}</p>
+          {active === 'types' && <HubInfo />}
+        </div>
+      )}
       {addHref && <Link className="fab" href={addHref} aria-label={addLabel}><Icon n="plus" size={26} /></Link>}
     </>
   );

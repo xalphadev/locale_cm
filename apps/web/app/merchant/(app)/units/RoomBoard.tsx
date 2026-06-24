@@ -84,11 +84,9 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         const show = !bfDismissed && !selectMode && rooms.some((r) => r.monthly) && rooms.length >= 8 && occN / rooms.length < 0.1;
         return show ? (
           <div className="rbackfill">
-            <span><b>ตึกนี้ยังว่าง {Math.round((1 - occN / rooms.length) * 100)}%</b> — ถ้ามีคนอยู่แล้ว เลือกหลายห้องพร้อมกันตั้งเป็น “มีผู้เช่า”</span>
-            <div className="rbackfill-acts">
-              <button type="button" className="rbackfill-go" onClick={() => { setSelectMode(true); setBfDismissed(true); }}><Icon n="check" size={14} /> เลือกหลายห้อง</button>
-              <button type="button" className="rbackfill-x" onClick={() => setBfDismissed(true)} aria-label="ปิด"><Icon n="x" size={15} /></button>
-            </div>
+            <span><b>ว่าง {Math.round((1 - occN / rooms.length) * 100)}%</b> — มีคนอยู่แล้ว? ตั้งทีเดียวหลายห้อง</span>
+            <button type="button" className="rbackfill-go" onClick={() => { setSelectMode(true); setBfDismissed(true); }}>เลือก</button>
+            <button type="button" className="rbackfill-x" onClick={() => setBfDismissed(true)} aria-label="ปิด"><Icon n="x" size={15} /></button>
           </div>
         ) : null;
       })()}

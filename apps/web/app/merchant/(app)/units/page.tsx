@@ -121,33 +121,29 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
         </div>
       ) : (
         <>
-          <div className="occbar">
-            <div className="occbar-top">
-              <span><b>{rooms.length}</b> ห้อง · <b style={{ color: ST.vacant.color }}>{vacant}</b> ว่าง · <b>{rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</b> ใช้งาน</span>
-              <span className="occbar-acts">
-                <Link className="occbar-leads" href="/merchant/units/calendar"><Icon n="calendar" size={14} /> ปฏิทินรวม</Link>
-                <Link className="occbar-leads" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์</Link>
-                <Link className="occbar-leads" href="/merchant/bookings"><Icon n="chat" size={14} /> การจอง</Link>
-              </span>
-            </div>
-            <div className="occbar-track">
-              {vacant > 0 && <span style={{ width: seg(vacant), background: ST.vacant.color }} title={`ว่าง ${vacant}`} />}
-              {occupied > 0 && <span style={{ width: seg(occupied), background: ST.occupied.color }} title={`มีผู้เช่า ${occupied}`} />}
-              {reserved > 0 && <span style={{ width: seg(reserved), background: ST.reserved.color }} title={`จอง ${reserved}`} />}
-              {maint > 0 && <span style={{ width: seg(maint), background: ST.maintenance.color }} title={`ปิดซ่อม ${maint}`} />}
-            </div>
-            <div className="occlegend">
-              {vacant > 0 && <span><i style={{ background: ST.vacant.color }} /> ว่าง {vacant}</span>}
-              {occupied > 0 && <span><i style={{ background: ST.occupied.color }} /> มีผู้เช่า {occupied}</span>}
-              {reserved > 0 && <span><i style={{ background: ST.reserved.color }} /> จองแล้ว {reserved}</span>}
-              {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> ปิดซ่อม {maint}</span>}
-            </div>
-            {(soonRows.length > 0 || hasDaily) && (
-              <div className="occteaser">
-                {soonRows.length > 0 && <a href="#soon" className="occteaser-chip"><Icon n="clock" size={13} /> ว่างเร็ว {soonRows.length}</a>}
-                {hasDaily && <a href="#daily" className="occteaser-chip"><Icon n="calendar" size={13} /> วันนี้ เข้า {checkIns.length} · ออก {checkOuts.length}</a>}
+          <div className="rb-hero">
+            <div className="rb-hero-top">
+              <div className="rb-hero-num"><b style={{ color: ST.vacant.color }}>{vacant}</b><span>ห้องว่าง<i> / {rooms.length}</i></span></div>
+              <div className="rb-hero-acts">
+                <Link href="/merchant/units/calendar" title="ปฏิทินรวม" aria-label="ปฏิทินรวม"><Icon n="calendar" size={19} /></Link>
+                <Link href="/merchant/units/print" title="พิมพ์ผัง" aria-label="พิมพ์ผัง"><Icon n="image" size={19} /></Link>
+                <Link href="/merchant/bookings" title="การจอง" aria-label="การจอง"><Icon n="chat" size={19} /></Link>
               </div>
-            )}
+            </div>
+            <div className="rb-hero-bar">
+              <div className="occbar-track">
+                {vacant > 0 && <span style={{ width: seg(vacant), background: ST.vacant.color }} title={`ว่าง ${vacant}`} />}
+                {occupied > 0 && <span style={{ width: seg(occupied), background: ST.occupied.color }} title={`มีผู้เช่า ${occupied}`} />}
+                {reserved > 0 && <span style={{ width: seg(reserved), background: ST.reserved.color }} title={`จอง ${reserved}`} />}
+                {maint > 0 && <span style={{ width: seg(maint), background: ST.maintenance.color }} title={`ปิดซ่อม ${maint}`} />}
+              </div>
+              <span className="rb-hero-pct">ใช้งาน {rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</span>
+            </div>
+            <div className="rb-hero-foot">
+              {soonRows.length > 0 && <a href="#soon" className="occteaser-chip"><Icon n="clock" size={13} /> ว่างเร็ว {soonRows.length}</a>}
+              {hasDaily && <a href="#daily" className="occteaser-chip"><Icon n="calendar" size={13} /> วันนี้ {checkIns.length}↓ {checkOuts.length}↑</a>}
+              <span className="rb-priv">ไม่โชว์ลูกค้า</span>
+            </div>
           </div>
 
           <RoomBoard rooms={roomsData} groupTerm={term} />
