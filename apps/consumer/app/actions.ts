@@ -231,7 +231,7 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   const [pl] = await q<any>(`SELECT id, offers_stay, pay_online_enabled, pay_deposit_pct FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
   if (!pl || !pl.offers_stay || !pl.pay_online_enabled) redirect('/stay');
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId);
-  const [su] = isUuid ? await q<any>(`SELECT id, rental_mode, managed, price_minor FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]) : [];
+  const [su] = isUuid ? await q<any>(`SELECT id, rental_mode, managed, price_minor, available_units, daily_status FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]) : [];
   if (!su) redirect('/stay');
   const mode = su.rental_mode;
   if (!from || (mode === 'daily' && !to)) redirect(`${back}?err=dates`);
@@ -251,14 +251,25 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   const isDep = dpct > 0 && dpct < 100;
   const payNow = isDep ? Math.round(amount * dpct / 100) : amount;   // what the guest transfers now
 
-  // daily managed: only take a slip when a room is actually free for the span (never charge for un-fulfillable)
-  if (mode === 'daily' && su.managed && from && to) {
-    const [free] = await q<{ id: string }>(
-      `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
-         AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
-           AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)')) LIMIT 1`, [su.id, from, to]);
-    if (!free) redirect(`${back}?err=full`);
+  // availability guard — only take a slip when the booking can ACTUALLY be fulfilled, for every mode
+  // (closes the paid-but-no-room gap; the host's verify mirrors this so a verified slip always holds a room).
+  // A tiny submit→verify race remains but the GiST EXCLUDE on the block is the final double-book authority.
+  let fulfillable = true;
+  if (su.managed) {
+    if (mode === 'daily' && from && to) {
+      const [free] = await q<{ id: string }>(
+        `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+           AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
+             AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)')) LIMIT 1`, [su.id, from, to]);
+      fulfillable = !!free;
+    } else if (mode === 'monthly') {
+      const [free] = await q<{ id: string }>(`SELECT id FROM stay_room WHERE stay_unit_id=$1 AND status='active' AND deleted_at IS NULL AND occupancy_status='vacant' LIMIT 1`, [su.id]);
+      fulfillable = !!free;
+    }
+  } else {
+    fulfillable = mode === 'daily' ? su.daily_status !== 'full' : (Number(su.available_units) || 0) > 0;
   }
+  if (!fulfillable) redirect(`${back}?err=full`);
 
   const slip = formData.get('slip') as File | null;
   const slipUrl = slip && typeof slip.arrayBuffer === 'function' ? await saveSlip(slip) : null;
