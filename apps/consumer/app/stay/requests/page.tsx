@@ -34,6 +34,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
   const statusOf = (r: any) => {
     const expired = r.status !== 'converted' && r.expires_at && Date.parse(r.expires_at) < now;
     // paid bookings (slip submitted) get their own pre-confirmation states
+    if (r.payment_status === 'refunded') return { label: 'ที่พักคืนเงินแล้ว', cls: 'muted', ic: 'check' };
     if (r.payment_status === 'submitted' && !['converted', 'declined', 'cancelled', 'no_show'].includes(r.status)) return { label: 'ส่งสลิปแล้ว · รอที่พักตรวจสอบ', cls: 'pending', ic: 'clock' };
     if (r.payment_status === 'rejected') return { label: 'สลิปไม่ผ่าน — ติดต่อที่พัก', cls: 'muted', ic: 'x' };
     if (r.status === 'converted') {

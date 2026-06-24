@@ -1402,6 +1402,24 @@ export async function rejectSlipAction(leadId: string) {
   redirect(`/merchant/bookings/${leadId}?ok=rejected`);
 }
 
+/** Record that the host returned a guest's deposit/payment (the money moved bank-to-bank between them; the
+ *  platform never held it). Marks payment_status='refunded' so it drops out of revenue, and tells the guest. */
+export async function markRefundedAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [r] = await q<any>(
+    `UPDATE stay_booking_request SET refunded_at=now(), refunded_minor=COALESCE(paid_minor, amount_minor), payment_status='refunded', updated_at=now()
+      WHERE id=$1 AND place_id=$2 AND payment_status IN ('submitted','verified','rejected') AND refunded_at IS NULL
+      RETURNING requester_user_id, ref`, [leadId, acc.place_id]);
+  if (r?.requester_user_id) await q(
+    `INSERT INTO notif_outbox(event_type, event_class, audience_user_id, city_id, entity_type, entity_id, dedup_key, payload)
+     SELECT 'stay_booking_refunded','ops',$2,p.city_id,'place',p.id,'bkrefund:'||$3, jsonb_build_object('title',$4::text)
+       FROM places p WHERE p.id=$1 ON CONFLICT DO NOTHING`,
+    [acc.place_id, r.requester_user_id, leadId, `ที่พักคืนเงินให้แล้ว · ${r.ref}`]);
+  revalidatePath('/merchant/bookings');
+  redirect(`/merchant/bookings/${leadId}?ok=refunded`);
+}
+
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();

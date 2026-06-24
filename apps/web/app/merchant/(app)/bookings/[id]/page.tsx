@@ -4,9 +4,9 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction } from '../../../actions';
+import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction, markRefundedAction } from '../../../actions';
 
-const PAY_TH: Record<string, string> = { submitted: 'รอตรวจสลิป', verified: 'ชำระแล้ว', rejected: 'สลิปไม่ผ่าน' };
+const PAY_TH: Record<string, string> = { submitted: 'รอตรวจสลิป', verified: 'ชำระแล้ว', rejected: 'สลิปไม่ผ่าน', refunded: 'คืนเงินแล้ว' };
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +55,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
             CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.message END message,
             (b.expires_at < now() AND b.status <> 'converted') expired_pii,
             b.status, b.scheduled_at, b.created_at, b.converted_block_id, b.checked_in_at, b.checked_out_at,
-            b.ref, b.payment_status, b.amount_minor, b.deposit_minor, b.paid_minor, b.payment_method, b.slip_url,
+            b.ref, b.payment_status, b.amount_minor, b.deposit_minor, b.paid_minor, b.payment_method, b.slip_url, b.refunded_at, b.refunded_minor,
             su.name_i18n unit_name, su.managed, r.code AS room_code, bk.note AS block_note
        FROM stay_booking_request b
        LEFT JOIN stay_units su ON su.id = b.stay_unit_id
@@ -127,6 +127,12 @@ export default async function BookingDetail({ params, searchParams }: { params: 
               <div className="lead-acts">
                 <form action={verifySlipAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="check" size={16} /> ยืนยันการชำระ (กันห้อง)</button></form>
                 <form action={rejectSlipAction.bind(null, b.id)}><ConfirmSubmit message="ปฏิเสธสลิปนี้? ลูกค้าจะเห็นว่า “สลิปไม่ผ่าน”" className="dbtn danger">สลิปไม่ผ่าน</ConfirmSubmit></form>
+              </div>
+            )}
+            {b.refunded_at && <p className="note" style={{ margin: 0 }}>✓ คืนเงินแล้ว ฿{Math.round(Number(b.refunded_minor || 0) / 100).toLocaleString()} · {fmtDate(b.refunded_at)}</p>}
+            {b.amount_minor && b.payment_status !== 'refunded' && (b.payment_status === 'rejected' || b.status === 'cancelled' || b.status === 'declined') && (
+              <div className="lead-acts">
+                <form action={markRefundedAction.bind(null, b.id)}><ConfirmSubmit message="ยืนยันว่าได้คืนเงินให้ลูกค้าแล้ว? (คุณโอนคืนเอง — ระบบแค่บันทึก)" className="dbtn sm">บันทึกคืนเงิน ฿{Math.round(Number(b.paid_minor || b.amount_minor) / 100).toLocaleString()}</ConfirmSubmit></form>
               </div>
             )}
           </>
