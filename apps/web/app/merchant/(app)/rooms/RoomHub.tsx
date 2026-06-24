@@ -11,10 +11,10 @@ export function RoomHub({ active, title, addHref, addLabel }: {
   active: 'bookings' | 'board' | 'types'; title: string; addHref?: string; addLabel?: string;
 }) {
   const sub = active === 'bookings'
-    ? 'คำขอจอง + การจองทั้งหมดของที่พัก · ไม่เก็บเงินผ่านแอป'
+    ? 'คำขอจอง + การจอง + ตรวจสลิปชำระเงินของที่พัก'
     : active === 'types'
       ? 'ราคา รูป ห้องว่าง — สิ่งที่ลูกค้าเห็น'
-      : 'ห้องจริงของคุณ — ใครอยู่ห้องไหน / ว่างกี่ห้อง (ไม่โชว์ลูกค้า)';
+      : 'ห้องจริงของคุณ — ว่างกี่ห้อง · ตั้งสถานะเอง (ไม่โชว์ลูกค้า)';
   return (
     <>
       <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title={title} />

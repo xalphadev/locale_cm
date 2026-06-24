@@ -19,12 +19,15 @@ const ST: Record<string, { label: string; color: string }> = {
   maintenance: { label: 'ปิดซ่อม', color: '#9aa0a6' },
 };
 const FILTERS: [string, string][] = [['all', 'ทั้งหมด'], ['vacant', 'ว่าง'], ['occupied', 'มีผู้เช่า'], ['reserved', 'จอง'], ['maintenance', 'ปิดซ่อม']];
+const COLL = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });   // A1, A2 … A10 (not A1, A10, A2)
+const untilTxt = (d: any) => { if (!d) return ''; const dt = new Date(d); return isNaN(dt.getTime()) ? '' : dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }); };
 
 export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms: BoardRoom[]; groupTerm?: string }) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [dense, setDense] = useState(rooms.length > 24);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [bfDismissed, setBfDismissed] = useState(false);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rooms.length };
@@ -35,10 +38,12 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
   const ql = query.trim().toLowerCase();
   const filtered = rooms.filter((r) =>
     (status === 'all' || r.status === status) &&
-    (!ql || r.code.toLowerCase().includes(ql) || (r.type && r.type.toLowerCase().includes(ql)) || (r.note && r.note.toLowerCase().includes(ql))));
+    (!ql || r.code.toLowerCase().includes(ql) || (r.type && r.type.toLowerCase().includes(ql)) || (r.note && r.note.toLowerCase().includes(ql)) || (r.guest && r.guest.toLowerCase().includes(ql))));
 
   const byFloor: Record<string, BoardRoom[]> = {}; const floors: string[] = [];
   for (const r of filtered) { const f = r.floor || '—'; if (!byFloor[f]) { byFloor[f] = []; floors.push(f); } byFloor[f].push(r); }
+  floors.sort((a, b) => (a === '—' ? -1 : b === '—' ? 1 : COLL.compare(a, b)));   // unspecified floor first, then natural
+  for (const f of floors) byFloor[f].sort((a, b) => COLL.compare(a.code, b.code));
 
   // multi-select → bulk status (with undo). The same setRoomsOccupancyBulkAction does apply + undo.
   const STATUSES = (['vacant', 'occupied', 'reserved', 'maintenance'] as const).map((k) => ({ k, label: ST[k].label, color: ST[k].color }));
@@ -73,6 +78,20 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         </button>
         <button type="button" className={`rfdense ${selectMode ? 'on' : ''}`} onClick={() => (selectMode ? exitSelect() : setSelectMode(true))} aria-label="เลือกหลายห้อง" title="เลือกหลายห้อง"><Icon n="check" size={17} /></button>
       </div>
+
+      {(() => {
+        const occN = rooms.filter((r) => r.status === 'occupied' || r.status === 'reserved').length;
+        const show = !bfDismissed && !selectMode && rooms.some((r) => r.monthly) && rooms.length >= 8 && occN / rooms.length < 0.1;
+        return show ? (
+          <div className="rbackfill">
+            <span><b>ตึกนี้ยังว่าง {Math.round((1 - occN / rooms.length) * 100)}%</b> — ถ้ามีคนอยู่แล้ว เลือกหลายห้องพร้อมกันตั้งเป็น “มีผู้เช่า”</span>
+            <div className="rbackfill-acts">
+              <button type="button" className="rbackfill-go" onClick={() => { setSelectMode(true); setBfDismissed(true); }}><Icon n="check" size={14} /> เลือกหลายห้อง</button>
+              <button type="button" className="rbackfill-x" onClick={() => setBfDismissed(true)} aria-label="ปิด"><Icon n="x" size={15} /></button>
+            </div>
+          </div>
+        ) : null;
+      })()}
 
       <div className="rfchips">
         {FILTERS.filter(([k]) => k === 'all' || counts[k]).map(([k, label]) => (
@@ -120,9 +139,15 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                         <span className="rtile-code">{r.code}{r.room_kind === 'bed' ? <span className="rtile-bed">เตียง</span> : null}</span>
                         <span className="rtile-chip" style={{ color: st.color, background: `color-mix(in srgb, ${st.color} 14%, transparent)` }}>{st.label}</span>
                       </div>
-                      {r.guest
-                        ? <span className="rtile-guest"><Icon n="chat" size={12} /> {r.guest}{r.note ? <span className="rtile-note"> · {r.note}</span> : ''}</span>
-                        : <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>}
+                      {r.guest ? (
+                        <span className="rtile-guest"><Icon n="chat" size={12} /> {r.guest}{r.occupied_until ? <span className="rtile-note"> · ว่าง {untilTxt(r.occupied_until)}</span> : r.note ? <span className="rtile-note"> · {r.note}</span> : ''}</span>
+                      ) : (r.status === 'occupied' || r.status === 'reserved') ? (
+                        r.note
+                          ? <span className="rtile-guest"><Icon n="chat" size={12} /> {r.note}{r.occupied_until ? <span className="rtile-note"> · ว่าง {untilTxt(r.occupied_until)}</span> : ''}</span>
+                          : <span className="rtile-addname"><Icon n="chat" size={12} /> ใส่ชื่อผู้เช่า →</span>
+                      ) : (
+                        <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>
+                      )}
                     </Link>
                     {!selectMode && (r.guestPhone
                       ? <a className="rtile-act cal" href={`tel:${r.guestPhone}`}><Icon n="phone" size={14} /> โทร</a>

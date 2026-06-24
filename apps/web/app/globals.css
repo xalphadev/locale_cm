@@ -919,6 +919,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rtile-guest{display:flex;align-items:center;gap:4px;font-size:.8rem;font-weight:700;color:var(--text,#1a1a2e);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rtile-guest svg{flex:none;color:var(--accent,#2b74ff)}
 .rtile-guest .rtile-note{font-weight:500;color:var(--muted,#6b7280)}
+.rtile-addname{display:inline-flex;align-items:center;gap:4px;font-size:.8rem;font-weight:800;color:#b45309;white-space:nowrap}
+.rtile-addname svg{flex:none;opacity:.85}
+.rbackfill{display:flex;align-items:center;gap:10px;margin:0 0 11px;padding:11px 13px;border-radius:13px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:.85rem;font-weight:600;line-height:1.4}
+.rbackfill b{font-weight:800}
+.rbackfill-acts{margin-left:auto;display:flex;align-items:center;gap:6px;flex:none}
+.rbackfill-go{display:inline-flex;align-items:center;gap:4px;padding:7px 12px;border-radius:9px;border:none;background:#ea580c;color:#fff;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap}
+.rbackfill-x{border:none;background:none;color:#9a3412;cursor:pointer;display:flex;padding:2px}
 /* "ผู้เข้าพักตอนนี้" box on the room detail (who's-in-which-room) */
 .merchant-root .guestbox{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;border:1px solid var(--m-line);border-radius:14px;background:linear-gradient(180deg,#f4f8ff,#fff)}
 .merchant-root .guestbox-l{flex:1;min-width:0}

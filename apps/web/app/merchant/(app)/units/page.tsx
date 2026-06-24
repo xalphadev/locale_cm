@@ -214,7 +214,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                 {roster.map((r) => (
                   <Link key={r.id} href={`/merchant/units/${r.id}`} className="rosterrow">
                     <span className="rosterrow-rm">ห้อง {r.code}{r.floor ? ` · ${term} ${r.floor}` : ''}</span>
-                    <span className="rosterrow-nt">{r.note || '—'}</span>
+                    <span className="rosterrow-nt">{r.guest_name || r.note || '—'}</span>
                     {r.occupied_until && <span className="rosterrow-un">ว่าง {fmtD(r.occupied_until)}</span>}
                   </Link>
                 ))}
