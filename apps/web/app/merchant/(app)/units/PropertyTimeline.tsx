@@ -15,7 +15,7 @@ export type TLRoom = {
   rental_mode: string; occupancy_status: string; occupied_until: string | null; blocks: Blk[];
 };
 const DOW = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
-const KCOLOR: Record<string, string> = { stay: '#3b82f6', tenancy: '#3b82f6', reserved: '#f59e0b', occupied: '#3b82f6', maintenance: '#9aa0a8', hold: '#a855f7' };
+const KCOLOR: Record<string, string> = { stay: '#3b82f6', tenancy: '#3b82f6', reserved: '#f59e0b', occupied: '#3b82f6', maintenance: '#9aa0a8', hold: '#0ea5a4' };
 const KLABEL: Record<string, string> = { stay: 'เข้าพัก', tenancy: 'สัญญาเช่า', reserved: 'จอง', occupied: 'มีผู้เช่า', maintenance: 'ปิดซ่อม', hold: 'กันห้อง' };
 
 export function PropertyTimeline({ rooms, days, today, term }: { rooms: TLRoom[]; days: string[]; today: string; term: string }) {
@@ -106,7 +106,7 @@ export function PropertyTimeline({ rooms, days, today, term }: { rooms: TLRoom[]
         <span><i style={{ background: '#3b82f6' }} /> เข้าพัก/เช่า</span>
         <span><i style={{ background: '#f59e0b' }} /> จอง</span>
         <span><i style={{ background: '#9aa0a8' }} /> ปิดซ่อม</span>
-        <span><i style={{ background: '#a855f7' }} /> กันห้อง</span>
+        <span><i style={{ background: '#0ea5a4' }} /> กันห้อง</span>
         <span><i style={{ background: '#eef0f3', boxShadow: 'inset 0 0 0 1px #e0e3e8' }} /> ว่าง</span>
         <span style={{ opacity: .65 }}>แตะ 2 วัน = สร้างช่วง</span>
       </div>

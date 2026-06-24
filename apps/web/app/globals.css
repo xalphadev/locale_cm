@@ -769,7 +769,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .bk-link:active{opacity:.65}
 .bk-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 /* summary card — the room-management home dashboard (occupancy + today's ops) */
-.bk-summary{margin:2px 0 13px;padding:15px 16px;border:1px solid var(--hairline,#e8e8ee);border-radius:17px;background:linear-gradient(180deg,#f6f9ff,#fff);box-shadow:0 1px 3px rgba(16,20,12,.045)}
+.bk-summary{margin:2px 0 14px;padding:16px 17px;border:1px solid #f1f4fa;border-radius:20px;background:linear-gradient(158deg,#f4f8ff,#fff 62%);box-shadow:0 6px 20px -10px rgba(20,24,52,.10),0 1px 2px rgba(20,24,52,.04)}
+.bk-summary .occbar-track{height:12px}
+.bk-summary .occbar-track span{transition:width .55s cubic-bezier(.2,.8,.2,1)}
 .bk-sum-stats{display:flex;gap:8px}
 .bk-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
 .bk-stat-n{font-size:1.75rem;font-weight:800;line-height:1;color:var(--text,#1a1a2e)}
@@ -797,12 +799,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .fab{position:fixed;z-index:45;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--m-accent);color:#fff;box-shadow:0 10px 24px -6px rgba(43,116,255,.5),0 3px 9px rgba(16,20,12,.18)}
 .merchant-root .fab:active{transform:scale(.92)}
 .stayhub-h{font-size:.82rem;font-weight:700;color:var(--muted,#6b7280);margin:18px 0 9px}
-.stayhub-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-.stayhub-tile{display:flex;flex-direction:column;gap:7px;padding:16px 15px;border:1px solid var(--hairline,#e8e8ee);border-radius:16px;background:var(--surface,#fff);text-decoration:none;color:var(--text,#1a1a2e);box-shadow:0 1px 3px rgba(16,20,12,.04);transition:transform .12s}
-.stayhub-tile:active{transform:scale(.97)}
-.stayhub-tile.hot{border-color:#f3c98b;background:linear-gradient(180deg,#fffaf2,#fff)}
-.stayhub-ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--m-soft,#eef2ff);color:var(--accent,#2b74ff)}
-.stayhub-tile.hot .stayhub-ic{background:#fcebcf;color:#e08c1d}
+.stayhub-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.stayhub-tile{display:flex;flex-direction:column;gap:9px;padding:18px 16px;border:1px solid #f1f4fa;border-radius:20px;background:#fff;text-decoration:none;color:var(--text,#1a1a2e);box-shadow:0 6px 20px -10px rgba(20,24,52,.12),0 1px 2px rgba(20,24,52,.04);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s,border-color .2s}
+.stayhub-tile:hover{box-shadow:0 10px 26px -12px rgba(20,24,52,.18),0 2px 4px rgba(20,24,52,.05);border-color:#e9edf6}
+.stayhub-tile:active{transform:scale(.965);box-shadow:0 3px 10px -5px rgba(20,24,52,.14)}
+.stayhub-tile.hot{border-color:#f6d9a8;background:linear-gradient(165deg,#fffaf1,#fff 65%)}
+.stayhub-ic{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#eef3ff,#e1eaff);color:var(--m-accent,#2b74ff);box-shadow:inset 0 0 0 1px rgba(43,116,255,.07)}
+.stayhub-tile.hot .stayhub-ic{background:linear-gradient(150deg,#fdeccc,#fbe0b3);color:#e08c1d;box-shadow:inset 0 0 0 1px rgba(224,140,29,.1)}
 .stayhub-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .stayhub-badge{flex:none;background:#fbe7c6;color:#b46a04;font-size:.72rem;font-weight:800;padding:2px 9px;border-radius:999px}
 .stayhub-lb{font-weight:800;font-size:1.04rem}
@@ -820,9 +823,25 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .occ-pct{font-size:.84rem;color:var(--muted,#5b6470);white-space:nowrap}
 .occ-newcta{display:inline-flex;align-items:center;font-weight:700;color:var(--accent,#2b74ff);text-decoration:none;white-space:nowrap}
 .stay-today{display:flex;flex-direction:column;gap:6px;margin:11px 0 2px}
-.stay-today-row{display:flex;align-items:center;gap:7px;font-size:.88rem;padding:8px 12px;border:1px solid var(--hairline,#eef0f3);border-radius:11px;background:var(--surface,#fff)}
+.stay-today-row{display:flex;align-items:center;gap:7px;font-size:.88rem;padding:9px 13px;border:1px solid #f1f4fa;border-radius:13px;background:#fff;box-shadow:0 3px 12px -9px rgba(20,24,52,.10)}
 .stt-tag{font-size:.7rem;font-weight:800;padding:2px 7px;border-radius:999px;color:#fff}
-.stt-tag.in{background:#12b76a}.stt-tag.out{background:#f59e0b}.stt-tag.soon{background:#8b93a0}
+.stt-tag.in{background:#12b76a}.stt-tag.out{background:#f59e0b}.stt-tag.soon{background:#8b93a0}.stt-tag.amber{background:#e08c1d}.stt-tag.red{background:#e5484d}
+/* home: occupancy label (F7) + alert rows (F2/F3) + activity feed (F3) */
+.merchant-root .occ-label{font-size:.82rem;font-weight:700;color:var(--m-muted);margin-top:3px}
+/* home hero summary — vivid gradient card + a conic-gradient occupancy donut */
+.merchant-root .bk-summary.occ-hero{background:linear-gradient(135deg,#dbe8ff 0%,#e8f1ff 52%,#fbfdff 100%);border:1px solid #ecf2fc;box-shadow:0 12px 30px -14px rgba(43,100,220,.26),0 2px 6px -2px rgba(20,24,52,.05)}
+.merchant-root .occ-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.merchant-root .occ-num{display:flex;flex-direction:column;line-height:1.1;min-width:0}
+.merchant-root .occ-num>b{font-size:2.5rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.merchant-root .occ-num-u{font-size:.92rem;font-weight:700;color:var(--m-text,#0e1322);margin-top:2px}
+.merchant-root .occ-num-u .muted{font-weight:600}
+.merchant-root .occ-num .occ-label{margin-top:5px;font-size:.8rem}
+.merchant-root .occ-ring{position:relative;flex:none;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--m-accent,#2b74ff) calc(var(--p,0)*1%), #dfe6f5 0);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px -5px rgba(43,116,255,.4)}
+.merchant-root .occ-ring::after{content:'';position:absolute;inset:7px;border-radius:50%;background:#fff}
+.merchant-root .occ-ring>span{position:relative;z-index:1;font-weight:800;font-size:1.15rem;color:var(--m-text,#0e1322);line-height:1}
+.merchant-root .occ-ring>span i{font-style:normal;font-size:.64rem;font-weight:700;color:var(--m-muted)}
+.merchant-root .occ-ring>em{position:relative;z-index:1;font-style:normal;font-size:.55rem;font-weight:700;color:var(--m-muted);letter-spacing:.03em;margin-top:1px}
+.merchant-root .bk-summary.occ-hero .occbar-track{height:13px;background:#e4ebf7;box-shadow:inset 0 1px 2px rgba(20,24,52,.07)}
 /* hub: walk-in CTA + the add-booking form */
 .winform{display:flex;flex-direction:column;gap:13px;margin-top:10px}
 .winform-submit{width:100%;margin-top:4px}
