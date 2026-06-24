@@ -209,7 +209,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น', groupActi
         <div className="rb-scrim" onClick={() => setGrpOpen(false)}>
           <div className="rb-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="rb-sheet-h"><b>จัดกลุ่มห้องตาม</b><button type="button" onClick={() => setGrpOpen(false)} aria-label="ปิด"><Icon n="x" size={20} /></button></div>
-            <form action={groupAction} className="grpset-f">
+            <form action={groupAction} onSubmit={() => setGrpOpen(false)} className="grpset-f">
               <input name="term_custom" defaultValue={groupTerm} maxLength={16} placeholder="โซน" aria-label="คำเรียกกลุ่มห้อง" />
               <button className="dbtn sm primary" type="submit">บันทึก</button>
             </form>
