@@ -6,6 +6,7 @@ import { Icon } from '../ui';
 import { setStayUnitManagedAction, setRoomGroupTermAction } from '../../actions';
 import RoomBoard from './RoomBoard';
 import { RoomHub } from '../rooms/RoomHub';
+import { RoomViewToggle } from './RoomViewToggle';
 import DateRangePicker from '../DateRangePicker';
 import TypeCalendar from './TypeCalendar';
 
@@ -96,7 +97,8 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
   return (
     <>
-      <RoomHub active="board" title="ผังห้อง" addHref={types.length > 0 ? '/merchant/units/new' : undefined} addLabel="เพิ่มห้อง" />
+      <RoomHub active="board" title="ห้อง" addHref={types.length > 0 ? '/merchant/units/new' : undefined} addLabel="เพิ่มห้อง" />
+      <RoomViewToggle active="board" />
 
       {searchParams?.ok === 'added' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'bulk' && (
@@ -125,7 +127,6 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             <div className="rb-hero-top">
               <div className="rb-hero-num"><b style={{ color: ST.vacant.color }}>{vacant}</b><span>ห้องว่าง<i> / {rooms.length}</i></span></div>
               <div className="rb-hero-acts">
-                <Link href="/merchant/units/calendar" title="ปฏิทินรวม" aria-label="ปฏิทินรวม"><Icon n="calendar" size={19} /></Link>
                 <Link href="/merchant/units/print" title="พิมพ์ผัง" aria-label="พิมพ์ผัง"><Icon n="image" size={19} /></Link>
                 <Link href="/merchant/bookings" title="การจอง" aria-label="การจอง"><Icon n="chat" size={19} /></Link>
               </div>

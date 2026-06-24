@@ -63,9 +63,8 @@ export default async function StayHome() {
 
   const tiles: { href: string; icon: string; label: string; stat: string; hot?: boolean; badge?: number }[] = [
     { href: '/merchant/bookings', icon: 'chat', label: 'การจอง', stat: newN > 0 ? 'มีคำขอรอตอบ' : 'คำขอ + การจอง', hot: newN > 0, badge: newN || undefined },
-    ...(managed ? [{ href: '/merchant/units', icon: 'grid', label: 'ผังห้อง', stat: total > 0 ? `${rs!.vacant} ห้องว่าง` : 'เพิ่มห้องจริง' }] : []),
+    ...(managed ? [{ href: '/merchant/units', icon: 'grid', label: 'ห้อง', stat: total > 0 ? `${rs!.vacant} ว่าง · ผัง+ปฏิทิน` : 'เพิ่มห้องจริง' }] : []),
     { href: '/merchant/rooms', icon: 'tag', label: 'ประเภท & ราคา', stat: `${tc?.n || 0} รูปแบบ` },
-    ...(managed ? [{ href: '/merchant/units/calendar', icon: 'calendar', label: 'ปฏิทินรวม', stat: 'ดูทั้งเดือน' }] : []),
     { href: '/merchant/revenue', icon: 'wallet', label: 'รายได้ & สถิติ', stat: 'รายได้ · อัตราเข้าพัก' },
   ];
 

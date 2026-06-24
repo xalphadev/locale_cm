@@ -941,6 +941,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rb-hero-pct{flex:none;font-size:.8rem;font-weight:700;color:var(--m-muted,#8a909a);white-space:nowrap}
 .rb-hero-foot{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
 .rb-priv{margin-left:auto;font-size:.72rem;font-weight:600;color:#aeb4bf;white-space:nowrap}
+/* one "ห้อง" menu, two views — segmented switch (ผังตอนนี้ ⇄ ปฏิทินตามวัน) */
+.merchant-root .roomview{display:flex;gap:3px;margin:0 0 13px;padding:3px;border-radius:13px;background:var(--m-sunk,#eef1f5);border:1px solid var(--m-line)}
+.merchant-root .roomview-i{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:10px;font-size:.92rem;font-weight:800;color:var(--m-muted);text-decoration:none;transition:background .15s}
+.merchant-root .roomview-i.on{background:#fff;color:var(--m-accent);box-shadow:0 2px 7px -2px rgba(20,24,52,.16)}
+.merchant-root .roomview-i svg{flex:none}
 /* "ผู้เข้าพักตอนนี้" box on the room detail (who's-in-which-room) */
 .merchant-root .guestbox{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;border:1px solid var(--m-line);border-radius:14px;background:linear-gradient(180deg,#f4f8ff,#fff)}
 .merchant-root .guestbox-l{flex:1;min-width:0}
