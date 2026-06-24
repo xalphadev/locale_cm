@@ -3,6 +3,7 @@ import { Icon } from '../../icons';
 import { q, i18n, demoUserId } from '@/lib/db';
 import { STAY_KIND_TH } from '@/lib/facets';
 import { withdrawBookingRequestAction } from '../../actions';
+import { ConfirmSubmit } from '../../ConfirmSubmit';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +18,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
   const uid = await demoUserId();
   const rows = uid ? await q<any>(
     `SELECT r.id, r.request_kind, r.rental_mode, r.desired_from, r.desired_to, r.desired_months,
-            r.status, r.created_at, r.expires_at, r.converted_block_id, r.scheduled_at,
+            r.status, r.created_at, r.expires_at, r.converted_block_id, r.scheduled_at, r.checked_in_at, r.checked_out_at,
             p.id place_id, p.name_i18n place_name, p.stay_kind, p.phone, p.line_id,
             su.id unit_id, su.name_i18n unit_name
        FROM stay_booking_request r
@@ -31,9 +32,14 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
   // 'confirmed' = owner accepted the request; 'converted' = promoted to a real occupancy block (kept distinct).
   const statusOf = (r: any) => {
     const expired = r.status !== 'converted' && r.expires_at && Date.parse(r.expires_at) < now;
-    if (r.status === 'converted') return { label: 'ยืนยันการเข้าพักแล้ว', cls: 'ok', ic: 'check' };
+    if (r.status === 'converted') {
+      if (r.checked_out_at) return { label: 'เข้าพักเสร็จสิ้น', cls: 'muted', ic: 'check' };
+      if (r.checked_in_at) return { label: 'กำลังเข้าพัก', cls: 'ok', ic: 'check' };
+      return { label: 'ยืนยันการเข้าพักแล้ว', cls: 'ok', ic: 'check' };
+    }
     if (r.status === 'declined') return { label: 'ที่พักไม่สะดวกรับ', cls: 'muted', ic: 'x' };
     if (r.status === 'no_show') return { label: 'ไม่ได้เข้าพัก (ไม่มาตามนัด)', cls: 'muted', ic: 'x' };
+    if (r.status === 'cancelled') return { label: 'ที่พักยกเลิกการจองแล้ว', cls: 'muted', ic: 'x' };
     if (expired) return { label: 'หมดอายุแล้ว', cls: 'muted', ic: 'clock' };
     if (r.status === 'confirmed') return { label: 'ที่พักยืนยันรับคำขอแล้ว', cls: 'ok', ic: 'check' };
     if (r.status === 'scheduled') return { label: r.scheduled_at ? `นัดเข้าชม ${fmt(r.scheduled_at)}` : 'นัดเข้าชมแล้ว', cls: 'ok', ic: 'calendar' };
@@ -64,7 +70,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
             const dates = r.rental_mode === 'monthly'
               ? `${r.desired_months ? `${r.desired_months} เดือน` : 'รายเดือน'}${r.desired_from ? ` · เข้าพัก ${fmt(r.desired_from)}` : ''}`
               : (r.desired_from && r.desired_to ? `${fmt(r.desired_from)} – ${fmt(r.desired_to)}` : 'รายวัน');
-            const canWithdraw = r.status !== 'converted' && r.status !== 'declined' && st.label !== 'หมดอายุแล้ว';
+            const canWithdraw = !['converted', 'declined', 'cancelled', 'no_show'].includes(r.status) && st.label !== 'หมดอายุแล้ว';
             return (
               <div className="reqcard" key={r.id}>
                 <Link className="reqcard-h" href={href}>
@@ -84,7 +90,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
                     {r.line_id && <span className="reqlink muted">LINE: {r.line_id}</span>}
                     {canWithdraw && (
                       <form action={withdrawBookingRequestAction.bind(null, r.id)}>
-                        <button type="submit" className="reqwithdraw">ถอนคำขอ</button>
+                        <ConfirmSubmit message="ถอนคำขอนี้? เจ้าของที่พักจะไม่เห็นคำขอของคุณอีก" className="reqwithdraw">ถอนคำขอ</ConfirmSubmit>
                       </form>
                     )}
                   </span>

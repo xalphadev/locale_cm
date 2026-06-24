@@ -6,7 +6,8 @@ import { getLocale } from '@/lib/i18n';
 export const metadata = { title: 'Locale — เดินซอย เก็บแสตมป์', description: 'Nimman Cafe-Hop' };
 // Single viewport meta with viewport-fit=cover so the iOS WebView exposes env(safe-area-inset-*).
 // (A manual <meta> alone is overridden by Next's injected default, which omits viewport-fit.)
-export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' as const };
+// maximumScale=1 + userScalable=false → native-feeling app, no pinch/double-tap zoom in the WKWebView.
+export const viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover' as const };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

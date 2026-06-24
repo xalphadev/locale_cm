@@ -1,6 +1,7 @@
 import { q, demoUserId, i18n } from '@/lib/db';
 import { checkInAction, redeemAction } from '../actions';
 import { Icon } from '../icons';
+import { ConfirmSubmit } from '../ConfirmSubmit';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,7 @@ export default async function Passport() {
                   <div className="muted">แลกที่ร้านพาร์ตเนอร์</div></div>
                 {complete && (
                   <form action={redeemAction} style={{ marginLeft: 'auto' }}>
-                    <button className="rbtn" type="submit">แลกรางวัล</button>
+                    <ConfirmSubmit message="ยืนยันแลกรางวัลที่ร้านพาร์ตเนอร์? เหรียญที่สะสมจะถูกใช้ทั้งหมดและแลกคืนไม่ได้" className="rbtn">แลกรางวัล</ConfirmSubmit>
                   </form>
                 )}
               </div>
