@@ -28,7 +28,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
       ORDER BY r.created_at`, [acc.place_id]);
   const ratesByUnit: Record<string, any[]> = {};
   for (const r of rates) (ratesByUnit[r.stay_unit_id] ||= []).push(r);
-  const [pay] = await q<any>(`SELECT pay_promptpay, pay_bank, pay_account_no, pay_account_name, pay_online_enabled FROM places WHERE id=$1`, [acc.place_id]);
+  const [pay] = await q<any>(`SELECT pay_promptpay, pay_bank, pay_account_no, pay_account_name, pay_online_enabled, pay_deposit_pct FROM places WHERE id=$1`, [acc.place_id]);
 
   return (
     <>
@@ -51,6 +51,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
           <div className="field"><label>เลขบัญชี</label><input name="pay_account_no" defaultValue={pay?.pay_account_no || ''} placeholder="xxx-x-xxxxx-x" inputMode="numeric" maxLength={40} /></div>
         </div>
         <div className="field"><label>ชื่อบัญชี</label><input name="pay_account_name" defaultValue={pay?.pay_account_name || ''} placeholder="ชื่อ-นามสกุล / ชื่อร้าน" maxLength={120} /></div>
+        <div className="field"><label>เก็บมัดจำ (%) — 0 = เต็มจำนวน</label><input name="pay_deposit_pct" type="number" min={0} max={90} defaultValue={pay?.pay_deposit_pct || 0} inputMode="numeric" /></div>
         <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกบัญชี</button>
       </form>
 

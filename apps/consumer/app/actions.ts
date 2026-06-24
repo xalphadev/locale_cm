@@ -228,7 +228,7 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   const back = `/stay/${stayUnitId}/book`;
   if (!name || !phone) redirect(`${back}?err=contact`);
 
-  const [pl] = await q<any>(`SELECT id, offers_stay, pay_online_enabled FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
+  const [pl] = await q<any>(`SELECT id, offers_stay, pay_online_enabled, pay_deposit_pct FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
   if (!pl || !pl.offers_stay || !pl.pay_online_enabled) redirect('/stay');
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId);
   const [su] = isUuid ? await q<any>(`SELECT id, rental_mode, managed, price_minor FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]) : [];
@@ -247,6 +247,9 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   const rates = rateRows.map((r: any) => ({ price: Number(r.price_minor), start: r.start, end: r.end, seasonStart: r.sstart, seasonEnd: r.send, recurs: !!r.recurs }));
   const { amount } = quoteStay(mode, from, mode === 'daily' ? to : null, months, base, rates);
   if (amount <= 0) redirect(`${back}?err=price`);
+  const dpct = Math.max(0, Math.min(90, Number(pl.pay_deposit_pct) || 0));
+  const isDep = dpct > 0 && dpct < 100;
+  const payNow = isDep ? Math.round(amount * dpct / 100) : amount;   // what the guest transfers now
 
   // daily managed: only take a slip when a room is actually free for the span (never charge for un-fulfillable)
   if (mode === 'daily' && su.managed && from && to) {
@@ -265,10 +268,10 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   const [bk] = await q<{ id: string; ref: string }>(
     `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, desired_months,
         requester_user_id, contact_name, contact_phone, party_size, message, channel, status,
-        amount_minor, paid_minor, payment_method, slip_url, paid_at, payment_status, expires_at)
-     VALUES($1,$2,'booking',$3,$4,$5,$6,$7,$8,$9,$10,$11,'app','new',$12,$12,$13,$14,now(),'submitted', now() + interval '60 days')
+        amount_minor, deposit_minor, paid_minor, payment_method, slip_url, paid_at, payment_status, expires_at)
+     VALUES($1,$2,'booking',$3,$4,$5,$6,$7,$8,$9,$10,$11,'app','new',$12,$13,$14,$15,$16,now(),'submitted', now() + interval '60 days')
      RETURNING id, ref`,
-    [placeId, su.id, mode, from, mode === 'daily' ? to : null, mode === 'monthly' ? months : null, uid, name, phone, party, msg, amount, method, slipUrl]);
+    [placeId, su.id, mode, from, mode === 'daily' ? to : null, mode === 'monthly' ? months : null, uid, name, phone, party, msg, amount, isDep ? payNow : null, payNow, method, slipUrl]);
   if (bk) await q(
     `INSERT INTO notif_outbox(event_type, event_class, merchant_id, city_id, entity_type, entity_id, dedup_key, payload)
      SELECT 'stay_lead_new', 'ops', p.merchant_id, p.city_id, 'stay_booking_request', $1, 'lead:' || $1,

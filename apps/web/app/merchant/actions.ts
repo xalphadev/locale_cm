@@ -1666,8 +1666,9 @@ export async function updateStayPaymentAction(formData: FormData) {
   const accName = s(formData, 'pay_account_name').slice(0, 120) || null;
   const hasChannel = !!(promptpay || (bank && accNo));
   const enabled = !!formData.get('pay_online_enabled') && hasChannel;
-  await q(`UPDATE places SET pay_promptpay=$2, pay_bank=$3, pay_account_no=$4, pay_account_name=$5, pay_online_enabled=$6 WHERE id=$1`,
-    [acc.place_id, promptpay, bank, accNo, accName, enabled]);
+  const depositPct = Math.max(0, Math.min(90, parseInt(s(formData, 'pay_deposit_pct') || '0', 10) || 0));
+  await q(`UPDATE places SET pay_promptpay=$2, pay_bank=$3, pay_account_no=$4, pay_account_name=$5, pay_online_enabled=$6, pay_deposit_pct=$7 WHERE id=$1`,
+    [acc.place_id, promptpay, bank, accNo, accName, enabled, depositPct]);
   revalidatePath('/merchant/pricing');
   redirect(`/merchant/pricing?ok=pay${!enabled && !!formData.get('pay_online_enabled') ? '&warn=nochannel' : ''}`);
 }

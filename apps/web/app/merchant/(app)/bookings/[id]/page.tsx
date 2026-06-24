@@ -55,7 +55,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
             CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.message END message,
             (b.expires_at < now() AND b.status <> 'converted') expired_pii,
             b.status, b.scheduled_at, b.created_at, b.converted_block_id, b.checked_in_at, b.checked_out_at,
-            b.ref, b.payment_status, b.amount_minor, b.paid_minor, b.payment_method, b.slip_url,
+            b.ref, b.payment_status, b.amount_minor, b.deposit_minor, b.paid_minor, b.payment_method, b.slip_url,
             su.name_i18n unit_name, su.managed, r.code AS room_code, bk.note AS block_note
        FROM stay_booking_request b
        LEFT JOIN stay_units su ON su.id = b.stay_unit_id
@@ -116,7 +116,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
           <>
             <h2 className="rsec"><span className="rsec-ic"><Icon n="wallet" size={15} /></span> การชำระเงิน {b.ref ? <span className="bk-ref">{b.ref}</span> : null}</h2>
             <div className="factgrid">
-              <Fact ic="wallet" l="ยอด" v={b.amount_minor ? `฿${Math.round(Number(b.amount_minor) / 100).toLocaleString()}` : '—'} />
+              <Fact ic="wallet" l={b.deposit_minor ? 'ยอดเต็ม' : 'ยอด'} v={b.amount_minor ? `฿${Math.round(Number(b.amount_minor) / 100).toLocaleString()}` : '—'} />
+              {b.deposit_minor ? <Fact ic="wallet" l="จ่ายมัดจำ" v={`฿${Math.round(Number(b.paid_minor) / 100).toLocaleString()}`} /> : null}
+              {b.deposit_minor ? <Fact ic="clock" l="ค้างชำระ" v={`฿${Math.round((Number(b.amount_minor) - Number(b.paid_minor)) / 100).toLocaleString()}`} /> : null}
               <Fact ic="tag" l="ช่องทาง" v={b.payment_method === 'promptpay' ? 'PromptPay' : 'โอนธนาคาร'} />
               <Fact ic="check" l="สถานะ" v={PAY_TH[b.payment_status] || b.payment_status} />
             </div>

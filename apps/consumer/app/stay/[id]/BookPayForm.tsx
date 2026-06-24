@@ -14,8 +14,9 @@ const ERR: Record<string, string> = {
   price: 'ที่พักนี้ยังไม่ได้ตั้งราคา', full: 'ช่วงวันที่เลือกเต็มแล้ว ลองวันอื่น', slip: 'แนบสลิปการโอนด้วย',
 };
 
-export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay, err }:
-  { action: (fd: FormData) => void; mode: string; basePriceMinor: number; rates: Rate[]; capacity: number | null; pay: Pay; err: string | null }) {
+export function BookPayForm({ action, mode, basePriceMinor, rates, depositPct, capacity, pay, err }:
+  { action: (fd: FormData) => void; mode: string; basePriceMinor: number; rates: Rate[]; depositPct: number; capacity: number | null; pay: Pay; err: string | null }) {
+  const isDeposit = depositPct > 0 && depositPct < 100;
   const daily = mode === 'daily';
   const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
   const [from, setFrom] = useState('');
@@ -28,17 +29,18 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay
   const { amount: total, nights } = useMemo(
     () => quoteStay(mode, from || null, to || null, months, basePriceMinor, rates),
     [mode, from, to, months, basePriceMinor, rates]);
+  const payNow = isDeposit && total > 0 ? Math.round(total * depositPct / 100) : total;
   const dayAfter = from ? new Date(Date.parse(from) + 86400000).toISOString().slice(0, 10) : today;
   const hasBoth = !!pay.promptpay && !!(pay.bank && pay.accountNo);
 
   // PromptPay QR with the amount embedded — regenerate whenever the total or method changes
   useEffect(() => {
-    if (method === 'promptpay' && pay.promptpay && total > 0) {
-      const payload = promptpayPayload(pay.promptpay, total / 100);
+    if (method === 'promptpay' && pay.promptpay && payNow > 0) {
+      const payload = promptpayPayload(pay.promptpay, payNow / 100);
       if (payload) { QRCode.toDataURL(payload, { width: 240, margin: 1 }).then(setQr).catch(() => setQr('')); return; }
     }
     setQr('');
-  }, [method, pay.promptpay, total]);
+  }, [method, pay.promptpay, payNow]);
 
   return (
     <form className="bookpay" action={action}>
@@ -66,9 +68,9 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay
       </section>
 
       <div className="bp-total">
-        <span>ยอดที่ต้องชำระ</span>
-        <b>{total > 0 ? money(total) : '—'}</b>
-        {total > 0 && <small>{daily ? `${nights} คืน` : `${months} เดือน`}{daily && nights ? ` · เฉลี่ย ${money(Math.round(total / nights))}/คืน` : ''}</small>}
+        <span>{isDeposit ? 'มัดจำที่ต้องชำระตอนนี้' : 'ยอดที่ต้องชำระ'}</span>
+        <b>{payNow > 0 ? money(payNow) : '—'}</b>
+        {total > 0 && <small>{daily ? `${nights} คืน` : `${months} เดือน`}{daily && nights ? ` · เฉลี่ย ${money(Math.round(total / nights))}/คืน` : ''}{isDeposit ? ` · มัดจำ ${depositPct}% ของ ${money(total)} · ที่เหลือจ่ายตอนเข้าพัก` : ''}</small>}
       </div>
 
       <section className="bp-sec">
@@ -103,7 +105,7 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay
               {pay.accountName && <div className="bp-acct-row"><span>ชื่อบัญชี</span><b>{pay.accountName}</b></div>}
             </>
           )}
-          {total > 0 && <div className="bp-acct-amt">โอน <b>{money(total)}</b></div>}
+          {payNow > 0 && <div className="bp-acct-amt">โอน <b>{money(payNow)}</b>{isDeposit ? ' (มัดจำ)' : ''}</div>}
         </div>
         <label className="bp-slip">
           <span>{slipName ? `📎 ${slipName}` : '＋ แนบรูปสลิปการโอน *'}</span>
@@ -111,7 +113,7 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay
         </label>
       </section>
 
-      <button type="submit" className="bp-submit">ยืนยันการจอง{total > 0 ? ` · ${money(total)}` : ''}</button>
+      <button type="submit" className="bp-submit">ยืนยันการจอง{payNow > 0 ? ` · ${money(payNow)}` : ''}</button>
       <p className="bp-foot">เงินโอนเข้าบัญชีของที่พัก<b>โดยตรง</b> · ที่พักจะตรวจสลิปแล้วยืนยันการจอง · ระบบไม่เก็บเงินแทน</p>
     </form>
   );

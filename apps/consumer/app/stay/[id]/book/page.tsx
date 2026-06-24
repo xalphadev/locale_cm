@@ -15,7 +15,7 @@ export default async function BookPay({ params, searchParams }: { params: { id: 
   const [u] = isUuid ? await q<any>(
     `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.capacity, su.image_urls,
             p.id place_id, p.name_i18n place_name, p.offers_stay, p.pay_online_enabled,
-            p.pay_promptpay, p.pay_bank, p.pay_account_no, p.pay_account_name
+            p.pay_promptpay, p.pay_bank, p.pay_account_no, p.pay_account_name, p.pay_deposit_pct
        FROM stay_units su JOIN places p ON p.id = su.place_id
       WHERE su.id=$1 AND su.deleted_at IS NULL AND p.status='published' AND p.is_visible`, [params.id]) : [];
   if (!u || !u.offers_stay || !u.pay_online_enabled || u.price_minor == null) redirect(`/stay/${params.id}`);
@@ -42,6 +42,7 @@ export default async function BookPay({ params, searchParams }: { params: { id: 
         mode={u.rental_mode}
         basePriceMinor={Number(u.price_minor)}
         rates={rates}
+        depositPct={u.pay_deposit_pct || 0}
         capacity={u.capacity || null}
         pay={{ promptpay: u.pay_promptpay || null, bank: u.pay_bank || null, accountNo: u.pay_account_no || null, accountName: u.pay_account_name || null }}
         err={searchParams?.err || null}
