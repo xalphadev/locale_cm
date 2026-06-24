@@ -935,6 +935,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rb-hero-bar{display:flex;align-items:center;gap:10px;margin-top:10px}
 .rb-hero-bar .occbar-track{flex:1;height:10px}
 .rb-hero-pct{flex:none;font-size:.78rem;font-weight:700;color:var(--m-muted,#8a909a);white-space:nowrap}
+.rb-hero-leg{display:flex;flex-wrap:wrap;gap:5px 13px;margin-top:9px;font-size:.78rem;font-weight:600;color:var(--m-text,#444)}
+.rb-hero-leg span{display:inline-flex;align-items:center;gap:5px}
+.rb-hero-leg i{width:9px;height:9px;border-radius:50%;flex:none}
 .rb-teasers{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}
 .rb-footer{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:18px;padding-top:13px;border-top:1px solid var(--m-line)}
 .rb-grp{flex:1;min-width:0}

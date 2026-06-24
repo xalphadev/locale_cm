@@ -131,6 +131,12 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               </div>
               <span className="rb-hero-pct">ใช้งาน {rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</span>
             </div>
+            <div className="rb-hero-leg">
+              {vacant > 0 && <span><i style={{ background: ST.vacant.color }} /> ว่าง {vacant}</span>}
+              {occupied > 0 && <span><i style={{ background: ST.occupied.color }} /> มีผู้เช่า {occupied}</span>}
+              {reserved > 0 && <span><i style={{ background: ST.reserved.color }} /> จอง {reserved}</span>}
+              {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> ปิดซ่อม {maint}</span>}
+            </div>
           </div>
           {(soonRows.length > 0 || hasDaily) && (
             <div className="rb-teasers">
