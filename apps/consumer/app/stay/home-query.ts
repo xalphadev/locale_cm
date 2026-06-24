@@ -15,7 +15,7 @@ export async function loadStayHome(searchParams: Record<string, string>) {
     // $1=mode, $2=uid — card columns groupStayRows()/PlaceStayCard consume
     const cardCols = `su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.image_urls,
       su.available_units, su.daily_status, su.availability_updated_at, su.capacity,
-      p.id place_id, p.name_i18n shop_name, p.stay_kind, p.geo::text geo, d.name_i18n district_name,
+      p.id place_id, p.name_i18n shop_name, p.stay_kind, p.geo::text geo, d.name_i18n district_name, p.pay_online_enabled,
       EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved,
       (SELECT round(avg(rv.rating),1) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating,
       (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') rating_n`;

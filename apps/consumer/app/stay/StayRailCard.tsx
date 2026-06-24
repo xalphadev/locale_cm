@@ -18,7 +18,7 @@ export function StayRailCard({ p }: { p: any }) {
       </div>
       <div className="rcard-nm">{p.name}</div>
       <div className="rcard-meta">{KIND_TH[p.kind] || 'ที่พัก'}{p.district ? ` · ${p.district}` : ''}{scored ? ` · ★ ${p.rating}` : ''}</div>
-      <div className="rcard-price">{price}</div>
+      <div className="rcard-price">{price}{p.payOnline ? <span className="rcard-online">จองออนไลน์</span> : null}</div>
     </Link>
   );
 }
