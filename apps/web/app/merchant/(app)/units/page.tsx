@@ -64,9 +64,6 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
          AND r.occupancy_status IN ('occupied','reserved') AND r.occupied_until IS NOT NULL
          AND r.occupied_until >= CURRENT_DATE AND r.occupied_until < CURRENT_DATE + 45
       ORDER BY r.occupied_until`, [acc.place_id]);
-  const roster = rooms
-    .filter((r) => r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved')
-    .sort((a, b) => (a.occupied_until ? String(a.occupied_until) : '9999').localeCompare(b.occupied_until ? String(b.occupied_until) : '9999'));
   const hasDaily = rooms.some((r) => r.rental_mode === 'daily');
   const fromQ = searchParams?.from, toQ = searchParams?.to;
   const rangeOk = /^\d{4}-\d{2}-\d{2}$/.test(fromQ || '') && /^\d{4}-\d{2}-\d{2}$/.test(toQ || '') && (toQ || '') > (fromQ || '');
@@ -94,7 +91,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
   return (
     <>
-      <RoomHub active="board" title="ห้อง" addHref={types.length > 0 ? '/merchant/units/new' : undefined} addLabel="เพิ่มห้อง" />
+      <RoomHub active="board" title="ห้อง" />
       <RoomViewToggle active="board" />
 
       {searchParams?.ok === 'added' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
@@ -145,7 +142,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             </div>
           )}
 
-          <RoomBoard rooms={roomsData} groupTerm={term} />
+          <RoomBoard rooms={roomsData} groupTerm={term} groupAction={setRoomGroupTermAction} />
 
           {soonRows.length > 0 && (
             <details id="soon" className="soonbox">
@@ -192,32 +189,6 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             </details>
           )}
 
-          {roster.length > 0 && (
-            <details className="usettings">
-              <summary><Icon n="users" size={14} /> ใครอยู่ห้องไหน · {roster.length} ห้อง</summary>
-              <p className="fhint">รวมโน้ตของห้องที่มีผู้เช่า/จอง — เห็นเฉพาะคุณ</p>
-              <div className="roster">
-                {roster.map((r) => (
-                  <Link key={r.id} href={`/merchant/units/${r.id}`} className="rosterrow">
-                    <span className="rosterrow-rm">ห้อง {r.code}{r.floor ? ` · ${term} ${r.floor}` : ''}</span>
-                    <span className="rosterrow-nt">{r.guest_name || r.note || '—'}</span>
-                    {r.occupied_until && <span className="rosterrow-un">ว่าง {fmtD(r.occupied_until)}</span>}
-                  </Link>
-                ))}
-              </div>
-            </details>
-          )}
-          <div className="rb-footer">
-            <details className="rb-grp">
-              <summary>จัดกลุ่มตาม <b>{term}</b> · เปลี่ยน</summary>
-              <form action={setRoomGroupTermAction} className="grpset-f">
-                <input name="term_custom" defaultValue={term} maxLength={16} placeholder="ชั้น" aria-label="คำเรียกกลุ่มห้อง" />
-                <button className="dbtn sm primary" type="submit">บันทึก</button>
-              </form>
-              <p className="fhint">เช่น โซน · อาคาร · ปีก · บ้าน</p>
-            </details>
-            <Link className="rb-foot-link" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์ผัง</Link>
-          </div>
         </>
       )}
     </>

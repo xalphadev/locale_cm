@@ -22,12 +22,14 @@ const FILTERS: [string, string][] = [['all', 'ทั้งหมด'], ['vacant'
 const COLL = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });   // A1, A2 … A10 (not A1, A10, A2)
 const untilTxt = (d: any) => { if (!d) return ''; const dt = new Date(d); return isNaN(dt.getTime()) ? '' : dt.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }); };
 
-export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms: BoardRoom[]; groupTerm?: string }) {
+export default function RoomBoard({ rooms, groupTerm = 'ชั้น', groupAction }: { rooms: BoardRoom[]; groupTerm?: string; groupAction?: (fd: FormData) => void }) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [typeF, setTypeF] = useState('all');
   const [dense, setDense] = useState(rooms.length > 24);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [fabOpen, setFabOpen] = useState(false);
+  const [grpOpen, setGrpOpen] = useState(false);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rooms.length };
@@ -78,7 +80,6 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         <button type="button" className={`rfdense ${dense ? 'on' : ''}`} onClick={() => setDense((d) => !d)} aria-label="สลับมุมมอง" title={dense ? 'มุมมองการ์ด' : 'มุมมองผังย่อ'}>
           <Icon n={dense ? 'feed' : 'grid'} size={17} />
         </button>
-        <button type="button" className={`rfdense ${selectMode ? 'on' : ''}`} onClick={() => (selectMode ? exitSelect() : setSelectMode(true))} aria-label="เลือกหลายห้อง" title="เลือกหลายห้อง"><Icon n="check" size={17} /></button>
       </div>
 
       <div className="rfchips">
@@ -170,19 +171,52 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         </section>
       ))}
 
-      {selectMode && selected.size > 0 && (
+      {selectMode && (
         <div className="bulkbar">
-          <span className="bulkbar-n">{selected.size} ห้อง</span>
-          <div className="bulkbar-acts">
-            {STATUSES.map((s) => (
-              <button key={s.k} type="button" onClick={() => applyBulk(s.k, s.label)}><i style={{ background: s.color }} /> {s.label}</button>
-            ))}
-          </div>
-          <button type="button" className="bulkbar-del" onClick={doDelete}><Icon n="trash" size={14} /> ลบ</button>
-          <button type="button" className="bulkbar-x" onClick={exitSelect}>ยกเลิก</button>
+          <span className="bulkbar-n">{selected.size ? `${selected.size} ห้อง` : 'แตะห้องที่จะเปลี่ยน'}</span>
+          {selected.size > 0 && (
+            <div className="bulkbar-acts">
+              {STATUSES.map((s) => (
+                <button key={s.k} type="button" onClick={() => applyBulk(s.k, s.label)}><i style={{ background: s.color }} /> {s.label}</button>
+              ))}
+            </div>
+          )}
+          {selected.size > 0 && <button type="button" className="bulkbar-del" onClick={doDelete}><Icon n="trash" size={14} /> ลบ</button>}
+          <button type="button" className="bulkbar-x" onClick={exitSelect}>{selected.size ? 'ยกเลิก' : 'เสร็จ'}</button>
         </div>
       )}
       {undo && <div className="undotoast"><span>เปลี่ยน {undo.items.length} ห้องเป็น “{undo.label}”</span><button type="button" onClick={doUndo}>เลิกทำ</button></div>}
+
+      {/* FAB speed-dial: เพิ่มห้อง · เลือกหลายห้อง · จัดกลุ่ม · พิมพ์ผัง — hidden while selecting (bulkbar owns the bottom) */}
+      {!selectMode && (
+        <>
+          {fabOpen && <div className="fabmenu-scrim" onClick={() => setFabOpen(false)} />}
+          <div className="fabwrap">
+            {fabOpen && (
+              <div className="fabmenu">
+                <Link className="fabmenu-i" href="/merchant/units/new" onClick={() => setFabOpen(false)}><span className="fabmenu-ic"><Icon n="plus" size={17} /></span> เพิ่มห้อง</Link>
+                <button type="button" className="fabmenu-i" onClick={() => { setSelectMode(true); setFabOpen(false); }}><span className="fabmenu-ic"><Icon n="check" size={17} /></span> เลือกหลายห้อง</button>
+                {groupAction && <button type="button" className="fabmenu-i" onClick={() => { setGrpOpen(true); setFabOpen(false); }}><span className="fabmenu-ic"><Icon n="sort" size={17} /></span> จัดกลุ่มตาม {groupTerm}</button>}
+                <Link className="fabmenu-i" href="/merchant/units/print" onClick={() => setFabOpen(false)}><span className="fabmenu-ic"><Icon n="image" size={17} /></span> พิมพ์ผัง</Link>
+              </div>
+            )}
+            <button type="button" className={`rb-fabbtn ${fabOpen ? 'fab-open' : ''}`} onClick={() => setFabOpen((o) => !o)} aria-label={fabOpen ? 'ปิดเมนู' : 'เมนู'}><Icon n="plus" size={26} /></button>
+          </div>
+        </>
+      )}
+
+      {grpOpen && groupAction && (
+        <div className="rb-scrim" onClick={() => setGrpOpen(false)}>
+          <div className="rb-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="rb-sheet-h"><b>จัดกลุ่มห้องตาม</b><button type="button" onClick={() => setGrpOpen(false)} aria-label="ปิด"><Icon n="x" size={20} /></button></div>
+            <form action={groupAction} className="grpset-f">
+              <input name="term_custom" defaultValue={groupTerm} maxLength={16} placeholder="โซน" aria-label="คำเรียกกลุ่มห้อง" />
+              <button className="dbtn sm primary" type="submit">บันทึก</button>
+            </form>
+            <p className="fhint">เช่น โซน · อาคาร · ปีก · บ้าน — ตอนเพิ่มห้องจะถามชื่อกลุ่มนี้</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }

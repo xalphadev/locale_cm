@@ -938,6 +938,21 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rb-hero-leg{display:flex;flex-wrap:wrap;gap:5px 13px;margin-top:9px;font-size:.78rem;font-weight:600;color:var(--m-text,#444)}
 .rb-hero-leg span{display:inline-flex;align-items:center;gap:5px}
 .rb-hero-leg i{width:9px;height:9px;border-radius:50%;flex:none}
+/* FAB speed-dial menu (add room · multi-select · group-by · print) + group-by bottom sheet */
+.fabwrap{position:fixed;right:18px;bottom:22px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:11px}
+.rb-fabbtn{align-self:flex-end;width:56px;height:56px;border-radius:50%;background:var(--m-accent,#2b74ff);color:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -6px rgba(43,100,220,.5);cursor:pointer;transition:transform .2s}
+.rb-fabbtn.fab-open{transform:rotate(45deg)}
+.fabmenu{display:flex;flex-direction:column;align-items:flex-end;gap:9px;animation:fabin .15s ease}
+@keyframes fabin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.fabmenu-i{display:inline-flex;align-items:center;gap:9px;padding:7px 15px 7px 7px;border-radius:999px;background:#fff;color:var(--m-text,#1a1a2e);font:inherit;font-weight:800;font-size:.9rem;border:1px solid var(--m-line);box-shadow:0 6px 18px -8px rgba(20,24,52,.3);text-decoration:none;cursor:pointer;white-space:nowrap}
+.fabmenu-ic{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--m-sunk,#eef1f5);color:var(--m-accent,#2b74ff);flex:none}
+.fabmenu-scrim{position:fixed;inset:0;z-index:39;background:rgba(10,15,30,.12)}
+.rb-scrim{position:fixed;inset:0;z-index:60;background:rgba(10,15,30,.42);display:flex;align-items:flex-end}
+.rb-sheet{width:100%;background:#fff;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(0,0,0,.2);animation:sheetin .2s ease}
+@keyframes sheetin{from{transform:translateY(100%)}to{transform:none}}
+.rb-sheet-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.rb-sheet-h b{font-size:1.05rem;font-weight:800;color:var(--m-text)}
+.rb-sheet-h>button{border:none;background:none;color:var(--m-muted);cursor:pointer;display:flex;padding:2px}
 .rb-teasers{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}
 .rb-footer{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:18px;padding-top:13px;border-top:1px solid var(--m-line)}
 .rb-grp{flex:1;min-width:0}
