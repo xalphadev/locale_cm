@@ -1556,6 +1556,9 @@ export async function createBookingAction(formData: FormData) {
   const partyRaw = Number(s(formData, 'party_size'));
   const party = Number.isFinite(partyRaw) && partyRaw > 0 ? Math.min(50, Math.round(partyRaw)) : null;
   const note = name ? `${monthly ? 'เข้าอยู่' : 'จอง'}ที่เคาน์เตอร์: ${name}` : (monthly ? 'เข้าอยู่ walk-in' : 'จอง walk-in');
+  // optional money taken at the counter — recorded as already-verified (no slip), so it counts in revenue
+  const amountMinor = bahtToMinor(s(formData, 'amount'));
+  const paidNow = amountMinor != null && amountMinor > 0;
   let blockId: string;
   try {
     const [blk] = await q<{ id: string }>(
@@ -1568,9 +1571,12 @@ export async function createBookingAction(formData: FormData) {
   }
   if (monthly) await q(`UPDATE stay_room SET occupancy_status='occupied', occupied_until=$3, note=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [roomId, acc.place_id, end, note]);
   await q(
-    `INSERT INTO stay_booking_request(place_id, stay_unit_id, room_id, request_kind, rental_mode, desired_from, desired_to, desired_months, party_size, contact_name, contact_phone, channel, status, converted_block_id, expires_at)
-     VALUES($1,$2,$3,'booking',$4,$5,$6,$7,$8,$9,$10,'walk_in','converted',$11, now() + interval '60 days')`,
-    [acc.place_id, unitId, roomId, su.rental_mode, from, monthly ? null : end, monthly ? months : null, party, name || null, phone || null, blockId]);
+    `INSERT INTO stay_booking_request(place_id, stay_unit_id, room_id, request_kind, rental_mode, desired_from, desired_to, desired_months, party_size, contact_name, contact_phone, channel, status, converted_block_id, expires_at,
+        amount_minor, paid_minor, payment_method, paid_at, payment_status)
+     VALUES($1,$2,$3,'booking',$4,$5,$6,$7,$8,$9,$10,'walk_in','converted',$11, now() + interval '60 days',
+        $12,$12,$13, CASE WHEN $12 IS NOT NULL THEN now() END, $14)`,
+    [acc.place_id, unitId, roomId, su.rental_mode, from, monthly ? null : end, monthly ? months : null, party, name || null, phone || null, blockId,
+     paidNow ? amountMinor : null, paidNow ? 'cash' : null, paidNow ? 'verified' : 'none']);
   await refreshUnitVacancy(unitId);
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
   redirect('/merchant/bookings?ok=created');

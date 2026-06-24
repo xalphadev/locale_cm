@@ -41,6 +41,7 @@ export function WalkInForm({ types, rooms }: {
       <div className="field"><label>ชื่อผู้จอง</label><input name="guest_name" maxLength={80} placeholder="ชื่อ-นามสกุล (ถ้ามี)" /></div>
       <div className="field"><label>เบอร์โทร</label><input name="guest_phone" maxLength={40} inputMode="tel" placeholder="08x-xxx-xxxx" /></div>
       <div className="field"><label>จำนวนคน</label><input type="number" name="party_size" min="1" max="50" placeholder="เช่น 2" /></div>
+      <div className="field"><label>ยอดที่รับชำระ (บาท)</label><input type="number" name="amount" min="0" step="1" inputMode="numeric" placeholder="ใส่ถ้ารับเงินแล้ว — จะนับเป็นรายได้" /></div>
       <button type="submit" className="btn btn-primary winform-submit">บันทึกการจอง</button>
     </form>
   );

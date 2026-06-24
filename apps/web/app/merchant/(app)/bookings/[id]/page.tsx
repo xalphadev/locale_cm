@@ -119,7 +119,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
               <Fact ic="wallet" l={b.deposit_minor ? 'ยอดเต็ม' : 'ยอด'} v={b.amount_minor ? `฿${Math.round(Number(b.amount_minor) / 100).toLocaleString()}` : '—'} />
               {b.deposit_minor ? <Fact ic="wallet" l="จ่ายมัดจำ" v={`฿${Math.round(Number(b.paid_minor) / 100).toLocaleString()}`} /> : null}
               {b.deposit_minor ? <Fact ic="clock" l="ค้างชำระ" v={`฿${Math.round((Number(b.amount_minor) - Number(b.paid_minor)) / 100).toLocaleString()}`} /> : null}
-              <Fact ic="tag" l="ช่องทาง" v={b.payment_method === 'promptpay' ? 'PromptPay' : 'โอนธนาคาร'} />
+              <Fact ic="tag" l="ช่องทาง" v={b.payment_method === 'promptpay' ? 'PromptPay' : b.payment_method === 'cash' ? 'รับที่เคาน์เตอร์' : 'โอนธนาคาร'} />
               <Fact ic="check" l="สถานะ" v={PAY_TH[b.payment_status] || b.payment_status} />
             </div>
             {b.slip_url && <a className="bk-slip" href={b.slip_url} target="_blank" rel="noopener"><img src={b.slip_url} alt="สลิปการโอน" /><span>ดูสลิปเต็ม</span></a>}
