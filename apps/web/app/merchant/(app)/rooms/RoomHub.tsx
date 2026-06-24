@@ -1,33 +1,28 @@
 import Link from 'next/link';
 import { Icon } from '../ui';
 import { HubInfo } from './HubInfo';
+import { MTopbar } from '../MTopbar';
 
-// Shared header for the room "hub". Both /merchant/rooms (ประเภท & ราคา) and /merchant/units (ผังห้อง)
-// render this identically, so the two views read as two tabs of ONE section — not two parallel bottom-nav
-// menus (which confused owners). The segment only appears when there's a board to switch to
-// (offers_stay && manages_stay && multi); otherwise it degrades to a plain titled header.
-export function RoomHub({ active, showSeg, noun, addHref, addLabel }: {
-  active: 'types' | 'board'; showSeg: boolean; noun: string; addHref?: string; addLabel?: string;
+// Header for a room-management SPOKE page (จอง / ผังห้อง / ประเภท & ราคา). DEEP pages reached from the
+// ห้องพัก hub, so a standard MTopbar (back-chevron → /merchant/stay + centered title). The add action is a
+// FAB floating bottom-right (thumb-reachable; these pages have no bottom nav so nothing collides). The
+// contextual "?" help sits inline at the end of the sub line, only where it's relevant (ประเภท & ราคา).
+export function RoomHub({ active, title, addHref, addLabel }: {
+  active: 'bookings' | 'board' | 'types'; title: string; addHref?: string; addLabel?: string;
 }) {
-  const sub = !showSeg
-    ? 'ราคา รูป ห้องว่าง — สิ่งที่ลูกค้าเห็น'
+  const sub = active === 'bookings'
+    ? 'คำขอจอง + การจองทั้งหมดของที่พัก · ไม่เก็บเงินผ่านแอป'
     : active === 'types'
-      ? 'หน้าร้านของคุณ — ราคา รูป จำนวนห้องว่างที่ลูกค้าเห็น'
+      ? 'ราคา รูป ห้องว่าง — สิ่งที่ลูกค้าเห็น'
       : 'ห้องจริงของคุณ — ใครอยู่ห้องไหน / ว่างกี่ห้อง (ไม่โชว์ลูกค้า)';
   return (
-    <div className="roomhub">
-      <div className="listhead">
-        <h1>{noun}</h1>
-        {showSeg && active === 'types' && <HubInfo />}
-        {addHref && <Link className="addbtn" href={addHref}><Icon n="plus" size={17} /> {addLabel}</Link>}
+    <>
+      <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title={title} />
+      <div className="roomhub-subrow">
+        <p className="roomhub-sub">{sub}</p>
+        {active === 'types' && <HubInfo />}
       </div>
-      {showSeg && (
-        <div className="roomseg" role="tablist">
-          <Link className={`roomseg-i ${active === 'types' ? 'on' : ''}`} href="/merchant/rooms">ประเภท &amp; ราคา</Link>
-          <Link className={`roomseg-i ${active === 'board' ? 'on' : ''}`} href="/merchant/units">ผังห้อง</Link>
-        </div>
-      )}
-      <p className="roomhub-sub">{sub}</p>
-    </div>
+      {addHref && <Link className="fab" href={addHref} aria-label={addLabel}><Icon n="plus" size={26} /></Link>}
+    </>
   );
 }

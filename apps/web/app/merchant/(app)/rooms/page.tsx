@@ -1,9 +1,10 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
+import { Icon } from '../ui';
 import { RoomList } from './RoomList';
 import { RoomHub } from './RoomHub';
-import { Icon } from '../ui';
 
 export const dynamic = 'force-dynamic';
 const DAILY_TH: Record<string, string> = { vacant: 'ว่างวันนี้', full: 'เต็มวันนี้', ask: 'สอบถามว่าง' };
@@ -29,51 +30,27 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
     const full = monthly ? r.available_units === 0 : r.daily_status === 'full';
     const availLabel = monthly ? (r.available_units > 0 ? `ว่าง ${r.available_units} ห้อง` : 'เต็ม') : DAILY_TH[r.daily_status];
     const availCls = vacant ? 'season' : full ? 'sold' : 'off';
+    const physical = physById[r.id] || 0;
+    const hasBoard = !!acc.manages_stay && acc.room_mode !== 'unique';
+    // "health" — what's incomplete on a listing the customer sees (badges nudge the owner to finish it)
+    const issues: string[] = [];
+    if (!(r.image_urls && r.image_urls.filter(Boolean).length)) issues.push('ยังไม่มีรูป');
+    if (r.price_minor == null) issues.push('ยังไม่ตั้งราคา');
+    if (hasBoard && r.managed && physical === 0) issues.push('ยังไม่มีห้องในผัง');
     return {
       id: r.id, name: i18n(r.name_i18n),
       meta: `${monthly ? 'รายเดือน' : 'รายวัน'}${r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}/${monthly ? 'เดือน' : 'คืน'}` : ''} · อัปเดต ${daysAgo(r.availability_updated_at)}`,
-      image_urls: r.image_urls, status: r.status, monthly, vacant, full, availLabel, availCls, managed: !!r.managed, physical: physById[r.id] || 0,
+      image_urls: r.image_urls, status: r.status, monthly, vacant, full, availLabel, availCls, managed: !!r.managed, physical, issues,
     };
   });
   const noun = acc.room_mode === 'unique' ? 'ห้อง' : 'ห้องพัก';
-  const roomsN = items.reduce((a, i) => a + i.physical, 0);
-  const hasBoard = !!acc.manages_stay && acc.room_mode !== 'unique';
-  const steps = hasBoard
-    ? [
-        { done: items.length > 0, label: 'สร้างรูปแบบห้อง', href: '/merchant/rooms/new' },
-        { done: roomsN > 0, label: 'เพิ่มห้องจริงในผัง (101, 102…)', href: '/merchant/units/new' },
-        { done: items.some((i) => i.managed), label: 'เปิดนับห้องว่างอัตโนมัติ', href: '/merchant/units' },
-      ]
-    : [{ done: items.length > 0, label: 'เพิ่มห้อง', href: '/merchant/rooms/new' }];
-  const setupDone = steps.every((st) => st.done);
-  const doneN = steps.filter((st) => st.done).length;
   return (
     <>
+      <RoomHub active="types" title="ประเภท & ราคา" addHref="/merchant/rooms/new" addLabel="เพิ่มห้อง" />
+      <Link className="xlink" href="/merchant/pricing"><span className="xlink-ic"><Icon n="wallet" size={18} /></span><span className="xlink-tx"><b>ราคาตามฤดู</b><span>ตั้งราคาไฮ/โลว์ซีซั่นแยกตามช่วง</span></span><Icon n="chevR" size={18} className="xlink-go" /></Link>
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
-      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
-      {!setupDone && (
-        <div className="setupcard">
-          <div className="setupcard-top">
-            <div className="setupcard-ttl"><span className="setupcard-spark"><Icon n="spark" size={15} /></span> เริ่มต้นใช้งาน</div>
-            <span className="setupcard-badge">{doneN}/{steps.length}</span>
-          </div>
-          <div className="setupbar"><span style={{ width: `${(doneN / steps.length) * 100}%` }} /></div>
-          <div className="setupsteps">
-            {steps.map((st, i) => {
-              const now = !st.done && steps.slice(0, i).every((s) => s.done);
-              return (
-                <a key={i} href={st.href} className={`setupstep ${st.done ? 'done' : ''} ${now ? 'now' : ''}`}>
-                  <span className="setupstep-ic">{st.done ? <Icon n="check" size={13} /> : i + 1}</span>
-                  <span className="setupstep-tx">{st.label}</span>
-                  {!st.done && <Icon n="chevR" size={16} className="setupstep-go" />}
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      )}
-      <RoomHub active="types" showSeg={!!acc.manages_stay && acc.room_mode !== 'unique'} noun={noun} addHref="/merchant/rooms/new" addLabel="เพิ่มห้อง" />
+      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบรูปแบบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}
       <RoomList items={items} noun={noun} hasBoard={!!acc.manages_stay && acc.room_mode !== 'unique'} />
     </>
   );

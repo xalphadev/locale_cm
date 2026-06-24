@@ -44,7 +44,7 @@ export default async function Dashboard() {
       </div>
 
       {missing.length > 0 && (
-        <Link className="banner-warn rstrip" href="/merchant/shop/edit">
+        <Link className="rstrip" href="/merchant/shop/edit">
           <span className="rstrip-top"><Icon n="store" size={15} /> <b>ทำให้ร้านพร้อม — ขาดอีก {missing.length} อย่าง</b><span className="rstrip-go">เพิ่มข้อมูล →</span></span>
           <span className="rstrip-sub">{missing.join(' · ')}</span>
           <span className="rstrip-bar"><i style={{ width: pct + '%' }} /></span>
@@ -78,9 +78,9 @@ export default async function Dashboard() {
           </Link>
         )}
         {(stay || acc.manages_stay) && (
-          <Link className="menu-row" href="/merchant/leads">
+          <Link className="menu-row" href="/merchant/bookings">
             <span className="menu-ic"><Icon n="chat" size={20} /></span>
-            <span className="menu-tx">คำขอจอง</span>
+            <span className="menu-tx">การจอง</span>
             {(stats?.leads ?? 0) > 0 ? <span className="menu-badge-new">ใหม่ {stats.leads}</span> : null}
             <Icon n="chevR" className="menu-go" size={18} />
           </Link>

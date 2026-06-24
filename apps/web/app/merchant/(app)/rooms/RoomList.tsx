@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 
-type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; monthly: boolean; vacant: boolean; full: boolean; availLabel: string; availCls: string; managed: boolean; physical: number };
+type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; monthly: boolean; vacant: boolean; full: boolean; availLabel: string; availCls: string; managed: boolean; physical: number; issues: string[] };
 
 // Two INDEPENDENT filter axes, combinable (AND): rental MODE (รายเดือน/รายวัน) and STATUS (ว่าง/เต็ม/ซ่อน).
 // They used to share one single-select chip row, so "รายเดือน ที่ว่าง" was impossible.
@@ -67,6 +67,7 @@ export function RoomList({ items, noun = 'ห้องพัก', hasBoard }: { 
                       {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
                       <span className={`t ${r.availCls}`}>{r.availLabel}</span>
                       {hasBoard && r.physical > 0 && <span className="t link"><Icon n="grid" size={11} /> {r.physical} ห้องในผัง</span>}
+                      {r.issues.map((iss) => <span className="t warn" key={iss}>{iss}</span>)}
                     </span>
                   </span>
                   <Icon n="chevR" size={20} className="mrow-go" />

@@ -30,8 +30,18 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
   const types = await q<any>(`SELECT id, name_i18n, rental_mode, managed FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at`, [acc.place_id]);
   const rooms = await q<any>(
-    `SELECT r.id, r.code, r.floor, r.room_kind, r.occupancy_status, r.occupied_until, r.note, r.stay_unit_id, su.name_i18n unit_name, su.rental_mode
+    `SELECT r.id, r.code, r.floor, r.room_kind, r.occupancy_status, r.occupied_until, r.note, r.stay_unit_id,
+            su.name_i18n unit_name, su.rental_mode, g.contact_name guest_name, g.contact_phone guest_phone
        FROM stay_room r LEFT JOIN stay_units su ON su.id = r.stay_unit_id
+       -- "who's in this room right now": the guest on the active booking covering today (zero new tables)
+       LEFT JOIN LATERAL (
+         SELECT br.contact_name, br.contact_phone
+           FROM stay_occupancy_block bk
+           JOIN stay_booking_request br ON br.converted_block_id = bk.id AND br.deleted_at IS NULL
+          WHERE bk.room_id = r.id AND bk.deleted_at IS NULL AND bk.status='active'
+            AND bk.block_kind IN ('stay','tenancy') AND bk.span @> CURRENT_DATE
+          ORDER BY bk.start_date DESC LIMIT 1
+       ) g ON true
       WHERE r.place_id=$1 AND r.deleted_at IS NULL ORDER BY r.floor NULLS FIRST, r.code`, [acc.place_id]);
 
   const vacant = rooms.filter((r) => r.occupancy_status === 'vacant').length;
@@ -45,6 +55,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const roomsData = rooms.map((r) => ({
     id: r.id, code: r.code, floor: r.floor, room_kind: r.room_kind, status: r.occupancy_status,
     occupied_until: r.occupied_until, note: r.note, type: r.unit_name ? i18n(r.unit_name) : '', monthly: r.rental_mode !== 'daily',
+    guest: r.guest_name || null, guestPhone: r.guest_phone || null,
   }));
   const term = acc.room_group_term || 'ชั้น';
   const soonRows = await q<any>(
@@ -85,16 +96,16 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
   return (
     <>
+      <RoomHub active="board" title="ผังห้อง" addHref={types.length > 0 ? '/merchant/units/new' : undefined} addLabel="เพิ่มห้อง" />
+
       {searchParams?.ok === 'added' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'bulk' && (
         <div className={Number(searchParams.skipped) > 0 ? 'banner-warn' : 'banner-ok'}>
           ✓ เพิ่ม {searchParams.added ?? 0} ห้องแล้ว{Number(searchParams.skipped) > 0 ? ` · ข้าม ${searchParams.skipped} ห้องที่มีเลขซ้ำอยู่แล้ว` : ''}
         </div>
       )}
-      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว</div>}
+      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}
       {searchParams?.error === 'norooms' && <div className="banner-err">เพิ่มห้องจริงอย่างน้อย 1 ห้องก่อน แล้วค่อยเปิด “ใช้คำนวณ”</div>}
-
-      <RoomHub active="board" showSeg noun="ห้องพัก" addHref={types.length > 0 ? '/merchant/units/new' : undefined} addLabel="เพิ่มห้อง" />
 
       {types.length === 0 ? (
         <div className="mempty">
@@ -116,7 +127,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               <span className="occbar-acts">
                 <Link className="occbar-leads" href="/merchant/units/calendar"><Icon n="calendar" size={14} /> ปฏิทินรวม</Link>
                 <Link className="occbar-leads" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์</Link>
-                <Link className="occbar-leads" href="/merchant/leads"><Icon n="chat" size={14} /> คำขอจอง</Link>
+                <Link className="occbar-leads" href="/merchant/bookings"><Icon n="chat" size={14} /> การจอง</Link>
               </span>
             </div>
             <div className="occbar-track">

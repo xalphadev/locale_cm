@@ -4,6 +4,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
 import { MTopbar } from '../../MTopbar';
+import { ConfirmSubmit } from '../../ConfirmSubmit';
 import { confirmRedemptionAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -40,7 +41,7 @@ export default async function Redeem({ searchParams }: { searchParams: { ok?: st
                 <div className="mrow-meta">ลูกค้า #{p.uref} · ใช้ {p.cost_stamps} แต้ม</div>
               </div>
               <form action={confirmRedemptionAction.bind(null, p.id)}>
-                <button className="dbtn primary sm" type="submit">ยืนยัน</button>
+                <ConfirmSubmit message={`ยืนยันการแลกของลูกค้า? จะตัด ${p.cost_stamps} แต้มของลูกค้าทันที และคืนไม่ได้`} className="dbtn primary sm">ยืนยัน</ConfirmSubmit>
               </form>
             </div>
           ))}

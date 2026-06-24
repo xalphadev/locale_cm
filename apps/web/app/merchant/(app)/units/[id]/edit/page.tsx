@@ -4,6 +4,7 @@ import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
 import { Icon, isUuid } from '../../../ui';
 import { MTopbar } from '../../../MTopbar';
+import { ConfirmSubmit } from '../../../ConfirmSubmit';
 import { updateRoomAction, deleteRoomAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ export default async function EditRoomUnit({ params, searchParams }: { params: {
   const term = acc.room_group_term || 'ชั้น';
   return (
     <>
-      <MTopbar back={`/merchant/units/`} backLabel="รายละเอียดห้อง" title={`แก้ไขห้อง `} />
+      <MTopbar back={`/merchant/units/${r.id}`} backLabel="รายละเอียดห้อง" title={`แก้ไขห้อง ${r.code}`} />
       {searchParams?.error === 'code' && <div className="banner-err">กรุณาใส่เลข/ชื่อห้อง</div>}
       <form className="form mform" action={updateRoomAction.bind(null, r.id)}>
         <section className="fsec">
@@ -41,7 +42,7 @@ export default async function EditRoomUnit({ params, searchParams }: { params: {
         </section>
       </form>
       <form className="delwrap" action={deleteRoomAction.bind(null, r.id)}>
-        <button className="dbtn danger" type="submit"><Icon n="trash" size={17} /> ลบห้องนี้</button>
+        <ConfirmSubmit message={`ลบห้อง ${r.code}? ${r.occupancy_status === 'occupied' ? 'ห้องนี้มีผู้เช่าอยู่ — ' : ''}(กู้คืนได้จากถังขยะ)`} className="dbtn danger"><Icon n="trash" size={17} /> ลบห้องนี้</ConfirmSubmit>
       </form>
     </>
   );

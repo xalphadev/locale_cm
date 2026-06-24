@@ -10,6 +10,7 @@ import { setRoomOccupancyAction, setRoomsOccupancyBulkAction, deleteRoomsBulkAct
 export type BoardRoom = {
   id: string; code: string; floor: string | null; room_kind: string; status: string;
   occupied_until: string | null; note: string | null; type: string; monthly: boolean;
+  guest: string | null; guestPhone: string | null;
 };
 const ST: Record<string, { label: string; color: string }> = {
   vacant: { label: 'ว่าง', color: '#12b76a' },
@@ -119,15 +120,19 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                         <span className="rtile-code">{r.code}{r.room_kind === 'bed' ? <span className="rtile-bed">เตียง</span> : null}</span>
                         <span className="rtile-chip" style={{ color: st.color, background: `color-mix(in srgb, ${st.color} 14%, transparent)` }}>{st.label}</span>
                       </div>
-                      <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>
+                      {r.guest
+                        ? <span className="rtile-guest"><Icon n="chat" size={12} /> {r.guest}{r.note ? <span className="rtile-note"> · {r.note}</span> : ''}</span>
+                        : <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>}
                     </Link>
-                    {!selectMode && (r.monthly
-                      ? (
-                        <form className="rtile-act" action={setRoomOccupancyAction.bind(null, r.id, r.status === 'vacant' ? 'occupied' : 'vacant')}>
-                          <button type="submit">{r.status === 'vacant' ? 'ตั้งมีผู้เช่า' : 'ตั้งว่าง'}</button>
-                        </form>
-                      )
-                      : <Link className="rtile-act cal" href={`/merchant/units/${r.id}`}><Icon n="calendar" size={14} /> ปฏิทิน</Link>)}
+                    {!selectMode && (r.guestPhone
+                      ? <a className="rtile-act cal" href={`tel:${r.guestPhone}`}><Icon n="phone" size={14} /> โทร</a>
+                      : r.monthly
+                        ? (
+                          <form className="rtile-act" action={setRoomOccupancyAction.bind(null, r.id, r.status === 'vacant' ? 'occupied' : 'vacant')}>
+                            <button type="submit">{r.status === 'vacant' ? 'ตั้งมีผู้เช่า' : 'ตั้งว่าง'}</button>
+                          </form>
+                        )
+                        : <Link className="rtile-act cal" href={`/merchant/units/${r.id}`}><Icon n="calendar" size={14} /> ปฏิทิน</Link>)}
                   </div>
                 );
               })}

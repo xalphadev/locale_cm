@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 const TABS: (Omit<Tab, 'badge'> & { cap: string | null })[] = [
   { href: '/merchant', icon: 'home', label: 'ภาพรวม', cap: null, exact: true, match: ['/merchant'] },
   { href: '/merchant/products', icon: 'tag', label: 'สินค้า', cap: 'sells_products', match: ['/merchant/products'] },
-  { href: '/merchant/rooms', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: ['/merchant/rooms', '/merchant/units'] },
+  { href: '/merchant/stay', icon: 'bed', label: 'ห้องพัก', cap: 'offers_stay', match: ['/merchant/stay', '/merchant/bookings', '/merchant/rooms', '/merchant/units', '/merchant/pricing'] },
   { href: '/merchant/loyalty', icon: 'spark', label: 'แต้ม', cap: null, match: ['/merchant/loyalty'] },
   { href: '/merchant/shop', icon: 'store', label: 'ร้าน', cap: null, match: ['/merchant/shop'] },
 ];
@@ -25,8 +25,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const live = acc.place_status === 'published';
   // tab renames ห้องพัก → ห้อง in 'unique' mode (resort, no board); reflects the ACTIVE branch (Switcher).
   const mode = acc.room_mode || 'multi';
-  // new-lead count → an always-visible badge on the ห้องพัก tab (the in-app "new booking request" alert,
-  // since คำขอจอง has no nav tab of its own). Outbound delivery (LINE/email) is separate infra.
+  // new-lead count → an always-visible badge on the ห้องพัก tab, which now lands on /merchant/bookings
+  // (the booking inbox is the daily driver). Outbound delivery (LINE/email) is separate infra.
   let newLeads = 0;
   if (acc.place_id && (acc.offers_stay || acc.manages_stay)) {
     const [lr] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_booking_request WHERE place_id=$1 AND status='new' AND deleted_at IS NULL`, [acc.place_id]);
@@ -37,8 +37,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     .map((t) => ({
       href: t.href,
       icon: t.icon,
-      label: t.href === '/merchant/rooms' && mode === 'unique' ? 'ห้อง' : t.label,
-      badge: t.href === '/merchant/rooms' && newLeads > 0 ? newLeads : undefined,
+      label: t.href === '/merchant/stay' && mode === 'unique' ? 'ห้อง' : t.label,
+      badge: t.href === '/merchant/stay' && newLeads > 0 ? newLeads : undefined,
       exact: !!t.exact,
       match: t.match,
     }));

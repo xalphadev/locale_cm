@@ -4,7 +4,8 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction } from '../../../actions';
+import { ConfirmSubmit } from '../../ConfirmSubmit';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import RoomCalendar from '../RoomCalendar';
 
@@ -69,6 +70,16 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
   const vacantRooms = occupiedNow
     ? await q<any>(`SELECT id, code, floor FROM stay_room WHERE place_id=$1 AND deleted_at IS NULL AND status='active' AND occupancy_status='vacant' AND id<>$2 ORDER BY floor NULLS FIRST, code`, [acc.place_id, r.id])
     : [];
+  // who's in this room right now (the guest on the active booking covering today) — zero new tables
+  const [guest] = occupiedNow ? await q<any>(
+    `SELECT br.id booking_id, br.contact_name, br.contact_phone, br.party_size, br.checked_in_at, br.checked_out_at,
+            to_char(COALESCE(bk.start_date, br.desired_from),'DD/MM/YY') from_d,
+            to_char(COALESCE(bk.end_date, br.desired_to),'DD/MM/YY') to_d
+       FROM stay_occupancy_block bk
+       JOIN stay_booking_request br ON br.converted_block_id = bk.id AND br.deleted_at IS NULL
+      WHERE bk.room_id=$1 AND bk.deleted_at IS NULL AND bk.status='active'
+        AND bk.block_kind IN ('stay','tenancy') AND bk.span @> CURRENT_DATE
+      ORDER BY bk.start_date DESC LIMIT 1`, [r.id]) : [];
 
   return (
     <>
@@ -87,6 +98,22 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
         <span className={`t ${o.cls}`}>{o.label}</span>
         {r.floor && <span className="t off">{term} {r.floor}</span>}
       </div>
+
+      {guest && (
+        <div className="guestbox">
+          <div className="guestbox-l">
+            <div className="guestbox-k">ผู้เข้าพักตอนนี้{guest.checked_in_at ? ' · เช็คอินแล้ว' : ''}</div>
+            <div className="guestbox-nm">{guest.contact_name || 'ไม่ระบุชื่อ'}</div>
+            <div className="guestbox-meta">{guest.from_d}{guest.to_d ? `–${guest.to_d}` : ''}{guest.party_size ? ` · ${guest.party_size} คน` : ''}</div>
+          </div>
+          <div className="guestbox-acts">
+            {guest.contact_phone && <a className="dbtn sm" href={`tel:${guest.contact_phone}`}><Icon n="phone" size={15} /> โทร</a>}
+            {!guest.checked_in_at
+              ? <form action={checkInAction.bind(null, guest.booking_id)}><button className="dbtn sm primary" type="submit"><Icon n="check" size={15} /> เช็คอิน</button></form>
+              : <form action={checkOutAction.bind(null, guest.booking_id)}><ConfirmSubmit message="เช็คเอาท์ผู้เข้าพักนี้? ห้องจะถูกปล่อยคืนให้ว่างทันที" className="dbtn sm primary"><Icon n="check" size={15} /> เช็คเอาท์</ConfirmSubmit></form>}
+          </div>
+        </div>
+      )}
 
       <div className="availcard" style={{ display: 'block' }}>
         <div className="availcard-k">สถานะห้อง — แตะเพื่อเปลี่ยน</div>
@@ -117,7 +144,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
               <option value="" disabled>เลือกห้องปลายทาง (ที่ว่าง)</option>
               {vacantRooms.map((v: any) => <option key={v.id} value={v.id}>ห้อง {v.code}{v.floor ? ` · ${term} ${v.floor}` : ''}</option>)}
             </select>
-            <button className="dbtn sm" type="submit">ย้าย →</button>
+            <ConfirmSubmit message="ย้ายผู้เช่าจากห้องนี้ไปห้องที่เลือก? โน้ตและวันว่างจะย้ายตามไปด้วย" className="dbtn sm">ย้าย →</ConfirmSubmit>
           </div>
         </form>
       )}
@@ -168,7 +195,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
                     <div className="field"><label>โน้ต</label><input name="note" defaultValue={b.note || ''} placeholder="เช่น จองผ่านไลน์" /></div>
                     <button className="dbtn sm primary" type="submit">บันทึกการแก้ไข</button>
                   </form>
-                  <form action={cancelRoomBlockAction.bind(null, b.id)}><button className="dbtn sm danger" type="submit">เอาออก</button></form>
+                  <form action={cancelRoomBlockAction.bind(null, b.id)}><ConfirmSubmit message="เอาช่วงที่จองนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>
                 </details>
               ))}
             </div>

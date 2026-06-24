@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
+import { ConfirmSubmit } from '../ConfirmSubmit';
 import { setDealStatusAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -69,7 +70,7 @@ export default async function Deals({ searchParams }: { searchParams: { ok?: str
                     </form>
                   )}
                   <form action={setDealStatusAction.bind(null, d.id, 'expired')}>
-                    <button className="dbtn danger sm" type="submit" aria-label="จบดีล"><Icon n="trash" size={15} /></button>
+                    <ConfirmSubmit message="จบดีลนี้ถาวร? ลูกค้าจะใช้ดีลนี้ไม่ได้อีก และเปิดกลับไม่ได้" className="dbtn danger sm" aria-label="จบดีล"><Icon n="trash" size={15} /></ConfirmSubmit>
                   </form>
                 </div>
               </div>

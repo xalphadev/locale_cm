@@ -24,10 +24,9 @@ export type Tab = { href: string; icon: string; label: string; badge?: number; e
 
 function secOf(path: string): string {
   if (path.startsWith('/merchant/products')) return 'products';
-  if (path.startsWith('/merchant/rooms') || path.startsWith('/merchant/units')) return 'rooms';
+  if (path.startsWith('/merchant/stay') || path.startsWith('/merchant/rooms') || path.startsWith('/merchant/units') || path.startsWith('/merchant/bookings') || path.startsWith('/merchant/pricing')) return 'rooms';
   if (path.startsWith('/merchant/loyalty')) return 'loyalty';
   if (path.startsWith('/merchant/leads')) return 'leads';
-  if (path.startsWith('/merchant/pricing')) return 'pricing';
   if (path.startsWith('/merchant/deals')) return 'deals';
   if (path.startsWith('/merchant/payouts')) return 'payouts';
   if (path.startsWith('/merchant/shop')) return 'shop';
@@ -36,12 +35,19 @@ function secOf(path: string): string {
 
 export function MShell({ tabs, header, children }: { tabs: Tab[]; header: ReactNode; children: ReactNode }) {
   const path = usePathname() || '/merchant';
-  const isTop = path.split('/').filter(Boolean).length <= 2;
+  // The ห้องพัก section is a hub-and-spoke: /merchant/stay is the HOME (top: brand header + bottom nav),
+  // but its spokes (จอง / ผังห้อง / ประเภท&ราคา) are focused DEEP pages — no brand header, no bottom nav,
+  // a back-chevron to the hub instead (like every other detail page).
+  const SPOKES = new Set(['/merchant/bookings', '/merchant/units', '/merchant/rooms', '/merchant/pricing']);
+  const isTop = !SPOKES.has(path) && path.split('/').filter(Boolean).length <= 2;
   const sec = secOf(path);
+  // The ห้องพัก hub (/merchant/stay) keeps the bottom nav (it's a section home) but DROPS the brand header —
+  // its own "ห้องพัก" title leads instead, so the page isn't double-headed. The body then owns the status-bar inset.
+  const showHeader = isTop && path !== '/merchant/stay';
   const active = (t: Tab) => (t.exact ? path === t.match[0] : t.match.some((m) => path.startsWith(m)));
   return (
-    <div className="mshell">
-      {isTop && header}
+    <div className={`mshell ${isTop ? '' : 'deep'} ${isTop && !showHeader ? 'nohdr' : ''}`}>
+      {showHeader && header}
       <main className={`mbody ${sec ? 'sec-' + sec : ''}`}>{children}</main>
       <nav className="mtab">
         {tabs.map((t) => (

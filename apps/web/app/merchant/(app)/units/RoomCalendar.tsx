@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { Icon } from '../ui';
+import { ConfirmSubmit } from '../ConfirmSubmit';
 import { addRoomBlockAction, cancelRoomBlockAction } from '../../actions';
 
 // Per-room month calendar (daily rooms). VIEW = see which nights are free/booked; tap two free days to
@@ -81,7 +82,7 @@ export default function RoomCalendar({ roomId, blocks, months = 3 }: { roomId: s
         return (
           <div className="rcal-pop">
             <span>{bl.start_date} → {bl.end_date || 'ต่อเนื่อง'}{bl.note ? ` · ${bl.note}` : ''}</span>
-            <form action={cancelRoomBlockAction.bind(null, bl.id)}><button className="dbtn sm" type="submit">เอาออก</button></form>
+            <form action={cancelRoomBlockAction.bind(null, bl.id)}><ConfirmSubmit message="เอาช่วงที่จองนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm">เอาออก</ConfirmSubmit></form>
           </div>
         );
       })()}

@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
+import { MTopbar } from '../MTopbar';
+import { ConfirmSubmit } from '../ConfirmSubmit';
 import { createSeasonAction, deleteSeasonAction, createRateAction, deleteRateAction } from '../../actions';
 import DateRangePicker from '../DateRangePicker';
 
@@ -29,13 +31,14 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
 
   return (
     <>
+      <MTopbar back="/merchant/rooms" backLabel="ประเภท & ราคา" title="ราคาตามฤดู" />
+
       {searchParams?.ok && <div className="banner-ok">✓ บันทึกแล้ว</div>}
       {searchParams?.error === 'date' && <div className="banner-err">กรุณาเลือกวันเริ่ม–สิ้นสุด</div>}
       {searchParams?.error === 'price' && <div className="banner-err">กรุณาใส่ราคา</div>}
       {searchParams?.error === 'label' && <div className="banner-err">กรุณาตั้งชื่อช่วง</div>}
       {searchParams?.error === 'unit' && <div className="banner-err">ไม่พบรูปแบบห้อง</div>}
 
-      <h1 className="phead"><span className="phead-ic"><Icon n="wallet" size={18} /></span> ราคาตามฤดู</h1>
       <p className="note">ตั้งราคาต่อ “รูปแบบห้อง” แยกตามช่วง (ไฮ/โลว์ซีซั่น) — เป็นราคาที่ <b>แสดง</b> ให้ลูกค้าเห็นเท่านั้น ไม่มีการเก็บเงินผ่านแอป</p>
 
       <section className="fsec">
@@ -50,7 +53,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
                     <span className="mrow-nm">{i18n(se.label_i18n)}</span>
                     <span className="mrow-meta">{fmt(se.start_date)}–{fmt(se.end_date)}{se.recurs_yearly ? ' · ทุกปี' : ''}</span>
                   </span>
-                  <form action={deleteSeasonAction.bind(null, se.id)}><button className="dbtn sm danger" type="submit"><Icon n="trash" size={14} /></button></form>
+                  <form action={deleteSeasonAction.bind(null, se.id)}><ConfirmSubmit message="ลบช่วงราคานี้? ราคาทั้งหมดที่ผูกกับช่วงนี้จะถูกลบไปด้วย" className="dbtn sm danger"><Icon n="trash" size={14} /></ConfirmSubmit></form>
                 </div>
               ))}
             </div>
@@ -81,7 +84,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
                   <span className="mrow-nm">{r.season_id ? i18n(r.season_label) : `${fmt(r.start_date)}–${fmt(r.end_date)}`}</span>
                   <span className="mrow-meta">{baht(r.price_minor)}/{r.price_period === 'month' ? 'เดือน' : 'คืน'}</span>
                 </span>
-                <form action={deleteRateAction.bind(null, r.id)}><button className="dbtn sm danger" type="submit"><Icon n="trash" size={14} /></button></form>
+                <form action={deleteRateAction.bind(null, r.id)}><ConfirmSubmit message="ลบราคาช่วงนี้?" className="dbtn sm danger"><Icon n="trash" size={14} /></ConfirmSubmit></form>
               </div>
             ))}
             <form className="pricesub" action={createRateAction}>

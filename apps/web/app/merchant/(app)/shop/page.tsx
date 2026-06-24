@@ -53,7 +53,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
 
       {/* readiness strip — whole strip taps through to edit; vanishes at 100% */}
       {missing.length > 0 && (
-        <Link className="banner-warn rstrip" href="/merchant/shop/edit">
+        <Link className="rstrip" href="/merchant/shop/edit">
           <span className="rstrip-top"><Icon n="clock" size={15} /> <b>ขาดอีก {missing.length} อย่างจะพร้อมเผยแพร่</b><span className="rstrip-go">แก้ไข →</span></span>
           <span className="rstrip-sub">{missing.join(' · ')}</span>
           <span className="rstrip-bar"><i style={{ width: pct + '%' }} /></span>

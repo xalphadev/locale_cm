@@ -87,7 +87,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
   --m-bg:#F8F7F3; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
-  --m-accent:#2B74FF; --m-accent-press:#1A5FE6; --m-soft:#D6E4FF; --m-navy:#16284D; --m-gold:#F5B500; --m-hint:#A0A0A8;
+  --m-accent:#2B74FF; --m-accent-press:#1A5FE6; --m-soft:#D6E4FF; --m-navy:#16284D; --m-gold:#FFB81C; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
   --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
   /* flat & clean — definition comes from hairline borders + spacing, not floating shadows */
@@ -205,11 +205,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .banner-ok{background:var(--m-soft);color:var(--m-accent);border-radius:11px;font-weight:600}
 .merchant-root .banner-err{background:#FDECEC;color:#C0392B;border-radius:11px}
 /* ownership-verification banner + locked menu chip (0027) */
-.merchant-root .verifybanner{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:.85rem .95rem;border-radius:14px;background:#FBF1D8;border:1px solid #F0D89B;color:#7A5A00;text-decoration:none}
-.merchant-root .verifybanner .vb-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#F5B500;color:#fff;flex:none}
+.merchant-root .verifybanner{display:flex;align-items:center;gap:12px;margin:10px 0 4px;padding:.85rem .95rem;border-radius:14px;background:#FFF4C7;border:1px solid #FBE38A;color:#7A5A00;text-decoration:none}
+.merchant-root .verifybanner .vb-ic{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:#FFB81C;color:#fff;flex:none}
 .merchant-root .verifybanner .vb-tx{flex:1;font-size:.86rem;line-height:1.4}
 .merchant-root .verifybanner .vb-go{color:#B98900;flex:none}
-.merchant-root .menu-lock{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:800;color:#9A6A00;background:#FBF1D8;border-radius:999px;padding:.18rem .5rem;margin-left:auto}
+.merchant-root .menu-lock{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:800;color:#946400;background:#FFF0B8;border-radius:999px;padding:.18rem .5rem;margin-left:auto}
 /* .mini — used by the shop-page geo picker */
 .merchant-root .mini{border:1px solid var(--m-line);border-radius:9px;background:var(--m-surface);font-weight:700;color:var(--m-text)}
 /* auth pages */
@@ -239,7 +239,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root{background:#E4E8EF}                       /* soft tint behind the shell so it pops on desktop (matches consumer) */
 .mshell{max-width:440px;margin:0 auto;min-height:100vh;background:#fff;position:relative;padding-bottom:calc(100px + env(safe-area-inset-bottom));box-shadow:0 0 60px rgba(16,20,12,.14);overflow-x:hidden}
 /* header — clean frosted-white app bar (consumer-style), accent avatar, no heavy banner */
-.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(43,116,255,.16),rgba(43,116,255,0)),rgba(255,255,255,.82);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);color:var(--m-text);padding:calc(13px + env(safe-area-inset-top)) 16px 13px}
+.mtop{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;background:#fff;color:var(--m-text);padding:calc(13px + env(safe-area-inset-top)) 16px 13px}
 .mtop-ava{flex:none;width:42px;height:42px;border-radius:13px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.18rem;box-shadow:inset 0 0 0 1px rgba(26,115,232,.12)}
 .mtop-l{flex:1;min-width:0}
 .mtop-brand{font-size:.6rem;font-weight:800;letter-spacing:.13em;color:var(--m-accent);text-transform:uppercase}
@@ -249,8 +249,10 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mtop-out{flex:none;align-self:center;border:1px solid var(--m-line);background:var(--m-surface);color:var(--m-muted);border-radius:999px;padding:.42rem .9rem;font:inherit;font-weight:700;font-size:.8rem;cursor:pointer}
 .mtop-out:active{transform:scale(.96)}
 .mbody{padding:1.25rem 1.05rem 1rem;--mb-pt:1.25rem;--mb-px:1.05rem}
+/* headerless top page (ห้องพัก hub): no brand bar above, so the body clears the status bar itself */
+.mshell.nohdr .mbody{padding-top:calc(1.05rem + env(safe-area-inset-top))}
 /* centered top app-bar for deep pages (MTopbar) — mirrors the brand bar (.mtop), breaks out of .mbody padding */
-.merchant-root .mtopbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:calc(-1*var(--mb-pt,1.25rem)) calc(-1*var(--mb-px,1.05rem)) 1.1rem;padding:calc(10px + env(safe-area-inset-top)) 8px 10px;background:linear-gradient(180deg,rgba(43,116,255,.16),rgba(43,116,255,0)),rgba(255,255,255,.85);backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px)}
+.merchant-root .mtopbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:8px;margin:calc(-1*var(--mb-pt,1.25rem)) calc(-1*var(--mb-px,1.05rem)) 1.1rem;padding:calc(10px + env(safe-area-inset-top)) 8px 10px;background:#fff}
 .merchant-root .mtopbar-back{flex:none;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--m-text)}
 .merchant-root .mtopbar-back:hover{background:var(--m-sunk);color:var(--m-accent)}
 .merchant-root .mtopbar-back:active{background:var(--m-sunk);transform:scale(.92)}
@@ -259,12 +261,18 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mtopbar-act a,.merchant-root .mtopbar-act button{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:none;background:none;border-radius:50%;color:var(--m-accent);cursor:pointer;padding:0}
 .merchant-root .mtopbar-act a:active,.merchant-root .mtopbar-act button:active{background:var(--m-sunk);transform:scale(.92)}
 .mbody h1{font-size:1.6rem;font-weight:800;margin:.1rem 0 .75rem;letter-spacing:-.03em}
+/* native app feel: kill tap flash + long-press callout; UI chrome not text-selectable */
+.merchant-root{-webkit-tap-highlight-color:transparent}
+.merchant-root .mtab,.merchant-root .mtab-i,.merchant-root .mtop,.merchant-root .mtopbar,.merchant-root button,.merchant-root a,.merchant-root [role=button]{-webkit-touch-callout:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}
 /* bottom tabs — airy frosted glass bar, color-only active (matches the consumer app's floating nav) */
-.mtab{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:calc(100% - 36px);max-width:404px;height:64px;z-index:40;display:flex;align-items:center;justify-content:space-around;background:rgba(255,255,255,.82);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.65);border-radius:30px;box-shadow:0 10px 34px -8px rgba(16,20,12,.24)}
+.mtab{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 36px);max-width:404px;height:64px;z-index:40;display:flex;align-items:center;justify-content:space-around;background:rgba(255,255,255,.82);backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);border:1px solid rgba(255,255,255,.65);border-radius:30px;box-shadow:0 10px 34px -8px rgba(16,20,12,.24)}
 .mtab-i{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--m-muted);font-size:.68rem;font-weight:600;transition:transform .12s,color .15s}
 .mtab-i svg{width:23px;height:23px;stroke-width:2}
 .mtab-i:active{transform:scale(.92)}
 .mtab-i.on{color:var(--m-accent);font-weight:700}
+/* deep pages (push-style, MTopbar + back button): hide the bottom pill nav on mobile and reclaim the gap it left. Desktop keeps the sidebar (re-shown in the ≥1024 block). */
+.mshell.deep .mtab{display:none}
+.mshell.deep{padding-bottom:calc(90px + env(safe-area-inset-bottom))}
 
 /* ===== skeleton loading — shown inside the persistent shell during soft navigation (loading.tsx) ===== */
 @keyframes mskel-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -412,12 +420,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .info-row b a{color:var(--m-accent)}
 
 /* readiness strip (branch-view "ขาดอีก N อย่างจะพร้อม") — sits on .banner-warn, whole strip taps to edit */
-.merchant-root .rstrip{display:block;text-decoration:none}
-.merchant-root .rstrip-top{display:flex;align-items:center;gap:6px;font-size:.9rem}
+.merchant-root .rstrip{display:block;text-decoration:none;background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;padding:14px 16px;margin:10px 0 4px;color:var(--m-text)}
+.merchant-root .rstrip:active{transform:scale(.99)}
+.merchant-root .rstrip-top{display:flex;align-items:center;gap:8px;font-size:.92rem}
+.merchant-root .rstrip-top svg{color:var(--m-jade);flex:none}
 .merchant-root .rstrip-go{margin-left:auto;color:var(--m-accent);font-weight:800;font-size:.84rem;white-space:nowrap}
-.merchant-root .rstrip-sub{display:block;font-size:.8rem;margin-top:3px;opacity:.85}
-.merchant-root .rstrip-bar{display:block;height:5px;border-radius:999px;background:rgba(0,0,0,.09);overflow:hidden;margin-top:8px}
-.merchant-root .rstrip-bar>i{display:block;height:100%;background:var(--m-accent);border-radius:999px}
+.merchant-root .rstrip-sub{display:block;font-size:.8rem;margin-top:4px;color:var(--m-muted)}
+.merchant-root .rstrip-bar{display:block;height:7px;border-radius:999px;background:var(--m-sunk);overflow:hidden;margin-top:11px}
+.merchant-root .rstrip-bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--m-jade),#3FBE85);border-radius:999px;transition:width .35s ease}
 /* sub-heading inside a form section (e.g. "โซเชียล" under ช่องทางติดต่อ) */
 .merchant-root .fsub{font-size:.82rem;font-weight:800;color:var(--m-muted);margin:1rem 0 .5rem;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
 
@@ -753,6 +763,74 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .lead-contact{display:flex;flex-wrap:wrap;gap:8px}
 .lead-acts{display:flex;flex-wrap:wrap;gap:7px;border-top:1px solid var(--hairline,#eee);padding-top:9px}
 
+/* ระบบจองห้อง — booking menu (P0). Cards reuse .leadcard/.lead-* above; these add the today-strip,
+   the tappable card header, badge cluster, and the detail-page timeline. */
+.bk-link{text-decoration:none;color:inherit}
+.bk-link:active{opacity:.65}
+.bk-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+/* summary card — the room-management home dashboard (occupancy + today's ops) */
+.bk-summary{margin:2px 0 13px;padding:15px 16px;border:1px solid var(--hairline,#e8e8ee);border-radius:17px;background:linear-gradient(180deg,#f6f9ff,#fff);box-shadow:0 1px 3px rgba(16,20,12,.045)}
+.bk-sum-stats{display:flex;gap:8px}
+.bk-stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.bk-stat-n{font-size:1.75rem;font-weight:800;line-height:1;color:var(--text,#1a1a2e)}
+.bk-stat-l{font-size:.75rem;color:var(--muted,#6b7280);font-weight:600}
+.bk-green{color:#12b76a}.bk-blue{color:#3b82f6}.bk-amber{color:#f59e0b}
+.bk-sum-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:13px;padding-top:12px;border-top:1px solid var(--hairline,#eef0f3);font-size:.84rem;color:var(--muted,#5b6470)}
+.bk-sum-foot b{color:var(--text,#1a1a2e);font-weight:800}
+.bk-sum-cal{display:inline-flex;align-items:center;gap:5px;font-weight:600;color:var(--accent,#2b74ff);text-decoration:none;white-space:nowrap}
+/* lens chips: single scrollable row (no 2-line wrap) */
+.bk-lenses{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.bk-lenses::-webkit-scrollbar{display:none}
+.bk-lenses a{flex:0 0 auto}
+.bk-sum-pct{white-space:nowrap}
+/* stay hub — room-management HOME launcher (back-link on spokes + icon tiles on the hub) */
+.roomhub-subrow{display:flex;align-items:center;gap:7px;margin:0 0 13px}
+/* cross-link row (e.g. ประเภท&ราคา → ราคาตามฤดู) */
+.merchant-root .xlink{display:flex;align-items:center;gap:12px;margin:2px 0 13px;padding:12px 14px;border:1px solid var(--m-line);border-radius:14px;background:var(--m-surface,#fff);text-decoration:none;color:var(--m-text)}
+.merchant-root .xlink:active{transform:scale(.99);background:var(--m-sunk)}
+.merchant-root .xlink-ic{flex:none;width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:var(--m-soft);color:var(--m-accent)}
+.merchant-root .xlink-tx{flex:1;display:flex;flex-direction:column;min-width:0}
+.merchant-root .xlink-tx b{font-size:.97rem;font-weight:800}
+.merchant-root .xlink-tx span{font-size:.8rem;color:var(--m-muted)}
+.merchant-root .xlink-go{color:var(--m-muted);flex:none}
+/* FAB — floating "+" add button (bottom-right) on the spoke list pages (no bottom nav to collide with) */
+.merchant-root .fab{position:fixed;z-index:45;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--m-accent);color:#fff;box-shadow:0 10px 24px -6px rgba(43,116,255,.5),0 3px 9px rgba(16,20,12,.18)}
+.merchant-root .fab:active{transform:scale(.92)}
+.stayhub-h{font-size:.82rem;font-weight:700;color:var(--muted,#6b7280);margin:18px 0 9px}
+.stayhub-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.stayhub-tile{display:flex;flex-direction:column;gap:7px;padding:16px 15px;border:1px solid var(--hairline,#e8e8ee);border-radius:16px;background:var(--surface,#fff);text-decoration:none;color:var(--text,#1a1a2e);box-shadow:0 1px 3px rgba(16,20,12,.04);transition:transform .12s}
+.stayhub-tile:active{transform:scale(.97)}
+.stayhub-tile.hot{border-color:#f3c98b;background:linear-gradient(180deg,#fffaf2,#fff)}
+.stayhub-ic{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:var(--m-soft,#eef2ff);color:var(--accent,#2b74ff)}
+.stayhub-tile.hot .stayhub-ic{background:#fcebcf;color:#e08c1d}
+.stayhub-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.stayhub-badge{flex:none;background:#fbe7c6;color:#b46a04;font-size:.72rem;font-weight:800;padding:2px 9px;border-radius:999px}
+.stayhub-lb{font-weight:800;font-size:1.04rem}
+.stayhub-st{font-size:.8rem;color:var(--muted,#6b7280);font-weight:600}
+/* hub: getting-started card (brand-new property) */
+.stay-onboard{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:2px 0 4px;padding:15px 16px;border:1px solid #cfe0ff;border-radius:17px;background:linear-gradient(180deg,#f2f7ff,#fff)}
+.stay-onboard-ic{flex:0 0 auto;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#e3edff;color:var(--accent,#2b74ff)}
+.stay-onboard-tx{flex:1 1 150px;min-width:0}
+.stay-onboard-t{font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e)}
+.stay-onboard-d{font-size:.83rem;color:var(--muted,#5b6470);margin-top:2px;line-height:1.35}
+.stay-onboard-cta{flex:1 1 100%;justify-content:center}
+/* hub: occupancy line + new-request cta + today rows */
+.occ-line{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:.95rem;color:var(--text,#1a1a2e)}
+.occ-line .muted{font-size:.84rem}
+.occ-pct{font-size:.84rem;color:var(--muted,#5b6470);white-space:nowrap}
+.occ-newcta{display:inline-flex;align-items:center;font-weight:700;color:var(--accent,#2b74ff);text-decoration:none;white-space:nowrap}
+.stay-today{display:flex;flex-direction:column;gap:6px;margin:11px 0 2px}
+.stay-today-row{display:flex;align-items:center;gap:7px;font-size:.88rem;padding:8px 12px;border:1px solid var(--hairline,#eef0f3);border-radius:11px;background:var(--surface,#fff)}
+.stt-tag{font-size:.7rem;font-weight:800;padding:2px 7px;border-radius:999px;color:#fff}
+.stt-tag.in{background:#12b76a}.stt-tag.out{background:#f59e0b}.stt-tag.soon{background:#8b93a0}
+/* hub: walk-in CTA + the add-booking form */
+.winform{display:flex;flex-direction:column;gap:13px;margin-top:10px}
+.winform-submit{width:100%;margin-top:4px}
+.bk-detail{display:flex;flex-direction:column;gap:2px}
+.bk-head{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:6px}
+.bk-timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.bk-timeline li{display:flex;justify-content:space-between;gap:8px;font-size:.86rem;padding:7px 11px;background:var(--sunk,#f4f5f7);border-radius:9px}
+
 /* seasonal pricing add-forms (/merchant/pricing) — P3 */
 .pricesub{margin-top:10px;border-top:1px solid var(--hairline,#eee);padding-top:11px;display:flex;flex-direction:column;gap:9px}
 .pricesub .check{margin:0}
@@ -819,6 +897,16 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rtile-bed{font-size:.64rem;font-weight:700;color:var(--muted,#6b7280)}
 .rtile-chip{flex:none;font-size:.74rem;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .rtile-type{font-size:.78rem;color:var(--muted,#6b7280);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtile-guest{display:flex;align-items:center;gap:4px;font-size:.8rem;font-weight:700;color:var(--text,#1a1a2e);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rtile-guest svg{flex:none;color:var(--accent,#2b74ff)}
+.rtile-guest .rtile-note{font-weight:500;color:var(--muted,#6b7280)}
+/* "ผู้เข้าพักตอนนี้" box on the room detail (who's-in-which-room) */
+.merchant-root .guestbox{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;border:1px solid var(--m-line);border-radius:14px;background:linear-gradient(180deg,#f4f8ff,#fff)}
+.merchant-root .guestbox-l{flex:1;min-width:0}
+.merchant-root .guestbox-k{font-size:.72rem;font-weight:700;color:var(--m-muted);text-transform:uppercase;letter-spacing:.02em}
+.merchant-root .guestbox-nm{font-size:1.1rem;font-weight:800;color:var(--m-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .guestbox-meta{font-size:.82rem;color:var(--m-muted);margin-top:1px}
+.merchant-root .guestbox-acts{display:flex;flex-direction:column;gap:6px;flex:none}
 .rtile-act{border-top:1px solid var(--hairline,#f0f0f4)}
 .rtile-act button,.rtile-act.cal{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;padding:.58rem;border:none;background:none;font:inherit;font-size:.86rem;font-weight:700;color:var(--accent,#1a73e8);cursor:pointer;text-decoration:none}
 .rtile-act button:active{background:var(--sunk,#f4f5f7)}
@@ -1043,6 +1131,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   }
   .merchant-root .mtop{grid-area:top;z-index:30}
   .merchant-root .mbody{grid-area:main;max-width:1000px;width:100%;margin:0 auto;padding:1.9rem 2.4rem 3.2rem;--mb-pt:1.9rem;--mb-px:2.4rem}
+  /* the sidebar is persistent on desktop — undo the mobile deep-page hide */
+  .merchant-root .mshell.deep .mtab{display:flex}
+  .merchant-root .mshell.deep{padding-bottom:0}
   /* the bottom pill nav becomes a full-height left sidebar */
   .merchant-root .mtab{
     grid-area:side;position:sticky;top:0;align-self:start;height:100vh;width:256px;left:auto;transform:none;
@@ -1168,6 +1259,29 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .caltl-c{width:30px;height:30px;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6;background:#f7f9fb}
 .callegend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 4px;font-size:.78rem;color:#555}
 .callegend span{display:inline-flex;align-items:center;gap:5px}
+/* ปฏิทินรวม — slideable window nav + today-column highlight + per-room guest */
+.calnav{display:flex;align-items:center;gap:10px;margin:2px 0 11px}
+.calnav-b{flex:none;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--m-line,#e9ecf1);border-radius:10px;color:var(--m-text,#0e1322);background:#fff;text-decoration:none}
+.calnav-b:active{background:var(--m-sunk,#eff1f5)}
+.calnav-r{flex:1;text-align:center;font-weight:800;font-size:.95rem;color:var(--m-text,#0e1322)}
+.calnav-today{flex:none;font-size:.84rem;font-weight:700;color:var(--m-accent,#2b74ff);text-decoration:none;padding:0 4px}
+.caltl-dh.tdy{background:color-mix(in srgb,var(--m-accent,#2b74ff) 12%,#fff)}
+.caltl-dh.tdy b{color:var(--m-accent,#2b74ff)}
+.caltl-c.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent)}
+.caltl-guest{color:var(--m-accent,#2b74ff);font-weight:700;font-size:.76rem}
+/* interactive timeline: clickable cells + range selection + create form + block popover */
+.caltl-cx{cursor:pointer}
+.caltl-c.sel{background:color-mix(in srgb,var(--m-accent,#2b74ff) 30%,#fff)!important;box-shadow:inset 0 0 0 1.5px var(--m-accent,#2b74ff)}
+.caltl-c.pa{opacity:.45;cursor:default}
+.lnk-btn{border:none;background:none;color:var(--m-accent,#2b74ff);font:inherit;font-weight:700;cursor:pointer;padding:0}
+.merchant-root .tl-add{margin:10px 0 4px;padding:14px;border:1px solid var(--m-line);border-radius:14px;background:var(--m-surface,#fff);display:flex;flex-direction:column;gap:11px;box-shadow:0 6px 20px -10px rgba(16,20,12,.25)}
+.merchant-root .tl-add-h{font-weight:800;font-size:.95rem;color:var(--m-text)}
+.merchant-root .tl-add-acts{display:flex;gap:8px;justify-content:flex-end}
+.merchant-root .tl-pop{margin:10px 0 4px;padding:12px 14px;border:1px solid var(--m-line);border-radius:14px;background:var(--m-surface,#fff);display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px -10px rgba(16,20,12,.25)}
+.merchant-root .tl-pop-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.merchant-root .tl-pop-l b{font-size:.95rem}
+.merchant-root .tl-pop-l span{font-size:.82rem;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .tl-pop-a{flex:none;display:flex;gap:7px}
 .callegend i{width:14px;height:14px;border-radius:4px;display:inline-block}
 
 /* rooms-hub: on-demand (?) concept popover — progressive disclosure, replaces 3 stacked explainers */
@@ -1188,13 +1302,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root{
   --m-soft:#E7EFFF;
   --m-sec-products-bg:#E2F2EC; --m-sec-products:#2E9E78;   /* teal-jade */
-  --m-sec-rooms-bg:#EAE7FB;    --m-sec-rooms:#6C5CD4;       /* soft indigo */
-  --m-sec-loyalty-bg:#F8EFD6;  --m-sec-loyalty:#C68A12;     /* amber (value family) */
+  --m-sec-rooms-bg:#D6E4FF;    --m-sec-rooms:#2B74FF;       /* blue primary (no purple) */
+  --m-sec-loyalty-bg:#FFEEAF;  --m-sec-loyalty:#EBA000;     /* fresh egg-yolk yellow */
   --m-sec-shop-bg:#E7EBF2;     --m-sec-shop:#5A6B8C;        /* calm slate */
   --m-sec-leads-bg:#E0EFF3;    --m-sec-leads:#3389A6;       /* dusty cyan */
-  --m-sec-pricing-bg:#F8EFD6;  --m-sec-pricing:#C68A12;
+  --m-sec-pricing-bg:#FFEEAF;  --m-sec-pricing:#EBA000;
   --m-sec-deals-bg:#F6E7E4;    --m-sec-deals:#C06A57;       /* rose-clay (promo) */
-  --m-sec-payouts-bg:#F8EFD6;  --m-sec-payouts:#C68A12;
+  --m-sec-payouts-bg:#FFEEAF;  --m-sec-payouts:#EBA000;
   --m-sec-trash-bg:#ECECEF;    --m-sec-trash:#7A7A85;       /* dead gray */
 }
 /* home menu chips — colored by destination href (no JSX change). ring tints to match (was hardcoded blue) */

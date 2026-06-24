@@ -6,7 +6,9 @@ import { Icon } from './adm-ui';
 export const metadata = { title: 'Locale · Admin', description: 'Back-office over the verified ledger' };
 // Emit a SINGLE viewport meta with viewport-fit=cover (so iOS WebView env(safe-area-inset-*) is non-zero).
 // Without this, Next injects its own default viewport WITHOUT viewport-fit, which wins over a manual <meta>.
-export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' as const };
+// maximumScale=1 + userScalable=false → this is a native-feeling app, NOT a zoomable web page: WKWebView
+// must not pinch/double-tap zoom (it left the UI scaled-up + clipped).
+export const viewport = { width: 'device-width', initialScale: 1, maximumScale: 1, userScalable: false, viewportFit: 'cover' as const };
 
 // Sidebar IA, grouped by job-to-be-done. cap-free; staff see all sections.
 const NAV: { grp: string; items: { href: string; icon: string; label: string; match: (p: string) => boolean }[] }[] = [

@@ -4,6 +4,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
+import { ConfirmSubmit } from '../../ConfirmSubmit';
 import { ShopGallery } from '../../ShopGallery';
 import { FURNISHED_TH } from '../constants';
 import { amenityLabels } from '@/lib/amenities';
@@ -132,7 +133,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
         <form action={setStayUnitFlagAction.bind(null, u.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงให้ลูกค้าเห็น' : 'ซ่อนจากลูกค้า'}</button></form>
       </div>
       <form className="delwrap" action={deleteStayUnitAction.bind(null, u.id)}>
-        <button className="dbtn danger" type="submit"><Icon n="trash" size={17} /> ลบห้องนี้</button>
+        <ConfirmSubmit message={`ลบรูปแบบห้อง “${i18n(u.name_i18n)}”? ${childRooms.length > 0 ? `มีห้องจริง ${childRooms.length} ห้องผูกอยู่ — ` : ''}ลูกค้าจะไม่เห็นรูปแบบนี้อีก (กู้คืนได้จากถังขยะ)`} className="dbtn danger"><Icon n="trash" size={17} /> ลบห้องนี้</ConfirmSubmit>
       </form>
     </>
   );

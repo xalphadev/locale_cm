@@ -1235,6 +1235,16 @@ export async function moveTenantAction(srcId: string, formData: FormData) {
   const dest = rows.find((r: any) => r.id === destId);
   if (!src || !dest) redirect('/merchant/units');
   if (dest.occupancy_status !== 'vacant') redirect(`/merchant/units/${srcId}?error=occupied`);
+  // P1: move the monthly tenancy block too (it now backs the calendar). Block FIRST so a GiST overlap on
+  // the destination room aborts BEFORE we touch the board flags — no partial/desynced state.
+  try {
+    await q(`UPDATE stay_occupancy_block SET room_id=$2, updated_at=now()
+               WHERE room_id=$1 AND place_id=$3 AND block_kind='tenancy' AND status='active' AND deleted_at IS NULL`,
+      [srcId, destId, acc.place_id]);
+  } catch (e: any) {
+    if (e?.code === '23P01') redirect(`/merchant/units/${srcId}?error=occupied`);
+    throw e;
+  }
   await q(`UPDATE stay_room SET occupancy_status='occupied', note=$3, occupied_until=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [destId, acc.place_id, src.note, src.occupied_until]);
   await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [srcId, acc.place_id]);
   await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta) VALUES
@@ -1253,13 +1263,13 @@ export async function convertLeadToBlockAction(leadId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_to, rental_mode, contact_name FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
-  if (!b || !b.stay_unit_id || b.rental_mode !== 'daily' || !b.desired_from || !b.desired_to) redirect('/merchant/leads?error=cvt');
+  if (!b || !b.stay_unit_id || b.rental_mode !== 'daily' || !b.desired_from || !b.desired_to) redirect('/merchant/bookings?error=cvt');
   const [room] = await q<{ id: string }>(
     `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
         AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
           AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)'))
       ORDER BY r.code LIMIT 1`, [b.stay_unit_id, b.desired_from, b.desired_to]);
-  if (!room) redirect('/merchant/leads?error=full');
+  if (!room) redirect('/merchant/bookings?error=full');
   try {
     const [blk] = await q<{ id: string }>(
       `INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,'stay',$3,$4,$5) RETURNING id`,
@@ -1267,11 +1277,11 @@ export async function convertLeadToBlockAction(leadId: string) {
     await q(`UPDATE stay_booking_request SET status='converted', converted_block_id=$2, updated_at=now() WHERE id=$1 AND place_id=$3`, [leadId, blk.id, acc.place_id]);
     await refreshUnitVacancy(b.stay_unit_id);
   } catch (e: any) {
-    if (e?.code === '23P01') redirect('/merchant/leads?error=full');
+    if (e?.code === '23P01') redirect('/merchant/bookings?error=full');
     throw e;
   }
-  revalidatePath('/merchant/leads'); revalidatePath('/merchant/units', 'layout');
-  redirect('/merchant/leads?ok=converted');
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout');
+  redirect('/merchant/bookings?ok=converted');
 }
 
 /** Close a MONTHLY lead in-app (no money). Managed listing → occupy the first vacant room until
@@ -1280,26 +1290,42 @@ export async function convertMonthlyLeadAction(leadId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_months, rental_mode, contact_name FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
-  if (!b || !b.stay_unit_id || b.rental_mode !== 'monthly') redirect('/merchant/leads?error=cvt');
+  if (!b || !b.stay_unit_id || b.rental_mode !== 'monthly') redirect('/merchant/bookings?error=cvt');
   const months = Math.max(1, Math.min(36, Number(b.desired_months) || 1));
   const [su] = await q<{ managed: boolean }>(`SELECT managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [b.stay_unit_id, acc.place_id]);
-  if (!su) redirect('/merchant/leads?error=cvt');
+  if (!su) redirect('/merchant/bookings?error=cvt');
+  let blockId: string | null = null;
   if (su.managed) {
     const [room] = await q<{ id: string }>(
       `SELECT id FROM stay_room WHERE stay_unit_id=$1 AND status='active' AND deleted_at IS NULL AND occupancy_status='vacant' ORDER BY code LIMIT 1`, [b.stay_unit_id]);
-    if (!room) redirect('/merchant/leads?error=full');
+    if (!room) redirect('/merchant/bookings?error=full');
+    const tnote = b.contact_name ? `เข้าอยู่ผ่านแอป: ${b.contact_name}` : 'เข้าอยู่ผ่านแอป';
+    // P1: a monthly tenancy now creates a BOUNDED tenancy block (move-in + N months) so it shows on the
+    // calendar, is GiST-protected against double-book, and can be cancelled/moved like a nightly stay.
+    // Block FIRST (the GiST EXCLUDE is the double-book authority); the room flag mirrors it.
+    try {
+      const [blk] = await q<{ id: string }>(
+        `INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note)
+           VALUES($1,$2,'tenancy', COALESCE($3::date, CURRENT_DATE),
+                  (COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, $5) RETURNING id`,
+        [room.id, acc.place_id, b.desired_from, String(months), tnote]);
+      blockId = blk.id;
+    } catch (e: any) {
+      if (e?.code === '23P01') redirect('/merchant/bookings?error=full');
+      throw e;
+    }
     await q(
       `UPDATE stay_room SET occupancy_status='occupied', occupied_until=(COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, note=$5, updated_at=now() WHERE id=$1 AND place_id=$2`,
-      [room.id, acc.place_id, b.desired_from, String(months), b.contact_name ? `เข้าอยู่ผ่านแอป: ${b.contact_name}` : 'เข้าอยู่ผ่านแอป']);
+      [room.id, acc.place_id, b.desired_from, String(months), tnote]);
   } else {
     const [u] = await q<{ available_units: number }>(
       `UPDATE stay_units SET available_units=GREATEST(0, available_units-1), availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND available_units>0 RETURNING available_units`, [b.stay_unit_id, acc.place_id]);
-    if (!u) redirect('/merchant/leads?error=full');
+    if (!u) redirect('/merchant/bookings?error=full');
   }
-  await q(`UPDATE stay_booking_request SET status='converted', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  await q(`UPDATE stay_booking_request SET status='converted', converted_block_id=$3, updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id, blockId]);
   await refreshUnitVacancy(b.stay_unit_id);
-  revalidatePath('/merchant/leads'); revalidatePath('/merchant/units', 'layout');
-  redirect('/merchant/leads?ok=converted_m');
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout');
+  redirect('/merchant/bookings?ok=converted_m');
 }
 
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
@@ -1322,14 +1348,14 @@ export async function setLeadStatusAction(leadId: string, status: string) {
   if (!acc?.place_id) redirect('/merchant/login');
   const st = ['new', 'contacted', 'scheduled', 'confirmed', 'declined'].includes(status) ? status : 'contacted';
   await q(`UPDATE stay_booking_request SET status=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id, st]);
-  revalidatePath('/merchant/leads'); revalidatePath('/merchant');
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant');
 }
 
 export async function deleteLeadAction(leadId: string) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   await q(`UPDATE stay_booking_request SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
-  revalidatePath('/merchant/leads'); revalidatePath('/merchant');
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant');
 }
 
 /** No-show: a confirmed booking whose guest never came. Free the held room (cancel the block) so it can be
@@ -1340,15 +1366,15 @@ export async function markNoShowAction(leadId: string) {
   const [b] = await q<{ converted_block_id: string | null }>(`SELECT converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND status='converted' AND deleted_at IS NULL`, [leadId, acc.place_id]);
   // only DAILY bookings hold a recorded occupancy block we can release; a monthly stay occupies a room with no
   // back-link, so freeing it must be done from the room board. Bail (no orphaned status) if there's no block.
-  if (!b || !b.converted_block_id) redirect('/merchant/leads');
+  if (!b || !b.converted_block_id) redirect('/merchant/bookings');
   const [blk] = await q<{ stay_unit_id: string | null }>(
     `UPDATE stay_occupancy_block bk SET status='cancelled', deleted_at=now(), updated_at=now()
        FROM stay_room r WHERE bk.id=$1 AND bk.room_id=r.id AND r.place_id=$2 AND bk.deleted_at IS NULL
        RETURNING r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
   if (blk) await refreshUnitVacancy(blk.stay_unit_id);
   await q(`UPDATE stay_booking_request SET status='no_show', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
-  revalidatePath('/merchant/leads'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
-  redirect('/merchant/leads?ok=noshow');
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/bookings?ok=noshow');
 }
 
 /** Set a viewing appointment date+time on a lead (status → scheduled). The renter sees it in คำขอของฉัน. */
@@ -1358,8 +1384,142 @@ export async function scheduleLeadAction(leadId: string, formData: FormData) {
   const whenRaw = s(formData, 'scheduled_at');                                        // datetime-local 'YYYY-MM-DDTHH:MM'
   const when = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(whenRaw) ? whenRaw : null;
   await q(`UPDATE stay_booking_request SET status='scheduled', scheduled_at=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id, when]);
-  revalidatePath('/merchant/leads'); revalidatePath('/merchant');
-  redirect('/merchant/leads?ok=scheduled');
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant');
+  redirect('/merchant/bookings?ok=scheduled');
+}
+
+/** Cancel a CONVERTED booking symmetrically (guest cancelled / owner voided). Releases the held room and
+ *  marks the booking 'cancelled'. Daily + monthly-managed: cancel the linked block (and clear the room's
+ *  board flag for a tenancy). Unmanaged monthly (no block): restore the vacancy counter. No money. */
+export async function cancelBookingAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<{ rental_mode: string; converted_block_id: string | null; stay_unit_id: string | null }>(
+    `SELECT rental_mode, converted_block_id, stay_unit_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND status='converted' AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  if (!b) redirect('/merchant/bookings');
+  if (b.converted_block_id) {
+    // block-backed (daily 'stay' or monthly 'tenancy'): cancel it; for a tenancy also free the room flag.
+    const [blk] = await q<{ room_id: string; block_kind: string; stay_unit_id: string | null }>(
+      `UPDATE stay_occupancy_block bk SET status='cancelled', deleted_at=now(), updated_at=now()
+         FROM stay_room r WHERE bk.id=$1 AND bk.room_id=r.id AND r.place_id=$2 AND bk.deleted_at IS NULL
+         RETURNING bk.room_id, bk.block_kind, r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
+    if (blk?.block_kind === 'tenancy') {
+      await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [blk.room_id, acc.place_id]);
+    }
+    if (blk) await refreshUnitVacancy(blk.stay_unit_id);
+  } else if (b.rental_mode === 'monthly' && b.stay_unit_id) {
+    // unmanaged monthly (vacancy counter, no block): give the unit back. Managed-legacy monthly without a
+    // block can't be traced to a room here → just mark cancelled; the owner frees the room on the board.
+    await q(`UPDATE stay_units SET available_units=available_units+1, availability_updated_at=now(), updated_at=now()
+               WHERE id=$1 AND place_id=$2 AND managed=false`, [b.stay_unit_id, acc.place_id]);
+    await refreshUnitVacancy(b.stay_unit_id);
+  }
+  await q(`UPDATE stay_booking_request SET status='cancelled', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/bookings?ok=cancelled');
+}
+
+/** Walk-in / phone booking the owner creates directly (not from a consumer lead). Picks the chosen room or
+ *  auto-assigns the first free room of the type for the dates, writes the occupancy block (stay/tenancy) +
+ *  a converted walk-in booking row (incl. party_size + room_id). Managed listings only — it needs a real
+ *  room to hold. Block FIRST (GiST EXCLUDE = double-book authority). No money. */
+export async function createBookingAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const unitId = s(formData, 'stay_unit_id');
+  const roomIdIn = s(formData, 'room_id');
+  const from = s(formData, 'start_date');
+  if (!UUID_RE.test(unitId) || !isDate(from)) redirect('/merchant/bookings/new?error=input');
+  const [su] = await q<{ rental_mode: string | null; managed: boolean }>(`SELECT rental_mode, managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [unitId, acc.place_id]);
+  if (!su || !su.managed) redirect('/merchant/bookings/new?error=input');
+  const monthly = su.rental_mode === 'monthly';
+  const months = Math.max(1, Math.min(36, Number(s(formData, 'months')) || 1));
+  // end date as a concrete string for both modes (monthly = from + N months, bounded; computed in pg to avoid TZ drift)
+  let end: string;
+  if (monthly) {
+    const [d] = await q<{ d: string }>(`SELECT to_char(($1::date + ($2 || ' months')::interval)::date,'YYYY-MM-DD') d`, [from, String(months)]);
+    end = d.d;
+  } else {
+    const toRaw = s(formData, 'end_date');
+    if (!isDate(toRaw) || toRaw <= from) redirect('/merchant/bookings/new?error=date');
+    end = toRaw;
+  }
+  // resolve room: explicit (must belong to the type) else auto-pick the first room free for the span
+  let roomId: string | null = null;
+  if (UUID_RE.test(roomIdIn)) {
+    const [r] = await q<{ id: string }>(`SELECT id FROM stay_room WHERE id=$1 AND stay_unit_id=$2 AND place_id=$3 AND status='active' AND deleted_at IS NULL`, [roomIdIn, unitId, acc.place_id]);
+    if (r) roomId = r.id;
+  }
+  if (!roomId) {
+    const [r] = await q<{ id: string }>(
+      `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+          AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
+            AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)'))
+        ORDER BY r.code LIMIT 1`, [unitId, from, end]);
+    if (!r) redirect('/merchant/bookings/new?error=full');
+    roomId = r.id;
+  }
+  const name = s(formData, 'guest_name').slice(0, 80);
+  const phone = s(formData, 'guest_phone').slice(0, 40);
+  const partyRaw = Number(s(formData, 'party_size'));
+  const party = Number.isFinite(partyRaw) && partyRaw > 0 ? Math.min(50, Math.round(partyRaw)) : null;
+  const note = name ? `${monthly ? 'เข้าอยู่' : 'จอง'}ที่เคาน์เตอร์: ${name}` : (monthly ? 'เข้าอยู่ walk-in' : 'จอง walk-in');
+  let blockId: string;
+  try {
+    const [blk] = await q<{ id: string }>(
+      `INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [roomId, acc.place_id, monthly ? 'tenancy' : 'stay', from, end, note]);
+    blockId = blk.id;
+  } catch (e: any) {
+    if (e?.code === '23P01') redirect('/merchant/bookings/new?error=full');
+    throw e;
+  }
+  if (monthly) await q(`UPDATE stay_room SET occupancy_status='occupied', occupied_until=$3, note=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [roomId, acc.place_id, end, note]);
+  await q(
+    `INSERT INTO stay_booking_request(place_id, stay_unit_id, room_id, request_kind, rental_mode, desired_from, desired_to, desired_months, party_size, contact_name, contact_phone, channel, status, converted_block_id, expires_at)
+     VALUES($1,$2,$3,'booking',$4,$5,$6,$7,$8,$9,$10,'walk_in','converted',$11, now() + interval '60 days')`,
+    [acc.place_id, unitId, roomId, su.rental_mode, from, monthly ? null : end, monthly ? months : null, party, name || null, phone || null, blockId]);
+  await refreshUnitVacancy(unitId);
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/bookings?ok=created');
+}
+
+/** Check in a converted booking — stamp the arrival + write a check_in event against the held room.
+ *  Source of truth = the timestamp (no new status), so the loop closes without a status-vocabulary change. */
+export async function checkInAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<{ converted_block_id: string | null; checked_in_at: any }>(
+    `SELECT converted_block_id, checked_in_at FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND status='converted' AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  if (!b || !b.converted_block_id || b.checked_in_at) redirect('/merchant/bookings');
+  const [blk] = await q<{ room_id: string }>(
+    `SELECT bk.room_id FROM stay_occupancy_block bk JOIN stay_room r ON r.id=bk.room_id WHERE bk.id=$1 AND r.place_id=$2 AND bk.deleted_at IS NULL`, [b.converted_block_id, acc.place_id]);
+  await q(`UPDATE stay_booking_request SET checked_in_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  if (blk) await q(`INSERT INTO stay_room_event(room_id, block_id, place_id, event_kind) VALUES($1,$2,$3,'check_in')`, [blk.room_id, b.converted_block_id, acc.place_id]);
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/bookings?ok=checkin');
+}
+
+/** Check out a converted booking — stamp the departure, write a check_out event, complete the block (so the
+ *  date frees for rebooking) and free the room. Tenancy (monthly) also clears the board flag. No money. */
+export async function checkOutAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<{ converted_block_id: string | null; checked_out_at: any }>(
+    `SELECT converted_block_id, checked_out_at FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND status='converted' AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  if (!b || !b.converted_block_id || b.checked_out_at) redirect('/merchant/bookings');
+  await q(`UPDATE stay_booking_request SET checked_out_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  const [blk] = await q<{ room_id: string; block_kind: string; stay_unit_id: string | null }>(
+    `UPDATE stay_occupancy_block bk SET status='completed', updated_at=now()
+       FROM stay_room r WHERE bk.id=$1 AND bk.room_id=r.id AND r.place_id=$2 AND bk.deleted_at IS NULL
+       RETURNING bk.room_id, bk.block_kind, r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
+  if (blk) {
+    await q(`INSERT INTO stay_room_event(room_id, block_id, place_id, event_kind) VALUES($1,$2,$3,'check_out')`, [blk.room_id, b.converted_block_id, acc.place_id]);
+    if (blk.block_kind === 'tenancy') await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [blk.room_id, acc.place_id]);
+    await refreshUnitVacancy(blk.stay_unit_id);
+  }
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect('/merchant/bookings?ok=checkout');
 }
 
 // ── seasonal pricing (0035): DISPLAY-only rates per room-TYPE, by season window. NEVER joined to the
