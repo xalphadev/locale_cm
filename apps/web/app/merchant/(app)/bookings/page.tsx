@@ -66,7 +66,7 @@ export default async function Bookings({ searchParams }: { searchParams: { ok?: 
             CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.contact_line END contact_line,
             CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.message END message,
             (b.expires_at < now() AND b.status <> 'converted') expired_pii,
-            b.status, b.scheduled_at, b.created_at, b.converted_block_id, b.checked_in_at, b.checked_out_at, su.name_i18n unit_name, su.managed, r.code AS room_code
+            b.status, b.scheduled_at, b.created_at, b.converted_block_id, b.checked_in_at, b.checked_out_at, b.payment_status, b.amount_minor, su.name_i18n unit_name, su.managed, r.code AS room_code
        FROM stay_booking_request b
        LEFT JOIN stay_units su ON su.id = b.stay_unit_id
        LEFT JOIN stay_occupancy_block bk ON bk.id = b.converted_block_id AND bk.deleted_at IS NULL
@@ -144,6 +144,7 @@ export default async function Bookings({ searchParams }: { searchParams: { ok?: 
                 <Link href={`/merchant/bookings/${b.id}`} className="lead-top bk-link">
                   <span className="lead-nm">{b.contact_name || 'ผู้สนใจ'}</span>
                   <span className="bk-badges">
+                    {b.payment_status === 'submitted' && <span className="t warn"><Icon n="wallet" size={11} /> รอตรวจสลิป</span>}
                     {g.checkedIn && <span className="t season">กำลังเข้าพัก</span>}
                     {g.arrival && <span className="t season">เข้าวันนี้</span>}
                     {g.departure && <span className="t cat">ออกวันนี้</span>}

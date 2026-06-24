@@ -39,7 +39,7 @@ export default async function Revenue() {
   const chart = await q<any>(
     `WITH days AS (SELECT generate_series(CURRENT_DATE-13, CURRENT_DATE, interval '1 day')::date d)
      SELECT to_char(days.d,'FMDD/FMMM') lbl, count(b.id)::int n
-       FROM days LEFT JOIN stay_booking_request b ON b.created_at::date = days.d AND b.place_id=$1 AND b.deleted_at IS NULL AND NOT (b.status='cancelled' OR b.payment_status='rejected')
+       FROM days LEFT JOIN stay_booking_request b ON b.created_at::date = days.d AND b.place_id=$1 AND b.deleted_at IS NULL AND NOT (b.status='cancelled' OR b.payment_status IN ('rejected','refunded'))
       GROUP BY days.d ORDER BY days.d`, [pid]);
 
   const now = new Date();
