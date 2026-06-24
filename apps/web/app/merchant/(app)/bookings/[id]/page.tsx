@@ -4,7 +4,9 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction } from '../../../actions';
+import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction } from '../../../actions';
+
+const PAY_TH: Record<string, string> = { submitted: 'รอตรวจสลิป', verified: 'ชำระแล้ว', rejected: 'สลิปไม่ผ่าน' };
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +40,7 @@ function Fact({ ic, l, v }: { ic: string; l: string; v: string }) {
   );
 }
 
-export default async function BookingDetail({ params }: { params: { id: string } }) {
+export default async function BookingDetail({ params, searchParams }: { params: { id: string }; searchParams: { ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
@@ -53,6 +55,7 @@ export default async function BookingDetail({ params }: { params: { id: string }
             CASE WHEN b.expires_at < now() AND b.status <> 'converted' THEN NULL ELSE b.message END message,
             (b.expires_at < now() AND b.status <> 'converted') expired_pii,
             b.status, b.scheduled_at, b.created_at, b.converted_block_id, b.checked_in_at, b.checked_out_at,
+            b.ref, b.payment_status, b.amount_minor, b.paid_minor, b.payment_method, b.slip_url,
             su.name_i18n unit_name, su.managed, r.code AS room_code, bk.note AS block_note
        FROM stay_booking_request b
        LEFT JOIN stay_units su ON su.id = b.stay_unit_id
@@ -75,6 +78,9 @@ export default async function BookingDetail({ params }: { params: { id: string }
       <MTopbar back="/merchant/bookings" backLabel="การจอง" title={b.contact_name || 'การจอง'} />
 
       <div className="bk-detail">
+        {searchParams?.ok === 'verified' && <div className="banner-ok">✓ ยืนยันการชำระแล้ว — กันห้องในปฏิทินเรียบร้อย</div>}
+        {searchParams?.ok === 'rejected' && <div className="banner-ok">บันทึกว่าสลิปไม่ผ่านแล้ว</div>}
+        {searchParams?.error === 'full' && <div className="banner-err">ห้องเต็มในช่วงวันนี้แล้ว — ติดต่อลูกค้าเพื่อเปลี่ยนวัน/คืนเงิน (กดสลิปไม่ผ่าน)</div>}
         <div className="bk-head">
           <span className={`t ${st.cls}`}>{st.label}</span>
           {b.checked_out_at ? <span className="t off">เช็คเอาท์แล้ว</span> : b.checked_in_at ? <span className="t season">กำลังเข้าพัก</span> : null}
@@ -105,6 +111,24 @@ export default async function BookingDetail({ params }: { params: { id: string }
             : <Fact ic="calendar" l="เช็คเอาท์" v={fmtDate(b.to_d)} />}
           {b.scheduled_at ? <Fact ic="clock" l="นัดดูห้อง" v={fmtDT(b.scheduled_at)} /> : null}
         </div>
+
+        {b.payment_status && b.payment_status !== 'none' && (
+          <>
+            <h2 className="rsec"><span className="rsec-ic"><Icon n="wallet" size={15} /></span> การชำระเงิน {b.ref ? <span className="bk-ref">{b.ref}</span> : null}</h2>
+            <div className="factgrid">
+              <Fact ic="wallet" l="ยอด" v={b.amount_minor ? `฿${Math.round(Number(b.amount_minor) / 100).toLocaleString()}` : '—'} />
+              <Fact ic="tag" l="ช่องทาง" v={b.payment_method === 'promptpay' ? 'PromptPay' : 'โอนธนาคาร'} />
+              <Fact ic="check" l="สถานะ" v={PAY_TH[b.payment_status] || b.payment_status} />
+            </div>
+            {b.slip_url && <a className="bk-slip" href={b.slip_url} target="_blank" rel="noopener"><img src={b.slip_url} alt="สลิปการโอน" /><span>ดูสลิปเต็ม</span></a>}
+            {b.payment_status === 'submitted' && (
+              <div className="lead-acts">
+                <form action={verifySlipAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="check" size={16} /> ยืนยันการชำระ (กันห้อง)</button></form>
+                <form action={rejectSlipAction.bind(null, b.id)}><ConfirmSubmit message="ปฏิเสธสลิปนี้? ลูกค้าจะเห็นว่า “สลิปไม่ผ่าน”" className="dbtn danger">สลิปไม่ผ่าน</ConfirmSubmit></form>
+              </div>
+            )}
+          </>
+        )}
 
         <h2 className="rsec"><span className="rsec-ic"><Icon n="store" size={15} /></span> จัดการ</h2>
         <div className="lead-acts">

@@ -1328,6 +1328,69 @@ export async function convertMonthlyLeadAction(leadId: string) {
   redirect('/merchant/bookings?ok=converted_m');
 }
 
+/** Host verifies an online-booking slip: mark the payment verified AND hold the room in one step (creates
+ *  the occupancy block, GiST-guarded, mode-aware — same as a manual convert). Money stays host-direct; this
+ *  only records that the host accepted the transfer. */
+export async function verifySlipAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_to, desired_months, rental_mode, contact_name, status, converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND payment_status='submitted'`, [leadId, acc.place_id]);
+  if (!b) redirect('/merchant/bookings');
+  await q(`UPDATE stay_booking_request SET payment_status='verified', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  // hold the room (skip if already converted, e.g. a re-verify)
+  if (b.status !== 'converted' && b.stay_unit_id) {
+    if (b.rental_mode === 'daily' && b.desired_from && b.desired_to) {
+      const [room] = await q<{ id: string }>(
+        `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+            AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
+              AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)'))
+          ORDER BY r.code LIMIT 1`, [b.stay_unit_id, b.desired_from, b.desired_to]);
+      if (!room) redirect(`/merchant/bookings/${leadId}?error=full`);
+      try {
+        const [blk] = await q<{ id: string }>(
+          `INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,'stay',$3,$4,$5) RETURNING id`,
+          [room.id, acc.place_id, b.desired_from, b.desired_to, b.contact_name ? `จองออนไลน์: ${b.contact_name}` : 'จองออนไลน์']);
+        await q(`UPDATE stay_booking_request SET status='converted', converted_block_id=$2, updated_at=now() WHERE id=$1 AND place_id=$3`, [leadId, blk.id, acc.place_id]);
+        await refreshUnitVacancy(b.stay_unit_id);
+      } catch (e: any) { if (e?.code === '23P01') redirect(`/merchant/bookings/${leadId}?error=full`); throw e; }
+    } else if (b.rental_mode === 'monthly') {
+      const months = Math.max(1, Math.min(36, Number(b.desired_months) || 1));
+      const [su] = await q<{ managed: boolean }>(`SELECT managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [b.stay_unit_id, acc.place_id]);
+      if (su?.managed) {
+        const [room] = await q<{ id: string }>(`SELECT id FROM stay_room WHERE stay_unit_id=$1 AND status='active' AND deleted_at IS NULL AND occupancy_status='vacant' ORDER BY code LIMIT 1`, [b.stay_unit_id]);
+        if (!room) redirect(`/merchant/bookings/${leadId}?error=full`);
+        const tnote = b.contact_name ? `จองออนไลน์: ${b.contact_name}` : 'จองออนไลน์';
+        let blockId: string;
+        try {
+          const [blk] = await q<{ id: string }>(
+            `INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note)
+               VALUES($1,$2,'tenancy', COALESCE($3::date, CURRENT_DATE), (COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, $5) RETURNING id`,
+            [room.id, acc.place_id, b.desired_from, String(months), tnote]);
+          blockId = blk.id;
+        } catch (e: any) { if (e?.code === '23P01') redirect(`/merchant/bookings/${leadId}?error=full`); throw e; }
+        await q(`UPDATE stay_room SET occupancy_status='occupied', occupied_until=(COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, note=$5, updated_at=now() WHERE id=$1 AND place_id=$2`, [room.id, acc.place_id, b.desired_from, String(months), tnote]);
+        await q(`UPDATE stay_booking_request SET status='converted', converted_block_id=$3, updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id, blockId]);
+      } else {
+        await q(`UPDATE stay_units SET available_units=GREATEST(0, available_units-1), availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND available_units>0`, [b.stay_unit_id, acc.place_id]);
+        await q(`UPDATE stay_booking_request SET status='converted', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+      }
+      await refreshUnitVacancy(b.stay_unit_id);
+    }
+  }
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
+  redirect(`/merchant/bookings/${leadId}?ok=verified`);
+}
+
+/** Host rejects an online-booking slip (wrong amount / unreadable). Records it; the booking is NOT held.
+ *  The guest sees "สลิปไม่ผ่าน" and contacts the host. No room is taken; no money moved. */
+export async function rejectSlipAction(leadId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  await q(`UPDATE stay_booking_request SET payment_status='rejected', updated_at=now() WHERE id=$1 AND place_id=$2 AND payment_status='submitted'`, [leadId, acc.place_id]);
+  revalidatePath('/merchant/bookings');
+  redirect(`/merchant/bookings/${leadId}?ok=rejected`);
+}
+
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();
