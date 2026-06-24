@@ -6,7 +6,6 @@ import { Icon } from '../ui';
 import { setRoomGroupTermAction } from '../../actions';
 import RoomBoard from './RoomBoard';
 import { RoomHub } from '../rooms/RoomHub';
-import { RoomViewToggle } from './RoomViewToggle';
 import DateRangePicker from '../DateRangePicker';
 import TypeCalendar from './TypeCalendar';
 
@@ -91,8 +90,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
 
   return (
     <>
-      <RoomHub active="board" title="ห้อง" />
-      <RoomViewToggle active="board" />
+      <RoomHub active="board" title="ผังห้อง" />
 
       {searchParams?.ok === 'added' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'bulk' && (

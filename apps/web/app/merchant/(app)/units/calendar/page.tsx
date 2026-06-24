@@ -5,7 +5,6 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { PropertyTimeline } from '../PropertyTimeline';
-import { RoomViewToggle } from '../RoomViewToggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,8 +69,7 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
 
   return (
     <>
-      <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="ห้อง" />
-      <RoomViewToggle active="calendar" />
+      <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="ปฏิทินรวม" />
 
       <div className="calnav">
         <Link className="calnav-b" href={`/merchant/units/calendar${qs(prev)}`} aria-label="ก่อนหน้า"><Icon n="chevL" size={18} /></Link>
