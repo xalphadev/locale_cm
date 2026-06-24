@@ -1,0 +1,103 @@
+import { redirect } from 'next/navigation';
+import { currentAccount } from '@/lib/auth';
+import { q } from '@/lib/db';
+import { Icon } from '../ui';
+import { MTopbar } from '../MTopbar';
+
+export const dynamic = 'force-dynamic';
+
+// Revenue & occupancy dashboard (competitor-parity, no money held). Revenue = the amounts the host VERIFIED
+// from uploaded slips this month (host-direct transfers). Occupancy = booked room-nights ÷ capacity. ADR =
+// revenue ÷ room-nights. Plus today's check-in/out/in-house and a 14-day bookings bar chart.
+const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const baht = (m: number) => `฿${Math.round(m / 100).toLocaleString('th-TH')}`;
+
+export default async function Revenue() {
+  const acc = await currentAccount();
+  if (!acc?.place_id) redirect('/merchant/login');
+  if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
+  const pid = acc.place_id;
+
+  const [m] = await q<any>(
+    `SELECT count(*)::int bookings, COALESCE(SUM(amount_minor),0)::bigint revenue
+       FROM stay_booking_request
+      WHERE place_id=$1 AND deleted_at IS NULL AND payment_status='verified'
+        AND paid_at >= date_trunc('month', CURRENT_DATE) AND paid_at < (date_trunc('month', CURRENT_DATE) + interval '1 month')`, [pid]);
+  const [rooms] = await q<any>(`SELECT count(*)::int n FROM stay_room WHERE place_id=$1 AND status='active' AND deleted_at IS NULL`, [pid]);
+  const [nz] = await q<any>(
+    `SELECT COALESCE(SUM( LEAST(COALESCE(bk.end_date, mm.e), mm.e) - GREATEST(bk.start_date, mm.s) ),0)::int nights
+       FROM stay_occupancy_block bk JOIN stay_room r ON r.id=bk.room_id,
+            (SELECT date_trunc('month',CURRENT_DATE)::date s, (date_trunc('month',CURRENT_DATE)+interval '1 month')::date e) mm
+      WHERE r.place_id=$1 AND r.deleted_at IS NULL AND bk.status IN ('active','completed') AND bk.deleted_at IS NULL
+        AND bk.block_kind IN ('stay','tenancy') AND bk.start_date < mm.e AND COALESCE(bk.end_date, mm.e) > mm.s`, [pid]);
+  const [td] = await q<any>(
+    `SELECT
+       (SELECT count(*) FILTER (WHERE checked_in_at::date = CURRENT_DATE)::int FROM stay_booking_request WHERE place_id=$1 AND deleted_at IS NULL) cin,
+       (SELECT count(*) FILTER (WHERE checked_out_at::date = CURRENT_DATE)::int FROM stay_booking_request WHERE place_id=$1 AND deleted_at IS NULL) cout,
+       (SELECT count(*) FILTER (WHERE checked_in_at IS NOT NULL AND checked_out_at IS NULL)::int FROM stay_booking_request WHERE place_id=$1 AND deleted_at IS NULL AND status='converted') inhouse,
+       (SELECT count(DISTINCT bk.room_id)::int FROM stay_occupancy_block bk JOIN stay_room r ON r.id=bk.room_id WHERE r.place_id=$1 AND bk.status='active' AND bk.deleted_at IS NULL AND bk.block_kind IN ('stay','tenancy','hold','maintenance') AND bk.span @> CURRENT_DATE) busy_today`, [pid]);
+  const chart = await q<any>(
+    `WITH days AS (SELECT generate_series(CURRENT_DATE-13, CURRENT_DATE, interval '1 day')::date d)
+     SELECT to_char(days.d,'FMDD/FMMM') lbl, count(b.id)::int n
+       FROM days LEFT JOIN stay_booking_request b ON b.created_at::date = days.d AND b.place_id=$1 AND b.deleted_at IS NULL AND NOT (b.status='cancelled' OR b.payment_status='rejected')
+      GROUP BY days.d ORDER BY days.d`, [pid]);
+
+  const now = new Date();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const roomN = rooms?.n || 0;
+  const nights = nz?.nights || 0;
+  const revenue = Number(m?.revenue || 0);
+  const capacity = roomN * daysInMonth;
+  const occ = capacity ? Math.round((nights / capacity) * 100) : 0;
+  const adr = nights ? Math.round(revenue / nights) : 0;
+  const totalRooms = roomN;
+  const vacantToday = Math.max(0, totalRooms - (td?.busy_today || 0));
+  const maxN = Math.max(1, ...chart.map((c) => c.n));
+
+  return (
+    <>
+      <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="รายได้ & สถิติ" />
+
+      <div className="rev">
+        <div className="rev-hero">
+          <div className="rev-hero-l">
+            <span className="rev-cap">รายได้เดือน{MONTHS[now.getMonth()]}</span>
+            <b className="rev-rev">{baht(revenue)}</b>
+            <span className="rev-sub">ยืนยันแล้ว {m?.bookings || 0} การจอง · {nights} คืน</span>
+          </div>
+          <div className="rev-occ"><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
+        </div>
+
+        <div className="rev-kpis">
+          <div className="rev-kpi"><span>ค่าเฉลี่ย/คืน</span><b>{adr ? baht(adr) : '—'}</b></div>
+          <div className="rev-kpi"><span>จำนวนคืน</span><b>{nights}</b></div>
+          <div className="rev-kpi"><span>การจอง</span><b>{m?.bookings || 0}</b></div>
+        </div>
+
+        <div className="rev-today">
+          <div className="rev-today-h"><Icon n="calendar" size={15} /> วันนี้</div>
+          <div className="rev-today-g">
+            <div className="rev-t"><b>{td?.cin || 0}</b><span>เช็คอิน</span></div>
+            <div className="rev-t"><b>{td?.cout || 0}</b><span>เช็คเอาท์</span></div>
+            <div className="rev-t"><b>{td?.inhouse || 0}</b><span>กำลังพัก</span></div>
+            <div className="rev-t"><b>{vacantToday}<i>/{totalRooms}</i></b><span>ห้องว่าง</span></div>
+          </div>
+        </div>
+
+        <div className="rev-chart-c">
+          <div className="rev-chart-h">การจอง 14 วันล่าสุด</div>
+          <div className="rev-chart">
+            {chart.map((c, i) => (
+              <div key={i} className="rev-bar-w" title={`${c.lbl}: ${c.n}`}>
+                <div className="rev-bar" style={{ height: `${Math.round((c.n / maxN) * 100)}%` }}>{c.n > 0 ? <i>{c.n}</i> : null}</div>
+                {i % 2 === 0 ? <span>{c.lbl}</span> : <span>&nbsp;</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <p className="note">รายได้นับจากสลิปที่คุณกด “ยืนยันการชำระ” แล้วเท่านั้น · เงินโอนเข้าบัญชีคุณโดยตรง ระบบไม่ถือเงินแทน</p>
+      </div>
+    </>
+  );
+}

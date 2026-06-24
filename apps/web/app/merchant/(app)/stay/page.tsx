@@ -66,6 +66,7 @@ export default async function StayHome() {
     ...(managed ? [{ href: '/merchant/units', icon: 'grid', label: 'ผังห้อง', stat: total > 0 ? `${rs!.vacant} ห้องว่าง` : 'เพิ่มห้องจริง' }] : []),
     { href: '/merchant/rooms', icon: 'tag', label: 'ประเภท & ราคา', stat: `${tc?.n || 0} รูปแบบ` },
     ...(managed ? [{ href: '/merchant/units/calendar', icon: 'calendar', label: 'ปฏิทินรวม', stat: 'ดูทั้งเดือน' }] : []),
+    { href: '/merchant/revenue', icon: 'wallet', label: 'รายได้ & สถิติ', stat: 'รายได้ · อัตราเข้าพัก' },
   ];
 
   return (

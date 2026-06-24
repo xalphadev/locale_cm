@@ -1354,6 +1354,35 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .bk-slip{display:inline-flex;flex-direction:column;align-items:center;gap:5px;margin:4px 0 2px;text-decoration:none}
 .merchant-root .bk-slip img{max-width:210px;max-height:290px;border-radius:12px;border:1px solid var(--m-line);box-shadow:0 4px 14px -8px rgba(20,24,52,.25)}
 .merchant-root .bk-slip span{font-size:.8rem;font-weight:700;color:var(--m-accent)}
+/* revenue & occupancy dashboard */
+.merchant-root .rev{display:flex;flex-direction:column;gap:13px;padding-bottom:24px}
+.merchant-root .rev-hero{display:flex;align-items:center;gap:12px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#dbe8ff,#eef4ff);border:1px solid #e2ecfb;box-shadow:0 10px 26px -14px rgba(43,100,220,.28)}
+.merchant-root .rev-hero-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.merchant-root .rev-cap{font-size:.82rem;font-weight:700;color:#3b5a8c}
+.merchant-root .rev-rev{font-size:2rem;font-weight:800;color:#16306a;line-height:1.1}
+.merchant-root .rev-sub{font-size:.8rem;color:#5a6b86;font-weight:600}
+.merchant-root .rev-occ{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;width:82px;height:82px;border-radius:50%;background:#fff;box-shadow:0 4px 14px -6px rgba(20,40,90,.25)}
+.merchant-root .rev-occ b{font-size:1.4rem;font-weight:800;color:#1d4ed8;line-height:1}
+.merchant-root .rev-occ span{font-size:.62rem;font-weight:700;color:#6b7a93;margin-top:2px}
+.merchant-root .rev-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.merchant-root .rev-kpi{background:#fff;border:1px solid var(--m-line);border-radius:14px;padding:13px;text-align:center;display:flex;flex-direction:column;gap:3px}
+.merchant-root .rev-kpi span{font-size:.74rem;font-weight:700;color:var(--m-muted)}
+.merchant-root .rev-kpi b{font-size:1.12rem;font-weight:800;color:var(--m-text)}
+.merchant-root .rev-today{background:#fff;border:1px solid var(--m-line);border-radius:16px;padding:14px}
+.merchant-root .rev-today-h{display:flex;align-items:center;gap:6px;font-weight:800;font-size:.92rem;color:var(--m-text);margin-bottom:11px}
+.merchant-root .rev-today-h svg{color:var(--m-accent)}
+.merchant-root .rev-today-g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.merchant-root .rev-t{text-align:center;display:flex;flex-direction:column;gap:2px}
+.merchant-root .rev-t b{font-size:1.3rem;font-weight:800;color:var(--m-text)}
+.merchant-root .rev-t b i{font-style:normal;font-size:.8rem;font-weight:600;color:var(--m-muted)}
+.merchant-root .rev-t span{font-size:.72rem;font-weight:600;color:var(--m-muted)}
+.merchant-root .rev-chart-c{background:#fff;border:1px solid var(--m-line);border-radius:16px;padding:14px}
+.merchant-root .rev-chart-h{font-weight:800;font-size:.92rem;color:var(--m-text);margin-bottom:14px}
+.merchant-root .rev-chart{display:flex;align-items:flex-end;gap:4px;height:130px}
+.merchant-root .rev-bar-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+.merchant-root .rev-bar{width:100%;max-width:22px;min-height:3px;background:linear-gradient(180deg,#4d90ff,#2b74ff);border-radius:5px 5px 0 0;position:relative;display:flex;justify-content:center}
+.merchant-root .rev-bar i{position:absolute;top:-15px;font-style:normal;font-size:.66rem;font-weight:800;color:var(--m-accent)}
+.merchant-root .rev-bar-w span{font-size:.58rem;color:var(--m-muted);font-weight:600;white-space:nowrap}
 .callegend i{width:14px;height:14px;border-radius:4px;display:inline-block}
 
 /* rooms-hub: on-demand (?) concept popover — progressive disclosure, replaces 3 stacked explainers */

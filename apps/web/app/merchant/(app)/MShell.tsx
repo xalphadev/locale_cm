@@ -24,7 +24,7 @@ export type Tab = { href: string; icon: string; label: string; badge?: number; e
 
 function secOf(path: string): string {
   if (path.startsWith('/merchant/products')) return 'products';
-  if (path.startsWith('/merchant/stay') || path.startsWith('/merchant/rooms') || path.startsWith('/merchant/units') || path.startsWith('/merchant/bookings') || path.startsWith('/merchant/pricing')) return 'rooms';
+  if (path.startsWith('/merchant/stay') || path.startsWith('/merchant/rooms') || path.startsWith('/merchant/units') || path.startsWith('/merchant/bookings') || path.startsWith('/merchant/pricing') || path.startsWith('/merchant/revenue')) return 'rooms';
   if (path.startsWith('/merchant/loyalty')) return 'loyalty';
   if (path.startsWith('/merchant/leads')) return 'leads';
   if (path.startsWith('/merchant/deals')) return 'deals';
@@ -38,7 +38,7 @@ export function MShell({ tabs, header, children }: { tabs: Tab[]; header: ReactN
   // The ห้องพัก section is a hub-and-spoke: /merchant/stay is the HOME (top: brand header + bottom nav),
   // but its spokes (จอง / ผังห้อง / ประเภท&ราคา) are focused DEEP pages — no brand header, no bottom nav,
   // a back-chevron to the hub instead (like every other detail page).
-  const SPOKES = new Set(['/merchant/bookings', '/merchant/units', '/merchant/rooms', '/merchant/pricing']);
+  const SPOKES = new Set(['/merchant/bookings', '/merchant/units', '/merchant/rooms', '/merchant/pricing', '/merchant/revenue']);
   const isTop = !SPOKES.has(path) && path.split('/').filter(Boolean).length <= 2;
   const sec = secOf(path);
   // The ห้องพัก hub (/merchant/stay) keeps the bottom nav (it's a section home) but DROPS the brand header —
