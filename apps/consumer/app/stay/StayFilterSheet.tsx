@@ -21,14 +21,14 @@ const ONE = 'เลือก 1 อย่าง';
 
 type Props = {
   mode: string; q: string; basePath?: string; from?: string; to?: string;
-  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; beds: string; gender: string; bam: string[]; count: number;
+  kind: string[]; sort: string; am: string[]; fr: string[]; pr: string; beds: string; gender: string; bam: string[]; online: boolean; count: number;
   amenOpts: AmenOpt[]; buildOpts: AmenOpt[];
 };
 
 export default function StayFilterSheet(p: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr, beds: p.beds, gender: p.gender, bam: [...p.bam] });
+  const init = () => ({ kind: [...p.kind], sort: p.sort, am: [...p.am], fr: [...p.fr], pr: p.pr, beds: p.beds, gender: p.gender, bam: [...p.bam], online: p.online });
   const [s, setS] = useState(init);
 
   function openSheet() { setS(init()); setOpen(true); }
@@ -37,7 +37,7 @@ export default function StayFilterSheet(p: Props) {
   // multi-select (checkbox): ประเภทที่พัก · เฟอร์นิเจอร์ · สิ่งอำนวยความสะดวก
   const multi = (key: 'kind' | 'am' | 'fr' | 'bam', val: string) =>
     setS((x) => ({ ...x, [key]: x[key].includes(val) ? x[key].filter((y) => y !== val) : [...x[key], val] }));
-  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '', beds: '', gender: '', bam: [] }); }
+  function clearAll() { setS({ kind: [], sort: '', am: [], fr: [], pr: '', beds: '', gender: '', bam: [], online: false }); }
   function apply() {
     const u = new URLSearchParams();
     if (p.mode !== 'monthly') u.set('mode', p.mode);
@@ -50,13 +50,14 @@ export default function StayFilterSheet(p: Props) {
     if (s.pr) u.set('pr', s.pr);
     if (s.beds) u.set('beds', s.beds); if (s.gender) u.set('gender', s.gender);
     if (s.bam.length) u.set('bam', s.bam.join(','));
+    if (s.online) u.set('online', '1');
     const qs = u.toString();
     setOpen(false);
     const base = p.basePath || '/stay';                                                       // /stay or /stay/map
     router.push(qs ? `${base}?${qs}` : base);
   }
 
-  const selected = s.kind.length + s.am.length + s.fr.length + s.bam.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.beds ? 1 : 0) + (s.gender ? 1 : 0);
+  const selected = s.kind.length + s.am.length + s.fr.length + s.bam.length + (s.sort ? 1 : 0) + (s.pr ? 1 : 0) + (s.beds ? 1 : 0) + (s.gender ? 1 : 0) + (s.online ? 1 : 0);
 
   const Chip = ({ on, onClick, check = false, children }: { on: boolean; onClick: () => void; check?: boolean; children: any }) =>
     <button type="button" className={`fchip ${on ? 'on' : ''}`} onClick={onClick}>{check && on && <Icon n="check" size={13} className="fchip-ck" />}{children}</button>;
@@ -79,6 +80,9 @@ export default function StayFilterSheet(p: Props) {
             <div className="sheet-grab" />
             <div className="sheet-head"><b>ตัวกรอง</b><button type="button" className="sheet-x" onClick={() => setOpen(false)} aria-label="ปิด"><Icon n="x" size={20} /></button></div>
             <div className="sheet-body">
+              <Sec icon="check" title="การจอง" hint="">
+                <Chip on={s.online} check onClick={() => setS((x) => ({ ...x, online: !x.online }))}>จองและชำระเงินออนไลน์ได้</Chip>
+              </Sec>
               <Sec icon="bed" title="ประเภทที่พัก" hint={MULTI}>
                 {STAY_KINDS.map((k) => <Chip key={k} on={s.kind.includes(k)} check onClick={() => multi('kind', k)}>{STAY_KIND_TH[k]}</Chip>)}
               </Sec>
