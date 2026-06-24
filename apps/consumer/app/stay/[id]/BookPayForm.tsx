@@ -1,6 +1,8 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import QRCode from 'qrcode';
 import { quoteStay, type Rate } from '@/lib/quote';
+import { promptpayPayload } from '@/lib/promptpay';
 
 // Single-page online-booking form: pick dates/guests → see the amount → fill contact → transfer to the
 // host's account and attach the slip → submit (createPaidBookingAction). Price preview = base × nights/
@@ -21,12 +23,22 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay
   const [months, setMonths] = useState(daily ? 0 : 3);
   const [method, setMethod] = useState<'promptpay' | 'bank_transfer'>(pay.promptpay ? 'promptpay' : 'bank_transfer');
   const [slipName, setSlipName] = useState('');
+  const [qr, setQr] = useState('');
 
   const { amount: total, nights } = useMemo(
     () => quoteStay(mode, from || null, to || null, months, basePriceMinor, rates),
     [mode, from, to, months, basePriceMinor, rates]);
   const dayAfter = from ? new Date(Date.parse(from) + 86400000).toISOString().slice(0, 10) : today;
   const hasBoth = !!pay.promptpay && !!(pay.bank && pay.accountNo);
+
+  // PromptPay QR with the amount embedded — regenerate whenever the total or method changes
+  useEffect(() => {
+    if (method === 'promptpay' && pay.promptpay && total > 0) {
+      const payload = promptpayPayload(pay.promptpay, total / 100);
+      if (payload) { QRCode.toDataURL(payload, { width: 240, margin: 1 }).then(setQr).catch(() => setQr('')); return; }
+    }
+    setQr('');
+  }, [method, pay.promptpay, total]);
 
   return (
     <form className="bookpay" action={action}>
@@ -80,7 +92,10 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay
         )}
         <div className="bp-acct">
           {method === 'promptpay' && pay.promptpay ? (
-            <div className="bp-acct-row"><span>PromptPay</span><b>{pay.promptpay}</b></div>
+            <>
+              {qr && <div className="bp-qr"><img src={qr} alt="PromptPay QR" /><span>สแกนจ่ายผ่านแอปธนาคาร · ยอดจะขึ้นอัตโนมัติ</span></div>}
+              <div className="bp-acct-row"><span>PromptPay</span><b>{pay.promptpay}</b></div>
+            </>
           ) : (
             <>
               {pay.bank && <div className="bp-acct-row"><span>ธนาคาร</span><b>{pay.bank}</b></div>}
