@@ -116,13 +116,17 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
           {!collapsed[f] && (dense ? (
             <div className="rgrid">
               {byFloor[f].map((r) => {
+                // daily rooms don't carry a meaningful occupancy_status flag (the calendar/blocks are the truth)
+                // → render NEUTRAL so a date-booked daily room never looks falsely "ว่าง"
+                const daily = !r.monthly;
                 const st = ST[r.status] || ST.vacant;
-                // [bg-tint%, ring%] — occupied stays calm but clearly blue; vacant/จอง pop stronger
-                const S: number[] = ({ vacant: [42, 62], occupied: [26, 44], reserved: [44, 64], maintenance: [34, 52] } as Record<string, number[]>)[r.status] || [42, 62];
+                const color = daily ? '#aab1bd' : st.color;
+                // [bg-tint%, ring%] — occupied stays calm but clearly blue; vacant/จอง pop stronger; daily muted
+                const S: number[] = daily ? [18, 34] : (({ vacant: [42, 62], occupied: [26, 44], reserved: [44, 64], maintenance: [34, 52] } as Record<string, number[]>)[r.status] || [42, 62]);
                 const fs = r.code.length <= 3 ? '1rem' : r.code.length <= 5 ? '.86rem' : '.74rem';  // shrink long names so they don't overflow
                 return (
-                  <Link className={`rchip ${selected.has(r.id) ? 'rsel' : ''}`} key={r.id} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)} title={`${r.code} · ${st.label}`}
-                    style={{ fontSize: fs, background: `color-mix(in srgb, ${st.color} ${S[0]}%, var(--m-surface,#fff))`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${st.color} ${S[1]}%, transparent)` } as any}>
+                  <Link className={`rchip ${selected.has(r.id) ? 'rsel' : ''}`} key={r.id} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)} title={`${r.code} · ${daily ? 'รายวัน — ดูปฏิทิน' : st.label}`}
+                    style={{ fontSize: fs, background: `color-mix(in srgb, ${color} ${S[0]}%, var(--m-surface,#fff))`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} ${S[1]}%, transparent)` } as any}>
                     {r.code}
                   </Link>
                 );
@@ -131,7 +135,8 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
           ) : (
             <div className="roomboard">
               {byFloor[f].map((r) => {
-                const st = ST[r.status] || ST.vacant;
+                const daily = !r.monthly;
+                const st = daily ? { label: 'รายวัน', color: '#9aa0a6' } : (ST[r.status] || ST.vacant);
                 return (
                   <div className="rtile" key={r.id} style={{ '--st': st.color } as any}>
                     <Link className={`rtile-main ${selected.has(r.id) ? 'rsel' : ''}`} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)}>
@@ -140,13 +145,13 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
                         <span className="rtile-chip" style={{ color: st.color, background: `color-mix(in srgb, ${st.color} 14%, transparent)` }}>{st.label}</span>
                       </div>
                       {r.guest ? (
-                        <span className="rtile-guest"><Icon n="chat" size={12} /> {r.guest}{r.occupied_until ? <span className="rtile-note"> · ว่าง {untilTxt(r.occupied_until)}</span> : r.note ? <span className="rtile-note"> · {r.note}</span> : ''}</span>
-                      ) : (r.status === 'occupied' || r.status === 'reserved') ? (
+                        <span className="rtile-guest"><Icon n="chat" size={12} /> {r.guest}{!daily && r.occupied_until ? <span className="rtile-note"> · ว่าง {untilTxt(r.occupied_until)}</span> : r.note ? <span className="rtile-note"> · {r.note}</span> : ''}</span>
+                      ) : (!daily && (r.status === 'occupied' || r.status === 'reserved')) ? (
                         r.note
                           ? <span className="rtile-guest"><Icon n="chat" size={12} /> {r.note}{r.occupied_until ? <span className="rtile-note"> · ว่าง {untilTxt(r.occupied_until)}</span> : ''}</span>
                           : <span className="rtile-addname"><Icon n="chat" size={12} /> ใส่ชื่อผู้เช่า →</span>
                       ) : (
-                        <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{r.note ? ` · ${r.note}` : ''}</span>
+                        <span className="rtile-type">{r.type || 'ไม่ระบุรูปแบบ'}{daily ? <span className="rtile-note"> · ดูสถานะในปฏิทิน</span> : r.note ? ` · ${r.note}` : ''}</span>
                       )}
                     </Link>
                     {!selectMode && (r.guestPhone
