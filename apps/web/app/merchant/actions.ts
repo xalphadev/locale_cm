@@ -1486,7 +1486,7 @@ export async function createBookingAction(formData: FormData) {
 
 /** Check in a converted booking — stamp the arrival + write a check_in event against the held room.
  *  Source of truth = the timestamp (no new status), so the loop closes without a status-vocabulary change. */
-export async function checkInAction(leadId: string) {
+export async function checkInAction(leadId: string, formData?: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const [b] = await q<{ converted_block_id: string | null; checked_in_at: any }>(
@@ -1497,12 +1497,13 @@ export async function checkInAction(leadId: string) {
   await q(`UPDATE stay_booking_request SET checked_in_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
   if (blk) await q(`INSERT INTO stay_room_event(room_id, block_id, place_id, event_kind) VALUES($1,$2,$3,'check_in')`, [blk.room_id, b.converted_block_id, acc.place_id]);
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
-  redirect('/merchant/bookings?ok=checkin');
+  const back = formData?.get('returnTo') as string | null;
+  redirect(back || '/merchant/bookings?ok=checkin');
 }
 
 /** Check out a converted booking — stamp the departure, write a check_out event, complete the block (so the
  *  date frees for rebooking) and free the room. Tenancy (monthly) also clears the board flag. No money. */
-export async function checkOutAction(leadId: string) {
+export async function checkOutAction(leadId: string, formData?: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   const [b] = await q<{ converted_block_id: string | null; checked_out_at: any }>(
@@ -1519,7 +1520,8 @@ export async function checkOutAction(leadId: string) {
     await refreshUnitVacancy(blk.stay_unit_id);
   }
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
-  redirect('/merchant/bookings?ok=checkout');
+  const back = formData?.get('returnTo') as string | null;
+  redirect(back || '/merchant/bookings?ok=checkout');
 }
 
 // ── seasonal pricing (0035): DISPLAY-only rates per room-TYPE, by season window. NEVER joined to the

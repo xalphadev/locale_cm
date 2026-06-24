@@ -1288,6 +1288,38 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .caltl-dh.tdy b{color:var(--m-accent,#2b74ff)}
 .caltl-c.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent)}
 .caltl-guest{color:var(--m-accent,#2b74ff);font-weight:700;font-size:.76rem}
+/* Wave A — 2wk/month toggle, floor filter + search, continuous bars, collapsible floor groups */
+.merchant-root .calview{display:inline-flex;margin:0 0 11px;border:1px solid var(--m-line);border-radius:10px;overflow:hidden}
+.merchant-root .calview-i{padding:6px 15px;font-size:.84rem;font-weight:700;color:var(--m-muted);text-decoration:none;background:#fff}
+.merchant-root .calview-i.on{background:var(--m-accent);color:#fff}
+.merchant-root .calview-i+.calview-i{border-left:1px solid var(--m-line)}
+.merchant-root .caltools{display:flex;flex-direction:column;gap:9px;margin:0 0 11px}
+.merchant-root .calchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.merchant-root .calchips::-webkit-scrollbar{display:none}
+.merchant-root .calchip{flex:0 0 auto;padding:6px 12px;border-radius:999px;border:1px solid var(--m-line);background:#fff;font:inherit;font-size:.82rem;font-weight:700;color:var(--m-muted);cursor:pointer;white-space:nowrap}
+.merchant-root .calchip.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff}
+.merchant-root .calchip i{font-style:normal;opacity:.65;font-weight:600}
+.merchant-root .calsearch{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--m-line);border-radius:12px;background:var(--m-sunk,#f1f3f7);color:var(--m-muted)}
+.merchant-root .calsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text);outline:none;min-width:0}
+.merchant-root .calsearch button{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;padding:0;display:flex}
+.merchant-root .caltl-t.calbars{table-layout:fixed;width:auto;min-width:100%}
+.merchant-root .cal-col-rh{width:84px}
+.merchant-root .cal-col-d{width:34px}
+.merchant-root .calbars .cal-cell{height:44px;padding:0;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6}
+.merchant-root .calbars .cal-free{background:#fafbfd;cursor:pointer}
+.merchant-root .calbars .cal-free.pa{background:#f5f6f9;cursor:default}
+.merchant-root .calbars .cal-free.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent) 35%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent) 35%,transparent)}
+.merchant-root .calbars .cal-free.sel{background:color-mix(in srgb,var(--m-accent) 26%,#fff)!important;box-shadow:inset 0 0 0 1.5px var(--m-accent)}
+.merchant-root .cal-bar{min-height:34px;margin:5px 2px;border-radius:8px;display:flex;flex-direction:column;justify-content:center;padding:3px 9px;font-weight:700;box-shadow:inset 3px 0 0 currentColor;cursor:pointer;overflow:hidden}
+.merchant-root .cal-bar-ref{font-style:normal;font-size:.6rem;font-weight:700;opacity:.72;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .cal-bar span{font-size:.78rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .caltl-occ{display:flex;flex-direction:column;align-items:center;line-height:1;margin-top:3px;font-size:.56rem;font-weight:700;color:var(--m-accent)}
+.merchant-root .caltl-occ i{font-style:normal;width:17px;height:17px;border-radius:50%;background:color-mix(in srgb,var(--m-accent) 14%,#fff);display:flex;align-items:center;justify-content:center;font-size:.62rem;margin-bottom:1px}
+.merchant-root .caltl-occ.z{color:#aab1bd}
+.merchant-root .caltl-occ.z i{background:#eef0f4}
+.merchant-root .cal-grp-c{text-align:left;padding:8px 11px;font-size:.84rem;font-weight:800;color:var(--m-text);background:var(--m-sunk,#f1f3f7);cursor:pointer;border-bottom:1px solid #e6e9ef}
+.merchant-root .cal-grp-c em{font-style:normal;font-weight:600;font-size:.78rem;color:var(--m-muted)}
+.merchant-root .cal-grp-c svg{vertical-align:-2px;color:var(--m-muted)}
 /* interactive timeline: clickable cells + range selection + create form + block popover */
 .caltl-cx{cursor:pointer}
 .caltl-c.sel{background:color-mix(in srgb,var(--m-accent,#2b74ff) 30%,#fff)!important;box-shadow:inset 0 0 0 1.5px var(--m-accent,#2b74ff)}
@@ -1301,6 +1333,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .tl-pop-l b{font-size:.95rem}
 .merchant-root .tl-pop-l span{font-size:.82rem;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .tl-pop-a{flex:none;display:flex;gap:7px}
+.merchant-root .tl-sheet{flex-direction:column;align-items:stretch;gap:11px}
+.merchant-root .tl-sheet .tl-pop-l span{white-space:normal}
+.merchant-root .tl-sheet .tl-pop-a{flex:none;flex-wrap:wrap;gap:8px}
+.merchant-root .tl-sheet .tl-pop-a form{display:contents}
+.merchant-root .cal-bar-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:5px;vertical-align:1px}
 .callegend i{width:14px;height:14px;border-radius:4px;display:inline-block}
 
 /* rooms-hub: on-demand (?) concept popover — progressive disclosure, replaces 3 stacked explainers */

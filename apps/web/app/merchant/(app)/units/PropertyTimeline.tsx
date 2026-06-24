@@ -1,71 +1,141 @@
 'use client';
-import { useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '../ui';
 import { ConfirmSubmit } from '../ConfirmSubmit';
-import { addRoomBlockAction, cancelRoomBlockAction } from '../../actions';
+import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction } from '../../actions';
 
-// Interactive property timeline (rooms × the visible day window). Tap two FREE cells in one room to block a
-// range (create a booking / maintenance / hold via addRoomBlockAction); tap a BUSY cell to see/remove its
-// block (cancelRoomBlockAction). Monthly rooms occupied by the board flag (no block) show busy but aren't
-// removable here (manage from the room). All date math is YYYY-MM-DD string compare. No schema, no money.
-type Blk = { id: string; s: string; e: string | null; k: string; note: string | null };
+// Interactive property timeline (rooms × the visible day window). Bookings render as CONTINUOUS BARS with
+// the guest name on them; rooms group by floor (collapsible) and are filterable + searchable for big
+// properties. Tap two FREE cells in one room to block a range (addRoomBlockAction); tap a BAR to see/remove
+// it (cancelRoomBlockAction). All date math is YYYY-MM-DD string compare. No schema, no money.
+type Blk = { id: string; s: string; e: string | null; k: string; note: string | null; guest: string | null; ref: string | null; bid: string | null; cin: string | null; cout: string | null };
 export type TLRoom = {
   id: string; code: string; floor: string | null; guest: string | null;
   rental_mode: string; occupancy_status: string; occupied_until: string | null; blocks: Blk[];
 };
 const DOW = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
-const KCOLOR: Record<string, string> = { stay: '#3b82f6', tenancy: '#3b82f6', reserved: '#f59e0b', occupied: '#3b82f6', maintenance: '#9aa0a8', hold: '#0ea5a4' };
+// pastel pairs (bg + text) — softer than solid bars, dark readable text (matches the PMS reference). NO purple.
+const KSTYLE: Record<string, { bg: string; fg: string }> = {
+  stay: { bg: '#dbeafe', fg: '#1d4ed8' }, tenancy: { bg: '#dbeafe', fg: '#1d4ed8' }, occupied: { bg: '#dbeafe', fg: '#1d4ed8' },
+  reserved: { bg: '#fef3c7', fg: '#b45309' }, maintenance: { bg: '#e9ebef', fg: '#52525b' }, hold: { bg: '#ccfbf1', fg: '#0f766e' },
+};
+const Kst = (k: string) => KSTYLE[k] || KSTYLE.stay;
 const KLABEL: Record<string, string> = { stay: 'เข้าพัก', tenancy: 'สัญญาเช่า', reserved: 'จอง', occupied: 'มีผู้เช่า', maintenance: 'ปิดซ่อม', hold: 'กันห้อง' };
 
-export function PropertyTimeline({ rooms, days, today, term }: { rooms: TLRoom[]; days: string[]; today: string; term: string }) {
+export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms: TLRoom[]; days: string[]; today: string; term: string; returnTo: string }) {
   const [sel, setSel] = useState<{ roomId: string; code: string; a: string; b: string | null } | null>(null);
   const [open, setOpen] = useState<{ blk: Blk; code: string } | null>(null);
+  const [floor, setFloor] = useState('all');
+  const [qstr, setQstr] = useState('');
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toggle = (f: string) => setCollapsed((p) => { const n = new Set(p); n.has(f) ? n.delete(f) : n.add(f); return n; });
+  const floorLabel = (f: string) => (f ? `${term} ${f}` : 'ไม่ระบุชั้น');
 
-  // what covers (room, day): a real block (removable) | flag-busy (monthly, not removable) | free
+  const floors = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const r of rooms) { const f = r.floor || ''; m.set(f, (m.get(f) || 0) + 1); }
+    return [...m.entries()];
+  }, [rooms]);
+
+  const ql = qstr.trim().toLowerCase();
+  const shown = rooms.filter((r) => (floor === 'all' || (r.floor || '') === floor)
+    && (!ql || r.code.toLowerCase().includes(ql) || (r.guest && r.guest.toLowerCase().includes(ql))));
+  const groups: { floor: string; rooms: TLRoom[] }[] = [];
+  for (const r of shown) { const f = r.floor || ''; const last = groups[groups.length - 1]; if (!last || last.floor !== f) groups.push({ floor: f, rooms: [r] }); else last.rooms.push(r); }
+
   const cover = (r: TLRoom, day: string): { blk: Blk | null; flag: boolean } => {
     for (const bl of r.blocks) if (bl.s <= day && (!bl.e || day < bl.e)) return { blk: bl, flag: false };
     if (r.rental_mode !== 'daily' && r.occupancy_status && r.occupancy_status !== 'vacant' && (!r.occupied_until || day < r.occupied_until)) return { blk: null, flag: true };
     return { blk: null, flag: false };
   };
+  const dayOcc = (day: string) => { let occ = 0; for (const r of rooms) { const c = cover(r, day); if (c.blk || c.flag) occ++; } return { occ, pct: rooms.length ? Math.round((occ / rooms.length) * 100) : 0 }; };
   const inSel = (r: TLRoom, day: string) => !!sel && sel.roomId === r.id && (sel.b ? day >= sel.a && day < sel.b : day === sel.a);
-  // a range is selectable only if every night in [a,b) is free (no block / no flag) — so you can't span a booking
   const rangeClear = (r: TLRoom, a: string, b: string) => days.every((d) => !(d >= a && d < b) || (!cover(r, d).blk && !cover(r, d).flag));
-
-  const onCell = (r: TLRoom, day: string, c: { blk: Blk | null; flag: boolean }) => {
+  const onFree = (r: TLRoom, day: string) => {
     if (day < today) return;
-    if (c.blk) { setOpen(open?.blk.id === c.blk.id ? null : { blk: c.blk, code: r.code }); setSel(null); return; }
-    if (c.flag) { setOpen(null); setSel(null); return; }   // flag-busy: not creatable/removable here
     setOpen(null);
-    if (!sel || sel.roomId !== r.id || sel.b) setSel({ roomId: r.id, code: r.code, a: day, b: null });   // fresh range
-    else if (day > sel.a && rangeClear(r, sel.a, day)) setSel({ ...sel, b: day });   // set check-out (range must be clear)
-    else setSel({ roomId: r.id, code: r.code, a: day, b: null });                     // earlier tap / blocked span → restart
+    if (!sel || sel.roomId !== r.id || sel.b) setSel({ roomId: r.id, code: r.code, a: day, b: null });
+    else if (day > sel.a && rangeClear(r, sel.a, day)) setSel({ ...sel, b: day });
+    else setSel({ roomId: r.id, code: r.code, a: day, b: null });
+  };
+
+  // build a room's cells: continuous bars (colSpan) for booked spans, single cells for free/flag days
+  const cells = (r: TLRoom) => {
+    const out: any[] = [];
+    let i = 0;
+    while (i < days.length) {
+      const c = cover(r, days[i]);
+      if (c.blk) {
+        let span = 1;
+        while (i + span < days.length && cover(r, days[i + span]).blk?.id === c.blk.id) span++;
+        const blk = c.blk; const st = Kst(blk.k);
+        out.push(
+          <td key={i} colSpan={span} className="cal-cell" onClick={() => { setOpen(open?.blk.id === blk.id ? null : { blk, code: r.code }); setSel(null); }}>
+            <div className="cal-bar" style={{ background: st.bg, color: st.fg }}>
+              {blk.ref ? <i className="cal-bar-ref">{blk.ref}{blk.cin && !blk.cout ? <b className="cal-bar-dot" /> : null}</i> : null}
+              <span>{blk.guest || KLABEL[blk.k] || ''}</span>
+            </div>
+          </td>,
+        );
+        i += span;
+      } else if (c.flag) {
+        out.push(<td key={i} className="cal-cell cal-busy" style={{ background: Kst(r.occupancy_status).bg }} />);
+        i++;
+      } else {
+        const day = days[i]; const past = day < today;
+        out.push(<td key={i} className={`cal-cell cal-free ${inSel(r, day) ? 'sel' : ''} ${past ? 'pa' : ''} ${day === today ? 'tdy' : ''}`} onClick={() => onFree(r, day)} />);
+        i++;
+      }
+    }
+    return out;
   };
 
   return (
     <>
-      <div className="caltl">
-        <table className="caltl-t">
-          <thead>
-            <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); return <th key={d} className={`caltl-dh ${d === today ? 'tdy' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b></th>; })}</tr>
-          </thead>
-          <tbody>
-            {rooms.map((r) => (
-              <tr key={r.id}>
-                <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}{r.guest ? <span className="caltl-guest"> · {r.guest}</span> : r.floor ? <span className="caltl-fl"> · {term} {r.floor}</span> : null}</Link></th>
-                {days.map((d) => {
-                  const c = cover(r, d); const k = c.blk?.k || (c.flag ? r.occupancy_status : null); const past = d < today;
-                  return (
-                    <td key={d} className={`caltl-c caltl-cx ${d === today ? 'tdy' : ''} ${inSel(r, d) ? 'sel' : ''} ${past ? 'pa' : ''}`}
-                      title={k ? KLABEL[k] || k : 'ว่าง — แตะเพื่อเลือกช่วง'} onClick={() => onCell(r, d, c)}
-                      style={k ? { background: KCOLOR[k] || '#3b82f6' } : undefined} />
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="caltools">
+        {floors.length > 1 && (
+          <div className="calchips">
+            <button type="button" className={`calchip ${floor === 'all' ? 'on' : ''}`} onClick={() => setFloor('all')}>ทุกชั้น</button>
+            {floors.map(([f, n]) => <button type="button" key={f || '_'} className={`calchip ${floor === f ? 'on' : ''}`} onClick={() => setFloor(f)}>{floorLabel(f)} <i>{n}</i></button>)}
+          </div>
+        )}
+        <div className="calsearch">
+          <Icon n="search" size={15} />
+          <input value={qstr} onChange={(e) => setQstr(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" />
+          {qstr && <button type="button" onClick={() => setQstr('')} aria-label="ล้าง"><Icon n="x" size={13} /></button>}
+        </div>
       </div>
+
+      {shown.length === 0 ? (
+        <div className="nomatch">ไม่พบห้องที่ตรงตัวกรอง</div>
+      ) : (
+        <div className="caltl">
+          <table className="caltl-t calbars">
+            <colgroup><col className="cal-col-rh" />{days.map((d) => <col key={d} className="cal-col-d" />)}</colgroup>
+            <thead>
+              <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); const o = dayOcc(d); return <th key={d} className={`caltl-dh ${d === today ? 'tdy' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b><span className={`caltl-occ ${o.occ ? '' : 'z'}`} title={`เข้าพัก ${o.occ}/${rooms.length}`}><i>{o.occ}</i>{o.pct}%</span></th>; })}</tr>
+            </thead>
+            <tbody>
+              {groups.map((g) => (
+                <Fragment key={g.floor || '_'}>
+                  {floors.length > 1 && (
+                    <tr className="cal-grp"><th className="cal-grp-c" colSpan={days.length + 1} onClick={() => toggle(g.floor)}>
+                      <Icon n={collapsed.has(g.floor) ? 'chevR' : 'chevD'} size={15} /> {floorLabel(g.floor)} <em>{g.rooms.length} ห้อง</em>
+                    </th></tr>
+                  )}
+                  {!collapsed.has(g.floor) && g.rooms.map((r) => (
+                    <tr key={r.id}>
+                      <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}</Link></th>
+                      {cells(r)}
+                    </tr>
+                  ))}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {sel && !sel.b && <p className="note" style={{ margin: '8px 2px' }}>ห้อง {sel.code}: แตะวัน<b>เช็คเอาท์</b>อีกครั้งเพื่อเลือกช่วง · <button type="button" className="lnk-btn" onClick={() => setSel(null)}>ยกเลิก</button></p>}
 
@@ -89,25 +159,32 @@ export function PropertyTimeline({ rooms, days, today, term }: { rooms: TLRoom[]
         </form>
       )}
 
-      {open && (
-        <div className="tl-pop">
+      {open && (() => { const b = open.blk; const live = b.cin && !b.cout; return (
+        <div className="tl-pop tl-sheet">
           <div className="tl-pop-l">
-            <b>ห้อง {open.code}</b>
-            <span>{KLABEL[open.blk.k] || open.blk.k} · {open.blk.s} → {open.blk.e || 'ต่อเนื่อง'}{open.blk.note ? ` · ${open.blk.note}` : ''}</span>
+            <b>{b.ref ? `${b.ref} · ` : ''}ห้อง {open.code}{b.guest ? ` · ${b.guest}` : ''}</b>
+            <span>{KLABEL[b.k] || b.k} · {b.s} → {b.e || 'ต่อเนื่อง'}{b.cout ? ' · เช็คเอาท์แล้ว' : live ? ' · กำลังพัก' : ''}{b.note ? ` · ${b.note}` : ''}</span>
           </div>
           <div className="tl-pop-a">
+            {b.bid && !b.cin && (
+              <form action={checkInAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><button type="submit" className="dbtn sm primary">เช็คอิน</button></form>
+            )}
+            {b.bid && live && (
+              <form action={checkOutAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><ConfirmSubmit message="เช็คเอาท์ห้องนี้? ห้องจะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm primary">เช็คเอาท์</ConfirmSubmit></form>
+            )}
+            {b.bid && <Link className="dbtn sm" href={`/merchant/bookings/${b.bid}`}>รายละเอียด / แก้ไข ›</Link>}
+            {!b.cin && <form action={cancelRoomBlockAction.bind(null, b.id)}><ConfirmSubmit message="เอาช่วงนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>}
             <button type="button" className="dbtn sm" onClick={() => setOpen(null)}>ปิด</button>
-            <form action={cancelRoomBlockAction.bind(null, open.blk.id)}><ConfirmSubmit message="เอาช่วงนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>
           </div>
         </div>
-      )}
+      ); })()}
 
       <div className="callegend">
-        <span><i style={{ background: '#3b82f6' }} /> เข้าพัก/เช่า</span>
-        <span><i style={{ background: '#f59e0b' }} /> จอง</span>
-        <span><i style={{ background: '#9aa0a8' }} /> ปิดซ่อม</span>
-        <span><i style={{ background: '#0ea5a4' }} /> กันห้อง</span>
-        <span><i style={{ background: '#eef0f3', boxShadow: 'inset 0 0 0 1px #e0e3e8' }} /> ว่าง</span>
+        <span><i style={{ background: KSTYLE.stay.bg }} /> เข้าพัก/เช่า</span>
+        <span><i style={{ background: KSTYLE.reserved.bg }} /> จอง</span>
+        <span><i style={{ background: KSTYLE.maintenance.bg }} /> ปิดซ่อม</span>
+        <span><i style={{ background: KSTYLE.hold.bg }} /> กันห้อง</span>
+        <span><i style={{ background: '#fafbfd', boxShadow: 'inset 0 0 0 1px #e0e3e8' }} /> ว่าง</span>
         <span style={{ opacity: .65 }}>แตะ 2 วัน = สร้างช่วง</span>
       </div>
     </>
