@@ -1591,6 +1591,24 @@ export async function deleteRateAction(rateId: string) {
   redirect('/merchant/pricing?ok=rate_deleted');
 }
 
+/** Save where this place RECEIVES money for online bookings (host-direct slip model — the platform never
+ *  holds funds). Online booking can only be enabled once there's at least one receiving channel. No money
+ *  is processed here; this is just the account the guest transfers to + uploads a slip against. */
+export async function updateStayPaymentAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireStayOwner(acc);
+  const promptpay = s(formData, 'pay_promptpay').slice(0, 40) || null;
+  const bank = s(formData, 'pay_bank').slice(0, 60) || null;
+  const accNo = s(formData, 'pay_account_no').slice(0, 40) || null;
+  const accName = s(formData, 'pay_account_name').slice(0, 120) || null;
+  const hasChannel = !!(promptpay || (bank && accNo));
+  const enabled = !!formData.get('pay_online_enabled') && hasChannel;
+  await q(`UPDATE places SET pay_promptpay=$2, pay_bank=$3, pay_account_no=$4, pay_account_name=$5, pay_online_enabled=$6 WHERE id=$1`,
+    [acc.place_id, promptpay, bank, accNo, accName, enabled]);
+  revalidatePath('/merchant/pricing');
+  redirect(`/merchant/pricing?ok=pay${!enabled && !!formData.get('pay_online_enabled') ? '&warn=nochannel' : ''}`);
+}
+
 /** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for
  *  non-sequential / named units) — the fast way to lay out a dorm. Existing codes are skipped + reported. */
 export async function createRoomsBulkAction(formData: FormData) {

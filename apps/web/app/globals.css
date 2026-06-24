@@ -1345,6 +1345,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .tl-sheet .tl-pop-a{flex:none;flex-wrap:wrap;gap:8px}
 .merchant-root .tl-sheet .tl-pop-a form{display:contents}
 .merchant-root .cal-bar-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:5px;vertical-align:1px}
+.merchant-root .paycard{display:flex;flex-direction:column;gap:11px;padding:15px;margin:0 0 14px;border:1px solid var(--m-line);border-radius:16px;background:var(--m-surface,#fff);box-shadow:0 6px 20px -12px rgba(20,24,52,.18)}
+.merchant-root .paycard-h{display:flex;align-items:center;gap:7px;font-weight:800;font-size:1rem;color:var(--m-text)}
+.merchant-root .paycard-h svg{color:var(--m-accent)}
+.merchant-root .paysw{display:flex;align-items:center;gap:9px;font-weight:700;font-size:.92rem;color:var(--m-text);cursor:pointer}
+.merchant-root .paysw input{width:18px;height:18px;accent-color:var(--m-accent);flex:none}
 .callegend i{width:14px;height:14px;border-radius:4px;display:inline-block}
 
 /* rooms-hub: on-demand (?) concept popover — progressive disclosure, replaces 3 stacked explainers */

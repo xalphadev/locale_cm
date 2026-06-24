@@ -4,7 +4,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import { MTopbar } from '../MTopbar';
 import { ConfirmSubmit } from '../ConfirmSubmit';
-import { createSeasonAction, deleteSeasonAction, createRateAction, deleteRateAction } from '../../actions';
+import { createSeasonAction, deleteSeasonAction, createRateAction, deleteRateAction, updateStayPaymentAction } from '../../actions';
 import DateRangePicker from '../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 const baht = (m: any) => (m != null ? `฿${Math.round(Number(m) / 100).toLocaleString()}` : '—');
 const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 
-export default async function Pricing({ searchParams }: { searchParams: { ok?: string; error?: string } }) {
+export default async function Pricing({ searchParams }: { searchParams: { ok?: string; error?: string; warn?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
@@ -28,6 +28,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
       ORDER BY r.created_at`, [acc.place_id]);
   const ratesByUnit: Record<string, any[]> = {};
   for (const r of rates) (ratesByUnit[r.stay_unit_id] ||= []).push(r);
+  const [pay] = await q<any>(`SELECT pay_promptpay, pay_bank, pay_account_no, pay_account_name, pay_online_enabled FROM places WHERE id=$1`, [acc.place_id]);
 
   return (
     <>
@@ -38,8 +39,22 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
       {searchParams?.error === 'price' && <div className="banner-err">กรุณาใส่ราคา</div>}
       {searchParams?.error === 'label' && <div className="banner-err">กรุณาตั้งชื่อช่วง</div>}
       {searchParams?.error === 'unit' && <div className="banner-err">ไม่พบรูปแบบห้อง</div>}
+      {searchParams?.warn === 'nochannel' && <div className="banner-err">ใส่ PromptPay หรือ ธนาคาร+เลขบัญชี ก่อนเปิดรับจองออนไลน์</div>}
 
-      <p className="note">ตั้งราคาต่อ “รูปแบบห้อง” แยกตามช่วง (ไฮ/โลว์ซีซั่น) — เป็นราคาที่ <b>แสดง</b> ให้ลูกค้าเห็นเท่านั้น ไม่มีการเก็บเงินผ่านแอป</p>
+      <form className="paycard" action={updateStayPaymentAction}>
+        <div className="paycard-h"><Icon n="wallet" size={17} /> บัญชีรับเงิน (จองออนไลน์)</div>
+        <p className="note" style={{ margin: 0 }}>ลูกค้าโอนเข้าบัญชีนี้ของคุณ<b>โดยตรง</b> แล้วแนบสลิป คุณเป็นคนตรวจ — ระบบไม่ถือเงินแทน</p>
+        <label className="paysw"><input type="checkbox" name="pay_online_enabled" defaultChecked={!!pay?.pay_online_enabled} /> <span>เปิดรับจองออนไลน์ + ชำระเงิน</span></label>
+        <div className="field"><label>PromptPay (เบอร์ / เลขบัตรประชาชน)</label><input name="pay_promptpay" defaultValue={pay?.pay_promptpay || ''} placeholder="08xxxxxxxx" inputMode="tel" maxLength={40} /></div>
+        <div className="fgrid">
+          <div className="field"><label>ธนาคาร</label><input name="pay_bank" defaultValue={pay?.pay_bank || ''} placeholder="กสิกรไทย" maxLength={60} /></div>
+          <div className="field"><label>เลขบัญชี</label><input name="pay_account_no" defaultValue={pay?.pay_account_no || ''} placeholder="xxx-x-xxxxx-x" inputMode="numeric" maxLength={40} /></div>
+        </div>
+        <div className="field"><label>ชื่อบัญชี</label><input name="pay_account_name" defaultValue={pay?.pay_account_name || ''} placeholder="ชื่อ-นามสกุล / ชื่อร้าน" maxLength={120} /></div>
+        <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกบัญชี</button>
+      </form>
+
+      <p className="note">ตั้งราคาต่อ “รูปแบบห้อง” แยกตามช่วง (ไฮ/โลว์ซีซั่น) — เป็นราคาที่ใช้ <b>คิดยอด</b> ตอนลูกค้าจอง (ฐานราคาอยู่ในฟอร์มห้อง)</p>
 
       <section className="fsec">
         <div className="fsec-h"><span className="fsec-ic"><Icon n="calendar" size={15} /></span> ช่วงราคา (ฤดู)</div>
