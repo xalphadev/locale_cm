@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { q, demoUserId, i18n } from '@/lib/db';
+import { saveSlip } from '@/lib/storage';
 
 /** Switch UI language (TH/EN/ZH) — sets a cookie; the cookie-aware i18n re-renders everything. */
 export async function setLangAction(lang: string) {
@@ -203,6 +204,72 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
      ON CONFLICT DO NOTHING`,
     [lead.id, name, kind, mode, placeId]);
   redirect(`${back}?sent=1`);
+}
+
+/** Online booking WITH a slip payment (founder pivot 2026-06-24, host-direct model). The guest picks
+ *  dates/guests, transfers to the HOST's own account and uploads the slip; we record the amount + slip on
+ *  the booking spine (payment_status='submitted') for the host to verify. The platform never holds funds.
+ *  Quote = base price × nights/months (same maths the form previews, so the shown amount == the recorded
+ *  amount; seasonal-rate precision is a later refinement). */
+export async function createPaidBookingAction(placeId: string, stayUnitId: string, formData: FormData) {
+  const uid = await demoUserId();
+  const g = (k: string) => String(formData.get(k) ?? '').trim();
+  const name = g('contact_name').slice(0, 80);
+  const phone = g('contact_phone').slice(0, 40);
+  const email = g('contact_email').slice(0, 120);
+  const arrival = g('arrival').slice(0, 40);
+  const party = Math.max(1, Math.min(50, parseInt(g('party_size') || '1', 10) || 1));
+  const method = g('payment_method') === 'bank_transfer' ? 'bank_transfer' : 'promptpay';
+  const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const from = isDate(g('desired_from')) ? g('desired_from') : null;
+  const to = isDate(g('desired_to')) ? g('desired_to') : null;
+  const months = Math.max(1, Math.min(36, parseInt(g('desired_months') || '0', 10) || 1));
+  const back = `/stay/${stayUnitId}/book`;
+  if (!name || !phone) redirect(`${back}?err=contact`);
+
+  const [pl] = await q<any>(`SELECT id, offers_stay, pay_online_enabled FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
+  if (!pl || !pl.offers_stay || !pl.pay_online_enabled) redirect('/stay');
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId);
+  const [su] = isUuid ? await q<any>(`SELECT id, rental_mode, managed, price_minor FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]) : [];
+  if (!su) redirect('/stay');
+  const mode = su.rental_mode;
+  if (!from || (mode === 'daily' && !to)) redirect(`${back}?err=dates`);
+  const todayBkk = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+  if (mode === 'daily' && from < todayBkk) redirect(`${back}?err=past`);
+
+  const base = Number(su.price_minor ?? 0);
+  const nights = mode === 'daily' && to ? Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / 86400000)) : 0;
+  const amount = mode === 'daily' ? nights * base : months * base;
+  if (amount <= 0) redirect(`${back}?err=price`);
+
+  // daily managed: only take a slip when a room is actually free for the span (never charge for un-fulfillable)
+  if (mode === 'daily' && su.managed && from && to) {
+    const [free] = await q<{ id: string }>(
+      `SELECT r.id FROM stay_room r WHERE r.stay_unit_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+         AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block bk WHERE bk.room_id=r.id AND bk.status='active' AND bk.deleted_at IS NULL
+           AND bk.block_kind IN ('stay','tenancy','maintenance') AND bk.span && daterange($2::date,$3::date,'[)')) LIMIT 1`, [su.id, from, to]);
+    if (!free) redirect(`${back}?err=full`);
+  }
+
+  const slip = formData.get('slip') as File | null;
+  const slipUrl = slip && typeof slip.arrayBuffer === 'function' ? await saveSlip(slip) : null;
+  if (!slipUrl) redirect(`${back}?err=slip`);
+
+  const msg = [email ? `อีเมล: ${email}` : '', arrival ? `ถึงประมาณ: ${arrival}` : ''].filter(Boolean).join(' · ') || null;
+  const [bk] = await q<{ id: string; ref: string }>(
+    `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, desired_months,
+        requester_user_id, contact_name, contact_phone, party_size, message, channel, status,
+        amount_minor, paid_minor, payment_method, slip_url, paid_at, payment_status, expires_at)
+     VALUES($1,$2,'booking',$3,$4,$5,$6,$7,$8,$9,$10,$11,'app','new',$12,$12,$13,$14,now(),'submitted', now() + interval '60 days')
+     RETURNING id, ref`,
+    [placeId, su.id, mode, from, mode === 'daily' ? to : null, mode === 'monthly' ? months : null, uid, name, phone, party, msg, amount, method, slipUrl]);
+  if (bk) await q(
+    `INSERT INTO notif_outbox(event_type, event_class, merchant_id, city_id, entity_type, entity_id, dedup_key, payload)
+     SELECT 'stay_lead_new', 'ops', p.merchant_id, p.city_id, 'stay_booking_request', $1, 'lead:' || $1,
+            jsonb_build_object('place_id', p.id, 'name', $2::text, 'kind', 'booking', 'rental_mode', $3::text, 'paid', true)
+       FROM places p WHERE p.id=$4 AND p.merchant_id IS NOT NULL ON CONFLICT DO NOTHING`,
+    [bk.id, name, mode, placeId]);
+  redirect(`/stay/requests?booked=${bk?.ref || ''}`);
 }
 
 // Renter withdraws their OWN still-open lead (PDPA self-service + control). Soft-delete so it also

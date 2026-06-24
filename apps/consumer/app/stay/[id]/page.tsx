@@ -32,7 +32,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
               su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at, su.managed,
               su.capacity, su.deposit_minor, su.min_stay, su.room_size_sqm, su.furnished, su.bills_included, su.unit_amenities,
               su.bedrooms, su.bathrooms, su.gender_policy, su.check_in_time, su.check_out_time, su.attrs,
-              p.id place_id, p.brand_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website,
+              p.id place_id, p.brand_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website, p.pay_online_enabled,
               p.opening_hours, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -156,6 +156,12 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
         {searchParams?.err === 'full' && <div className="bookerr">ช่วงวันที่นี้เต็มแล้ว — เลือกวันอื่น หรือดู “ปฏิทินคืนว่าง” ด้านบน</div>}
         {searchParams?.err === 'past' && <div className="bookerr">เลือกวันที่ในอนาคต — จองย้อนหลังไม่ได้</div>}
         {searchParams?.err === 'toomany' && <div className="bookerr">คุณมีคำขอที่ยังรออยู่กับที่พักนี้หลายรายการแล้ว — รอการติดต่อกลับ หรือถอนคำขอเดิมที่ “คำขอของฉัน” ก่อน</div>}
+        {u.pay_online_enabled && u.price_minor != null && (
+          <Link className="bookpay-cta" href={`/stay/${u.id}/book`}>
+            <Icon n="calendar" size={18} /> <span>จองและชำระเงินออนไลน์</span>
+            <b>฿{Math.round(u.price_minor / 100).toLocaleString()}/{monthly ? 'เดือน' : 'คืน'}</b>
+          </Link>
+        )}
         <details className="bookbox" {...(fromQ ? { open: true } : {})}>
           <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดู·จองห้องนี้</summary>
           <form className="bookform" action={submitBookingRequestAction.bind(null, u.place_id, u.id)}>

@@ -14,11 +14,12 @@ const fmt = (d: any) => { if (!d) return ''; const dt = d instanceof Date ? d : 
 const KIND_TH: Record<string, string> = { viewing: 'ขอเข้าชมห้อง', booking: 'ขอจอง/กันห้อง', enquiry: 'สอบถามข้อมูล' };
 
 // Renter-side view of the contact-leads they submitted (closes the lead loop — no money, just status + follow-up).
-export default async function MyStayRequests({ searchParams }: { searchParams: { cancelled?: string } }) {
+export default async function MyStayRequests({ searchParams }: { searchParams: { cancelled?: string; booked?: string } }) {
   const uid = await demoUserId();
   const rows = uid ? await q<any>(
-    `SELECT r.id, r.request_kind, r.rental_mode, r.desired_from, r.desired_to, r.desired_months,
+    `SELECT r.id, r.ref, r.request_kind, r.rental_mode, r.desired_from, r.desired_to, r.desired_months,
             r.status, r.created_at, r.expires_at, r.converted_block_id, r.scheduled_at, r.checked_in_at, r.checked_out_at,
+            r.payment_status, r.amount_minor,
             p.id place_id, p.name_i18n place_name, p.stay_kind, p.phone, p.line_id,
             su.id unit_id, su.name_i18n unit_name
        FROM stay_booking_request r
@@ -32,6 +33,9 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
   // 'confirmed' = owner accepted the request; 'converted' = promoted to a real occupancy block (kept distinct).
   const statusOf = (r: any) => {
     const expired = r.status !== 'converted' && r.expires_at && Date.parse(r.expires_at) < now;
+    // paid bookings (slip submitted) get their own pre-confirmation states
+    if (r.payment_status === 'submitted' && !['converted', 'declined', 'cancelled', 'no_show'].includes(r.status)) return { label: 'ส่งสลิปแล้ว · รอที่พักตรวจสอบ', cls: 'pending', ic: 'clock' };
+    if (r.payment_status === 'rejected') return { label: 'สลิปไม่ผ่าน — ติดต่อที่พัก', cls: 'muted', ic: 'x' };
     if (r.status === 'converted') {
       if (r.checked_out_at) return { label: 'เข้าพักเสร็จสิ้น', cls: 'muted', ic: 'check' };
       if (r.checked_in_at) return { label: 'กำลังเข้าพัก', cls: 'ok', ic: 'check' };
@@ -56,6 +60,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
       <p className="shopnote" style={{ margin: '2px 16px 12px' }}><Icon n="chat" size={13} /> คำขอติดต่อที่คุณส่งให้ที่พัก — ไม่ใช่การจอง/ชำระเงิน ที่พักจะติดต่อกลับโดยตรง</p>
 
       {searchParams?.cancelled && <div className="booksent" style={{ margin: '0 16px 12px' }}><Icon n="check" size={16} /> ถอนคำขอแล้ว</div>}
+      {searchParams?.booked && <div className="bookedok" style={{ margin: '0 16px 14px' }}><Icon n="check" size={18} /> <div><b>จองสำเร็จ!</b> เลขจอง <b>{searchParams.booked}</b><span>ส่งสลิปให้ที่พักแล้ว — รอการยืนยัน เราจะแจ้งสถานะที่นี่</span></div></div>}
 
       {rows.length === 0 ? (
         <div className="empty" style={{ padding: '32px 16px', textAlign: 'center' }}>
@@ -81,7 +86,7 @@ export default async function MyStayRequests({ searchParams }: { searchParams: {
                   </span>
                   <Icon n="chevR" size={16} className="reqcard-go" />
                 </Link>
-                <div className="reqmeta">{KIND_TH[r.request_kind] || 'สอบถามข้อมูล'} · {dates}</div>
+                <div className="reqmeta">{r.ref ? <b>{r.ref} · </b> : null}{KIND_TH[r.request_kind] || 'สอบถามข้อมูล'} · {dates}{r.amount_minor ? ` · ฿${Math.round(Number(r.amount_minor) / 100).toLocaleString()}` : ''}</div>
                 <div className={`reqbadge ${st.cls}`}><Icon n={st.ic} size={13} /> {st.label}</div>
                 <div className="reqfoot">
                   <span className="muted">ส่งเมื่อ {fmt(r.created_at)}</span>
