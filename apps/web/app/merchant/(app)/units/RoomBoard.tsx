@@ -25,6 +25,7 @@ const untilTxt = (d: any) => { if (!d) return ''; const dt = new Date(d); return
 export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms: BoardRoom[]; groupTerm?: string }) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
+  const [typeF, setTypeF] = useState('all');
   const [dense, setDense] = useState(rooms.length > 24);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -33,10 +34,12 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
     for (const r of rooms) c[r.status] = (c[r.status] || 0) + 1;
     return c;
   }, [rooms]);
+  const types = useMemo(() => [...new Set(rooms.map((r) => r.type).filter(Boolean))].sort((a, b) => COLL.compare(a, b)), [rooms]);
 
   const ql = query.trim().toLowerCase();
   const filtered = rooms.filter((r) =>
     (status === 'all' || r.status === status) &&
+    (typeF === 'all' || r.type === typeF) &&
     (!ql || r.code.toLowerCase().includes(ql) || (r.type && r.type.toLowerCase().includes(ql)) || (r.note && r.note.toLowerCase().includes(ql)) || (r.guest && r.guest.toLowerCase().includes(ql))));
 
   const byFloor: Record<string, BoardRoom[]> = {}; const floors: string[] = [];
@@ -79,6 +82,17 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
       </div>
 
       <div className="rfchips">
+        {types.length > 1 && (
+          <div className={`rftype ${typeF !== 'all' ? 'on' : ''}`}>
+            <Icon n="bed" size={13} />
+            <span>{typeF === 'all' ? 'ทุกประเภท' : typeF}</span>
+            <Icon n="chevD" size={13} />
+            <select value={typeF} onChange={(e) => setTypeF(e.target.value)} aria-label="กรองตามประเภทห้อง">
+              <option value="all">ทุกประเภท</option>
+              {types.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+        )}
         {FILTERS.filter(([k]) => k === 'all' || counts[k]).map(([k, label]) => (
           <button key={k} type="button" className={`rfchip ${status === k ? 'on' : ''}`} onClick={() => setStatus(k)}
             style={k !== 'all' && status === k ? { background: ST[k].color, borderColor: ST[k].color } : undefined}>
