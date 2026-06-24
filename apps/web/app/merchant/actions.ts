@@ -1334,9 +1334,15 @@ export async function convertMonthlyLeadAction(leadId: string) {
 export async function verifySlipAction(leadId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_to, desired_months, rental_mode, contact_name, status, converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND payment_status='submitted'`, [leadId, acc.place_id]);
+  const [b] = await q<any>(`SELECT id, ref, requester_user_id, stay_unit_id, desired_from, desired_to, desired_months, rental_mode, contact_name, status, converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND payment_status='submitted'`, [leadId, acc.place_id]);
   if (!b) redirect('/merchant/bookings');
   await q(`UPDATE stay_booking_request SET payment_status='verified', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
+  // notify the guest their booking is confirmed (consumer inbox → /stay/requests). Walk-ins have no user → skip.
+  if (b.requester_user_id) await q(
+    `INSERT INTO notif_outbox(event_type, event_class, audience_user_id, city_id, entity_type, entity_id, dedup_key, payload)
+     SELECT 'stay_booking_verified','ops',$2,p.city_id,'place',p.id,'bkverify:'||$3, jsonb_build_object('title',$4::text)
+       FROM places p WHERE p.id=$1 ON CONFLICT DO NOTHING`,
+    [acc.place_id, b.requester_user_id, b.id, `จองสำเร็จ! ที่พักยืนยันการชำระเงินแล้ว · ${b.ref}`]);
   // hold the room (skip if already converted, e.g. a re-verify)
   if (b.status !== 'converted' && b.stay_unit_id) {
     if (b.rental_mode === 'daily' && b.desired_from && b.desired_to) {
@@ -1386,7 +1392,12 @@ export async function verifySlipAction(leadId: string) {
 export async function rejectSlipAction(leadId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  await q(`UPDATE stay_booking_request SET payment_status='rejected', updated_at=now() WHERE id=$1 AND place_id=$2 AND payment_status='submitted'`, [leadId, acc.place_id]);
+  const [r] = await q<any>(`UPDATE stay_booking_request SET payment_status='rejected', updated_at=now() WHERE id=$1 AND place_id=$2 AND payment_status='submitted' RETURNING requester_user_id, ref`, [leadId, acc.place_id]);
+  if (r?.requester_user_id) await q(
+    `INSERT INTO notif_outbox(event_type, event_class, audience_user_id, city_id, entity_type, entity_id, dedup_key, payload)
+     SELECT 'stay_booking_rejected','ops',$2,p.city_id,'place',p.id,'bkreject:'||$3, jsonb_build_object('title',$4::text)
+       FROM places p WHERE p.id=$1 ON CONFLICT DO NOTHING`,
+    [acc.place_id, r.requester_user_id, leadId, `สลิปไม่ผ่าน — กรุณาติดต่อที่พัก · ${r.ref}`]);
   revalidatePath('/merchant/bookings');
   redirect(`/merchant/bookings/${leadId}?ok=rejected`);
 }

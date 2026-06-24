@@ -41,9 +41,11 @@ export default async function Inbox() {
             const title = n.payload?.title || '';
             const place = i18n(n.pname);
             const isDeal = n.event_type === 'deal_published';
+            const isBooking = typeof n.event_type === 'string' && n.event_type.startsWith('stay_booking');
+            const href = isBooking ? '/stay/requests' : (n.pid ? `/place/${n.pid}` : '#');
             return (
-              <Link className="nrow" key={n.id} href={n.pid ? `/place/${n.pid}` : '#'}>
-                <span className="nic"><Icon n={isDeal ? 'tag' : 'sparkles'} size={18} /></span>
+              <Link className="nrow" key={n.id} href={href}>
+                <span className="nic"><Icon n={isBooking ? 'bed' : isDeal ? 'tag' : 'sparkles'} size={18} /></span>
                 <div className="nbody">
                   <div className="ntx">
                     {isDeal ? <><b>{place}</b> ที่คุณบันทึกมีดีลใหม่{title ? <> · {title}</> : null}</>
