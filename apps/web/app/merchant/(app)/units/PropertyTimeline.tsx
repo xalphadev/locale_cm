@@ -13,6 +13,7 @@ type Blk = { id: string; s: string; e: string | null; k: string; note: string | 
 export type TLRoom = {
   id: string; code: string; floor: string | null; guest: string | null;
   rental_mode: string; occupancy_status: string; occupied_until: string | null; blocks: Blk[];
+  unitId: string; unitName: string; priceMinor: number | null; pricePeriod: string | null; capacity: number | null; bedrooms: number | null; unitSort: number;
 };
 const DOW = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 // pastel pairs (bg + text) — softer than solid bars, dark readable text (matches the PMS reference). NO purple.
@@ -26,23 +27,24 @@ const KLABEL: Record<string, string> = { stay: 'เข้าพัก', tenancy:
 export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms: TLRoom[]; days: string[]; today: string; term: string; returnTo: string }) {
   const [sel, setSel] = useState<{ roomId: string; code: string; a: string; b: string | null } | null>(null);
   const [open, setOpen] = useState<{ blk: Blk; code: string } | null>(null);
-  const [floor, setFloor] = useState('all');
+  const [typeF, setTypeF] = useState('all');
   const [qstr, setQstr] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const toggle = (f: string) => setCollapsed((p) => { const n = new Set(p); n.has(f) ? n.delete(f) : n.add(f); return n; });
-  const floorLabel = (f: string) => (f ? `${term} ${f}` : 'ไม่ระบุชั้น');
+  const toggle = (t: string) => setCollapsed((p) => { const n = new Set(p); n.has(t) ? n.delete(t) : n.add(t); return n; });
+  const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
+  const bedTag = (r: TLRoom) => (r.capacity ? `${r.capacity} คน` : r.bedrooms ? `${r.bedrooms} ห้องนอน` : '');
 
-  const floors = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rooms) { const f = r.floor || ''; m.set(f, (m.get(f) || 0) + 1); }
+  const types = useMemo(() => {
+    const m = new Map<string, { name: string; n: number }>();
+    for (const r of rooms) { const e = m.get(r.unitId) || { name: r.unitName, n: 0 }; e.n++; m.set(r.unitId, e); }
     return [...m.entries()];
   }, [rooms]);
 
   const ql = qstr.trim().toLowerCase();
-  const shown = rooms.filter((r) => (floor === 'all' || (r.floor || '') === floor)
+  const shown = rooms.filter((r) => (typeF === 'all' || r.unitId === typeF)
     && (!ql || r.code.toLowerCase().includes(ql) || (r.guest && r.guest.toLowerCase().includes(ql))));
-  const groups: { floor: string; rooms: TLRoom[] }[] = [];
-  for (const r of shown) { const f = r.floor || ''; const last = groups[groups.length - 1]; if (!last || last.floor !== f) groups.push({ floor: f, rooms: [r] }); else last.rooms.push(r); }
+  const groups: { id: string; rooms: TLRoom[] }[] = [];
+  for (const r of shown) { const last = groups[groups.length - 1]; if (!last || last.id !== r.unitId) groups.push({ id: r.unitId, rooms: [r] }); else last.rooms.push(r); }
 
   const cover = (r: TLRoom, day: string): { blk: Blk | null; flag: boolean } => {
     for (const bl of r.blocks) if (bl.s <= day && (!bl.e || day < bl.e)) return { blk: bl, flag: false };
@@ -50,6 +52,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
     return { blk: null, flag: false };
   };
   const dayOcc = (day: string) => { let occ = 0; for (const r of rooms) { const c = cover(r, day); if (c.blk || c.flag) occ++; } return { occ, pct: rooms.length ? Math.round((occ / rooms.length) * 100) : 0 }; };
+  const typeAvail = (rs: TLRoom[], day: string) => rs.filter((r) => { const c = cover(r, day); return !c.blk && !c.flag; }).length;   // free rooms of this type on a day
   const inSel = (r: TLRoom, day: string) => !!sel && sel.roomId === r.id && (sel.b ? day >= sel.a && day < sel.b : day === sel.a);
   const rangeClear = (r: TLRoom, a: string, b: string) => days.every((d) => !(d >= a && d < b) || (!cover(r, d).blk && !cover(r, d).flag));
   const onFree = (r: TLRoom, day: string) => {
@@ -94,10 +97,10 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   return (
     <>
       <div className="caltools">
-        {floors.length > 1 && (
+        {types.length > 1 && (
           <div className="calchips">
-            <button type="button" className={`calchip ${floor === 'all' ? 'on' : ''}`} onClick={() => setFloor('all')}>ทุกชั้น</button>
-            {floors.map(([f, n]) => <button type="button" key={f || '_'} className={`calchip ${floor === f ? 'on' : ''}`} onClick={() => setFloor(f)}>{floorLabel(f)} <i>{n}</i></button>)}
+            <button type="button" className={`calchip ${typeF === 'all' ? 'on' : ''}`} onClick={() => setTypeF('all')}>ทุกประเภท</button>
+            {types.map(([id, t]) => <button type="button" key={id || '_'} className={`calchip ${typeF === id ? 'on' : ''}`} onClick={() => setTypeF(id)}>{t.name} <i>{t.n}</i></button>)}
           </div>
         )}
         <div className="calsearch">
@@ -117,21 +120,23 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
               <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); const o = dayOcc(d); return <th key={d} className={`caltl-dh ${d === today ? 'tdy' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b><span className={`caltl-occ ${o.occ ? '' : 'z'}`} title={`เข้าพัก ${o.occ}/${rooms.length}`}><i>{o.occ}</i>{o.pct}%</span></th>; })}</tr>
             </thead>
             <tbody>
-              {groups.map((g) => (
-                <Fragment key={g.floor || '_'}>
-                  {floors.length > 1 && (
-                    <tr className="cal-grp"><th className="cal-grp-c" colSpan={days.length + 1} onClick={() => toggle(g.floor)}>
-                      <Icon n={collapsed.has(g.floor) ? 'chevR' : 'chevD'} size={15} /> {floorLabel(g.floor)} <em>{g.rooms.length} ห้อง</em>
-                    </th></tr>
-                  )}
-                  {!collapsed.has(g.floor) && g.rooms.map((r) => (
+              {groups.map((g) => { const t = g.rooms[0]; const col = collapsed.has(g.id); const sub = [`${g.rooms.length} ห้อง`, money(t.priceMinor, t.pricePeriod), bedTag(t)].filter(Boolean).join(' · '); return (
+                <Fragment key={g.id || '_'}>
+                  <tr className="cal-type">
+                    <th className="cal-type-h" onClick={() => toggle(g.id)}>
+                      <Icon n={col ? 'chevR' : 'chevD'} size={14} />
+                      <span><span className="cal-type-nm">{t.unitName}</span><span className="cal-type-sub">{sub}</span></span>
+                    </th>
+                    {days.map((d) => { const a = typeAvail(g.rooms, d); return <td key={d} className={`cal-type-av ${a ? '' : 'z'}`}>{a}</td>; })}
+                  </tr>
+                  {!col && g.rooms.map((r) => (
                     <tr key={r.id}>
-                      <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}</Link></th>
+                      <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}{r.floor ? <span className="caltl-fl"> · {term} {r.floor}</span> : null}</Link></th>
                       {cells(r)}
                     </tr>
                   ))}
                 </Fragment>
-              ))}
+              ); })}
             </tbody>
           </table>
         </div>

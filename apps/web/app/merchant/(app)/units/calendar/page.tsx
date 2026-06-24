@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
-import { q } from '@/lib/db';
+import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { PropertyTimeline } from '../PropertyTimeline';
@@ -37,6 +37,7 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
 
   const rooms = await q<any>(
     `SELECT r.id, r.code, r.floor, r.occupancy_status, to_char(r.occupied_until,'YYYY-MM-DD') occupied_until, su.rental_mode,
+            r.stay_unit_id, su.name_i18n unit_name, su.price_minor, su.price_period, su.capacity, su.bedrooms, su.sort unit_sort,
             g.contact_name guest_name,
             COALESCE(json_agg(json_build_object('id', b.id, 's', to_char(b.start_date,'YYYY-MM-DD'), 'e', to_char(b.end_date,'YYYY-MM-DD'), 'k', b.block_kind, 'note', b.note, 'guest', brb.contact_name, 'ref', brb.ref,
                      'bid', CASE WHEN brb.status='converted' THEN brb.id END, 'cin', brb.checked_in_at, 'cout', brb.checked_out_at))
@@ -54,14 +55,17 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
           ORDER BY bk.start_date DESC LIMIT 1
        ) g ON true
       WHERE r.place_id=$1 AND r.deleted_at IS NULL AND r.status='active'
-      GROUP BY r.id, su.rental_mode, g.contact_name`, [acc.place_id, start, endExcl]);
+      GROUP BY r.id, su.rental_mode, su.name_i18n, su.price_minor, su.price_period, su.capacity, su.bedrooms, su.sort, g.contact_name`, [acc.place_id, start, endExcl]);
 
   const tlRooms = rooms
     .map((r) => ({
       id: r.id, code: r.code, floor: r.floor, guest: r.guest_name || null,
       rental_mode: r.rental_mode, occupancy_status: r.occupancy_status, occupied_until: r.occupied_until, blocks: r.blocks || [],
+      unitId: r.stay_unit_id || '', unitName: r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุประเภท',
+      priceMinor: r.price_minor != null ? Number(r.price_minor) : null, pricePeriod: r.price_period || null,
+      capacity: r.capacity || null, bedrooms: r.bedrooms || null, unitSort: r.unit_sort ?? 9999,
     }))
-    .sort((a, b) => coll(a.floor || '', b.floor || '') || coll(a.code, b.code));   // natural sort: A1, A2 … A10
+    .sort((a, b) => (a.unitSort - b.unitSort) || coll(a.unitName, b.unitName) || coll(a.code, b.code));   // by type, then natural code
 
   return (
     <>

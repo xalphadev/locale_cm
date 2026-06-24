@@ -1303,8 +1303,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .calsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text);outline:none;min-width:0}
 .merchant-root .calsearch button{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;padding:0;display:flex}
 .merchant-root .caltl-t.calbars{table-layout:fixed;width:auto;min-width:100%}
-.merchant-root .cal-col-rh{width:84px}
+.merchant-root .cal-col-rh{width:98px}
 .merchant-root .cal-col-d{width:34px}
+.merchant-root .cal-type-h{position:sticky;left:0;z-index:1;display:flex;align-items:center;gap:4px;text-align:left;padding:7px 8px;cursor:pointer;background:#eef2f8;border-top:1px solid #e1e6ef;border-bottom:1px solid #e1e6ef}
+.merchant-root .cal-type-h svg{flex:none;color:var(--m-muted)}
+.merchant-root .cal-type-nm{display:block;font-size:.8rem;font-weight:800;color:var(--m-text);line-height:1.18}
+.merchant-root .cal-type-sub{display:block;font-size:.66rem;font-weight:600;color:var(--m-muted);line-height:1.2;margin-top:1px}
+.merchant-root .cal-type-av{text-align:center;font-size:.74rem;font-weight:800;color:#16794a;background:#eef2f8;border-top:1px solid #e1e6ef;border-bottom:1px solid #e1e6ef;border-right:1px solid #e6eaf1}
+.merchant-root .cal-type-av.z{color:#c2410c}
+.merchant-root .caltl-fl{color:var(--m-muted);font-weight:600;font-size:.74rem}
 .merchant-root .calbars .cal-cell{height:44px;padding:0;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6}
 .merchant-root .calbars .cal-free{background:#fafbfd;cursor:pointer}
 .merchant-root .calbars .cal-free.pa{background:#f5f6f9;cursor:default}
