@@ -27,7 +27,6 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
   const [status, setStatus] = useState('all');
   const [dense, setDense] = useState(rooms.length > 24);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-  const [bfDismissed, setBfDismissed] = useState(false);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: rooms.length };
@@ -70,7 +69,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
       <div className="rfilter">
         <div className="rfsearch">
           <Icon n="search" size={16} />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหาเลขห้อง / รูปแบบ / โน้ต…" />
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ค้นหา ห้อง / ชื่อผู้เช่า / โน้ต" />
           {query && <button type="button" onClick={() => setQuery('')} aria-label="ล้าง"><Icon n="x" size={15} /></button>}
         </div>
         <button type="button" className={`rfdense ${dense ? 'on' : ''}`} onClick={() => setDense((d) => !d)} aria-label="สลับมุมมอง" title={dense ? 'มุมมองการ์ด' : 'มุมมองผังย่อ'}>
@@ -79,24 +78,12 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น' }: { rooms
         <button type="button" className={`rfdense ${selectMode ? 'on' : ''}`} onClick={() => (selectMode ? exitSelect() : setSelectMode(true))} aria-label="เลือกหลายห้อง" title="เลือกหลายห้อง"><Icon n="check" size={17} /></button>
       </div>
 
-      {(() => {
-        const occN = rooms.filter((r) => r.status === 'occupied' || r.status === 'reserved').length;
-        const show = !bfDismissed && !selectMode && rooms.some((r) => r.monthly) && rooms.length >= 8 && occN / rooms.length < 0.1;
-        return show ? (
-          <div className="rbackfill">
-            <span><b>ว่าง {Math.round((1 - occN / rooms.length) * 100)}%</b> — มีคนอยู่แล้ว? ตั้งทีเดียวหลายห้อง</span>
-            <button type="button" className="rbackfill-go" onClick={() => { setSelectMode(true); setBfDismissed(true); }}>เลือก</button>
-            <button type="button" className="rbackfill-x" onClick={() => setBfDismissed(true)} aria-label="ปิด"><Icon n="x" size={15} /></button>
-          </div>
-        ) : null;
-      })()}
-
       <div className="rfchips">
         {FILTERS.filter(([k]) => k === 'all' || counts[k]).map(([k, label]) => (
           <button key={k} type="button" className={`rfchip ${status === k ? 'on' : ''}`} onClick={() => setStatus(k)}
             style={k !== 'all' && status === k ? { background: ST[k].color, borderColor: ST[k].color } : undefined}>
             {k !== 'all' && <span className="rfdot" style={{ background: status === k ? 'rgba(255,255,255,.9)' : ST[k].color }} />}
-            {label}{k !== 'all' ? ` ${counts[k] || 0}` : ''}
+            {label}
           </button>
         ))}
       </div>

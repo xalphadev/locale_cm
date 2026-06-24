@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
-import { setStayUnitManagedAction, setRoomGroupTermAction } from '../../actions';
+import { setRoomGroupTermAction } from '../../actions';
 import RoomBoard from './RoomBoard';
 import { RoomHub } from '../rooms/RoomHub';
 import { RoomViewToggle } from './RoomViewToggle';
@@ -51,8 +51,6 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const maint = rooms.filter((r) => r.occupancy_status === 'maintenance').length;
   const totalForBar = rooms.length || 1;
   const seg = (n: number) => `${((n / totalForBar) * 100).toFixed(2)}%`;
-  const roomCountByUnit: Record<string, number> = {};
-  for (const r of rooms) if (r.stay_unit_id) roomCountByUnit[r.stay_unit_id] = (roomCountByUnit[r.stay_unit_id] || 0) + 1;
   const roomsData = rooms.map((r) => ({
     id: r.id, code: r.code, floor: r.floor, room_kind: r.room_kind, status: r.occupancy_status,
     occupied_until: r.occupied_until, note: r.note, type: r.unit_name ? i18n(r.unit_name) : '', monthly: r.rental_mode !== 'daily',
@@ -69,7 +67,6 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const roster = rooms
     .filter((r) => r.occupancy_status === 'occupied' || r.occupancy_status === 'reserved')
     .sort((a, b) => (a.occupied_until ? String(a.occupied_until) : '9999').localeCompare(b.occupied_until ? String(b.occupied_until) : '9999'));
-  const promptAutoCount = types.some((t) => !t.managed && (roomCountByUnit[t.id] || 0) > 0);
   const hasDaily = rooms.some((r) => r.rental_mode === 'daily');
   const fromQ = searchParams?.from, toQ = searchParams?.to;
   const rangeOk = /^\d{4}-\d{2}-\d{2}$/.test(fromQ || '') && /^\d{4}-\d{2}-\d{2}$/.test(toQ || '') && (toQ || '') > (fromQ || '');
@@ -124,13 +121,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
       ) : (
         <>
           <div className="rb-hero">
-            <div className="rb-hero-top">
-              <div className="rb-hero-num"><b style={{ color: ST.vacant.color }}>{vacant}</b><span>ห้องว่าง<i> / {rooms.length}</i></span></div>
-              <div className="rb-hero-acts">
-                <Link href="/merchant/units/print" title="พิมพ์ผัง" aria-label="พิมพ์ผัง"><Icon n="image" size={19} /></Link>
-                <Link href="/merchant/bookings" title="การจอง" aria-label="การจอง"><Icon n="chat" size={19} /></Link>
-              </div>
-            </div>
+            <div className="rb-hero-num"><b style={{ color: ST.vacant.color }}>{vacant}</b><span>ห้องว่าง<i> / {rooms.length}</i></span></div>
             <div className="rb-hero-bar">
               <div className="occbar-track">
                 {vacant > 0 && <span style={{ width: seg(vacant), background: ST.vacant.color }} title={`ว่าง ${vacant}`} />}
@@ -140,12 +131,13 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               </div>
               <span className="rb-hero-pct">ใช้งาน {rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</span>
             </div>
-            <div className="rb-hero-foot">
-              {soonRows.length > 0 && <a href="#soon" className="occteaser-chip"><Icon n="clock" size={13} /> ว่างเร็ว {soonRows.length}</a>}
-              {hasDaily && <a href="#daily" className="occteaser-chip"><Icon n="calendar" size={13} /> วันนี้ {checkIns.length}↓ {checkOuts.length}↑</a>}
-              <span className="rb-priv">ไม่โชว์ลูกค้า</span>
-            </div>
           </div>
+          {(soonRows.length > 0 || hasDaily) && (
+            <div className="rb-teasers">
+              {soonRows.length > 0 && <a href="#soon" className="occteaser-chip"><Icon n="clock" size={13} /> ว่างเร็ว {soonRows.length}</a>}
+              {hasDaily && <a href="#daily" className="occteaser-chip"><Icon n="calendar" size={13} /> วันนี้ เข้า {checkIns.length} · ออก {checkOuts.length}</a>}
+            </div>
+          )}
 
           <RoomBoard rooms={roomsData} groupTerm={term} />
 
@@ -194,15 +186,6 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             </details>
           )}
 
-          <details className="grpset">
-            <summary><span>จัดกลุ่มห้องตาม <b>{term}</b></span><span className="grpset-edit">เปลี่ยน</span></summary>
-            <form action={setRoomGroupTermAction} className="grpset-f">
-              <input name="term_custom" defaultValue={term} maxLength={16} placeholder="ชั้น" aria-label="คำเรียกกลุ่มห้อง" />
-              <button className="dbtn sm primary" type="submit">บันทึก</button>
-            </form>
-            <p className="fhint">พิมพ์เองได้ (เช่น โซน · อาคาร · ปีก · บ้าน) — ตอนเพิ่มห้องจะถามชื่อ{term} (เช่น ริมน้ำ) แล้วจัดกลุ่มในผังให้</p>
-          </details>
-
           {roster.length > 0 && (
             <details className="usettings">
               <summary><Icon n="users" size={14} /> ใครอยู่ห้องไหน · {roster.length} ห้อง</summary>
@@ -218,25 +201,17 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               </div>
             </details>
           )}
-          <details className="usettings" open={promptAutoCount}>
-            <summary><Icon n="bed" size={14} /> ตั้งค่า · นับห้องว่างอัตโนมัติ{promptAutoCount ? ' ●' : ''}</summary>
-            <div className="grpterm-sec">นับห้องว่างอัตโนมัติ</div>
-            <p className="fhint">เปิด “ใช้คำนวณ” → จำนวนห้องว่างที่ลูกค้าเห็นจะนับจากห้องจริงที่ตั้งเป็น “ว่าง” (ปิด = พิมพ์ตัวเลขเองเหมือนเดิม)</p>
-            {types.map((t) => {
-              const rc = roomCountByUnit[t.id] || 0;
-              return (
-                <div className="mrow" key={t.id} style={{ cursor: 'default' }}>
-                  <span className="mrow-body">
-                    <span className="mrow-nm">{i18n(t.name_i18n)}</span>
-                    <span className="mrow-meta">{t.rental_mode === 'monthly' ? 'รายเดือน' : 'รายวัน'} · {rc} ห้องจริง{t.managed ? ' · นับอัตโนมัติ' : ''}</span>
-                  </span>
-                  {rc === 0
-                    ? <span className="dbtn sm" style={{ opacity: .45 }}>เพิ่มห้องก่อน</span>
-                    : <form action={setStayUnitManagedAction.bind(null, t.id, !t.managed)}><button className={`dbtn sm ${t.managed ? 'primary' : ''}`} type="submit">{t.managed ? 'อัตโนมัติ ✓' : 'ใช้คำนวณ'}</button></form>}
-                </div>
-              );
-            })}
-          </details>
+          <div className="rb-footer">
+            <details className="rb-grp">
+              <summary>จัดกลุ่มตาม <b>{term}</b> · เปลี่ยน</summary>
+              <form action={setRoomGroupTermAction} className="grpset-f">
+                <input name="term_custom" defaultValue={term} maxLength={16} placeholder="ชั้น" aria-label="คำเรียกกลุ่มห้อง" />
+                <button className="dbtn sm primary" type="submit">บันทึก</button>
+              </form>
+              <p className="fhint">เช่น โซน · อาคาร · ปีก · บ้าน</p>
+            </details>
+            <Link className="rb-foot-link" href="/merchant/units/print"><Icon n="image" size={14} /> พิมพ์ผัง</Link>
+          </div>
         </>
       )}
     </>

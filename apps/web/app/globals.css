@@ -926,21 +926,27 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rbackfill b{font-weight:800}
 .rbackfill-go{flex:none;margin-left:auto;padding:7px 14px;border-radius:9px;border:none;background:#ea580c;color:#fff;font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap}
 .rbackfill-x{flex:none;border:none;background:none;color:#c2722e;cursor:pointer;display:flex;padding:2px}
-/* room-board occupancy hero — big vacant count + icon actions + bar (replaces the text-heavy occbar) */
-.rb-hero{margin:2px 0 13px;padding:15px 16px;border-radius:18px;background:linear-gradient(180deg,#ffffff,#f7fcf9);border:1px solid #e8eeec;box-shadow:0 6px 20px -13px rgba(20,40,30,.2)}
-.rb-hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+/* room-board occupancy hero — compact: big vacant count + bar (no icons/legend/foot) */
+.rb-hero{margin:2px 0 11px;padding:13px 15px;border-radius:16px;background:linear-gradient(180deg,#ffffff,#f7fcf9);border:1px solid #e8eeec;box-shadow:0 5px 16px -12px rgba(20,40,30,.18)}
 .rb-hero-num{display:flex;align-items:baseline;gap:8px}
-.rb-hero-num b{font-size:2.5rem;font-weight:800;line-height:.9}
-.rb-hero-num span{font-size:.98rem;font-weight:800;color:var(--m-text,#1a1a2e)}
+.rb-hero-num b{font-size:2rem;font-weight:800;line-height:.9}
+.rb-hero-num span{font-size:.92rem;font-weight:800;color:var(--m-text,#1a1a2e)}
 .rb-hero-num i{font-style:normal;color:var(--m-muted,#8a909a);font-weight:600}
-.rb-hero-acts{display:flex;gap:7px;flex:none}
-.rb-hero-acts a{display:flex;align-items:center;justify-content:center;width:39px;height:39px;border-radius:12px;background:#eef4fb;color:var(--m-accent,#2b74ff);border:1px solid #e4ecf4;transition:transform .15s}
-.rb-hero-acts a:active{transform:scale(.93)}
-.rb-hero-bar{display:flex;align-items:center;gap:11px;margin-top:13px}
-.rb-hero-bar .occbar-track{flex:1;height:11px}
-.rb-hero-pct{flex:none;font-size:.8rem;font-weight:700;color:var(--m-muted,#8a909a);white-space:nowrap}
-.rb-hero-foot{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
-.rb-priv{margin-left:auto;font-size:.72rem;font-weight:600;color:#aeb4bf;white-space:nowrap}
+.rb-hero-bar{display:flex;align-items:center;gap:10px;margin-top:10px}
+.rb-hero-bar .occbar-track{flex:1;height:10px}
+.rb-hero-pct{flex:none;font-size:.78rem;font-weight:700;color:var(--m-muted,#8a909a);white-space:nowrap}
+.rb-teasers{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px}
+.rb-footer{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-top:18px;padding-top:13px;border-top:1px solid var(--m-line)}
+.rb-grp{flex:1;min-width:0}
+.rb-grp>summary{list-style:none;cursor:pointer;font-size:.82rem;font-weight:600;color:var(--m-muted)}
+.rb-grp>summary::-webkit-details-marker{display:none}
+.rb-grp>summary b{color:var(--m-text);font-weight:800}
+.rb-grp .grpset-f{margin-top:9px}
+.rb-foot-link{display:inline-flex;align-items:center;gap:5px;flex:none;font-size:.82rem;font-weight:700;color:var(--m-muted);text-decoration:none}
+.autocount{display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:13px 15px;border:1px solid var(--m-line);border-radius:14px;background:var(--m-surface,#fff)}
+.autocount-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.autocount-l b{font-weight:800;font-size:.92rem;color:var(--m-text)}
+.autocount-l>span{font-size:.8rem;color:var(--m-muted);line-height:1.4}
 /* one "ห้อง" menu, two views — segmented switch (ผังตอนนี้ ⇄ ปฏิทินตามวัน) */
 .merchant-root .roomview{display:flex;gap:3px;margin:0 0 13px;padding:3px;border-radius:13px;background:var(--m-sunk,#eef1f5);border:1px solid var(--m-line)}
 .merchant-root .roomview-i{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border-radius:10px;font-size:.92rem;font-weight:800;color:var(--m-muted);text-decoration:none;transition:background .15s}
