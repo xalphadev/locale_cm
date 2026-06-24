@@ -1,5 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
+import { quoteStay, type Rate } from '@/lib/quote';
 
 // Single-page online-booking form: pick dates/guests → see the amount → fill contact → transfer to the
 // host's account and attach the slip → submit (createPaidBookingAction). Price preview = base × nights/
@@ -11,8 +12,8 @@ const ERR: Record<string, string> = {
   price: 'ที่พักนี้ยังไม่ได้ตั้งราคา', full: 'ช่วงวันที่เลือกเต็มแล้ว ลองวันอื่น', slip: 'แนบสลิปการโอนด้วย',
 };
 
-export function BookPayForm({ action, mode, basePriceMinor, capacity, pay, err }:
-  { action: (fd: FormData) => void; mode: string; basePriceMinor: number; capacity: number | null; pay: Pay; err: string | null }) {
+export function BookPayForm({ action, mode, basePriceMinor, rates, capacity, pay, err }:
+  { action: (fd: FormData) => void; mode: string; basePriceMinor: number; rates: Rate[]; capacity: number | null; pay: Pay; err: string | null }) {
   const daily = mode === 'daily';
   const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
   const [from, setFrom] = useState('');
@@ -21,12 +22,9 @@ export function BookPayForm({ action, mode, basePriceMinor, capacity, pay, err }
   const [method, setMethod] = useState<'promptpay' | 'bank_transfer'>(pay.promptpay ? 'promptpay' : 'bank_transfer');
   const [slipName, setSlipName] = useState('');
 
-  const nights = useMemo(() => {
-    if (!daily || !from || !to) return 0;
-    const n = Math.round((Date.parse(to) - Date.parse(from)) / 86400000);
-    return n > 0 ? n : 0;
-  }, [daily, from, to]);
-  const total = daily ? nights * basePriceMinor : months * basePriceMinor;
+  const { amount: total, nights } = useMemo(
+    () => quoteStay(mode, from || null, to || null, months, basePriceMinor, rates),
+    [mode, from, to, months, basePriceMinor, rates]);
   const dayAfter = from ? new Date(Date.parse(from) + 86400000).toISOString().slice(0, 10) : today;
   const hasBoth = !!pay.promptpay && !!(pay.bank && pay.accountNo);
 
@@ -58,7 +56,7 @@ export function BookPayForm({ action, mode, basePriceMinor, capacity, pay, err }
       <div className="bp-total">
         <span>ยอดที่ต้องชำระ</span>
         <b>{total > 0 ? money(total) : '—'}</b>
-        {total > 0 && <small>{daily ? `${nights} คืน` : `${months} เดือน`} × {money(basePriceMinor)}</small>}
+        {total > 0 && <small>{daily ? `${nights} คืน` : `${months} เดือน`}{daily && nights ? ` · เฉลี่ย ${money(Math.round(total / nights))}/คืน` : ''}</small>}
       </div>
 
       <section className="bp-sec">

@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { q, demoUserId, i18n } from '@/lib/db';
 import { saveSlip } from '@/lib/storage';
+import { quoteStay } from '@/lib/quote';
 
 /** Switch UI language (TH/EN/ZH) — sets a cookie; the cookie-aware i18n re-renders everything. */
 export async function setLangAction(lang: string) {
@@ -238,8 +239,13 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   if (mode === 'daily' && from < todayBkk) redirect(`${back}?err=past`);
 
   const base = Number(su.price_minor ?? 0);
-  const nights = mode === 'daily' && to ? Math.max(1, Math.round((Date.parse(to) - Date.parse(from)) / 86400000)) : 0;
-  const amount = mode === 'daily' ? nights * base : months * base;
+  const rateRows = await q<any>(
+    `SELECT r.price_minor, to_char(r.start_date,'YYYY-MM-DD') start, to_char(r.end_date,'YYYY-MM-DD') "end",
+            to_char(s.start_date,'YYYY-MM-DD') sstart, to_char(s.end_date,'YYYY-MM-DD') send, COALESCE(s.recurs_yearly,false) recurs
+       FROM stay_rate r LEFT JOIN stay_season s ON s.id = r.season_id
+      WHERE r.stay_unit_id=$1 AND r.deleted_at IS NULL AND (s.id IS NULL OR s.deleted_at IS NULL)`, [su.id]);
+  const rates = rateRows.map((r: any) => ({ price: Number(r.price_minor), start: r.start, end: r.end, seasonStart: r.sstart, seasonEnd: r.send, recurs: !!r.recurs }));
+  const { amount } = quoteStay(mode, from, mode === 'daily' ? to : null, months, base, rates);
   if (amount <= 0) redirect(`${back}?err=price`);
 
   // daily managed: only take a slip when a room is actually free for the span (never charge for un-fulfillable)

@@ -20,6 +20,15 @@ export default async function BookPay({ params, searchParams }: { params: { id: 
       WHERE su.id=$1 AND su.deleted_at IS NULL AND p.status='published' AND p.is_visible`, [params.id]) : [];
   if (!u || !u.offers_stay || !u.pay_online_enabled || u.price_minor == null) redirect(`/stay/${params.id}`);
 
+  // seasonal rates (for a date-accurate quote — same maths the server records)
+  const rateRows = await q<any>(
+    `SELECT r.price_minor, to_char(r.start_date,'YYYY-MM-DD') start, to_char(r.end_date,'YYYY-MM-DD') "end",
+            to_char(s.start_date,'YYYY-MM-DD') sstart, to_char(s.end_date,'YYYY-MM-DD') send, COALESCE(s.recurs_yearly,false) recurs
+       FROM stay_rate r LEFT JOIN stay_season s ON s.id = r.season_id
+      WHERE r.stay_unit_id=$1 AND r.deleted_at IS NULL AND (s.id IS NULL OR s.deleted_at IS NULL)
+      ORDER BY r.price_minor`, [u.id]);
+  const rates = rateRows.map((r) => ({ price: Number(r.price_minor), start: r.start, end: r.end, seasonStart: r.sstart, seasonEnd: r.send, recurs: !!r.recurs }));
+
   return (
     <div className="staybg">
       <div className="staytop">
@@ -32,6 +41,7 @@ export default async function BookPay({ params, searchParams }: { params: { id: 
         action={createPaidBookingAction.bind(null, u.place_id, u.id)}
         mode={u.rental_mode}
         basePriceMinor={Number(u.price_minor)}
+        rates={rates}
         capacity={u.capacity || null}
         pay={{ promptpay: u.pay_promptpay || null, bank: u.pay_bank || null, accountNo: u.pay_account_no || null, accountName: u.pay_account_name || null }}
         err={searchParams?.err || null}
