@@ -486,14 +486,15 @@ export async function createStayUnitAction(formData: FormData) {
     `INSERT INTO stay_units(place_id, name_i18n, description_i18n, rental_mode, price_minor, price_period, available_units, available_from, daily_status,
         capacity, deposit_minor, min_stay, room_size_sqm, furnished, bills_included, unit_amenities,
         bedrooms, bathrooms, gender_policy, check_in_time, check_out_time, attrs,
-        image_urls, image_count, status, author_kind)
+        image_urls, image_count, status, author_kind, published_to_marketplace)
      VALUES($1, jsonb_build_object('th',$2::text), CASE WHEN $23::text <> '' THEN jsonb_build_object('th',$23::text) END,
-        $3,$4,$5,$6,$24::date,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb,$21,$22,'published','merchant')`,
+        $3,$4,$5,$6,$24::date,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::jsonb,$21,$22,'published','merchant',$25)`,
     [acc.place_id, nameTh, mode, priceMinor, period, availUnits, dailyStatus,
       num('capacity'), depositMinor, num('min_stay'), num('room_size_sqm'), furnished,
       bills.length ? bills : null, amen.length ? amen : null,
       num('bedrooms'), num('bathrooms'), gender, ci, co, JSON.stringify(attrs),
-      urls.length ? urls : null, urls.length || 1, descTh, availFrom]);
+      urls.length ? urls : null, urls.length || 1, descTh, availFrom,
+      priceMinor != null && urls.length > 0]);   // only show on the marketplace once it has a price + ≥1 photo
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=1');
 }
@@ -604,6 +605,8 @@ export async function updateStayUnitAction(unitId: string, formData: FormData) {
   // managed listings keep their ผังห้อง-derived vacancy — re-derive so the edit form can't override it
   // (fn no-ops for unmanaged listings, so hand-typed ones keep exactly what the form set).
   await q(`SELECT fn_stay_refresh_vacancy($1)`, [unitId]);
+  // re-derive marketplace visibility from the FINAL state: a listing only shows to guests with a price + ≥1 photo
+  await q(`UPDATE stay_units SET published_to_marketplace = (price_minor IS NOT NULL AND COALESCE(array_length(image_urls,1),0) > 0) WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [unitId, acc.place_id]);
   revalidatePath('/merchant/rooms');
   redirect('/merchant/rooms?ok=updated');
 }
@@ -1429,6 +1432,21 @@ export async function markRefundedAction(leadId: string) {
     [acc.place_id, r.requester_user_id, leadId, `ที่พักคืนเงินให้แล้ว · ${r.ref}`]);
   revalidatePath('/merchant/bookings');
   redirect(`/merchant/bookings/${leadId}?ok=refunded`);
+}
+
+/** Record the remaining balance the host collected at check-in (cash/transfer, host-direct). Bumps paid_minor
+ *  (capped at the quoted amount) so the booking is fully paid + revenue reflects money actually received. */
+export async function collectBalanceAction(leadId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const add = bahtToMinor(s(formData, 'amount'));
+  if (add == null || add <= 0) redirect(`/merchant/bookings/${leadId}`);
+  await q(
+    `UPDATE stay_booking_request
+        SET paid_minor = LEAST(COALESCE(amount_minor, COALESCE(paid_minor,0) + $3), COALESCE(paid_minor,0) + $3), updated_at = now()
+      WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND payment_status='verified'`, [leadId, acc.place_id, add]);
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant');
+  redirect(`/merchant/bookings/${leadId}?ok=collected`);
 }
 
 /** Remove a nightly block (soft cancel). Frees the dates and refreshes the listing's vacancy. */

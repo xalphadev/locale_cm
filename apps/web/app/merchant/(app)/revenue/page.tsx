@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
@@ -12,11 +13,22 @@ export const dynamic = 'force-dynamic';
 const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const baht = (m: number) => `฿${Math.round(m / 100).toLocaleString('th-TH')}`;
 
-export default async function Revenue() {
+export default async function Revenue({ searchParams }: { searchParams: { month?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
   const pid = acc.place_id;
+
+  // selected month (?month=YYYY-MM, default current) — drives the financial summary; today + chart stay live
+  const now = new Date();
+  const mre = /^(\d{4})-(\d{2})$/.exec(searchParams?.month || '');
+  const year = mre ? +mre[1] : now.getFullYear();
+  const mon = mre ? Math.min(11, Math.max(0, +mre[2] - 1)) : now.getMonth();   // 0-11
+  const fmtM = (y: number, mo: number) => `${y}-${String(mo + 1).padStart(2, '0')}`;
+  const mStart = `${fmtM(year, mon)}-01`;
+  const prev = fmtM(mon === 0 ? year - 1 : year, (mon + 11) % 12);
+  const next = fmtM(mon === 11 ? year + 1 : year, (mon + 1) % 12);
+  const isCurrent = year === now.getFullYear() && mon === now.getMonth();
 
   const [m] = await q<any>(
     `SELECT count(*)::int bookings,
@@ -24,14 +36,18 @@ export default async function Revenue() {
             COALESCE(SUM(GREATEST(0, COALESCE(amount_minor,0) - COALESCE(paid_minor,0))),0)::bigint outstanding
        FROM stay_booking_request
       WHERE place_id=$1 AND deleted_at IS NULL AND payment_status='verified'
-        AND paid_at >= date_trunc('month', CURRENT_DATE) AND paid_at < (date_trunc('month', CURRENT_DATE) + interval '1 month')`, [pid]);
+        AND paid_at >= $2::date AND paid_at < ($2::date + interval '1 month')`, [pid, mStart]);
+  const [refund] = await q<any>(
+    `SELECT COALESCE(SUM(refunded_minor),0)::bigint refunded FROM stay_booking_request
+      WHERE place_id=$1 AND deleted_at IS NULL AND payment_status='refunded'
+        AND refunded_at >= $2::date AND refunded_at < ($2::date + interval '1 month')`, [pid, mStart]);
   const [rooms] = await q<any>(`SELECT count(*)::int n FROM stay_room WHERE place_id=$1 AND status='active' AND deleted_at IS NULL`, [pid]);
   const [nz] = await q<any>(
     `SELECT COALESCE(SUM( LEAST(COALESCE(bk.end_date, mm.e), mm.e) - GREATEST(bk.start_date, mm.s) ),0)::int nights
        FROM stay_occupancy_block bk JOIN stay_room r ON r.id=bk.room_id,
-            (SELECT date_trunc('month',CURRENT_DATE)::date s, (date_trunc('month',CURRENT_DATE)+interval '1 month')::date e) mm
+            (SELECT $2::date s, ($2::date + interval '1 month')::date e) mm
       WHERE r.place_id=$1 AND r.deleted_at IS NULL AND bk.status IN ('active','completed') AND bk.deleted_at IS NULL
-        AND bk.block_kind IN ('stay','tenancy') AND bk.start_date < mm.e AND COALESCE(bk.end_date, mm.e) > mm.s`, [pid]);
+        AND bk.block_kind IN ('stay','tenancy') AND bk.start_date < mm.e AND COALESCE(bk.end_date, mm.e) > mm.s`, [pid, mStart]);
   const [td] = await q<any>(
     `SELECT
        (SELECT count(*) FILTER (WHERE checked_in_at::date = CURRENT_DATE)::int FROM stay_booking_request WHERE place_id=$1 AND deleted_at IS NULL) cin,
@@ -44,12 +60,12 @@ export default async function Revenue() {
        FROM days LEFT JOIN stay_booking_request b ON b.created_at::date = days.d AND b.place_id=$1 AND b.deleted_at IS NULL AND NOT (b.status='cancelled' OR b.payment_status IN ('rejected','refunded'))
       GROUP BY days.d ORDER BY days.d`, [pid]);
 
-  const now = new Date();
-  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysInMonth = new Date(year, mon + 1, 0).getDate();
   const roomN = rooms?.n || 0;
   const nights = nz?.nights || 0;
   const revenue = Number(m?.revenue || 0);     // money actually received (verified slips), not the quoted total
   const outstanding = Number(m?.outstanding || 0);   // verified bookings' unpaid balance (deposit taken, rest due)
+  const refunded = Number(refund?.refunded || 0);
   const capacity = roomN * daysInMonth;
   const occ = capacity ? Math.round((nights / capacity) * 100) : 0;
   const adr = nights ? Math.round(revenue / nights) : 0;
@@ -62,11 +78,16 @@ export default async function Revenue() {
       <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="รายได้ & สถิติ" />
 
       <div className="rev">
+        <div className="rev-monthnav">
+          <Link className="rev-mn-b" href={`/merchant/revenue?month=${prev}`} aria-label="เดือนก่อน"><Icon n="chevL" size={18} /></Link>
+          <span className="rev-mn-l">{MONTHS[mon]} {year + 543}</span>
+          {isCurrent ? <span className="rev-mn-b off"><Icon n="chevR" size={18} /></span> : <Link className="rev-mn-b" href={`/merchant/revenue?month=${next}`} aria-label="เดือนถัดไป"><Icon n="chevR" size={18} /></Link>}
+        </div>
         <div className="rev-hero">
           <div className="rev-hero-l">
-            <span className="rev-cap">รายได้เดือน{MONTHS[now.getMonth()]}</span>
+            <span className="rev-cap">รายได้เดือน{MONTHS[mon]}</span>
             <b className="rev-rev">{baht(revenue)}</b>
-            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · {nights} คืน{outstanding > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}</span>
+            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · {nights} คืน{outstanding > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}{refunded > 0 ? <> · คืนเงิน {baht(refunded)}</> : ''}</span>
           </div>
           <div className="rev-occ" title={`${nights} ÷ ${capacity} คืน`}><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
         </div>

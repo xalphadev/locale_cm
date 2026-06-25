@@ -4,7 +4,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction, markRefundedAction } from '../../../actions';
+import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction, markRefundedAction, collectBalanceAction } from '../../../actions';
 
 const PAY_TH: Record<string, string> = { submitted: 'รอตรวจสลิป', verified: 'ชำระแล้ว', rejected: 'สลิปไม่ผ่าน', refunded: 'คืนเงินแล้ว' };
 
@@ -80,6 +80,7 @@ export default async function BookingDetail({ params, searchParams }: { params: 
       <div className="bk-detail">
         {searchParams?.ok === 'verified' && <div className="banner-ok">✓ ยืนยันการชำระแล้ว — กันห้องในปฏิทินเรียบร้อย</div>}
         {searchParams?.ok === 'rejected' && <div className="banner-ok">บันทึกว่าสลิปไม่ผ่านแล้ว</div>}
+        {searchParams?.ok === 'collected' && <div className="banner-ok">✓ บันทึกรับเงินที่เหลือแล้ว</div>}
         {searchParams?.error === 'full' && <div className="banner-err">ห้องเต็มในช่วงวันนี้แล้ว — ติดต่อลูกค้าเพื่อเปลี่ยนวัน/คืนเงิน (กดสลิปไม่ผ่าน)</div>}
         <div className="bk-head">
           <span className={`t ${st.cls}`}>{st.label}</span>
@@ -128,6 +129,15 @@ export default async function BookingDetail({ params, searchParams }: { params: 
                 <form action={verifySlipAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="check" size={16} /> ยืนยันการชำระ (กันห้อง)</button></form>
                 <form action={rejectSlipAction.bind(null, b.id)}><ConfirmSubmit message="ปฏิเสธสลิปนี้? ลูกค้าจะเห็นว่า “สลิปไม่ผ่าน”" className="dbtn danger">สลิปไม่ผ่าน</ConfirmSubmit></form>
               </div>
+            )}
+            {b.payment_status === 'verified' && b.amount_minor && Number(b.amount_minor) > Number(b.paid_minor || 0) && (
+              <form className="balcollect" action={collectBalanceAction.bind(null, b.id)}>
+                <div className="balcollect-h">รับเงินที่เหลือ <b>฿{Math.round((Number(b.amount_minor) - Number(b.paid_minor || 0)) / 100).toLocaleString()}</b> (เก็บที่เคาน์เตอร์/โอน)</div>
+                <div className="balcollect-row">
+                  <input name="amount" type="number" min={1} inputMode="numeric" defaultValue={Math.round((Number(b.amount_minor) - Number(b.paid_minor || 0)) / 100)} aria-label="ยอดที่รับ (บาท)" />
+                  <button type="submit" className="dbtn sm primary">บันทึกรับเงิน</button>
+                </div>
+              </form>
             )}
             {b.refunded_at && <p className="note" style={{ margin: 0 }}>✓ คืนเงินแล้ว ฿{Math.round(Number(b.refunded_minor || 0) / 100).toLocaleString()} · {fmtDate(b.refunded_at)}</p>}
             {b.amount_minor && b.payment_status !== 'refunded' && (b.payment_status === 'rejected' || b.status === 'cancelled' || b.status === 'declined') && (

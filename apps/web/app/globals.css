@@ -1413,8 +1413,18 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .bk-slip{display:inline-flex;flex-direction:column;align-items:center;gap:5px;margin:4px 0 2px;text-decoration:none}
 .merchant-root .bk-slip img{max-width:210px;max-height:290px;border-radius:12px;border:1px solid var(--m-line);box-shadow:0 4px 14px -8px rgba(20,24,52,.25)}
 .merchant-root .bk-slip span{font-size:.8rem;font-weight:700;color:var(--m-accent)}
+.merchant-root .balcollect{margin:6px 0 0;padding:12px 13px;border:1px solid #d6e4ff;border-radius:12px;background:#f3f8ff;display:flex;flex-direction:column;gap:9px}
+.merchant-root .balcollect-h{font-size:.86rem;font-weight:600;color:var(--m-text)}
+.merchant-root .balcollect-h b{color:#c2410c;font-weight:800}
+.merchant-root .balcollect-row{display:flex;gap:8px}
+.merchant-root .balcollect-row input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:9px 12px;border:1px solid var(--m-line);border-radius:9px;background:#fff}
+.merchant-root .balcollect-row button{flex:none}
 /* revenue & occupancy dashboard */
 .merchant-root .rev{display:flex;flex-direction:column;gap:13px;padding-bottom:24px}
+.merchant-root .rev-monthnav{display:flex;align-items:center;justify-content:center;gap:14px}
+.merchant-root .rev-mn-l{font-size:1rem;font-weight:800;color:var(--m-text);min-width:120px;text-align:center}
+.merchant-root .rev-mn-b{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--m-line);background:#fff;color:var(--m-accent);text-decoration:none}
+.merchant-root .rev-mn-b.off{opacity:.3;pointer-events:none}
 .merchant-root .rev-hero{display:flex;align-items:center;gap:12px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#dbe8ff,#eef4ff);border:1px solid #e2ecfb;box-shadow:0 10px 26px -14px rgba(43,100,220,.28)}
 .merchant-root .rev-hero-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .merchant-root .rev-cap{font-size:.82rem;font-weight:700;color:#3b5a8c}
