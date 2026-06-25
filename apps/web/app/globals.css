@@ -1370,6 +1370,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .cal-type-av.z{color:#c2410c}
 .merchant-root .caltl-fl{color:var(--m-muted);font-weight:600;font-size:.74rem}
 .merchant-root .calbars .cal-cell{height:44px;padding:0;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6}
+/* flag-busy cell (status-based, no date span) — diagonal hatch so it reads differently from a continuous booking bar */
+.merchant-root .calbars .cal-busy{position:relative}
+.merchant-root .calbars .cal-busy::after{content:'';position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent 0,transparent 5px,rgba(255,255,255,.45) 5px,rgba(255,255,255,.45) 9px);pointer-events:none}
 .merchant-root .calbars .cal-free{background:#fafbfd;cursor:pointer}
 .merchant-root .calbars .cal-free.pa{background:#f5f6f9;cursor:default}
 .merchant-root .calbars .cal-free.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent) 35%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent) 35%,transparent)}

@@ -51,7 +51,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
           <div className="field"><label>เลขบัญชี</label><input name="pay_account_no" defaultValue={pay?.pay_account_no || ''} placeholder="xxx-x-xxxxx-x" inputMode="numeric" maxLength={40} /></div>
         </div>
         <div className="field"><label>ชื่อบัญชี</label><input name="pay_account_name" defaultValue={pay?.pay_account_name || ''} placeholder="ชื่อ-นามสกุล / ชื่อร้าน" maxLength={120} /></div>
-        <div className="field"><label>เก็บมัดจำ (%) — 0 = เต็มจำนวน</label><input name="pay_deposit_pct" type="number" min={0} max={90} defaultValue={pay?.pay_deposit_pct || 0} inputMode="numeric" /></div>
+        <div className="field"><label>เก็บมัดจำ (%)</label><input name="pay_deposit_pct" type="number" min={0} max={90} defaultValue={pay?.pay_deposit_pct || 0} inputMode="numeric" /><span className="fhint">เช่น 30% = เก็บก่อนเช็คอิน ที่เหลือจ่ายตอนเข้าพัก · 0 = ชำระเต็มจำนวน</span></div>
         <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกบัญชี</button>
       </form>
 

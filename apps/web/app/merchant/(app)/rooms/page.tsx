@@ -24,6 +24,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
       WHERE place_id=$1 AND deleted_at IS NULL AND status='active' AND stay_unit_id IS NOT NULL GROUP BY stay_unit_id`, [acc.place_id]);
   const physById: Record<string, number> = {};
   for (const row of rc) physById[row.stay_unit_id] = row.n;
+  const [pay] = await q<{ pay_online_enabled: boolean }>(`SELECT pay_online_enabled FROM places WHERE id=$1`, [acc.place_id]);
   const items = rows.map((r) => {
     const monthly = r.rental_mode === 'monthly';
     const vacant = monthly ? r.available_units > 0 : r.daily_status === 'vacant';
@@ -47,7 +48,8 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
   return (
     <>
       <RoomHub active="types" title="ประเภท & ราคา" addHref="/merchant/rooms/new" addLabel="เพิ่มห้อง" />
-      <Link className="xlink" href="/merchant/pricing"><span className="xlink-ic"><Icon n="wallet" size={18} /></span><span className="xlink-tx"><b>ราคาตามฤดู</b><span>ตั้งราคาไฮ/โลว์ซีซั่นแยกตามช่วง</span></span><Icon n="chevR" size={18} className="xlink-go" /></Link>
+      <Link className="xlink" href="/merchant/pricing"><span className="xlink-ic"><Icon n="wallet" size={18} /></span><span className="xlink-tx"><b>ราคาตามฤดู & บัญชีรับเงิน</b><span>ตั้งราคาไฮ/โลว์ซีซั่น + บัญชีรับจองออนไลน์</span></span><Icon n="chevR" size={18} className="xlink-go" /></Link>
+      {!pay?.pay_online_enabled && <Link className="banner-warn" href="/merchant/pricing" style={{ display: 'block', textDecoration: 'none' }}><b>ยังไม่ได้เปิดรับจองออนไลน์</b> — ตั้งบัญชี PromptPay/ธนาคาร เพื่อรับการจอง + ชำระเงินผ่านระบบ →</Link>}
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
       {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบรูปแบบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}

@@ -87,7 +87,7 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
           <div className="rev-hero-l">
             <span className="rev-cap">รายได้เดือน{MONTHS[mon]}</span>
             <b className="rev-rev">{baht(revenue)}</b>
-            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · {nights} คืน{outstanding > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}{refunded > 0 ? <> · คืนเงิน {baht(refunded)}</> : ''}</span>
+            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · เข้าพัก {nights}/{capacity} คืน-ห้อง{outstanding > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}{refunded > 0 ? <> · คืนเงิน {baht(refunded)}</> : ''}</span>
           </div>
           <div className="rev-occ" title={`${nights} ÷ ${capacity} คืน`}><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
         </div>
