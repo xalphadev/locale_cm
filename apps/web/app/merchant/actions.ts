@@ -1032,6 +1032,9 @@ export async function createRoomAction(formData: FormData) {
     if (e?.code === '23505') redirect('/merchant/units?error=dupe'); // unique (place_id, code)
     throw e;
   }
+  // Invariant: a type that has physical rooms is auto-managed. Promote BEFORE refresh —
+  // refreshUnitVacancy no-ops while managed=false, so the order matters (else available_units stays stale-typed).
+  if (okUnit) await q(`UPDATE stay_units SET managed=true, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND NOT managed`, [okUnit, acc.place_id]);
   await refreshUnitVacancy(okUnit);
   revalidatePath('/merchant/units'); revalidatePath('/merchant');
   redirect('/merchant/units?ok=added');
@@ -1140,6 +1143,11 @@ export async function setStayUnitManagedAction(unitId: string, on: boolean) {
     // exist — else the listing would flip to "0 ว่าง" mid-backfill while the owner is still adding rooms.
     const [c] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_room WHERE stay_unit_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [unitId, acc.place_id]);
     if (!c || c.n === 0) { revalidatePath('/merchant/units'); redirect('/merchant/units?error=norooms'); }
+  } else {
+    // invariant: a type that HAS physical rooms must stay auto-managed — can't drop back to a hand-typed
+    // counter (that's the "unmanaged-with-rooms" state that makes the typed number contradict the board).
+    const [c] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_room WHERE stay_unit_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [unitId, acc.place_id]);
+    if (c && c.n > 0) { revalidatePath('/merchant/units'); redirect(`/merchant/rooms/${unitId}/edit?error=hasrooms`); }
   }
   await q(`UPDATE stay_units SET managed=$3, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [unitId, acc.place_id, !!on]);
   if (on) await refreshUnitVacancy(unitId);
@@ -1757,6 +1765,8 @@ export async function createRoomsBulkAction(formData: FormData) {
     [acc.place_id, okUnit, codes, floor, capacity, status, occUntil, kind]);
   const added = made.length;
   const skipped = codes.length - added;
+  // a type that just gained real rooms is auto-managed — promote BEFORE refresh (refreshUnitVacancy no-ops if managed=false)
+  if (okUnit && added > 0) await q(`UPDATE stay_units SET managed=true, updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND NOT managed`, [okUnit, acc.place_id]);
   await refreshUnitVacancy(okUnit);
   revalidatePath('/merchant/units'); revalidatePath('/merchant');
   redirect(`/merchant/units?ok=bulk&added=${added}&skipped=${skipped}`);

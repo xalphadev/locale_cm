@@ -34,6 +34,11 @@ export default async function RoomDetail({ params }: { params: { id: string } })
     ? await q<any>(`SELECT id, code, floor, occupancy_status FROM stay_room WHERE stay_unit_id=$1 AND place_id=$2 AND deleted_at IS NULL AND status='active' ORDER BY floor NULLS FIRST, code`, [u.id, acc.place_id])
     : [];
 
+  // a type that HAS physical rooms is board-derived: show the REAL vacant count + hide the manual stepper,
+  // so the "ว่าง N" here can never contradict the ผังห้อง board (no stale typed available_units).
+  const hasRooms = childRooms.length > 0;
+  const vacantNow = childRooms.filter((r: any) => r.occupancy_status === 'vacant').length;
+  const derived = u.managed || hasRooms;
   const imgs: string[] | null = u.image_urls;
   const monthly = u.rental_mode === 'monthly';
   const hidden = u.status === 'hidden';
@@ -68,13 +73,13 @@ export default async function RoomDetail({ params }: { params: { id: string } })
         <div className="availcard-l">
           <div className="availcard-k">สถานะห้องว่าง</div>
           {monthly
-            ? <div className={`availcard-v ${u.available_units > 0 ? 'ok' : 'no'}`}>{u.available_units > 0 ? `ว่าง ${u.available_units} ห้อง` : 'เต็มแล้ว'}</div>
+            ? (() => { const v = hasRooms ? vacantNow : u.available_units; return <div className={`availcard-v ${v > 0 ? 'ok' : 'no'}`}>{v > 0 ? `ว่าง ${v} ห้อง` : 'เต็มแล้ว'}</div>; })()
             : <div className={`availcard-v ${u.daily_status === 'vacant' ? 'ok' : u.daily_status === 'full' ? 'no' : ''}`}>{DAILY_TH[u.daily_status]}</div>}
-          <div className="availcard-f">{u.managed
+          <div className="availcard-f">{derived
             ? <><Icon n="grid" size={12} /> นับจากผังห้องอัตโนมัติ</>
             : <><Icon n="clock" size={12} /> อัปเดต {daysAgo(u.availability_updated_at)}</>}</div>
         </div>
-        {u.managed ? (
+        {derived ? (
           <Link className="dbtn sm" href="/merchant/units"><Icon n="grid" size={16} /> ผังห้องจริง</Link>
         ) : monthly ? (
           <div className="stepper">
