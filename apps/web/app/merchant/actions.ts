@@ -1162,6 +1162,7 @@ export async function addRoomBlockAction(roomId: string, formData: FormData) {
   const to = s(formData, 'end_date');
   if (!isDate(from)) redirect(`/merchant/units/${roomId}?error=date`);
   const end = isDate(to) ? to : null;
+  if (end && end <= from) redirect(`/merchant/units/${roomId}?error=daterange`);   // no 0-/negative-day spans (GiST only guards overlap)
   const note = s(formData, 'note') || null;
   const [r] = await q<{ stay_unit_id: string | null; rental_mode: string | null }>(`SELECT r.stay_unit_id, su.rental_mode FROM stay_room r LEFT JOIN stay_units su ON su.id=r.stay_unit_id WHERE r.id=$1 AND r.place_id=$2 AND r.deleted_at IS NULL`, [roomId, acc.place_id]);
   if (!r) redirect('/merchant/units');
@@ -1200,6 +1201,7 @@ export async function editRoomBlockAction(blockId: string, formData: FormData) {
   if (!isDate(from)) redirect(`/merchant/units/${b.room_id}?error=date`);
   const to = s(formData, 'end_date');
   const end = isDate(to) ? to : null;
+  if (end && end <= from) redirect(`/merchant/units/${b.room_id}?error=daterange`);   // no 0-/negative-day spans
   const note = s(formData, 'note') || null;
   const kindIn = s(formData, 'block_kind');
   const blockKind = ['stay', 'tenancy', 'maintenance', 'hold'].includes(kindIn) ? kindIn : null;
@@ -1210,8 +1212,9 @@ export async function editRoomBlockAction(blockId: string, formData: FormData) {
     throw e;
   }
   await refreshUnitVacancy(b.stay_unit_id);
-  revalidatePath(`/merchant/units/${b.room_id}`); revalidatePath('/merchant/units');
-  redirect(`/merchant/units/${b.room_id}?ok=blocked`);
+  revalidatePath(`/merchant/units/${b.room_id}`); revalidatePath('/merchant/units', 'layout');
+  const back = s(formData, 'returnTo');
+  redirect(back || `/merchant/units/${b.room_id}?ok=blocked`);   // returnTo keeps an edit done from the calendar on the calendar
 }
 
 /** One-tap "block tonight" for a daily room (today → tomorrow). The GiST EXCLUDE rejects an overlap. */

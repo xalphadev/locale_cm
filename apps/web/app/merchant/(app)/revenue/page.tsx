@@ -19,7 +19,9 @@ export default async function Revenue() {
   const pid = acc.place_id;
 
   const [m] = await q<any>(
-    `SELECT count(*)::int bookings, COALESCE(SUM(amount_minor),0)::bigint revenue
+    `SELECT count(*)::int bookings,
+            COALESCE(SUM(paid_minor),0)::bigint revenue,
+            COALESCE(SUM(GREATEST(0, COALESCE(amount_minor,0) - COALESCE(paid_minor,0))),0)::bigint outstanding
        FROM stay_booking_request
       WHERE place_id=$1 AND deleted_at IS NULL AND payment_status='verified'
         AND paid_at >= date_trunc('month', CURRENT_DATE) AND paid_at < (date_trunc('month', CURRENT_DATE) + interval '1 month')`, [pid]);
@@ -46,7 +48,8 @@ export default async function Revenue() {
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const roomN = rooms?.n || 0;
   const nights = nz?.nights || 0;
-  const revenue = Number(m?.revenue || 0);
+  const revenue = Number(m?.revenue || 0);     // money actually received (verified slips), not the quoted total
+  const outstanding = Number(m?.outstanding || 0);   // verified bookings' unpaid balance (deposit taken, rest due)
   const capacity = roomN * daysInMonth;
   const occ = capacity ? Math.round((nights / capacity) * 100) : 0;
   const adr = nights ? Math.round(revenue / nights) : 0;
@@ -63,9 +66,9 @@ export default async function Revenue() {
           <div className="rev-hero-l">
             <span className="rev-cap">รายได้เดือน{MONTHS[now.getMonth()]}</span>
             <b className="rev-rev">{baht(revenue)}</b>
-            <span className="rev-sub">ยืนยันแล้ว {m?.bookings || 0} การจอง · {nights} คืน</span>
+            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · {nights} คืน{outstanding > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}</span>
           </div>
-          <div className="rev-occ"><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
+          <div className="rev-occ" title={`${nights} ÷ ${capacity} คืน`}><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
         </div>
 
         <div className="rev-kpis">

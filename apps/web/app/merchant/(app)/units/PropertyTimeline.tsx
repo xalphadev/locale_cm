@@ -3,7 +3,7 @@ import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '../ui';
 import { ConfirmSubmit } from '../ConfirmSubmit';
-import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction } from '../../actions';
+import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction } from '../../actions';
 
 // Interactive property timeline (rooms × the visible day window). Bookings render as CONTINUOUS BARS with
 // the guest name on them; rooms group by floor (collapsible) and are filterable + searchable for big
@@ -27,6 +27,7 @@ const KLABEL: Record<string, string> = { stay: 'เข้าพัก', tenancy:
 export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms: TLRoom[]; days: string[]; today: string; term: string; returnTo: string }) {
   const [sel, setSel] = useState<{ roomId: string; code: string; a: string; b: string | null } | null>(null);
   const [open, setOpen] = useState<{ blk: Blk; code: string } | null>(null);
+  const [editing, setEditing] = useState(false);
   const [typeF, setTypeF] = useState('all');
   const [qstr, setQstr] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -74,7 +75,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
         while (i + span < days.length && cover(r, days[i + span]).blk?.id === c.blk.id) span++;
         const blk = c.blk; const st = Kst(blk.k);
         out.push(
-          <td key={i} colSpan={span} className="cal-cell" onClick={() => { setOpen(open?.blk.id === blk.id ? null : { blk, code: r.code }); setSel(null); }}>
+          <td key={i} colSpan={span} className="cal-cell" onClick={() => { setOpen(open?.blk.id === blk.id ? null : { blk, code: r.code }); setEditing(false); setSel(null); }}>
             <div className="cal-bar" style={{ background: st.bg, color: st.fg }}>
               {blk.ref ? <i className="cal-bar-ref">{blk.ref}{blk.cin && !blk.cout ? <b className="cal-bar-dot" /> : null}</i> : null}
               <span>{blk.guest || KLABEL[blk.k] || ''}</span>
@@ -170,17 +171,34 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
             <b>{b.ref ? `${b.ref} · ` : ''}ห้อง {open.code}{b.guest ? ` · ${b.guest}` : ''}</b>
             <span>{KLABEL[b.k] || b.k} · {b.s} → {b.e || 'ต่อเนื่อง'}{b.cout ? ' · เช็คเอาท์แล้ว' : live ? ' · กำลังพัก' : ''}{b.note ? ` · ${b.note}` : ''}</span>
           </div>
-          <div className="tl-pop-a">
-            {b.bid && !b.cin && (
-              <form action={checkInAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><button type="submit" className="dbtn sm primary">เช็คอิน</button></form>
-            )}
-            {b.bid && live && (
-              <form action={checkOutAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><ConfirmSubmit message="เช็คเอาท์ห้องนี้? ห้องจะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm primary">เช็คเอาท์</ConfirmSubmit></form>
-            )}
-            {b.bid && <Link className="dbtn sm" href={`/merchant/bookings/${b.bid}`}>รายละเอียด / แก้ไข ›</Link>}
-            {!b.cin && <form action={cancelRoomBlockAction.bind(null, b.id)}><ConfirmSubmit message="เอาช่วงนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>}
-            <button type="button" className="dbtn sm" onClick={() => setOpen(null)}>ปิด</button>
-          </div>
+          {editing ? (
+            <form className="tl-edit" action={editRoomBlockAction.bind(null, b.id)}>
+              <input type="hidden" name="returnTo" value={returnTo} />
+              <input type="hidden" name="block_kind" value={b.k} />
+              <div className="fgrid">
+                <div className="field"><label>เข้า</label><input type="date" name="start_date" defaultValue={b.s} required /></div>
+                <div className="field"><label>ออก (เช็คเอาท์)</label><input type="date" name="end_date" defaultValue={b.e || ''} min={b.s} /></div>
+              </div>
+              <input name="note" defaultValue={b.note || ''} placeholder="โน้ต (เห็นเฉพาะคุณ)" maxLength={120} />
+              <div className="tl-pop-a">
+                <button type="button" className="dbtn sm" onClick={() => setEditing(false)}>ยกเลิก</button>
+                <button type="submit" className="dbtn sm primary">บันทึกวันที่</button>
+              </div>
+            </form>
+          ) : (
+            <div className="tl-pop-a">
+              {b.bid && !b.cin && (
+                <form action={checkInAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><button type="submit" className="dbtn sm primary">เช็คอิน</button></form>
+              )}
+              {b.bid && live && (
+                <form action={checkOutAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><ConfirmSubmit message="เช็คเอาท์ห้องนี้? ห้องจะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm primary">เช็คเอาท์</ConfirmSubmit></form>
+              )}
+              <button type="button" className="dbtn sm" onClick={() => setEditing(true)}><Icon n="calendar" size={14} /> แก้/ขยายวัน</button>
+              {b.bid && <Link className="dbtn sm" href={`/merchant/bookings/${b.bid}`}>รายละเอียด ›</Link>}
+              {!b.cin && <form action={cancelRoomBlockAction.bind(null, b.id)}><ConfirmSubmit message="เอาช่วงนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>}
+              <button type="button" className="dbtn sm" onClick={() => setOpen(null)}>ปิด</button>
+            </div>
+          )}
         </div>
       ); })()}
 

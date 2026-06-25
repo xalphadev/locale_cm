@@ -89,6 +89,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.ok === 'booked' && <div className="banner-ok">✓ บันทึกการจองแล้ว — ดูได้ในหน้า “คำขอจอง”</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ช่วงวันที่นี้ทับกับที่จองไว้แล้ว</div>}
       {searchParams?.error === 'date' && <div className="banner-err">กรุณาเลือกวันเริ่ม</div>}
+      {searchParams?.error === 'daterange' && <div className="banner-err">วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน</div>}
       {searchParams?.ok === 'moved' && <div className="banner-ok">✓ ย้ายผู้เช่าแล้ว</div>}
       {searchParams?.error === 'occupied' && <div className="banner-err">ห้องปลายทางไม่ว่าง</div>}
       {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
