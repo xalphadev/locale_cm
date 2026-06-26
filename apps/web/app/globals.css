@@ -762,6 +762,8 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .lead-msg{font-size:.92rem;color:var(--text,#1a1a2e);background:var(--sunk,#f4f5f7);border-radius:10px;padding:.5rem .7rem}
 .lead-contact{display:flex;flex-wrap:wrap;gap:8px}
 .lead-acts{display:flex;flex-wrap:wrap;gap:7px;border-top:1px solid var(--hairline,#eee);padding-top:9px}
+.merchant-root .actgroup{margin:0 0 10px}
+.merchant-root .actgroup-l{display:block;font-size:.76rem;font-weight:800;color:var(--m-muted);margin:0 0 1px}
 
 /* ระบบจองห้อง — booking menu (P0). Cards reuse .leadcard/.lead-* above; these add the today-strip,
    the tappable card header, badge cluster, and the detail-page timeline. */
@@ -938,6 +940,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rb-hero-leg{display:flex;flex-wrap:wrap;gap:5px 13px;margin-top:9px;font-size:.78rem;font-weight:600;color:var(--m-text,#444)}
 .rb-hero-leg span{display:inline-flex;align-items:center;gap:5px}
 .rb-hero-leg i{width:9px;height:9px;border-radius:50%;flex:none}
+.rb-hero-leg em{font-style:normal;font-size:.74rem;line-height:1;margin-left:-2px}
 /* FAB speed-dial menu (add room · multi-select · group-by · print) + group-by bottom sheet */
 .fabwrap{position:fixed;right:18px;bottom:22px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:11px}
 .rb-fabbtn{align-self:flex-end;width:56px;height:56px;border-radius:50%;background:var(--m-accent,#2b74ff);color:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -6px rgba(43,100,220,.5);cursor:pointer;transition:transform .2s}
@@ -1007,7 +1010,8 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rftype select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
 /* dense room rack — small number-only tiles, colour = status (occupied recedes, vacant/จอง pop) */
 .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:7px;margin-bottom:2px}
-.rchip{display:flex;align-items:center;justify-content:center;text-align:center;min-height:46px;padding:5px 7px;border:none;border-radius:10px;text-decoration:none;font-weight:800;font-size:1rem;color:var(--m-text,#0E1322);letter-spacing:-.01em;line-height:1.12;word-break:break-word;overflow:hidden;transition:transform .1s}
+.rchip{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;min-height:46px;padding:5px 7px;border:none;border-radius:10px;text-decoration:none;font-weight:800;font-size:1rem;color:var(--m-text,#0E1322);letter-spacing:-.01em;line-height:1.12;word-break:break-word;overflow:hidden;transition:transform .1s}
+.rchip-g{position:absolute;top:2px;right:4px;font-size:.56rem;line-height:1;opacity:.85;pointer-events:none}
 .rchip:active{transform:scale(.95)}
 
 /* room-group term setting (board > ตั้งค่า) */
@@ -1253,6 +1257,18 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root details.soonbox>summary,.merchant-root details.dailybox>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-weight:800;font-size:.92rem;color:var(--m-text)}
 .merchant-root details.soonbox>summary::-webkit-details-marker,.merchant-root details.dailybox>summary::-webkit-details-marker{display:none}
 .merchant-root details.soonbox[open]>summary,.merchant-root details.dailybox[open]>summary{margin-bottom:10px}
+/* "ผู้เข้าพักตอนนี้" — collapsed-by-default who's-in list under the board */
+.merchant-root details.guestpanel{background:var(--m-surface);border:1px solid var(--m-line);border-radius:14px;padding:12px 14px;margin:0 0 12px}
+.merchant-root details.guestpanel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;font-weight:800;font-size:.92rem;color:var(--m-text)}
+.merchant-root details.guestpanel>summary::-webkit-details-marker{display:none}
+.merchant-root details.guestpanel[open]>summary{margin-bottom:8px}
+.merchant-root .guestpanel-list{display:flex;flex-direction:column;gap:2px}
+.merchant-root .guestrow{display:flex;align-items:center;gap:8px;padding:7px 2px;border-top:1px solid var(--m-line)}
+.merchant-root .guestrow-l{flex:1;min-width:0;display:flex;align-items:baseline;gap:9px;text-decoration:none;color:inherit}
+.merchant-root .guestrow-rm{font-weight:800;font-size:.86rem;white-space:nowrap}
+.merchant-root .guestrow-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem;color:var(--m-text)}
+.merchant-root .guestrow-until{font-size:.76rem;color:var(--m-muted);white-space:nowrap}
+.merchant-root .guestrow .dbtn{flex:none}
 .merchant-root details.soonbox:target,.merchant-root details.dailybox:target{box-shadow:0 0 0 2px var(--m-soft)}
 
 /* room-type list: two independent filter axes (โหมด + สถานะ), combinable */

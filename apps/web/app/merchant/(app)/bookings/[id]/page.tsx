@@ -72,6 +72,9 @@ export default async function BookingDetail({ params, searchParams }: { params: 
   const st = ST[b.status] || ST.new;
   const canConvertDaily = b.managed && b.rental_mode === 'daily' && b.from_d && b.to_d && b.status !== 'converted' && b.status !== 'declined';
   const canConvertMonthly = b.rental_mode === 'monthly' && b.stay_unit_id && b.status !== 'converted' && b.status !== 'declined';
+  // group the จัดการ buttons by lifecycle stage: a lead's request actions vs a booking's stay actions
+  const reqActs = b.status !== 'converted' && b.status !== 'declined';   // contact/schedule/confirm/convert/decline
+  const stayActs = b.status === 'converted' && !b.checked_out_at;        // check-in/out/no-show/cancel (none left once checked out)
 
   return (
     <>
@@ -148,27 +151,39 @@ export default async function BookingDetail({ params, searchParams }: { params: 
           </>
         )}
 
-        <h2 className="rsec"><span className="rsec-ic"><Icon n="store" size={15} /></span> จัดการ</h2>
-        <div className="lead-acts">
-          {canConvertDaily && <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="calendar" size={16} /> ยืนยันการจอง (กันห้อง)</button></form>}
-          {canConvertMonthly && <form action={convertMonthlyLeadAction.bind(null, b.id)}><ConfirmSubmit message="รับลูกค้าเข้าพักรายเดือนและตั้งห้องเป็นไม่ว่าง? จำนวนห้องว่างจะลดลง (แก้ไขได้จากผังห้อง)" className="dbtn primary"><Icon n="calendar" size={16} /> รับเข้าพัก</ConfirmSubmit></form>}
-          {b.status === 'converted' && b.converted_block_id && !b.checked_in_at && !b.checked_out_at && <form action={checkInAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="check" size={16} /> เช็คอิน</button></form>}
-          {b.checked_in_at && !b.checked_out_at && <form action={checkOutAction.bind(null, b.id)}><ConfirmSubmit message="เช็คเอาท์ผู้เข้าพักนี้? ห้องจะถูกปล่อยคืนให้ว่างทันที" className="dbtn primary"><Icon n="check" size={16} /> เช็คเอาท์</ConfirmSubmit></form>}
-          {b.status === 'converted' && b.rental_mode === 'daily' && !b.checked_in_at && <form action={markNoShowAction.bind(null, b.id)}><ConfirmSubmit message="บันทึกว่าลูกค้าไม่มาเข้าพัก? ห้องที่กันไว้จะถูกปล่อยคืนให้จองใหม่ได้ทันที" className="dbtn">ไม่มาเข้าพัก</ConfirmSubmit></form>}
-          {b.status === 'converted' && !b.checked_out_at && <form action={cancelBookingAction.bind(null, b.id)}><ConfirmSubmit message="ยกเลิกการจองนี้? ห้องที่กันไว้จะถูกปล่อยคืนให้ว่างทันที" className="dbtn">ยกเลิกการจอง</ConfirmSubmit></form>}
-          {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn" type="submit">ติดต่อแล้ว</button></form>}
-          {b.status !== 'converted' && b.status !== 'declined' && (
-            <details className="lead-sched-f">
-              <summary className="dbtn"><Icon n="calendar" size={15} /> นัดดูห้อง</summary>
-              <form action={scheduleLeadAction.bind(null, b.id)}>
-                <input type="datetime-local" name="scheduled_at" required />
-                <button className="dbtn sm primary" type="submit">บันทึกนัด</button>
-              </form>
-            </details>
-          )}
-          {b.status !== 'confirmed' && b.status !== 'converted' && b.status !== 'declined' && <form action={setLeadStatusAction.bind(null, b.id, 'confirmed')}><button className="dbtn" type="submit">ตกลง (ยังไม่กันห้อง)</button></form>}
-          {b.status !== 'declined' && <form action={setLeadStatusAction.bind(null, b.id, 'declined')}><button className="dbtn" type="submit">ปฏิเสธ</button></form>}
-        </div>
+        {(reqActs || stayActs) && <h2 className="rsec"><span className="rsec-ic"><Icon n="store" size={15} /></span> จัดการ</h2>}
+
+        {reqActs && (
+          <div className="actgroup">
+            <span className="actgroup-l">คำขอจอง</span>
+            <div className="lead-acts">
+              {canConvertDaily && <form action={convertLeadToBlockAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="calendar" size={16} /> ยืนยันการจอง (กันห้อง)</button></form>}
+              {canConvertMonthly && <form action={convertMonthlyLeadAction.bind(null, b.id)}><ConfirmSubmit message="รับลูกค้าเข้าพักรายเดือนและตั้งห้องเป็นไม่ว่าง? จำนวนห้องว่างจะลดลง (แก้ไขได้จากผังห้อง)" className="dbtn primary"><Icon n="calendar" size={16} /> รับเข้าพัก</ConfirmSubmit></form>}
+              {b.status === 'new' && <form action={setLeadStatusAction.bind(null, b.id, 'contacted')}><button className="dbtn" type="submit">ติดต่อแล้ว</button></form>}
+              <details className="lead-sched-f">
+                <summary className="dbtn"><Icon n="calendar" size={15} /> นัดดูห้อง</summary>
+                <form action={scheduleLeadAction.bind(null, b.id)}>
+                  <input type="datetime-local" name="scheduled_at" required />
+                  <button className="dbtn sm primary" type="submit">บันทึกนัด</button>
+                </form>
+              </details>
+              {b.status !== 'confirmed' && <form action={setLeadStatusAction.bind(null, b.id, 'confirmed')}><button className="dbtn" type="submit">ตกลง (ยังไม่กันห้อง)</button></form>}
+              <form action={setLeadStatusAction.bind(null, b.id, 'declined')}><button className="dbtn" type="submit">ปฏิเสธ</button></form>
+            </div>
+          </div>
+        )}
+
+        {stayActs && (
+          <div className="actgroup">
+            <span className="actgroup-l">การเข้าพัก</span>
+            <div className="lead-acts">
+              {b.converted_block_id && !b.checked_in_at && <form action={checkInAction.bind(null, b.id)}><button className="dbtn primary" type="submit"><Icon n="check" size={16} /> เช็คอิน</button></form>}
+              {b.checked_in_at && <form action={checkOutAction.bind(null, b.id)}><ConfirmSubmit message="เช็คเอาท์ผู้เข้าพักนี้? ห้องจะถูกปล่อยคืนให้ว่างทันที" className="dbtn primary"><Icon n="check" size={16} /> เช็คเอาท์</ConfirmSubmit></form>}
+              {b.rental_mode === 'daily' && !b.checked_in_at && <form action={markNoShowAction.bind(null, b.id)}><ConfirmSubmit message="บันทึกว่าลูกค้าไม่มาเข้าพัก? ห้องที่กันไว้จะถูกปล่อยคืนให้จองใหม่ได้ทันที" className="dbtn">ไม่มาเข้าพัก</ConfirmSubmit></form>}
+              <form action={cancelBookingAction.bind(null, b.id)}><ConfirmSubmit message="ยกเลิกการจองนี้? ห้องที่กันไว้จะถูกปล่อยคืนให้ว่างทันที" className="dbtn">ยกเลิกการจอง</ConfirmSubmit></form>
+            </div>
+          </div>
+        )}
 
         {events.length > 0 && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="clock" size={15} /></span> ประวัติ</h2>

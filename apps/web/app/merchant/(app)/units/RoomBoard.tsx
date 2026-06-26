@@ -18,6 +18,8 @@ const ST: Record<string, { label: string; color: string }> = {
   reserved: { label: 'จองแล้ว', color: '#f59e0b' },
   maintenance: { label: 'ปิดซ่อม', color: '#9aa0a6' },
 };
+// distinct SHAPES per status so the board is legible without relying on colour alone (colour-blind safe)
+const GLYPH: Record<string, string> = { vacant: '○', occupied: '●', reserved: '◐', maintenance: '✕' };
 const FILTERS: [string, string][] = [['all', 'ทั้งหมด'], ['vacant', 'ว่าง'], ['occupied', 'มีผู้เช่า'], ['reserved', 'จอง'], ['maintenance', 'ปิดซ่อม']];
 const COLL = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });   // A1, A2 … A10 (not A1, A10, A2)
 
@@ -122,6 +124,7 @@ export default function RoomBoard({ rooms, groupTerm = 'ชั้น', groupActi
                 return (
                   <Link className={`rchip ${selected.has(r.id) ? 'rsel' : ''}`} key={r.id} href={`/merchant/units/${r.id}`} onClick={(e) => tileClick(e, r.id)} title={`${r.code} · ${daily ? 'รายวัน — ดูปฏิทิน' : st.label}${r.guest ? ` · ${r.guest}` : ''}`}
                     style={{ fontSize: fs, background: `color-mix(in srgb, ${color} ${S[0]}%, var(--m-surface,#fff))`, boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${color} ${S[1]}%, transparent)` } as any}>
+                    {!daily && GLYPH[r.status] && <span className="rchip-g" aria-hidden style={{ color }}>{GLYPH[r.status]}</span>}
                     {r.code}
                   </Link>
                 );

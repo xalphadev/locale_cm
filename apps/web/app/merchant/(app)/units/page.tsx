@@ -127,10 +127,10 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
               <span className="rb-hero-pct">ใช้งาน {rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</span>
             </div>
             <div className="rb-hero-leg">
-              {vacant > 0 && <span><i style={{ background: ST.vacant.color }} /> ว่าง {vacant}</span>}
-              {occupied > 0 && <span><i style={{ background: ST.occupied.color }} /> มีผู้เช่า {occupied}</span>}
-              {reserved > 0 && <span><i style={{ background: ST.reserved.color }} /> จอง {reserved}</span>}
-              {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> ปิดซ่อม {maint}</span>}
+              {vacant > 0 && <span><i style={{ background: ST.vacant.color }} /> <em style={{ color: ST.vacant.color }}>○</em> ว่าง {vacant}</span>}
+              {occupied > 0 && <span><i style={{ background: ST.occupied.color }} /> <em style={{ color: ST.occupied.color }}>●</em> มีผู้เช่า {occupied}</span>}
+              {reserved > 0 && <span><i style={{ background: ST.reserved.color }} /> <em style={{ color: ST.reserved.color }}>◐</em> จอง {reserved}</span>}
+              {maint > 0 && <span><i style={{ background: ST.maintenance.color }} /> <em style={{ color: ST.maintenance.color }}>✕</em> ปิดซ่อม {maint}</span>}
             </div>
           </div>
           {(soonRows.length > 0 || hasDaily) && (
@@ -141,6 +141,29 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
           )}
 
           <RoomBoard rooms={roomsData} groupTerm={term} groupAction={setRoomGroupTermAction} />
+
+          {(() => {
+            // collapsed-by-default "who's in which room" list — the compact chip grid lost the at-a-glance
+            // tenant view, so this brings it back without un-compacting the board (native <details>, no JS)
+            const inhouse = roomsData.filter((r: any) => (r.status === 'occupied' || r.status === 'reserved') && r.monthly);
+            return inhouse.length > 0 ? (
+              <details id="who" className="guestpanel">
+                <summary><Icon n="users" size={14} /> ผู้เข้าพักตอนนี้ <span className="listcount">{inhouse.length}</span></summary>
+                <div className="guestpanel-list">
+                  {inhouse.map((r: any) => (
+                    <div className="guestrow" key={r.id}>
+                      <Link href={`/merchant/units/${r.id}`} className="guestrow-l">
+                        <span className="guestrow-rm" style={{ color: ST[r.status]?.color }}>ห้อง {r.code}</span>
+                        <span className="guestrow-nm">{r.guest || r.note || <i style={{ opacity: .5 }}>ยังไม่ระบุชื่อ</i>}</span>
+                        {r.occupied_until && <span className="guestrow-until">ว่าง {fmtD(r.occupied_until)}</span>}
+                      </Link>
+                      {r.guestPhone && <a className="dbtn sm" href={`tel:${r.guestPhone}`} aria-label={`โทร ${r.guestPhone}`}><Icon n="chat" size={14} /> โทร</a>}
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null;
+          })()}
 
           {soonRows.length > 0 && (
             <details id="soon" className="soonbox">
