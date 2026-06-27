@@ -694,6 +694,19 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mswitch-add{flex:1;text-align:center;font-weight:800;font-size:.84rem;color:#fff;background:var(--m-ink);border-radius:999px;padding:.6rem;text-decoration:none;transition:transform .12s}
 .merchant-root .mswitch-add:active{transform:scale(.97)}
 .merchant-root .mswitch-mng{flex:none;text-align:center;font-weight:700;font-size:.84rem;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.6rem .9rem;text-decoration:none}
+
+/* ── generic bottom sheet (shared by the calendar date-picker, today-moves, tools, manage) ──
+   client-state driven: render scrim+sheet when open, toggle .in next frame (useSheetAnim) to slide up.
+   Safe because the host (.mbody) is NOT a sticky/transform ancestor — fixed escapes to the viewport. */
+.merchant-root .mbsheet-scrim{position:fixed;inset:0;z-index:59;background:rgba(16,20,12,.42);opacity:0;transition:opacity .28s ease}
+.merchant-root .mbsheet-scrim.in{opacity:1}
+.merchant-root .mbsheet{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0 auto;width:100%;max-width:440px;max-height:82vh;display:flex;flex-direction:column;background:var(--m-surface);border-radius:22px 22px 0 0;box-shadow:0 -12px 44px -8px rgba(16,20,12,.34);transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.85,.25,1)}
+.merchant-root .mbsheet.in{transform:translateY(0)}
+.merchant-root .mbsheet-handle{flex:none;display:block;width:38px;height:4px;border-radius:999px;background:var(--m-line);margin:9px auto 4px;cursor:pointer}
+.merchant-root .mbsheet-hd{flex:none;display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px}
+.merchant-root .mbsheet-hd b{font-size:.96rem;font-weight:800;color:var(--m-text)}
+.merchant-root .mbsheet-x{border:none;background:none;color:var(--m-muted);cursor:pointer;display:flex;padding:2px}
+.merchant-root .mbsheet-body{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:0 14px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:8px}
 /* portfolio: brand card → branch rows */
 .merchant-root .bcard{background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--r-card);box-shadow:var(--m-sh-soft);padding:12px;margin-bottom:13px}
 .merchant-root .bcard-h{display:flex;align-items:center;gap:11px;padding:2px 2px 11px;border-bottom:1px solid var(--m-line)}
@@ -1362,22 +1375,39 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .callegend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 2px 4px;font-size:.78rem;color:#555}
 .callegend span{display:inline-flex;align-items:center;gap:5px}
 /* ปฏิทินรวม — slideable window nav + today-column highlight + per-room guest */
-.calnav{display:flex;align-items:center;gap:10px;margin:2px 0 11px}
-.calnav-b{flex:none;width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--m-line,#e9ecf1);border-radius:10px;color:var(--m-text,#0e1322);background:#fff;text-decoration:none}
-.calnav-b:active{background:var(--m-sunk,#eff1f5)}
-.calnav-r{flex:1;text-align:center;font-weight:800;font-size:.95rem;color:var(--m-text,#0e1322)}
-.calnav-today{flex:none;font-size:.84rem;font-weight:700;color:var(--m-accent,#2b74ff);text-decoration:none;padding:0 4px}
-/* jump-to-date: a compact pill wrapping a native date input (icon shows; the input drives navigation) */
-.merchant-root .caljump{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--m-line);border-radius:10px;background:#fff;color:var(--m-accent);cursor:pointer}
-.merchant-root .caljump:active{background:var(--m-sunk)}
-.merchant-root .caljump input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-.merchant-root .caljump input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+/* compact calendar toolbar — app-bar + ONE row (date stepper + view toggle), was 3 stacked bars */
+.merchant-root .calbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 11px}
+.merchant-root .calstep{flex:1 1 auto;min-width:0;display:flex;align-items:stretch;border:1px solid var(--m-line);border-radius:10px;overflow:hidden;background:#fff}
+.merchant-root .calstep-b{flex:none;width:34px;display:inline-flex;align-items:center;justify-content:center;color:var(--m-text);text-decoration:none}
+.merchant-root .calstep-b:active{background:var(--m-sunk)}
+.merchant-root .calstep-r{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:5px;border:none;border-left:1px solid var(--m-line);border-right:1px solid var(--m-line);background:#fff;font:inherit;font-weight:800;font-size:.92rem;color:var(--m-text);padding:8px 6px;cursor:pointer;white-space:nowrap}
+.merchant-root .calstep-r svg{flex:none;color:var(--m-hint)}
+.merchant-root .calstep-r:active{background:var(--m-sunk)}
+.merchant-root .calstep-today{flex:none;font-size:.82rem;font-weight:700;color:var(--m-accent);text-decoration:none;padding:0 2px}
+/* custom month-grid date sheet body (shell = shared .mbsheet) */
+.merchant-root .calsheet-body{padding-top:2px}
+.merchant-root .calsheet-mh{display:flex;align-items:center;justify-content:space-between;padding:2px 2px 10px}
+.merchant-root .calsheet-mh b{font-size:1rem;font-weight:800;color:var(--m-text)}
+.merchant-root .calsheet-mb{width:38px;height:38px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--m-line);border-radius:10px;background:#fff;color:var(--m-text);cursor:pointer}
+.merchant-root .calsheet-mb:active{background:var(--m-sunk)}
+.merchant-root .calsheet-dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:.72rem;font-weight:700;color:var(--m-muted);padding-bottom:4px}
+.merchant-root .calsheet-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.merchant-root .calsheet-d{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:none;background:none;border-radius:10px;font:inherit;font-size:.92rem;font-weight:600;color:var(--m-text);cursor:pointer}
+.merchant-root .calsheet-d:active{background:var(--m-sunk)}
+.merchant-root .calsheet-d.is-other{color:var(--m-hint);font-weight:500}
+.merchant-root .calsheet-d.in-win{background:color-mix(in srgb,var(--m-accent) 12%,#fff)}
+.merchant-root .calsheet-d.is-today{box-shadow:inset 0 0 0 1.5px var(--m-accent);color:var(--m-accent)}
+.merchant-root .calsheet-d.is-sel{background:var(--m-accent);color:#fff;font-weight:800}
+.merchant-root .calsheet-foot{display:flex;gap:8px;padding:12px 0 2px}
+.merchant-root .calsheet-now{flex:1;text-align:center;font-weight:800;font-size:.88rem;color:#fff;background:var(--m-ink);border:none;border-radius:999px;padding:.6rem;cursor:pointer}
+.merchant-root .calsheet-close{flex:none;font-weight:700;font-size:.88rem;color:var(--m-accent);background:var(--m-soft);border:none;border-radius:999px;padding:.6rem 1rem;cursor:pointer}
 .caltl-dh.tdy{background:color-mix(in srgb,var(--m-accent,#2b74ff) 12%,#fff)}
 .caltl-dh.tdy b{color:var(--m-accent,#2b74ff)}
 .caltl-c.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent)}
 .caltl-guest{color:var(--m-accent,#2b74ff);font-weight:700;font-size:.76rem}
 /* Wave A — 2wk/month toggle, floor filter + search, continuous bars, collapsible floor groups */
 .merchant-root .calview{display:inline-flex;margin:0 0 11px;border:1px solid var(--m-line);border-radius:10px;overflow:hidden}
+.merchant-root .calbar .calview{flex:none;margin:0}
 .merchant-root .calview-i{padding:6px 15px;font-size:.84rem;font-weight:700;color:var(--m-muted);text-decoration:none;background:#fff}
 .merchant-root .calview-i.on{background:var(--m-accent);color:#fff}
 .merchant-root .calview-i+.calview-i{border-left:1px solid var(--m-line)}
@@ -1411,15 +1441,36 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root tr.cal-find-busy{opacity:.4}
 .merchant-root .calfind-chip em{font-style:normal;font-size:.78rem;font-weight:800;color:var(--m-accent);margin-left:5px}
 /* two calendar action buttons (หาห้องว่าง / ปิดหลายห้อง) side by side */
-.merchant-root .calacts{display:flex;gap:8px;flex-wrap:wrap}
+/* "เครื่องมือ" pill on the search row → opens the tools sheet (replaces the permanent .calacts row) */
+.merchant-root .caltools-btn{flex:none;display:inline-flex;align-items:center;gap:5px;margin-left:2px;padding:6px 11px;border-radius:999px;border:1px solid var(--m-line);background:#fff;color:var(--m-accent);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap}
+.merchant-root .caltools-btn:active{transform:scale(.96)}
+.merchant-root .caltools-btn.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff}
+/* tool rows inside the shared .mbsheet */
+.merchant-root .caltools-row{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:none;border:none;border-radius:14px;padding:.7rem;font:inherit;cursor:pointer;color:var(--m-text);transition:transform .12s,background .12s}
+.merchant-root .caltools-row:active{transform:scale(.98);background:var(--m-sunk)}
+.merchant-root .caltools-ic{flex:none;width:38px;height:38px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center}
+.merchant-root .caltools-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.merchant-root .caltools-tx b{font-size:.96rem;font-weight:800;letter-spacing:-.01em}
+.merchant-root .caltools-tx i{font-style:normal;font-size:.76rem;font-weight:600;color:var(--m-muted)}
+.merchant-root .caltools-row>svg{flex:none;color:var(--m-hint)}
 /* today's arrivals / departures strip */
-.merchant-root .caltoday{display:flex;flex-direction:column;gap:7px;margin:0 0 11px;padding:10px 12px;border:1px solid var(--m-line);border-radius:13px;background:var(--m-surface)}
-.merchant-root .caltoday-g{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-.merchant-root .caltoday-l{flex:none;font-size:.8rem;font-weight:800}
+/* today's moves — compact ONE-LINE summary that opens the moves sheet (scales to 100 rooms) */
+.merchant-root .caltoday{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:0 0 11px;padding:11px 13px;border:1px solid var(--m-line);border-radius:13px;background:var(--m-surface);font:inherit;cursor:pointer}
+.merchant-root .caltoday:active{transform:scale(.995)}
+.merchant-root .caltoday-l{flex:none;font-size:.86rem;font-weight:800}
 .merchant-root .caltoday-l.in{color:var(--m-jade,#12b76a)}
 .merchant-root .caltoday-l.out{color:#c2410c}
-.merchant-root .caltoday-chip{padding:5px 10px;border-radius:8px;border:none;background:var(--m-sunk);font:inherit;font-size:.82rem;font-weight:700;color:var(--m-text);cursor:pointer}
-.merchant-root .caltoday-chip:active{transform:scale(.96)}
+.merchant-root .caltoday-dot{width:4px;height:4px;border-radius:50%;background:var(--m-line)}
+.merchant-root .caltoday-go{margin-left:auto;flex:none;color:var(--m-hint);display:flex}
+/* moves-sheet body modifiers (sheet shell = shared .mbsheet) */
+.merchant-root .tlmoves-sr{flex:none;margin:0 0 8px}
+.merchant-root .tlmoves-sec{padding:8px 2px 2px}
+.merchant-root .tlmoves-row{display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:none;background:var(--m-sunk);border-radius:11px;padding:11px 13px;font:inherit;cursor:pointer}
+.merchant-root .tlmoves-row:active{transform:scale(.99)}
+.merchant-root .tlmoves-row b{flex:none;font-size:.9rem;font-weight:800;color:var(--m-text)}
+.merchant-root .tlmoves-row span{flex:1;min-width:0;font-size:.84rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .tlmoves-row svg{flex:none;color:var(--m-hint)}
+.merchant-root .tlmoves-row.live b::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:6px;vertical-align:1px}
 /* bulk-close room picker */
 .merchant-root .bulkrooms{display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow:auto;padding:2px}
 .merchant-root .bulkrooms-th{align-self:flex-start;border:none;background:none;font:inherit;font-size:.82rem;font-weight:800;color:var(--m-accent);cursor:pointer;padding:0}
@@ -1430,13 +1481,21 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .caltl-t.calbars{table-layout:fixed;width:auto;min-width:100%}
 .merchant-root .cal-col-rh{width:98px}
 .merchant-root .cal-col-d{width:34px}
-.merchant-root .cal-type-h{position:sticky;left:0;z-index:1;display:flex;align-items:center;gap:4px;text-align:left;padding:7px 8px;cursor:pointer;background:#eef2f8;border-top:1px solid #e1e6ef;border-bottom:1px solid #e1e6ef}
-.merchant-root .cal-type-h svg{flex:none;color:var(--m-muted)}
-.merchant-root .cal-type-nm{display:block;font-size:.8rem;font-weight:800;color:var(--m-text);line-height:1.18}
-.merchant-root .cal-type-sub{display:block;font-size:.66rem;font-weight:600;color:var(--m-muted);line-height:1.2;margin-top:1px}
-.merchant-root .cal-type-av{text-align:center;font-size:.74rem;font-weight:800;color:#16794a;background:#eef2f8;border-top:1px solid #e1e6ef;border-bottom:1px solid #e1e6ef;border-right:1px solid #e6eaf1}
+/* full-width type banner: the <th> spans the table, its inner pin sticks to the visible left edge */
+.merchant-root .calbars .cal-type-h{position:static;display:table-cell;text-align:left;padding:0;cursor:pointer;background:#eef2f8;border-top:1px solid #e1e6ef;border-bottom:1px solid #e1e6ef}
+.merchant-root .cal-type-pin{position:sticky;left:0;display:flex;align-items:baseline;gap:5px;padding:7px 10px;box-sizing:border-box;max-width:calc(100vw - 28px)}
+.merchant-root .cal-type-pin svg{flex:none;align-self:center;color:var(--m-muted)}
+.merchant-root .cal-type-nm{flex:none;font-size:.82rem;font-weight:800;color:var(--m-text);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:62vw}
+.merchant-root .cal-type-sub{flex:none;font-size:.7rem;font-weight:600;color:var(--m-muted);line-height:1.2;white-space:nowrap}
+/* thin availability strip under the banner */
+.merchant-root .cal-typeav-rh{position:sticky;left:0;z-index:1;background:#eef2f8;text-align:left;padding:2px 10px;font-size:.6rem;font-weight:700;color:var(--m-muted);border-bottom:1px solid #e1e6ef;border-right:1px solid #eceef2}
+.merchant-root .cal-type-av{text-align:center;font-size:.72rem;font-weight:800;color:#16794a;background:#eef2f8;padding:2px 0;border-bottom:1px solid #e1e6ef;border-right:1px solid #e6eaf1}
 .merchant-root .cal-type-av.z{color:#c2410c}
-.merchant-root .caltl-fl{color:var(--m-muted);font-weight:600;font-size:.74rem}
+/* 2-line room cell — code over floor, centered to the 44px bar row (scoped to .calbars; non-bars table stays 1-line) */
+.merchant-root .calbars .caltl-rh{white-space:normal;padding:4px 10px}
+.merchant-root .calbars .caltl-rh a{display:flex;flex-direction:column;justify-content:center;gap:1px;line-height:1.1;min-height:36px}
+.merchant-root .caltl-code{font-size:.84rem;font-weight:700}
+.merchant-root .caltl-fl{color:var(--m-muted);font-weight:600;font-size:.7rem}
 .merchant-root .calbars .cal-cell{height:44px;padding:0;border-right:1px solid #f3f4f6;border-bottom:1px solid #f3f4f6}
 /* flag-busy cell (status-based, no date span) — diagonal hatch so it reads differently from a continuous booking bar */
 .merchant-root .calbars .cal-busy{position:relative}
@@ -1465,15 +1524,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .tl-edit input[name=note]{font:inherit;width:100%;padding:9px 11px;border:1px solid var(--m-line);border-radius:9px;background:#fff}
 .merchant-root .tl-add-h{font-weight:800;font-size:.95rem;color:var(--m-text)}
 .merchant-root .tl-add-acts{display:flex;gap:8px;justify-content:flex-end}
-.merchant-root .tl-pop{margin:10px 0 4px;padding:12px 14px;border:1px solid var(--m-line);border-radius:14px;background:var(--m-surface,#fff);display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px -10px rgba(16,20,12,.25)}
 .merchant-root .tl-pop-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .merchant-root .tl-pop-l b{font-size:.95rem}
-.merchant-root .tl-pop-l span{font-size:.82rem;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .tl-pop-l span{font-size:.82rem;color:var(--m-muted)}
 .merchant-root .tl-pop-a{flex:none;display:flex;gap:7px}
-.merchant-root .tl-sheet{flex-direction:column;align-items:stretch;gap:11px}
-.merchant-root .tl-sheet .tl-pop-l span{white-space:normal}
-.merchant-root .tl-sheet .tl-pop-a{flex:none;flex-wrap:wrap;gap:8px}
-.merchant-root .tl-sheet .tl-pop-a form{display:contents}
+/* manage sheet body (inside the shared .mbsheet) — the booking actions/edit/move forms */
+.merchant-root .tl-sheetbody{gap:11px;padding-top:4px}
+.merchant-root .tl-sheetbody .tl-pop-l span{white-space:normal}
+.merchant-root .tl-sheetbody .tl-pop-a{flex:none;flex-wrap:wrap;gap:8px}
+.merchant-root .tl-sheetbody .tl-pop-a form{display:contents}
 .merchant-root .cal-bar-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#f59e0b;margin-left:5px;vertical-align:1px}
 .merchant-root .paycard{display:flex;flex-direction:column;gap:11px;padding:15px;margin:0 0 14px;border:1px solid var(--m-line);border-radius:16px;background:var(--m-surface,#fff);box-shadow:0 6px 20px -12px rgba(20,24,52,.18)}
 .merchant-root .paycard-h{display:flex;align-items:center;gap:7px;font-weight:800;font-size:1rem;color:var(--m-text)}

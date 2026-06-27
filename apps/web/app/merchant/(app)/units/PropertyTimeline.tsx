@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Icon } from '../ui';
 import { ConfirmSubmit } from '../ConfirmSubmit';
 import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction, moveBlockAction, bulkBlockRoomsAction } from '../../actions';
+import { useSheetAnim } from './useSheetAnim';
 
 // Interactive property timeline (rooms × the visible day window). Bookings render as CONTINUOUS BARS with
 // the guest name on them; rooms group by floor (collapsible) and are filterable + searchable for big
@@ -39,6 +40,12 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const toggleRoom = (id: string) => setBulkSel((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleType = (rs: TLRoom[]) => setBulkSel((p) => { const n = new Set(p); const all = rs.every((r) => n.has(r.id)); rs.forEach((r) => all ? n.delete(r.id) : n.add(r.id)); return n; });
   const bulkExit = () => { setBulkOpen(false); setBulkSel(new Set()); };
+  const [movesOpen, setMovesOpen] = useState(false);
+  const [mvq, setMvq] = useState('');
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const openShown = useSheetAnim(!!open);
+  const movesShown = useSheetAnim(movesOpen);
+  const toolsShown = useSheetAnim(toolsOpen);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggle = (t: string) => setCollapsed((p) => { const n = new Set(p); n.has(t) ? n.delete(t) : n.add(t); return n; });
   const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
@@ -96,7 +103,8 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
       if (bl.e === today) departures.push({ code: r.code, guest: bl.guest, blk: bl, roomId: r.id });
     }
   }
-  const openBlk = (m: Mv) => { setOpen({ blk: m.blk, code: m.code, roomId: m.roomId }); setEditing(false); setMoving(false); setSel(null); };
+  const openBlk = (m: Mv) => { setOpen({ blk: m.blk, code: m.code, roomId: m.roomId }); setEditing(false); setMoving(false); setSel(null); setMovesOpen(false); };
+  const activeTool = findMode ? 'หาห้องว่าง' : bulkOpen ? 'ปิดหลายห้อง' : null;   // a tool mode is live → trigger flips to exit
 
   // build a room's cells: continuous bars (colSpan) for booked spans, single cells for free/flag days
   const cells = (r: TLRoom) => {
@@ -132,20 +140,12 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   return (
     <>
       {(arrivals.length > 0 || departures.length > 0) && (
-        <div className="caltoday">
-          {arrivals.length > 0 && (
-            <div className="caltoday-g">
-              <span className="caltoday-l in">🛬 เข้าวันนี้ {arrivals.length}</span>
-              {arrivals.map((m, i) => <button type="button" key={'a' + i} className="caltoday-chip" onClick={() => openBlk(m)}>{m.code}{m.guest ? ` · ${m.guest}` : ''}</button>)}
-            </div>
-          )}
-          {departures.length > 0 && (
-            <div className="caltoday-g">
-              <span className="caltoday-l out">🛫 ออกวันนี้ {departures.length}</span>
-              {departures.map((m, i) => <button type="button" key={'d' + i} className="caltoday-chip" onClick={() => openBlk(m)}>{m.code}{m.guest ? ` · ${m.guest}` : ''}</button>)}
-            </div>
-          )}
-        </div>
+        <button type="button" className="caltoday" onClick={() => { setMvq(''); setMovesOpen(true); setOpen(null); }}>
+          {arrivals.length > 0 && <span className="caltoday-l in">🛬 เข้า {arrivals.length}</span>}
+          {arrivals.length > 0 && departures.length > 0 && <span className="caltoday-dot" />}
+          {departures.length > 0 && <span className="caltoday-l out">🛫 ออก {departures.length}</span>}
+          <span className="caltoday-go"><Icon n="chevR" size={16} /></span>
+        </button>
       )}
 
       <div className="caltools">
@@ -159,16 +159,33 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
           <Icon n="search" size={15} />
           <input value={qstr} onChange={(e) => setQstr(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" />
           {qstr && <button type="button" onClick={() => setQstr('')} aria-label="ล้าง"><Icon n="x" size={13} /></button>}
-        </div>
-        <div className="calacts">
-          <button type="button" className={`calfind-tg ${findMode ? 'on' : ''}`} onClick={() => { findMode ? exitFind() : (setFindMode(true), bulkExit(), setSel(null), setOpen(null)); }}>
-            <Icon n="search" size={14} /> หาห้องว่าง
-          </button>
-          <button type="button" className={`calfind-tg ${bulkOpen ? 'on' : ''}`} onClick={() => { bulkOpen ? bulkExit() : (setBulkOpen(true), setFindMode(false), setFFrom(null), setFTo(null), setSel(null), setOpen(null)); }}>
-            <Icon n="grid" size={14} /> ปิดหลายห้อง
+          <button type="button" className={`caltools-btn ${activeTool ? 'on' : ''}`} onClick={() => { activeTool ? (exitFind(), bulkExit()) : setToolsOpen(true); }} aria-label={activeTool ? `ออกจาก ${activeTool}` : 'เครื่องมือ'}>
+            <Icon n={activeTool ? 'x' : 'grid'} size={15} /> <span>{activeTool || 'เครื่องมือ'}</span>
           </button>
         </div>
       </div>
+
+      {toolsOpen && (
+        <>
+          <div className={`mbsheet-scrim ${toolsShown ? 'in' : ''}`} onClick={() => setToolsOpen(false)} />
+          <div className={`mbsheet ${toolsShown ? 'in' : ''}`} role="dialog" aria-label="เครื่องมือ">
+            <span className="mbsheet-handle" onClick={() => setToolsOpen(false)} aria-hidden />
+            <div className="mbsheet-hd"><b>เครื่องมือ</b><button type="button" className="mbsheet-x" onClick={() => setToolsOpen(false)} aria-label="ปิด"><Icon n="x" size={16} /></button></div>
+            <div className="mbsheet-body">
+              <button type="button" className="caltools-row" onClick={() => { setToolsOpen(false); setFindMode(true); bulkExit(); setSel(null); setOpen(null); setMovesOpen(false); }}>
+                <span className="caltools-ic"><Icon n="search" size={18} /></span>
+                <span className="caltools-tx"><b>หาห้องว่าง</b><i>เลือกช่วงวัน แล้วดูห้องที่ว่างทุกวัน</i></span>
+                <Icon n="chevR" size={16} />
+              </button>
+              <button type="button" className="caltools-row" onClick={() => { setToolsOpen(false); setBulkOpen(true); setFindMode(false); setFFrom(null); setFTo(null); setSel(null); setOpen(null); setMovesOpen(false); }}>
+                <span className="caltools-ic"><Icon n="grid" size={18} /></span>
+                <span className="caltools-tx"><b>ปิดหลายห้อง</b><i>ปิดซ่อม / กันห้องหลายห้องพร้อมกัน</i></span>
+                <Icon n="chevR" size={16} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {findMode && (
         <div className="calfind">
@@ -236,15 +253,23 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
               {groups.map((g) => { const t = g.rooms[0]; const col = collapsed.has(g.id); const sub = [`${g.rooms.length} ห้อง`, money(t.priceMinor, t.pricePeriod), bedTag(t)].filter(Boolean).join(' · '); return (
                 <Fragment key={g.id || '_'}>
                   <tr className="cal-type">
-                    <th className="cal-type-h" onClick={() => toggle(g.id)}>
-                      <Icon n={col ? 'chevR' : 'chevD'} size={14} />
-                      <span><span className="cal-type-nm">{t.unitName}</span><span className="cal-type-sub">{sub}</span></span>
+                    <th className="cal-type-h" colSpan={days.length + 1} onClick={() => toggle(g.id)}>
+                      <span className="cal-type-pin">
+                        <Icon n={col ? 'chevR' : 'chevD'} size={14} />
+                        <span className="cal-type-nm">{t.unitName}</span>
+                        <span className="cal-type-sub">{sub}</span>
+                      </span>
                     </th>
-                    {days.map((d) => { const a = typeAvail(g.rooms, d); return <td key={d} className={`cal-type-av ${a ? '' : 'z'}`}>{a}</td>; })}
                   </tr>
+                  {!col && (
+                    <tr className="cal-typeav">
+                      <th className="cal-typeav-rh">ว่าง</th>
+                      {days.map((d) => { const a = typeAvail(g.rooms, d); return <td key={d} className={`cal-type-av ${a ? '' : 'z'}`}>{a}</td>; })}
+                    </tr>
+                  )}
                   {!col && g.rooms.map((r) => (
                     <tr key={r.id} className={findMode && fFrom && fTo ? (freeSet.has(r.id) ? 'cal-find-free' : 'cal-find-busy') : ''}>
-                      <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}{r.floor ? <span className="caltl-fl"> · {term} {r.floor}</span> : null}</Link></th>
+                      <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}><b className="caltl-code">{r.code}</b>{r.floor ? <span className="caltl-fl">{term} {r.floor}</span> : null}</Link></th>
                       {cells(r)}
                     </tr>
                   ))}
@@ -277,8 +302,12 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
         </form>
       )}
 
-      {open && (() => { const b = open.blk; const live = b.cin && !b.cout; return (
-        <div className="tl-pop tl-sheet">
+      {open && (() => { const b = open.blk; const live = b.cin && !b.cout; const close = () => { setOpen(null); setEditing(false); setMoving(false); }; return (
+        <>
+        <div className={`mbsheet-scrim ${openShown ? 'in' : ''}`} onClick={close} />
+        <div className={`mbsheet ${openShown ? 'in' : ''}`} role="dialog" aria-modal="true">
+          <span className="mbsheet-handle" onClick={close} aria-hidden />
+          <div className="mbsheet-body tl-sheetbody">
           <div className="tl-pop-l">
             <b>{b.ref ? `${b.ref} · ` : ''}ห้อง {open.code}{b.guest ? ` · ${b.guest}` : ''}</b>
             <span>{KLABEL[b.k] || b.k} · {b.s} → {b.e || 'ต่อเนื่อง'}{b.cout ? ' · เช็คเอาท์แล้ว' : live ? ' · กำลังพัก' : ''}{b.note ? ` · ${b.note}` : ''}</span>
@@ -329,11 +358,53 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
               <button type="button" className="dbtn sm" onClick={() => setMoving(true)}><Icon n="grid" size={14} /> ย้ายห้อง</button>
               {b.bid && <Link className="dbtn sm" href={`/merchant/bookings/${b.bid}`}>รายละเอียด ›</Link>}
               {!b.cin && <form action={cancelRoomBlockAction.bind(null, b.id)}><ConfirmSubmit message="เอาช่วงนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>}
-              <button type="button" className="dbtn sm" onClick={() => setOpen(null)}>ปิด</button>
+              <button type="button" className="dbtn sm" onClick={close}>ปิด</button>
             </div>
           )}
+          </div>
         </div>
+        </>
       ); })()}
+
+      {movesOpen && (() => {
+        const mq = mvq.trim().toLowerCase();
+        const hit = (m: Mv) => !mq || m.code.toLowerCase().includes(mq) || (!!m.guest && m.guest.toLowerCase().includes(mq));
+        const byCode = (a: Mv, b: Mv) => a.code.localeCompare(b.code, undefined, { numeric: true });
+        const arr = arrivals.filter(hit).sort(byCode);
+        const dep = departures.filter(hit).sort(byCode);
+        const tap = (m: Mv) => { setMovesOpen(false); openBlk(m); };
+        return (
+          <>
+            <div className={`mbsheet-scrim ${movesShown ? 'in' : ''}`} onClick={() => setMovesOpen(false)} />
+            <div className={`mbsheet ${movesShown ? 'in' : ''}`} role="dialog" aria-label="เข้า–ออกวันนี้">
+              <span className="mbsheet-handle" onClick={() => setMovesOpen(false)} aria-hidden />
+              <div className="mbsheet-hd"><b>เข้า–ออกวันนี้</b><button type="button" className="mbsheet-x" onClick={() => setMovesOpen(false)} aria-label="ปิด"><Icon n="x" size={16} /></button></div>
+              {(arrivals.length + departures.length) > 6 && (
+                <div className="calsearch tlmoves-sr">
+                  <Icon n="search" size={15} />
+                  <input value={mvq} onChange={(e) => setMvq(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" />
+                  {mvq && <button type="button" onClick={() => setMvq('')} aria-label="ล้าง"><Icon n="x" size={13} /></button>}
+                </div>
+              )}
+              <div className="mbsheet-body">
+                {arr.length > 0 && <div className="tlmoves-sec"><span className="caltoday-l in">🛬 เข้าวันนี้ {arr.length}</span></div>}
+                {arr.map((m, i) => (
+                  <button type="button" key={'a' + i} className="tlmoves-row" onClick={() => tap(m)}>
+                    <b>ห้อง {m.code}</b><span>{m.guest || KLABEL[m.blk.k]}</span><Icon n="chevR" size={15} />
+                  </button>
+                ))}
+                {dep.length > 0 && <div className="tlmoves-sec"><span className="caltoday-l out">🛫 ออกวันนี้ {dep.length}</span></div>}
+                {dep.map((m, i) => (
+                  <button type="button" key={'d' + i} className={`tlmoves-row ${m.blk.cin && !m.blk.cout ? 'live' : ''}`} onClick={() => tap(m)}>
+                    <b>ห้อง {m.code}</b><span>{m.guest || KLABEL[m.blk.k]}{m.blk.cin && !m.blk.cout ? ' · กำลังพัก' : ''}</span><Icon n="chevR" size={15} />
+                  </button>
+                ))}
+                {arr.length === 0 && dep.length === 0 && <p className="nomatch">ไม่พบ</p>}
+              </div>
+            </div>
+          </>
+        );
+      })()}
 
       <div className="callegend">
         <span><i style={{ background: KSTYLE.stay.bg }} /> เข้าพัก/เช่า</span>
