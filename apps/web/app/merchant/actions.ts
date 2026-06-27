@@ -1163,7 +1163,8 @@ export async function setStayUnitManagedAction(unitId: string, on: boolean) {
 export async function addRoomBlockAction(roomId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const back = s(formData, 'returnTo');   // e.g. the หาห้องว่าง list — return there instead of the room page
+  const backRaw = s(formData, 'returnTo');   // e.g. the หาห้องว่าง list — return there instead of the room page
+  const back = backRaw.startsWith('/merchant/') ? backRaw : '';   // internal paths only (no open redirect)
   const fail = (e: string) => redirect(back ? `${back}${back.includes('?') ? '&' : '?'}error=${e}` : `/merchant/units/${roomId}?error=${e}`);
   const from = s(formData, 'start_date');
   const to = s(formData, 'end_date');
