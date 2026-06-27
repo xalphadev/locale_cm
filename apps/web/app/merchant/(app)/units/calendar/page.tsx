@@ -5,6 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { PropertyTimeline } from '../PropertyTimeline';
+import { CalJump } from '../CalJump';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +20,7 @@ const fmtRange = (a: string, b: string) => {
 };
 const coll = (x: string, y: string) => (x || '').localeCompare(y || '', undefined, { numeric: true, sensitivity: 'base' });
 
-export default async function PropertyCalendar({ searchParams }: { searchParams: { d?: string; w?: string } }) {
+export default async function PropertyCalendar({ searchParams }: { searchParams: { d?: string; w?: string; ok?: string; error?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
@@ -71,10 +72,17 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
     <>
       <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="ปฏิทินรวม" />
 
+      {searchParams?.ok === 'moved' && <div className="banner-ok">✓ ย้ายห้องแล้ว</div>}
+      {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกแล้ว</div>}
+      {searchParams?.error === 'overlap' && <div className="banner-err">ห้องปลายทางมีจองทับช่วงนี้แล้ว — เลือกห้องอื่น</div>}
+      {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
+      {searchParams?.error === 'daterange' && <div className="banner-err">วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน</div>}
+
       <div className="calnav">
         <Link className="calnav-b" href={`/merchant/units/calendar${qs(prev)}`} aria-label="ก่อนหน้า"><Icon n="chevL" size={18} /></Link>
         <span className="calnav-r">{fmtRange(start, days[WIN - 1])}</span>
         <Link className="calnav-b" href={`/merchant/units/calendar${qs(next)}`} aria-label="ถัดไป"><Icon n="chevR" size={18} /></Link>
+        <CalJump value={start} month={month} />
         {start !== today && <Link className="calnav-today" href={`/merchant/units/calendar${month ? '?w=month' : ''}`}>วันนี้</Link>}
       </div>
       <div className="calview">

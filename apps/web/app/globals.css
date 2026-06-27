@@ -1367,6 +1367,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .calnav-b:active{background:var(--m-sunk,#eff1f5)}
 .calnav-r{flex:1;text-align:center;font-weight:800;font-size:.95rem;color:var(--m-text,#0e1322)}
 .calnav-today{flex:none;font-size:.84rem;font-weight:700;color:var(--m-accent,#2b74ff);text-decoration:none;padding:0 4px}
+/* jump-to-date: a compact pill wrapping a native date input (icon shows; the input drives navigation) */
+.merchant-root .caljump{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--m-line);border-radius:10px;background:#fff;color:var(--m-accent);cursor:pointer}
+.merchant-root .caljump:active{background:var(--m-sunk)}
+.merchant-root .caljump input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.merchant-root .caljump input::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
 .caltl-dh.tdy{background:color-mix(in srgb,var(--m-accent,#2b74ff) 12%,#fff)}
 .caltl-dh.tdy b{color:var(--m-accent,#2b74ff)}
 .caltl-c.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent)}
@@ -1385,6 +1390,25 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .calsearch{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--m-line);border-radius:12px;background:var(--m-sunk,#f1f3f7);color:var(--m-muted)}
 .merchant-root .calsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text);outline:none;min-width:0}
 .merchant-root .calsearch button{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;padding:0;display:flex}
+/* "หาห้องว่าง" — find rooms free across a tapped date range */
+.merchant-root .calfind-tg{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid var(--m-accent);background:#fff;color:var(--m-accent);font:inherit;font-size:.84rem;font-weight:800;cursor:pointer}
+.merchant-root .calfind-tg.on{background:var(--m-accent);color:#fff}
+.merchant-root .calfind{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 11px;padding:11px 13px;border:1px solid #cfe0ff;border-radius:13px;background:#f3f8ff}
+.merchant-root .calfind-hint{display:inline-flex;align-items:center;gap:7px;font-size:.88rem;font-weight:700;color:var(--m-accent)}
+.merchant-root .calfind-head{display:flex;flex-direction:column;line-height:1.2}
+.merchant-root .calfind-head b{font-size:.95rem;color:var(--m-text)}
+.merchant-root .calfind-head span{font-size:.74rem;color:var(--m-muted)}
+.merchant-root .calfind-chips{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:7px}
+.merchant-root .calfind-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:9px;border:none;background:#fff;box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--m-jade,#12b76a) 40%,#fff);font:inherit;font-size:.84rem;font-weight:700;color:var(--m-text);cursor:pointer}
+.merchant-root .calfind-chip i{font-style:normal;font-size:.76rem;font-weight:800;color:var(--m-jade,#12b76a)}
+.merchant-root .calfind-x{margin-left:auto;flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;display:flex;padding:2px}
+/* date headers become tappable in find-mode; the picked span highlights */
+.merchant-root .caltl-dh.pick{cursor:pointer}
+.merchant-root .caltl-dh.inr{background:color-mix(in srgb,var(--m-accent,#2b74ff) 18%,#fff)}
+.merchant-root .caltl-dh.inr b{color:var(--m-accent,#2b74ff)}
+/* free rooms pop, busy rooms fade — at a glance which rooms take the whole range */
+.merchant-root tr.cal-find-free .caltl-rh{box-shadow:inset 3px 0 0 var(--m-jade,#12b76a)}
+.merchant-root tr.cal-find-busy{opacity:.4}
 .merchant-root .caltl-t.calbars{table-layout:fixed;width:auto;min-width:100%}
 .merchant-root .cal-col-rh{width:98px}
 .merchant-root .cal-col-d{width:34px}

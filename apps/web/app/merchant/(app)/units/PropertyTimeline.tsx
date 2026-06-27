@@ -3,7 +3,7 @@ import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '../ui';
 import { ConfirmSubmit } from '../ConfirmSubmit';
-import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction } from '../../actions';
+import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction, moveBlockAction } from '../../actions';
 
 // Interactive property timeline (rooms × the visible day window). Bookings render as CONTINUOUS BARS with
 // the guest name on them; rooms group by floor (collapsible) and are filterable + searchable for big
@@ -26,10 +26,14 @@ const KLABEL: Record<string, string> = { stay: 'เข้าพัก', tenancy:
 
 export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms: TLRoom[]; days: string[]; today: string; term: string; returnTo: string }) {
   const [sel, setSel] = useState<{ roomId: string; code: string; a: string; b: string | null } | null>(null);
-  const [open, setOpen] = useState<{ blk: Blk; code: string } | null>(null);
+  const [open, setOpen] = useState<{ blk: Blk; code: string; roomId: string } | null>(null);
   const [editing, setEditing] = useState(false);
+  const [moving, setMoving] = useState(false);
   const [typeF, setTypeF] = useState('all');
   const [qstr, setQstr] = useState('');
+  const [findMode, setFindMode] = useState(false);
+  const [fFrom, setFFrom] = useState<string | null>(null);
+  const [fTo, setFTo] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggle = (t: string) => setCollapsed((p) => { const n = new Set(p); n.has(t) ? n.delete(t) : n.add(t); return n; });
   const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
@@ -57,12 +61,25 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const inSel = (r: TLRoom, day: string) => !!sel && sel.roomId === r.id && (sel.b ? day >= sel.a && day < sel.b : day === sel.a);
   const rangeClear = (r: TLRoom, a: string, b: string) => days.every((d) => !(d >= a && d < b) || (!cover(r, d).blk && !cover(r, d).flag));
   const onFree = (r: TLRoom, day: string) => {
-    if (day < today) return;
+    if (findMode || day < today) return;   // in find-mode the header drives the range, not room cells
     setOpen(null);
     if (!sel || sel.roomId !== r.id || sel.b) setSel({ roomId: r.id, code: r.code, a: day, b: null });
     else if (day > sel.a && rangeClear(r, sel.a, day)) setSel({ ...sel, b: day });
     else setSel({ roomId: r.id, code: r.code, a: day, b: null });
   };
+
+  // "หาห้องว่าง": tap two header dates → rooms free EVERY day across [from,to); tap a result → prefilled create
+  const onHeader = (day: string) => {
+    if (!findMode || day < today) return;
+    if (!fFrom || fTo) { setFFrom(day); setFTo(null); }
+    else if (day > fFrom) setFTo(day);
+    else { setFFrom(day); setFTo(null); }
+  };
+  const findDays = fFrom && fTo ? days.filter((d) => d >= fFrom && d < fTo) : [];
+  const freeRooms = fFrom && fTo ? rooms.filter((r) => findDays.every((d) => { const c = cover(r, d); return !c.blk && !c.flag; })) : [];
+  const freeSet = new Set(freeRooms.map((r) => r.id));
+  const exitFind = () => { setFindMode(false); setFFrom(null); setFTo(null); };
+  const quickBook = (r: TLRoom) => { setSel({ roomId: r.id, code: r.code, a: fFrom!, b: fTo! }); exitFind(); };
 
   // build a room's cells: continuous bars (colSpan) for booked spans, single cells for free/flag days
   const cells = (r: TLRoom) => {
@@ -75,7 +92,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
         while (i + span < days.length && cover(r, days[i + span]).blk?.id === c.blk.id) span++;
         const blk = c.blk; const st = Kst(blk.k);
         out.push(
-          <td key={i} colSpan={span} className="cal-cell" onClick={() => { setOpen(open?.blk.id === blk.id ? null : { blk, code: r.code }); setEditing(false); setSel(null); }}>
+          <td key={i} colSpan={span} className="cal-cell" onClick={() => { setOpen(open?.blk.id === blk.id ? null : { blk, code: r.code, roomId: r.id }); setEditing(false); setMoving(false); setSel(null); }}>
             <div className="cal-bar" style={{ background: st.bg, color: st.fg }}>
               {blk.ref ? <i className="cal-bar-ref">{blk.ref}{blk.cin && !blk.cout ? <b className="cal-bar-dot" /> : null}</i> : null}
               <span>{blk.guest || KLABEL[blk.k] || ''}</span>
@@ -109,7 +126,28 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
           <input value={qstr} onChange={(e) => setQstr(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" />
           {qstr && <button type="button" onClick={() => setQstr('')} aria-label="ล้าง"><Icon n="x" size={13} /></button>}
         </div>
+        <button type="button" className={`calfind-tg ${findMode ? 'on' : ''}`} onClick={() => { findMode ? exitFind() : (setFindMode(true), setSel(null), setOpen(null)); }}>
+          <Icon n="search" size={14} /> หาห้องว่าง
+        </button>
       </div>
+
+      {findMode && (
+        <div className="calfind">
+          {!(fFrom && fTo) ? (
+            <span className="calfind-hint"><Icon n="calendar" size={14} /> {!fFrom ? 'แตะ “วันเข้า” บนหัวตาราง' : 'แตะ “วันออก” (เช็คเอาท์)'}</span>
+          ) : (
+            <>
+              <div className="calfind-head"><b>{freeRooms.length > 0 ? `ว่าง ${freeRooms.length} ห้อง` : 'ไม่มีห้องว่าง'}</b><span>{fFrom} → {fTo}</span></div>
+              {freeRooms.length > 0 && (
+                <div className="calfind-chips">
+                  {freeRooms.map((r) => <button type="button" key={r.id} className="calfind-chip" onClick={() => quickBook(r)}>ห้อง {r.code} <i>จอง ›</i></button>)}
+                </div>
+              )}
+            </>
+          )}
+          <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={15} /></button>
+        </div>
+      )}
 
       {shown.length === 0 ? (
         <div className="nomatch">ไม่พบห้องที่ตรงตัวกรอง</div>
@@ -118,7 +156,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
           <table className="caltl-t calbars">
             <colgroup><col className="cal-col-rh" />{days.map((d) => <col key={d} className="cal-col-d" />)}</colgroup>
             <thead>
-              <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); const o = dayOcc(d); return <th key={d} className={`caltl-dh ${d === today ? 'tdy' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b><span className={`caltl-occ ${o.occ ? '' : 'z'}`} title={`เข้าพัก ${o.occ}/${rooms.length}`}><i>{o.occ}</i>{o.pct}%</span></th>; })}</tr>
+              <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); const o = dayOcc(d); const inR = findMode && ((fFrom && fTo && d >= fFrom && d < fTo) || (fFrom && !fTo && d === fFrom)); return <th key={d} onClick={() => onHeader(d)} className={`caltl-dh ${d === today ? 'tdy' : ''} ${findMode && d >= today ? 'pick' : ''} ${inR ? 'inr' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b><span className={`caltl-occ ${o.occ ? '' : 'z'}`} title={`เข้าพัก ${o.occ}/${rooms.length}`}><i>{o.occ}</i>{o.pct}%</span></th>; })}</tr>
             </thead>
             <tbody>
               {groups.map((g) => { const t = g.rooms[0]; const col = collapsed.has(g.id); const sub = [`${g.rooms.length} ห้อง`, money(t.priceMinor, t.pricePeriod), bedTag(t)].filter(Boolean).join(' · '); return (
@@ -131,7 +169,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
                     {days.map((d) => { const a = typeAvail(g.rooms, d); return <td key={d} className={`cal-type-av ${a ? '' : 'z'}`}>{a}</td>; })}
                   </tr>
                   {!col && g.rooms.map((r) => (
-                    <tr key={r.id}>
+                    <tr key={r.id} className={findMode && fFrom && fTo ? (freeSet.has(r.id) ? 'cal-find-free' : 'cal-find-busy') : ''}>
                       <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}>{r.code}{r.floor ? <span className="caltl-fl"> · {term} {r.floor}</span> : null}</Link></th>
                       {cells(r)}
                     </tr>
@@ -185,7 +223,27 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
                 <button type="submit" className="dbtn sm primary">บันทึกวันที่</button>
               </div>
             </form>
-          ) : (
+          ) : moving ? (() => {
+            // dest options = other rooms free across every day this block covers (in the window); GiST is the backstop
+            const blkDays = days.filter((d) => d >= b.s && (!b.e || d < b.e));
+            const destOpts = rooms.filter((r) => r.id !== open.roomId && (blkDays.length === 0 || blkDays.every((d) => { const c = cover(r, d); return !c.blk && !c.flag; })));
+            return (
+              <form className="tl-edit" action={moveBlockAction.bind(null, b.id)}>
+                <input type="hidden" name="returnTo" value={returnTo} />
+                <div className="field"><label>ย้ายไปห้อง (ว่างตลอดช่วงนี้)</label>
+                  <select name="dest" defaultValue="" required>
+                    <option value="" disabled>เลือกห้องปลายทาง</option>
+                    {destOpts.map((r) => <option key={r.id} value={r.id}>ห้อง {r.code} · {r.unitName}</option>)}
+                  </select>
+                </div>
+                {destOpts.length === 0 && <p className="note" style={{ margin: 0 }}>ไม่มีห้องอื่นที่ว่างตลอดช่วงนี้</p>}
+                <div className="tl-pop-a">
+                  <button type="button" className="dbtn sm" onClick={() => setMoving(false)}>ยกเลิก</button>
+                  <button type="submit" className="dbtn sm primary" disabled={destOpts.length === 0}>ย้าย →</button>
+                </div>
+              </form>
+            );
+          })() : (
             <div className="tl-pop-a">
               {b.bid && !b.cin && (
                 <form action={checkInAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><button type="submit" className="dbtn sm primary">เช็คอิน</button></form>
@@ -194,6 +252,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
                 <form action={checkOutAction.bind(null, b.bid)}><input type="hidden" name="returnTo" value={returnTo} /><ConfirmSubmit message="เช็คเอาท์ห้องนี้? ห้องจะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm primary">เช็คเอาท์</ConfirmSubmit></form>
               )}
               <button type="button" className="dbtn sm" onClick={() => setEditing(true)}><Icon n="calendar" size={14} /> แก้/ขยายวัน</button>
+              <button type="button" className="dbtn sm" onClick={() => setMoving(true)}><Icon n="grid" size={14} /> ย้ายห้อง</button>
               {b.bid && <Link className="dbtn sm" href={`/merchant/bookings/${b.bid}`}>รายละเอียด ›</Link>}
               {!b.cin && <form action={cancelRoomBlockAction.bind(null, b.id)}><ConfirmSubmit message="เอาช่วงนี้ออก? วันที่จะกลับมาว่างให้จองใหม่ทันที" className="dbtn sm danger">เอาออก</ConfirmSubmit></form>}
               <button type="button" className="dbtn sm" onClick={() => setOpen(null)}>ปิด</button>

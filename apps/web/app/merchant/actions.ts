@@ -1272,6 +1272,46 @@ export async function moveTenantAction(srcId: string, formData: FormData) {
   redirect(`/merchant/units/${destId}?ok=moved`);
 }
 
+/** Move ONE booking/block (by id) to another room — the calendar version of moveTenantAction (which is
+ *  room-scoped + tenancy-only). The GiST EXCLUDE aborts if the destination overlaps. For stay/tenancy
+ *  blocks the now-state flags follow (dest→occupied if it covers today, src→vacant if nothing else does);
+ *  maintenance/hold just relocate. No money. */
+export async function moveBlockAction(blockId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const dest = s(formData, 'dest');
+  const back = s(formData, 'returnTo') || '/merchant/units';
+  const err = (code: string) => redirect(back + (back.includes('?') ? '&' : '?') + 'error=' + code);
+  if (!UUID_RE.test(dest)) err('dest');
+  const [b] = await q<any>(
+    `SELECT b.id, b.room_id, b.block_kind, b.note, to_char(b.end_date,'YYYY-MM-DD') end_ymd, r.stay_unit_id src_unit
+       FROM stay_occupancy_block b JOIN stay_room r ON r.id=b.room_id
+      WHERE b.id=$1 AND b.place_id=$2 AND b.status='active' AND b.deleted_at IS NULL`, [blockId, acc.place_id]);
+  if (!b || b.room_id === dest) err('dest');
+  const [dr] = await q<any>(`SELECT id, stay_unit_id FROM stay_room WHERE id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [dest, acc.place_id]);
+  if (!dr) err('dest');
+  try {
+    await q(`UPDATE stay_occupancy_block SET room_id=$2, updated_at=now() WHERE id=$1 AND place_id=$3`, [blockId, dest, acc.place_id]);
+  } catch (e: any) {
+    if (e?.code === '23P01') err('overlap');
+    throw e;
+  }
+  if (b.block_kind === 'stay' || b.block_kind === 'tenancy') {
+    await q(`UPDATE stay_room SET occupancy_status='occupied', note=$3, occupied_until=$4::date, updated_at=now()
+               WHERE id=$1 AND place_id=$2
+                 AND EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.id=$5 AND b.start_date<=CURRENT_DATE AND (b.end_date IS NULL OR b.end_date>CURRENT_DATE))`,
+      [dest, acc.place_id, b.note, b.end_ymd, blockId]);
+    await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now()
+               WHERE id=$1 AND place_id=$2
+                 AND NOT EXISTS (SELECT 1 FROM stay_occupancy_block b WHERE b.room_id=$1 AND b.status='active' AND b.deleted_at IS NULL AND b.block_kind IN ('stay','tenancy') AND b.span @> CURRENT_DATE)`,
+      [b.room_id, acc.place_id]);
+  }
+  await refreshUnitVacancy(b.src_unit);
+  if (dr.stay_unit_id && dr.stay_unit_id !== b.src_unit) await refreshUnitVacancy(dr.stay_unit_id);
+  revalidatePath('/merchant/units', 'layout');
+  redirect(back + (back.includes('?') ? '&' : '?') + 'ok=moved');
+}
+
 /** Close the loop: turn an agreed booking lead into a real calendar block (daily/managed). Auto-assigns
  *  the first room of the type free for the requested dates; the GiST EXCLUDE resolves any off-app race.
  *  No money — it only records the agreed dates as occupied + links the lead. */
