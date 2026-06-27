@@ -43,9 +43,12 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const [movesOpen, setMovesOpen] = useState(false);
   const [mvq, setMvq] = useState('');
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
   const openShown = useSheetAnim(!!open);
   const movesShown = useSheetAnim(movesOpen);
   const toolsShown = useSheetAnim(toolsOpen);
+  const typeShown = useSheetAnim(typeOpen);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggle = (t: string) => setCollapsed((p) => { const n = new Set(p); n.has(t) ? n.delete(t) : n.add(t); return n; });
   const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
@@ -105,6 +108,9 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   }
   const openBlk = (m: Mv) => { setOpen({ blk: m.blk, code: m.code, roomId: m.roomId }); setEditing(false); setMoving(false); setSel(null); setMovesOpen(false); };
   const activeTool = findMode ? 'หาห้องว่าง' : bulkOpen ? 'ปิดหลายห้อง' : null;   // a tool mode is live → trigger flips to exit
+  const hasMoves = arrivals.length > 0 || departures.length > 0;
+  const typeLabel = typeF === 'all' ? 'ทุกประเภท' : (types.find(([id]) => id === typeF)?.[1].name ?? 'ประเภท');
+  const oneType = types.length <= 1;
 
   // build a room's cells: continuous bars (colSpan) for booked spans, single cells for free/flag days
   const cells = (r: TLRoom) => {
@@ -139,30 +145,29 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
 
   return (
     <>
-      {(arrivals.length > 0 || departures.length > 0) && (
-        <button type="button" className="caltoday" onClick={() => { setMvq(''); setMovesOpen(true); setOpen(null); }}>
-          {arrivals.length > 0 && <span className="caltoday-l in">🛬 เข้า {arrivals.length}</span>}
-          {arrivals.length > 0 && departures.length > 0 && <span className="caltoday-dot" />}
-          {departures.length > 0 && <span className="caltoday-l out">🛫 ออก {departures.length}</span>}
-          <span className="caltoday-go"><Icon n="chevR" size={16} /></span>
-        </button>
-      )}
-
-      <div className="caltools">
-        {types.length > 1 && (
-          <div className="calchips">
-            <button type="button" className={`calchip ${typeF === 'all' ? 'on' : ''}`} onClick={() => setTypeF('all')}>ทุกประเภท</button>
-            {types.map(([id, t]) => <button type="button" key={id || '_'} className={`calchip ${typeF === id ? 'on' : ''}`} onClick={() => setTypeF(id)}>{t.name} <i>{t.n}</i></button>)}
+      <div className="calctl">
+        {searching || oneType ? (
+          <div className="calctl-search">
+            <Icon n="search" size={15} />
+            <input value={qstr} onChange={(e) => setQstr(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" autoFocus={searching} onBlur={() => { if (!qstr) setSearching(false); }} />
+            {qstr && <button type="button" onClick={() => { setQstr(''); if (searching) setSearching(false); }} aria-label="ล้าง"><Icon n="x" size={14} /></button>}
           </div>
+        ) : (
+          <>
+            <button type="button" className={`calctl-type ${typeF !== 'all' ? 'on' : ''}`} onClick={() => setTypeOpen(true)}>
+              <span>{typeLabel}</span><Icon n="chevD" size={14} />
+            </button>
+            <button type="button" className={`calctl-ic ${qstr ? 'on' : ''}`} onClick={() => setSearching(true)} aria-label="ค้นหา"><Icon n="search" size={17} /></button>
+          </>
         )}
-        <div className="calsearch">
-          <Icon n="search" size={15} />
-          <input value={qstr} onChange={(e) => setQstr(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" />
-          {qstr && <button type="button" onClick={() => setQstr('')} aria-label="ล้าง"><Icon n="x" size={13} /></button>}
-          <button type="button" className={`caltools-btn ${activeTool ? 'on' : ''}`} onClick={() => { activeTool ? (exitFind(), bulkExit()) : setToolsOpen(true); }} aria-label={activeTool ? `ออกจาก ${activeTool}` : 'เครื่องมือ'}>
-            <Icon n={activeTool ? 'x' : 'grid'} size={15} /> <span>{activeTool || 'เครื่องมือ'}</span>
+        {hasMoves && (
+          <button type="button" className="calctl-ic calctl-today" onClick={() => { setMvq(''); setMovesOpen(true); setOpen(null); }} aria-label="เข้า–ออกวันนี้">
+            <Icon n="calendar" size={17} /><i className="calctl-bdg">{arrivals.length + departures.length}</i>
           </button>
-        </div>
+        )}
+        <button type="button" className={`calctl-ic ${activeTool ? 'on' : ''}`} onClick={() => { activeTool ? (exitFind(), bulkExit()) : setToolsOpen(true); }} aria-label={activeTool ? `ออกจาก ${activeTool}` : 'เครื่องมือ'}>
+          <Icon n={activeTool ? 'x' : 'grid'} size={17} />
+        </button>
       </div>
 
       {toolsOpen && (
@@ -182,6 +187,26 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
                 <span className="caltools-tx"><b>ปิดหลายห้อง</b><i>ปิดซ่อม / กันห้องหลายห้องพร้อมกัน</i></span>
                 <Icon n="chevR" size={16} />
               </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {typeOpen && (
+        <>
+          <div className={`mbsheet-scrim ${typeShown ? 'in' : ''}`} onClick={() => setTypeOpen(false)} />
+          <div className={`mbsheet ${typeShown ? 'in' : ''}`} role="dialog" aria-label="ประเภทห้อง">
+            <span className="mbsheet-handle" onClick={() => setTypeOpen(false)} aria-hidden />
+            <div className="mbsheet-hd"><b>ประเภทห้อง</b><button type="button" className="mbsheet-x" onClick={() => setTypeOpen(false)} aria-label="ปิด"><Icon n="x" size={16} /></button></div>
+            <div className="mbsheet-body">
+              <button type="button" className={`caltype-row ${typeF === 'all' ? 'on' : ''}`} onClick={() => { setTypeF('all'); setTypeOpen(false); }}>
+                <span>ทุกประเภท</span><i>{rooms.length}</i>{typeF === 'all' && <Icon n="check" size={16} />}
+              </button>
+              {types.map(([id, t]) => (
+                <button type="button" key={id || '_'} className={`caltype-row ${typeF === id ? 'on' : ''}`} onClick={() => { setTypeF(id); setTypeOpen(false); }}>
+                  <span>{t.name}</span><i>{t.n}</i>{typeF === id && <Icon n="check" size={16} />}
+                </button>
+              ))}
             </div>
           </div>
         </>

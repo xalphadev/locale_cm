@@ -80,15 +80,15 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
       {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
       {searchParams?.error === 'daterange' && <div className="banner-err">วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน</div>}
 
-      <div className="calbar">
+      <div className="calbar2">
         <div className="calstep">
           <Link className="calstep-b" href={`/merchant/units/calendar${qs(prev)}`} aria-label="ก่อนหน้า"><Icon n="chevL" size={18} /></Link>
           <CalSheet start={start} winLen={WIN} month={month} today={today} label={fmtRange(start, days[WIN - 1])} />
           <Link className="calstep-b" href={`/merchant/units/calendar${qs(next)}`} aria-label="ถัดไป"><Icon n="chevR" size={18} /></Link>
         </div>
-        <div className="calview">
-          <Link className={`calview-i ${!month ? 'on' : ''}`} href={`/merchant/units/calendar${vqs('2wk')}`}>2 สัปดาห์</Link>
-          <Link className={`calview-i ${month ? 'on' : ''}`} href={`/merchant/units/calendar${vqs('month')}`}>1 เดือน</Link>
+        <div className="calview2">
+          <Link className={`calview-i ${!month ? 'on' : ''}`} href={`/merchant/units/calendar${vqs('2wk')}`}>2สัปดาห์</Link>
+          <Link className={`calview-i ${month ? 'on' : ''}`} href={`/merchant/units/calendar${vqs('month')}`}>เดือน</Link>
         </div>
         {start !== today && <Link className="calstep-today" href={`/merchant/units/calendar${month ? '?w=month' : ''}`}>วันนี้</Link>}
       </div>
