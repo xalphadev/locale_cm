@@ -702,6 +702,10 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mbsheet-scrim.in{opacity:1}
 .merchant-root .mbsheet{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0 auto;width:100%;max-width:440px;max-height:82vh;display:flex;flex-direction:column;background:var(--m-surface);border-radius:22px 22px 0 0;box-shadow:0 -12px 44px -8px rgba(16,20,12,.34);transform:translateY(110%);transition:transform .28s cubic-bezier(.2,.85,.25,1)}
 .merchant-root .mbsheet.in{transform:translateY(0)}
+/* while a DateRangePicker is open INSIDE a sheet, drop the sheet's transform so the picker's
+   position:fixed overlay escapes to the viewport (a transformed ancestor would clip it). translateY(0)
+   ≡ none, so there's no visual jump. */
+.merchant-root .mbsheet:has(.drp-overlay){transform:none;transition:none}
 .merchant-root .mbsheet-handle{flex:none;display:block;width:38px;height:4px;border-radius:999px;background:var(--m-line);margin:9px auto 4px;cursor:pointer}
 .merchant-root .mbsheet-hd{flex:none;display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px}
 .merchant-root .mbsheet-hd b{font-size:.96rem;font-weight:800;color:var(--m-text)}

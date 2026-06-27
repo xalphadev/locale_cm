@@ -258,7 +258,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
       {bulkOpen && (
         <>
           <div className={`mbsheet-scrim ${bulkShown ? 'in' : ''}`} onClick={bulkExit} />
-          <form className={`mbsheet bulksheet ${bulkShown ? 'in' : ''}`} action={bulkBlockRoomsAction} role="dialog" aria-label="ปิดหลายห้อง">
+          <form className={`mbsheet bulksheet ${bulkShown ? 'in' : ''}`} action={bulkBlockRoomsAction} role="dialog" aria-modal="true" aria-label="ปิดหลายห้อง">
             <input type="hidden" name="returnTo" value={returnTo} />
             <input type="hidden" name="block_kind" value={bulkKind} />
             {[...bulkSel].map((id) => <input key={id} type="hidden" name="room" value={id} />)}
