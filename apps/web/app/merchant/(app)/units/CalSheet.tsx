@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '../ui';
 import { useSheetAnim } from './useSheetAnim';
@@ -15,6 +15,9 @@ export function CalSheet({ start, winLen, month, today, label }: { start: string
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [cur, setCur] = useState(() => { const d = new Date(start + 'T00:00:00Z'); return { y: d.getUTCFullYear(), m: d.getUTCMonth() }; });
+  // re-sync the displayed month to the live window after a soft-nav (prev/next/วันนี้) — the lazy initializer
+  // only runs at mount, so without this the picker reopens on a stale, browsed-away month with no highlight.
+  useEffect(() => { const d = new Date(start + 'T00:00:00Z'); setCur({ y: d.getUTCFullYear(), m: d.getUTCMonth() }); }, [start]);
   const shown = useSheetAnim(open);
 
   const go = (s: string) => { router.push(`/merchant/units/calendar?d=${s}${month ? '&w=month' : ''}`); setOpen(false); };

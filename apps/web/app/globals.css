@@ -1421,8 +1421,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .calsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text);outline:none;min-width:0}
 .merchant-root .calsearch button{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;padding:0;display:flex}
 /* "หาห้องว่าง" — find rooms free across a tapped date range */
-.merchant-root .calfind-tg{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:999px;border:1px solid var(--m-accent);background:#fff;color:var(--m-accent);font:inherit;font-size:.84rem;font-weight:800;cursor:pointer}
-.merchant-root .calfind-tg.on{background:var(--m-accent);color:#fff}
 .merchant-root .calfind{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 11px;padding:11px 13px;border:1px solid #cfe0ff;border-radius:13px;background:#f3f8ff}
 .merchant-root .calfind-hint{display:inline-flex;align-items:center;gap:7px;font-size:.88rem;font-weight:700;color:var(--m-accent)}
 .merchant-root .calfind-head{display:flex;flex-direction:column;line-height:1.2}
@@ -1442,9 +1440,9 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .calfind-chip em{font-style:normal;font-size:.78rem;font-weight:800;color:var(--m-accent);margin-left:5px}
 /* two calendar action buttons (หาห้องว่าง / ปิดหลายห้อง) side by side */
 /* "เครื่องมือ" pill on the search row → opens the tools sheet (replaces the permanent .calacts row) */
-.merchant-root .caltools-btn{flex:none;display:inline-flex;align-items:center;gap:5px;margin-left:2px;padding:6px 11px;border-radius:999px;border:1px solid var(--m-line);background:#fff;color:var(--m-accent);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap}
-.merchant-root .caltools-btn:active{transform:scale(.96)}
-.merchant-root .caltools-btn.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff}
+.merchant-root .calsearch .caltools-btn{flex:none;display:inline-flex;align-items:center;gap:5px;margin-left:2px;padding:6px 11px;border-radius:999px;border:1px solid var(--m-line);background:#fff;color:var(--m-accent);font:inherit;font-size:.82rem;font-weight:800;cursor:pointer;white-space:nowrap}
+.merchant-root .calsearch .caltools-btn:active{transform:scale(.96)}
+.merchant-root .calsearch .caltools-btn.on{background:var(--m-accent);border-color:var(--m-accent);color:#fff}
 /* tool rows inside the shared .mbsheet */
 .merchant-root .caltools-row{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:none;border:none;border-radius:14px;padding:.7rem;font:inherit;cursor:pointer;color:var(--m-text);transition:transform .12s,background .12s}
 .merchant-root .caltools-row:active{transform:scale(.98);background:var(--m-sunk)}
