@@ -1,24 +1,27 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { MTopbar } from '../../MTopbar';
 import { Icon } from '../../ui';
-import { addRoomBlockAction } from '../../../actions';
 import AvailabilitySearch from './AvailabilitySearch';
+import AvailBookForm from './AvailBookForm';
 
 export const dynamic = 'force-dynamic';
 
-// "หาห้องว่าง" — a standalone availability search (replaces the on-calendar tap-the-header find-mode):
-// pick a date range with the picker → see the rooms free EVERY night of that range → expand a room to
-// book it (guest name/phone optional, GiST-guarded). No money — operational booking only.
+// "หาห้องว่าง" — standalone availability search→book. Pick รายเดือน (move-in + months) or รายวัน (date range)
+// + จำนวนผู้เข้าพัก → see free rooms (capacity-matched, with a price estimate, min-stay + deposit shown as a
+// NOTE) → book one (a name = a booking, no name = a hold). No money — operational booking only.
 const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
 const TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const fmtTh = (s: string) => { const [, m, d] = s.split('-'); return `${Number(d)} ${TH[Number(m) - 1]}`; };
 const nightsOf = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
-const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
+const monthsOf = (a: string, b: string) => { const [ay, am, ad] = a.split('-').map(Number); const [by, bm, bd] = b.split('-').map(Number); return Math.max(1, (by - ay) * 12 + (bm - am) + (bd >= ad ? 0 : -1)); };
+const baht = (m: number) => `฿${Math.round(m / 100).toLocaleString('th-TH')}`;
+const perTh = (p: string | null) => (p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : '');
 const coll = (x: string, y: string) => (x || '').localeCompare(y || '', undefined, { numeric: true, sensitivity: 'base' });
 
-export default async function AvailableRooms({ searchParams }: { searchParams: { from?: string; to?: string; ok?: string; error?: string } }) {
+export default async function AvailableRooms({ searchParams }: { searchParams: { from?: string; to?: string; mode?: string; pax?: string; ok?: string; error?: string; bk?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
@@ -27,14 +30,23 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
   const from = isDate(searchParams?.from || '') ? searchParams!.from! : '';
   const to = isDate(searchParams?.to || '') ? searchParams!.to! : '';
   const ready = !!from && !!to && to > from;
+  const searchMonthly = searchParams?.mode === 'monthly';
+  const pax = Math.max(0, Math.min(20, parseInt(searchParams?.pax || '', 10) || 0));
+
+  // default the search mode + min months from THIS property's inventory (mixed daily/monthly is possible)
+  const [inv] = await q<{ has_m: boolean | null; minm: number | null }>(
+    `SELECT bool_or(rental_mode='monthly') has_m, min(min_stay) FILTER (WHERE rental_mode='monthly') minm
+       FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL AND rental_mode IS NOT NULL`, [acc.place_id]);
+  const defaultMode = inv?.has_m ? 'monthly' : 'daily';
+  const minMonths = Math.max(1, inv?.minm || 1);
 
   let groups: { id: string; name: string; rooms: any[] }[] = [];
-  let freeCount = 0; let nights = 0;
+  let freeCount = 0; let nights = 0; let months = 0;
   if (ready) {
-    nights = nightsOf(from, to);
+    nights = nightsOf(from, to); months = monthsOf(from, to);
     const rows = await q<any>(
       `SELECT r.id, r.code, r.floor, r.stay_unit_id,
-              su.name_i18n unit_name, su.price_minor, su.price_period, su.capacity, su.sort unit_sort
+              su.name_i18n unit_name, su.price_minor, su.price_period, su.capacity, su.sort unit_sort, su.rental_mode, su.min_stay, su.deposit_minor
          FROM stay_room r
          LEFT JOIN stay_units su ON su.id = r.stay_unit_id
         WHERE r.place_id = $1 AND r.deleted_at IS NULL AND r.status='active'
@@ -51,36 +63,38 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
       unitName: r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุประเภท',
       priceMinor: r.price_minor != null ? Number(r.price_minor) : null, pricePeriod: r.price_period || null,
       capacity: r.capacity || null, unitSort: r.unit_sort ?? 9999,
+      monthly: r.rental_mode === 'monthly', minStay: r.min_stay || 0, depositMinor: r.deposit_minor != null ? Number(r.deposit_minor) : 0,
     })).sort((a, b) => (a.unitSort - b.unitSort) || coll(a.unitName, b.unitName) || coll(a.code, b.code));
     freeCount = mapped.length;
     for (const r of mapped) { const g = groups[groups.length - 1]; if (!g || g.id !== r.unitId) groups.push({ id: r.unitId, name: r.unitName, rooms: [r] }); else g.rooms.push(r); }
   }
 
-  const back = `/merchant/units/available?from=${from}&to=${to}`;
+  const back = `/merchant/units/available?from=${from}&to=${to}${searchMonthly ? '&mode=monthly' : ''}${pax ? `&pax=${pax}` : ''}`;
+  const barSpan = searchMonthly ? `${months} เดือน` : `${nights} คืน`;
 
   return (
     <>
       <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="หาห้องว่าง" />
 
-      {searchParams?.ok === 'booked' && <div className="banner-ok">✓ จองห้องให้แล้ว</div>}
-      {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกแล้ว</div>}
+      {searchParams?.ok === 'booked' && <div className="banner-ok">✓ จองห้อง {searchParams.bk || ''} ให้แล้ว · <Link href="/merchant/units/calendar" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>ดูในปฏิทิน</Link></div>}
+      {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ กันห้อง {searchParams.bk || ''} ไว้แล้ว</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ห้องนี้เพิ่งถูกจองไป — เลือกห้องอื่น</div>}
-      {searchParams?.error === 'daterange' && <div className="banner-err">วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน</div>}
+      {searchParams?.error === 'daterange' && <div className="banner-err">วันออกต้องอยู่หลังวันเข้า</div>}
       {searchParams?.error === 'date' && <div className="banner-err">วันที่ไม่ถูกต้อง</div>}
 
       {!ready ? (
         <div className="avail-empty">
           <span className="avail-empty-ic"><Icon n="calendar" size={28} /></span>
           <p className="avail-empty-t">ลูกค้าอยากเข้าพักช่วงไหน?</p>
-          <p className="avail-empty-s">เลือกช่วงวันที่ แล้วดูห้องที่ว่างทุกคืน</p>
-          <AvailabilitySearch />
+          <p className="avail-empty-s">เลือกช่วงวัน + จำนวนคน แล้วดูห้องที่ว่าง</p>
+          <AvailabilitySearch defaultMode={defaultMode} minMonths={minMonths} />
         </div>
       ) : (
         <section className="avail-results">
           <div className="avail-bar">
             <b>ว่าง {freeCount} ห้อง</b>
-            <span className="avail-range">{fmtTh(from)} – {fmtTh(to)} · {nights} คืน</span>
-            <a className="avail-redo" href="/merchant/units/available">เปลี่ยนวัน</a>
+            <span className="avail-range">{fmtTh(from)} – {fmtTh(to)} · {barSpan}{pax ? ` · ${pax} คน` : ''}</span>
+            <a className="avail-redo" href="/merchant/units/available">เปลี่ยน</a>
           </div>
           {freeCount === 0 ? (
             <div className="mempty"><span className="mempty-ic"><Icon n="bed" size={26} /></span>
@@ -88,29 +102,33 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
           ) : groups.map((g) => (
             <div className="avail-grp" key={g.id || '_'}>
               <div className="avail-grp-h"><span>{g.name}</span><i>{g.rooms.length} ห้องว่าง</i></div>
-              {g.rooms.map((r: any) => (
-                <details className="avail-room" key={r.id}>
-                  <summary className="avail-room-sum">
-                    <span className="avail-rt">
-                      <b>ห้อง {r.code}</b>
-                      <i>{[g.name, r.floor ? `${term} ${r.floor}` : '', money(r.priceMinor, r.pricePeriod), r.capacity ? `${r.capacity} คน` : ''].filter(Boolean).join(' · ')}</i>
-                    </span>
-                    <span className="avail-go-pill">จอง<Icon n="chevR" size={14} /></span>
-                  </summary>
-                  <form className="avail-book" action={addRoomBlockAction.bind(null, r.id)}>
-                    <input type="hidden" name="start_date" value={from} />
-                    <input type="hidden" name="end_date" value={to} />
-                    <input type="hidden" name="block_kind" value="stay" />
-                    <input type="hidden" name="returnTo" value={back} />
-                    <div className="fgrid">
-                      <div className="field"><label>ชื่อผู้จอง</label><input name="guest_name" maxLength={80} placeholder="ชื่อ-นามสกุล" /></div>
-                      <div className="field"><label>เบอร์โทร</label><input name="guest_phone" maxLength={40} inputMode="tel" placeholder="08x-xxx-xxxx" /></div>
-                    </div>
-                    <input name="note" maxLength={120} placeholder="โน้ต (เห็นเฉพาะคุณ)" />
-                    <button type="submit" className="dbtn primary">จองห้อง {r.code} · {nights} คืน</button>
-                  </form>
-                </details>
-              ))}
+              {g.rooms.map((r: any) => {
+                const span = r.monthly ? months : nights;
+                const spanLabel = r.monthly ? `${months} เดือน` : `${nights} คืน`;
+                const quoteMinor = r.priceMinor != null ? r.priceMinor * span : null;
+                const capWarn = pax > 0 && r.capacity != null && r.capacity < pax;
+                const minWarn = r.minStay > 0 && span < r.minStay;
+                const depositNote = r.depositMinor ? `มัดจำ ${baht(r.depositMinor)} — เก็บตอนเข้าพัก` : '';
+                const extra = [
+                  quoteMinor != null ? `≈ ${baht(quoteMinor)} · ${spanLabel}` : '',
+                  r.minStay > 0 ? `ขั้นต่ำ ${r.minStay} ${r.monthly ? 'เดือน' : 'คืน'}` : '',
+                  r.depositMinor ? `มัดจำ ${baht(r.depositMinor)}` : '',
+                ].filter(Boolean).join(' · ');
+                return (
+                  <details className="avail-room" key={r.id}>
+                    <summary className="avail-room-sum">
+                      <span className="avail-rt">
+                        <span className="avail-rt-1"><b>ห้อง {r.code}</b>{r.capacity ? <em className={capWarn ? 'cap-warn' : 'cap-ok'}>{capWarn ? `พอ ${r.capacity} คน` : `รับ ${r.capacity} คน`}</em> : null}</span>
+                        <i>{[r.unitName, r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</i>
+                        {extra ? <i className="avail-rt-q">{extra}</i> : null}
+                      </span>
+                      <span className="avail-go-pill">จอง<Icon n="chevR" size={14} /></span>
+                    </summary>
+                    {minWarn && <p className="avail-minwarn"><Icon n="clock" size={13} /> ต่ำกว่าขั้นต่ำ {r.minStay} {r.monthly ? 'เดือน' : 'คืน'} — จองได้แต่โปรดเช็ค</p>}
+                    <AvailBookForm roomId={r.id} code={r.code} from={from} to={to} back={back} spanLabel={spanLabel} pax={pax} amountMinor={quoteMinor} months={r.monthly ? months : 0} depositNote={depositNote} />
+                  </details>
+                );
+              })}
             </div>
           ))}
         </section>

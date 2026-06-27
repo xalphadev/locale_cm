@@ -1459,8 +1459,22 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-empty-ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--m-soft);color:var(--m-accent)}
 .merchant-root .avail-empty-t{font-size:1.06rem;font-weight:800;margin:8px 0 0;color:var(--m-text)}
 .merchant-root .avail-empty-s{font-size:.82rem;color:var(--m-muted);margin:0 0 6px}
-.merchant-root .avail-search{display:flex;flex-direction:column;gap:11px;width:100%;max-width:360px;margin:4px 0 14px}
+.merchant-root .avail-search{display:flex;flex-direction:column;gap:13px;width:100%;max-width:360px;margin:4px 0 14px;text-align:left}
 .merchant-root .avail-go{width:100%}
+.merchant-root .avail-mode{display:flex;border:1px solid var(--m-line);border-radius:11px;overflow:hidden}
+.merchant-root .avail-mode button{flex:1;border:none;background:#fff;font:inherit;font-size:.88rem;font-weight:800;color:var(--m-muted);padding:10px 0;cursor:pointer}
+.merchant-root .avail-mode button.on{background:var(--m-accent);color:#fff}
+.merchant-root .avail-mode button+button{border-left:1px solid var(--m-line)}
+.merchant-root .avail-fld{display:flex;flex-direction:column;gap:7px}
+.merchant-root .avail-fld>label{font-size:.82rem;font-weight:800;color:var(--m-muted)}
+.merchant-root .avail-step{display:inline-flex;align-items:center;align-self:flex-start;gap:14px;border:1px solid var(--m-line);border-radius:12px;padding:4px 6px;background:#fff}
+.merchant-root .avail-step button{width:36px;height:36px;border:none;border-radius:9px;background:var(--m-sunk);font-size:1.3rem;font-weight:700;color:var(--m-text);cursor:pointer;line-height:1}
+.merchant-root .avail-step button:active{transform:scale(.94)}
+.merchant-root .avail-step b{min-width:74px;text-align:center;font-size:.96rem;font-weight:800;color:var(--m-text)}
+.merchant-root .pax-chips{display:flex;gap:8px;flex-wrap:wrap}
+.merchant-root .pax-chips button{min-width:46px;min-height:44px;border-radius:12px;border:1px solid var(--m-line);background:var(--m-surface);font:inherit;font-size:.95rem;font-weight:800;color:var(--m-text);cursor:pointer}
+.merchant-root .pax-chips button:active{transform:scale(.94)}
+.merchant-root .pax-chips button.on{background:var(--m-soft);color:var(--m-accent);border-color:var(--m-accent)}
 .merchant-root .avail-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 11px;padding:10px 12px;border:1px solid #cfe0ff;border-radius:14px;background:#f3f8ff}
 .merchant-root .avail-bar b{font-size:1rem;font-weight:800;color:var(--m-text)}
 .merchant-root .avail-range{flex:1;min-width:0;font-size:.82rem;font-weight:600;color:var(--m-muted)}
@@ -1476,8 +1490,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-rt i{font-style:normal;font-size:.8rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .avail-go-pill{flex:none;display:inline-flex;align-items:center;gap:2px;padding:7px 13px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.84rem;font-weight:800}
 .merchant-root details.avail-room[open] .avail-go-pill{background:var(--m-soft);color:var(--m-accent)}
-.merchant-root .avail-book{display:flex;flex-direction:column;gap:9px;padding:0 12px 12px;border-top:1px solid #eef2f8}
-.merchant-root .avail-book .dbtn.primary{width:100%}
+.merchant-root .avail-rt-1{display:flex;align-items:baseline;gap:8px}
+.merchant-root .avail-rt-1 em{font-style:normal;font-size:.74rem;font-weight:800}
+.merchant-root .cap-ok{color:var(--m-jade)}
+.merchant-root .cap-warn{color:#b45309}
+.merchant-root .avail-rt-q{color:var(--m-accent) !important;font-weight:700 !important}
+.merchant-root .avail-minwarn{display:flex;align-items:center;gap:6px;margin:0;padding:8px 12px;font-size:.78rem;font-weight:700;color:#b45309;background:#fff7ed}
+.merchant-root .avail-book{display:flex;flex-direction:column;gap:9px;padding:10px 12px 12px;border-top:1px solid #eef2f8}
+.merchant-root .avail-book .dbtn{width:100%}
+.merchant-root .avail-book .dbtn.avail-hold{background:var(--m-sunk);color:var(--m-text);border:1px solid var(--m-line)}
 /* today's arrivals / departures strip */
 /* today's-moves section labels (reused inside the moves sheet) */
 .merchant-root .caltoday-l{flex:none;font-size:.86rem;font-weight:800}

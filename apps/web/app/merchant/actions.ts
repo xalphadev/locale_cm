@@ -1179,14 +1179,17 @@ export async function addRoomBlockAction(roomId: string, formData: FormData) {
   const leadMode = r.rental_mode === 'monthly' ? 'monthly' : 'daily';
   const guestName = s(formData, 'guest_name').slice(0, 80);
   const guestPhone = s(formData, 'guest_phone').slice(0, 40);
+  const pax = Math.max(0, Math.min(99, parseInt(s(formData, 'party_size'), 10) || 0)) || null;     // who the room is for
+  const amtMinor = Math.max(0, parseInt(s(formData, 'amount_minor'), 10) || 0) || null;            // a quote estimate (no money moves)
+  const months = Math.max(0, parseInt(s(formData, 'desired_months'), 10) || 0) || null;
   try {
     const [blk] = await q<{ id: string }>(`INSERT INTO stay_occupancy_block(room_id, place_id, block_kind, start_date, end_date, note) VALUES($1,$2,$3,$4,$5,$6) RETURNING id`,
       [roomId, acc.place_id, blockKind, from, end, note]);
     // optional guest → a converted walk-in/phone lead, so the booking shows in the คำขอจอง roster (still no money)
     if (guestName && r.stay_unit_id) await q(
-      `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, contact_name, contact_phone, channel, status, converted_block_id, expires_at)
-       VALUES($1,$2,'booking',$3,$4,$5,$6,$7,'walk_in','converted',$8, now() + interval '60 days')`,
-      [acc.place_id, r.stay_unit_id, leadMode, from, end, guestName, guestPhone || null, blk.id]);
+      `INSERT INTO stay_booking_request(place_id, stay_unit_id, request_kind, rental_mode, desired_from, desired_to, contact_name, contact_phone, channel, status, converted_block_id, party_size, amount_minor, desired_months, expires_at)
+       VALUES($1,$2,'booking',$3,$4,$5,$6,$7,'walk_in','converted',$8,$9,$10,$11, now() + interval '60 days')`,
+      [acc.place_id, r.stay_unit_id, leadMode, from, end, guestName, guestPhone || null, blk.id, pax, amtMinor, months]);
   } catch (e: any) {
     if (e?.code === '23P01') fail('overlap'); // exclusion_violation (double-book)
     throw e;
