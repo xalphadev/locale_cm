@@ -49,7 +49,7 @@ const LENSES: { key: string; label: string }[] = [
 export default async function Bookings({ searchParams }: { searchParams: { ok?: string; error?: string; lens?: string; q?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
+  if (!acc.manages_stay) redirect('/merchant');   // การจอง belongs to ระบบการจอง (manages_stay)
 
   const lens = LENSES.some((l) => l.key === searchParams?.lens) ? searchParams!.lens! : 'todo';
   const qtext = String(searchParams?.q || '').slice(0, 40).trim();

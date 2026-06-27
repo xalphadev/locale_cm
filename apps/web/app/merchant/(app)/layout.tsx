@@ -28,12 +28,13 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   // new-lead count → an always-visible badge on the ห้องพัก tab, which now lands on /merchant/bookings
   // (the booking inbox is the daily driver). Outbound delivery (LINE/email) is separate infra.
   let newLeads = 0;
-  if (acc.place_id && (acc.offers_stay || acc.manages_stay)) {
+  if (acc.place_id && acc.manages_stay) {   // leads only exist once ระบบการจอง is on
     const [lr] = await q<{ n: number }>(`SELECT count(*)::int n FROM stay_booking_request WHERE place_id=$1 AND status='new' AND deleted_at IS NULL`, [acc.place_id]);
     newLeads = lr?.n || 0;
   }
   const tabs: Tab[] = TABS
-    .filter((t) => !t.cap || (acc as any)[t.cap])
+    // the ห้องพัก tab also opens for a manage-only place (booking system without a public listing)
+    .filter((t) => !t.cap || (acc as any)[t.cap] || (t.href === '/merchant/stay' && acc.manages_stay))
     .map((t) => ({
       href: t.href,
       icon: t.icon,

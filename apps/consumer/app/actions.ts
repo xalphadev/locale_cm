@@ -164,9 +164,9 @@ export async function submitBookingRequestAction(placeId: string, stayUnitId: st
   const back = `/stay/${stayUnitId}`;
   if (!name || (!phone && !line)) redirect(`${back}?err=contact`);              // need a name + one way to reach them
 
-  // re-prove the place is a published, publicly-listed accommodation; resolve the listing it belongs to
-  const [pl] = await q<any>(`SELECT id, offers_stay FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
-  if (!pl || !pl.offers_stay) redirect('/stay');
+  // re-prove the place is a published, publicly-listed accommodation that opted into in-app booking
+  const [pl] = await q<any>(`SELECT id, offers_stay, manages_stay FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
+  if (!pl || !pl.offers_stay || !pl.manages_stay) redirect('/stay');   // listing-only places (no ระบบการจอง) take contact off-app
   let unitId: string | null = null; let mode: string | null = null; let managed = false;
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId)) {
     const [su] = await q<any>(`SELECT id, rental_mode, managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]);
@@ -228,8 +228,8 @@ export async function createPaidBookingAction(placeId: string, stayUnitId: strin
   const back = `/stay/${stayUnitId}/book`;
   if (!name || !phone) redirect(`${back}?err=contact`);
 
-  const [pl] = await q<any>(`SELECT id, offers_stay, pay_online_enabled, pay_deposit_pct FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
-  if (!pl || !pl.offers_stay || !pl.pay_online_enabled) redirect('/stay');
+  const [pl] = await q<any>(`SELECT id, offers_stay, manages_stay, pay_online_enabled, pay_deposit_pct FROM places WHERE id=$1 AND status='published' AND is_visible`, [placeId]);
+  if (!pl || !pl.offers_stay || !pl.manages_stay || !pl.pay_online_enabled) redirect('/stay');
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(stayUnitId);
   const [su] = isUuid ? await q<any>(`SELECT id, rental_mode, managed, price_minor, available_units, daily_status FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [stayUnitId, placeId]) : [];
   if (!su) redirect('/stay');

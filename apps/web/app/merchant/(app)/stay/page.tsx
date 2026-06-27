@@ -61,12 +61,14 @@ export default async function StayHome() {
   // setup-aware: guide a brand-new property to the next step instead of a dead dashboard
   const setupStep = !((tc?.n || 0) > 0) ? 'types' : (managed && total === 0) ? 'rooms' : null;
 
+  // booking/board/revenue belong to "ระบบการจอง" (manages_stay); a listing-only place sees just ประเภท&ราคา
+  const booking = !!acc.manages_stay;
   const tiles: { href: string; icon: string; label: string; stat: string; hot?: boolean; badge?: number }[] = [
-    { href: '/merchant/bookings', icon: 'chat', label: 'การจอง', stat: newN > 0 ? 'มีคำขอรอตอบ' : 'คำขอ + การจอง', hot: newN > 0, badge: newN || undefined },
+    ...(booking ? [{ href: '/merchant/bookings', icon: 'chat', label: 'การจอง', stat: newN > 0 ? 'มีคำขอรอตอบ' : 'คำขอ + การจอง', hot: newN > 0, badge: newN || undefined }] : []),
     ...(managed ? [{ href: '/merchant/units', icon: 'grid', label: 'ผังห้อง', stat: total > 0 ? `${rs!.vacant} ห้องว่าง` : 'เพิ่มห้องจริง' }] : []),
     { href: '/merchant/rooms', icon: 'tag', label: 'ประเภท & ราคา', stat: `${tc?.n || 0} รูปแบบ` },
     ...(managed ? [{ href: '/merchant/units/calendar', icon: 'calendar', label: 'ปฏิทินรวม', stat: 'ดูทั้งเดือน' }] : []),
-    { href: '/merchant/revenue', icon: 'wallet', label: 'รายได้ & สถิติ', stat: 'รายได้ · อัตราเข้าพัก' },
+    ...(booking ? [{ href: '/merchant/revenue', icon: 'wallet', label: 'รายได้ & สถิติ', stat: 'รายได้ · อัตราเข้าพัก' }] : []),
   ];
 
   return (
@@ -108,12 +110,19 @@ export default async function StayHome() {
             {rs!.maint > 0 && <span style={{ width: pct(rs!.maint), background: C.maint }} />}
           </div>
         </div>
-      ) : (
+      ) : booking ? (
         <div className="bk-summary">
           <div className="bk-sum-stats">
             <div className="bk-stat"><span className={`bk-stat-n ${newN > 0 ? 'bk-amber' : ''}`}>{newN}</span><span className="bk-stat-l">คำขอใหม่</span></div>
             <div className="bk-stat"><span className="bk-stat-n">{reqs?.total || 0}</span><span className="bk-stat-l">การจองทั้งหมด</span></div>
           </div>
+        </div>
+      ) : (
+        <div className="bk-summary">
+          <div className="bk-sum-stats">
+            <div className="bk-stat"><span className="bk-stat-n">{tc?.n || 0}</span><span className="bk-stat-l">รูปแบบห้อง</span></div>
+          </div>
+          <p className="roomhub-sub" style={{ margin: '8px 0 0' }}>ลูกค้าเห็นห้องของคุณบนหน้า “ที่พัก” แล้วติดต่อโดยตรง · เปิด “ระบบการจอง” ในตั้งค่าร้านเพื่อรับจองในแอป</p>
         </div>
       )}
 

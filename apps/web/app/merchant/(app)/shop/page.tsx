@@ -36,8 +36,8 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const hasHours = Object.keys(hours).length > 0;
   const caps = [
     p?.sells_products && 'ขายสินค้า',
-    p?.offers_stay && 'มีห้องพัก (เผยแพร่)',
-    p?.manages_stay && 'ใช้ระบบจัดการห้อง',
+    p?.offers_stay && 'ห้องพัก (เผยแพร่)',
+    p?.manages_stay && 'ระบบการจอง',
   ].filter(Boolean) as string[];
   const today = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Bangkok', weekday: 'short' }).format(new Date()).toLowerCase().slice(0, 3);
   const hr = (k: string) => (hours[k] && hours[k] !== 'closed' ? hours[k].replace('-', '–') : 'ปิด');

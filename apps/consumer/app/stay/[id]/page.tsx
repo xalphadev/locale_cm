@@ -32,7 +32,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
               su.image_urls, su.available_units, su.available_from, su.daily_status, su.availability_updated_at, su.managed,
               su.capacity, su.deposit_minor, su.min_stay, su.room_size_sqm, su.furnished, su.bills_included, su.unit_amenities,
               su.bedrooms, su.bathrooms, su.gender_policy, su.check_in_time, su.check_out_time, su.attrs,
-              p.id place_id, p.brand_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website, p.pay_online_enabled,
+              p.id place_id, p.brand_id, p.name_i18n shop_name, p.stay_kind, p.description_i18n place_desc, p.phone, p.line_id, p.website, p.pay_online_enabled, p.manages_stay,
               p.opening_hours, p.geo::text geo, d.name_i18n district_name,
               f.freshness_label::text fresh, f.last_verified_at,
               EXISTS(SELECT 1 FROM saved_places sp WHERE sp.place_id=p.id AND sp.user_id=$2) saved
@@ -114,6 +114,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
   const line = lineHref(u.line_id);
   const cta = line ? { href: line, label: 'ทักไลน์สอบถาม/จองห้องนี้', icon: 'chat' as const, ext: true, cls: 'line' }
     : u.phone ? { href: `tel:${u.phone}`, label: 'โทรสอบถาม', icon: 'phone' as const, ext: false, cls: 'tel' } : null;
+  const booking = !!u.manages_stay;   // the place opted into "ระบบการจอง" — show in-app booking; else contact-only listing
   const bills: string[] = u.bills_included ?? [];
   const amen: string[] = u.unit_amenities ?? [];
   const aml = await stayAmenityLabels();           // catalog labels (incl admin-added) for display
@@ -144,7 +145,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
         {cta
           ? <Link className={`roomcta-btn ${cta.cls}`} href={cta.href} {...(cta.ext ? { target: '_blank', rel: 'noopener' } : {})}><Icon n={cta.icon} size={18} /> {cta.label}</Link>
           : <span className="roomcta-btn off"><Icon n="chat" size={18} /> ติดต่อที่พัก</span>}
-        <div className="pcfresh" style={{ textAlign: 'center', margin: '6px 0 2px' }}>ไม่มีระบบจอง/จ่ายเงินในแอป — ติดต่อที่พักโดยตรง</div>
+        {!booking && <div className="pcfresh" style={{ textAlign: 'center', margin: '6px 0 2px' }}>ที่พักนี้ไม่รับจองในแอป — ติดต่อโดยตรงเพื่อสอบถาม/จอง</div>}
 
         {avail.length > 0 && (<>
           <h2 className="rsec"><span className="rsec-ic"><Icon n="calendar" size={15} /></span>ปฏิทินคืนว่าง</h2>
@@ -156,12 +157,13 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
         {searchParams?.err === 'full' && <div className="bookerr">ช่วงวันที่นี้เต็มแล้ว — เลือกวันอื่น หรือดู “ปฏิทินคืนว่าง” ด้านบน</div>}
         {searchParams?.err === 'past' && <div className="bookerr">เลือกวันที่ในอนาคต — จองย้อนหลังไม่ได้</div>}
         {searchParams?.err === 'toomany' && <div className="bookerr">คุณมีคำขอที่ยังรออยู่กับที่พักนี้หลายรายการแล้ว — รอการติดต่อกลับ หรือถอนคำขอเดิมที่ “คำขอของฉัน” ก่อน</div>}
-        {u.pay_online_enabled && u.price_minor != null && (
+        {booking && u.pay_online_enabled && u.price_minor != null && (
           <Link className="bookpay-cta" href={`/stay/${u.id}/book`}>
             <Icon n="calendar" size={18} /> <span>จองและชำระเงินออนไลน์</span>
             <b>฿{Math.round(u.price_minor / 100).toLocaleString()}/{monthly ? 'เดือน' : 'คืน'}</b>
           </Link>
         )}
+        {booking && (
         <details className="bookbox" {...(fromQ ? { open: true } : {})}>
           <summary className="bookbox-sum"><Icon n="calendar" size={17} /> ขอให้ที่พักติดต่อกลับ / นัดดู·จองห้องนี้</summary>
           <form className="bookform" action={submitBookingRequestAction.bind(null, u.place_id, u.id)}>
@@ -198,6 +200,7 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
             <button className="roomcta-btn line" type="submit"><Icon n="chat" size={17} /> ส่งคำขอ</button>
           </form>
         </details>
+        )}
 
         {u.fresh && (
           <div className="trust">

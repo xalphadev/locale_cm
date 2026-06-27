@@ -96,9 +96,11 @@ async function createBranchPlace(c: any, opts: {
   const pl = (await c.query(
     `SELECT fn_create_place($1::jsonb, $2, $3, $4, $5) id`,
     [JSON.stringify(payload), opts.cityId, opts.distId, DEMO_AGENT, DEMO_ADMIN])).rows[0];
-  // Accommodation defaults: publish to marketplace (offers_stay) + a room_mode from the kind —
+  // Accommodation defaults: list on the marketplace (offers_stay) + a room_mode from the kind —
   // homestay/guesthouse/house = 'unique' (each room its own listing), the rest = 'multi' (types + a
-  // room board). manages_stay (the ผังห้อง board) is on only for 'multi'. All editable in /merchant/shop.
+  // room board). "ระบบการจอง" (manages_stay) defaults ON only for 'multi' (apartments/dorms/hotels want
+  // in-app booking) — small unique-room places start listing-only (contact direct) and can opt in later.
+  // All editable in /merchant/shop.
   const roomMode = spec.stay && ['homestay', 'guesthouse', 'house'].includes(opts.type) ? 'unique' : 'multi';
   await c.query(
     `UPDATE places SET sells_products=$2, offers_stay=$3, manages_stay=$4, room_mode=$5, stay_kind=$6, source='merchant', brand_id=$7 WHERE id=$1`,

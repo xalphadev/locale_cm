@@ -101,11 +101,11 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
         <section className="fsec">
           <div className="fsec-h"><span className="fsec-ic"><Icon n="tag" size={15} /></span> {noun}นี้มีอะไรบ้าง</div>
           <label className="check"><input type="checkbox" name="sells_products" defaultChecked={!!p?.sells_products} /> ร้านมีสินค้าขาย — เปิดเมนู “สินค้า” + แสดงแถบสินค้าให้ลูกค้า</label>
-          <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — เปิดเมนู “ห้องพัก” + ขึ้นในหน้า “ที่พัก” ของลูกค้า</label>
-          {/* room-management + room-mode are details of "มีห้องพัก" — nested under it, auto-hidden when offers_stay is off (pure CSS :has, no JS). manages_stay value persists either way so a manage-only owner is never silently wiped. */}
+          <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — ขึ้นในหน้า “ที่พัก” ของลูกค้า + เปิดเมนูจัดการห้องพัก</label>
+          {/* "ระบบการจอง" (manages_stay) + room-mode are details of "มีห้องพัก" — nested under it, auto-hidden when offers_stay is off (pure CSS :has, no JS). manages_stay value persists either way so a manage-only owner is never silently wiped. */}
           <div className="staygrp">
-            <label className="check"><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> ใช้ระบบจัดการห้อง — เปิดเมนู “ผังห้อง” (วางห้องจริง · คุมห้องว่าง · ปฏิทินรายวัน)</label>
-            <p className="fhint">“ผังห้อง” ใช้บริหารห้องภายใน (เช็คอิน · ห้องว่าง · ปฏิทินรายวัน) — ไม่บังคับว่าต้องเผยแพร่ให้ลูกค้า</p>
+            <label className="check"><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> เปิดระบบการจอง — รับจองในแอป (คำขอจอง · จองออนไลน์+จ่ายเงิน) + ผังห้อง · ปฏิทิน · เช็คอิน/เช็คเอาท์</label>
+            <p className="fhint">ปิดไว้ = ลูกค้าเห็นห้อง+ราคา แล้ว<b>โทร/แอดไลน์หาเอง</b> (ไม่มีปุ่มจองในแอป) · เปิด = รับจอง + บริหารห้องครบในระบบ</p>
             <div className="field" style={{ marginTop: 12 }}>
               <label>รูปแบบห้องของที่พักนี้</label>
               <div className="modecards">
@@ -118,7 +118,7 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
                   <span className="modecard-b"><b>แต่ละห้องไม่เหมือนกัน</b><span>รีสอร์ท · เกสต์เฮาส์ — แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</span></span>
                 </label>
               </div>
-              <p className="fhint">ตั้งได้ต่อสาขา · “หลายห้องเหมือนกัน” = ราคาเดียวหลายห้อง (เปิดผังห้อง) · “แต่ละห้องไม่เหมือนกัน” = แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</p>
+              <p className="fhint">ตั้งได้ต่อสาขา · “หลายห้องเหมือนกัน” = ราคาเดียวหลายห้อง (มีผังห้องเมื่อเปิดระบบการจอง) · “แต่ละห้องไม่เหมือนกัน” = แต่ละห้องมีชื่อ/ราคา/รูปของตัวเอง</p>
             </div>
           </div>
           <p className="fhint">ปิดเมนูไหน เมนูนั้นและรายการที่เผยแพร่ไว้จะถูกซ่อนจากลูกค้า</p>

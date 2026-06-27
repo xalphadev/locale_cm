@@ -16,7 +16,7 @@ const baht = (m: number) => `฿${Math.round(m / 100).toLocaleString('th-TH')}`;
 export default async function Revenue({ searchParams }: { searchParams: { month?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
-  if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
+  if (!acc.manages_stay) redirect('/merchant');   // รายได้ comes from bookings — ระบบการจอง (manages_stay)
   const pid = acc.place_id;
 
   // selected month (?month=YYYY-MM, default current) — drives the financial summary; today + chart stay live
