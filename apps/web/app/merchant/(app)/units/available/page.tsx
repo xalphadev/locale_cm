@@ -5,20 +5,13 @@ import { q, i18n } from '@/lib/db';
 import { MTopbar } from '../../MTopbar';
 import { Icon } from '../../ui';
 import AvailabilitySearch from './AvailabilitySearch';
-import AvailBookForm from './AvailBookForm';
+import { isDate, fmtTh, nightsOf, monthsOf, baht, perTh } from './avail-utils';
 
 export const dynamic = 'force-dynamic';
 
 // "หาห้องว่าง" — standalone availability search→book. Pick รายเดือน (move-in + months) or รายวัน (date range)
 // + จำนวนผู้เข้าพัก → see free rooms (capacity-matched, with a price estimate, min-stay + deposit shown as a
 // NOTE) → book one (a name = a booking, no name = a hold). No money — operational booking only.
-const isDate = (s: string) => /^\d{4}-\d{2}-\d{2}$/.test(s);
-const TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-const fmtTh = (s: string) => { const [, m, d] = s.split('-'); return `${Number(d)} ${TH[Number(m) - 1]}`; };
-const nightsOf = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
-const monthsOf = (a: string, b: string) => { const [ay, am, ad] = a.split('-').map(Number); const [by, bm, bd] = b.split('-').map(Number); return Math.max(1, (by - ay) * 12 + (bm - am) + (bd >= ad ? 0 : -1)); };
-const baht = (m: number) => `฿${Math.round(m / 100).toLocaleString('th-TH')}`;
-const perTh = (p: string | null) => (p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : '');
 const coll = (x: string, y: string) => (x || '').localeCompare(y || '', undefined, { numeric: true, sensitivity: 'base' });
 
 export default async function AvailableRooms({ searchParams }: { searchParams: { from?: string; to?: string; mode?: string; pax?: string; ok?: string; error?: string; bk?: string } }) {
@@ -112,7 +105,6 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                 const quoteMinor = r.priceMinor != null ? r.priceMinor * span : null;
                 const capWarn = pax > 0 && r.capacity != null && r.capacity < pax;
                 const minWarn = r.minStay > 0 && span < r.minStay;
-                const depositNote = r.depositMinor ? `มัดจำ ${baht(r.depositMinor)} — เก็บตอนเข้าพัก` : '';
                 const matchOk = !capWarn && !minWarn;
                 const matchLabel = capWarn ? `รับได้แค่ ${r.capacity} คน` : minWarn ? `ขั้นต่ำ ${r.minStay} ${r.monthly ? 'เดือน' : 'คืน'}` : 'ว่างครบช่วงนี้';
                 const fine = [
@@ -120,8 +112,9 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                   r.depositMinor ? `มัดจำ ${baht(r.depositMinor)}` : '',
                 ].filter(Boolean).join(' · ');
                 return (
-                  <details className="avail-room" key={r.id}>
-                    <summary className="avail-room-sum">
+                  <Link key={r.id} className="avail-room avail-room--link"
+                    href={`/merchant/units/available/book?room=${r.id}&from=${from}&to=${to}${searchMonthly ? '&mode=monthly' : ''}${pax ? `&pax=${pax}` : ''}`}>
+                    <span className="avail-room-sum">
                       <span className="avail-rt">
                         <span className="avail-rt-1">
                           <b>ห้อง {r.code}</b>
@@ -132,10 +125,8 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                         {fine ? <span className="avail-fine">{fine}</span> : null}
                       </span>
                       <span className="avail-go-pill">จอง<Icon n="chevR" size={14} /></span>
-                    </summary>
-                    {minWarn && <p className="avail-minwarn"><Icon n="clock" size={13} /> ต่ำกว่าขั้นต่ำ {r.minStay} {r.monthly ? 'เดือน' : 'คืน'} — จองได้แต่โปรดเช็ค</p>}
-                    <AvailBookForm roomId={r.id} code={r.code} from={from} to={to} back={back} spanLabel={spanLabel} pax={pax} amountMinor={quoteMinor} months={r.monthly ? months : 0} depositNote={depositNote} />
-                  </details>
+                    </span>
+                  </Link>
                 );
               })}
             </div>

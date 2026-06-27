@@ -1527,6 +1527,25 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* not-ready CTA = soft blue, still clearly tappable (it opens the calendar) — never a dead grey box */
 .merchant-root .avail-go:not(.primary){background:var(--m-soft);color:var(--m-accent);border-color:#cfe0ff;box-shadow:none}
 .merchant-root .avail-go:not(.primary):active{transform:scale(.99);background:#cfe0ff}
+/* /book — deliberate booking: room card → its own page → live summary + verdict + confirm dialog */
+.merchant-root .avail-room--link{display:block;text-decoration:none;color:inherit}
+.merchant-root .avail-room--link:active{border-color:#cfe0ff;background:var(--m-soft)}
+.merchant-root .bookrev{display:flex;flex-direction:column;gap:12px}
+.merchant-root .bookrev-step{margin:0;font-size:.82rem;font-weight:700;color:var(--m-muted)}
+.merchant-root .bookrev-sum{display:flex;flex-direction:column;gap:8px;background:var(--m-soft);border:1px solid #cfe0ff;border-radius:16px;padding:14px}
+.merchant-root .bookrev-row{display:flex;align-items:center;gap:8px;font-size:.86rem;font-weight:700;color:var(--m-text)}
+.merchant-root .bookrev-row svg{flex:none;color:var(--m-accent)}
+.merchant-root .bookrev-row i{font-style:normal;font-weight:600;color:var(--m-muted);font-size:.78rem}
+.merchant-root .bookrev-price{align-items:baseline;gap:8px}
+.merchant-root .bookrev-price b{font-size:1.12rem;font-weight:800;letter-spacing:-.01em;color:var(--m-ink)}
+.merchant-root .bookrev-warn{color:#b45309}
+.merchant-root .bookrev-warn svg{color:#b45309}
+.merchant-root .bookrev-verdict{padding:.7rem .9rem;border-radius:12px;font-size:.9rem;font-weight:800;text-align:center}
+.merchant-root .bookrev-verdict.is-book{background:#E4F6EC;color:var(--m-jade)}
+.merchant-root .bookrev-verdict.is-hold{background:var(--m-sunk);color:var(--m-muted)}
+.merchant-root .bookrev-cta{margin-top:2px}
+.merchant-root .bookrev-cta .dbtn{width:100%}
+.merchant-root .bookrev-confirm{margin:8px 0 0;font-size:.9rem;font-weight:600;color:var(--m-text);line-height:1.55}
 /* today's arrivals / departures strip */
 /* today's-moves section labels (reused inside the moves sheet) */
 .merchant-root .caltoday-l{flex:none;font-size:.86rem;font-weight:800}
