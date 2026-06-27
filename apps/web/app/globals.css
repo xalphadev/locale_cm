@@ -1487,7 +1487,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-grp-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 4px 8px;font-size:.82rem;font-weight:800;letter-spacing:.02em;color:color-mix(in srgb,var(--m-text) 62%,var(--m-muted))}
 .merchant-root .avail-grp-h i{font-style:normal;font-size:.74rem;font-weight:800;color:var(--m-jade)}
 .merchant-root .avail-room{border:1px solid var(--m-line);border-radius:16px;background:var(--m-surface);margin:0 0 10px;overflow:hidden;transition:border-color .14s}
-.merchant-root details.avail-room[open]{border-color:#cfe0ff}
 .merchant-root .avail-room-sum{display:flex;align-items:flex-start;gap:12px;padding:14px;cursor:pointer;list-style:none}
 .merchant-root .avail-room-sum::-webkit-details-marker{display:none}
 .merchant-root .avail-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
@@ -1503,16 +1502,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-quote i{font-style:normal;font-size:.76rem;font-weight:700;color:var(--m-muted)}
 .merchant-root .avail-fine{font-size:.72rem;font-weight:600;color:var(--m-hint);margin-top:1px}
 .merchant-root .avail-go-pill{flex:none;align-self:center;display:inline-flex;align-items:center;gap:2px;padding:9px 14px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.85rem;font-weight:800;box-shadow:0 6px 14px -8px rgba(22,160,106,.7)}
-.merchant-root details.avail-room[open] .avail-go-pill{background:var(--m-soft);color:var(--m-accent);box-shadow:none}
-.merchant-root .avail-minwarn{display:flex;align-items:center;gap:6px;margin:0;padding:9px 14px;font-size:.76rem;font-weight:700;color:#b45309;background:#fff7ed;border-top:1px solid #fde9d3}
-/* BOOK: a focused mini-booking — recap strip + fields + verb-led CTA */
-.merchant-root .avail-book{display:flex;flex-direction:column;gap:11px;padding:14px;background:linear-gradient(180deg,#fbfdff,var(--m-surface));border-top:1px solid #eef2f8}
-.merchant-root .avail-book-recap{display:flex;align-items:center;gap:7px;font-size:.82rem;font-weight:800;color:var(--m-accent);background:var(--m-soft);border-radius:11px;padding:.55rem .8rem}
-.merchant-root .avail-book-recap svg{flex:none}
-.merchant-root .avail-book-amt{margin-left:auto;font-weight:800;color:var(--m-ink)}
-.merchant-root .avail-book .dbtn{width:100%;margin-top:1px}
-.merchant-root .avail-book .dbtn.avail-hold{background:var(--m-sunk);color:var(--m-text);border:1px solid var(--m-line);box-shadow:none}
-.merchant-root .avail-book-hint{margin:-2px 0 0;font-size:.72rem;font-weight:600;color:var(--m-hint);text-align:center;line-height:1.4}
 /* date = the required step 1; CTA is never a silent dead-end (all scoped to .avail-search) */
 .merchant-root .avail-search .drp-trigger{--bg:var(--m-surface);--hairline:var(--m-line);--text:var(--m-text);--muted:var(--m-muted);--hint:var(--m-hint)}
 .merchant-root .avail-datefld>label{display:flex;align-items:center;gap:7px}

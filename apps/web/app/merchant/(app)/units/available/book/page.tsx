@@ -33,9 +33,11 @@ export default async function BookPage({ searchParams }: {
     `SELECT r.id, r.code, r.floor, r.stay_unit_id,
             su.name_i18n unit_name, su.price_minor, su.price_period,
             su.capacity, su.rental_mode, su.min_stay, su.deposit_minor,
-            NOT EXISTS (SELECT 1 FROM stay_occupancy_block b
+            (NOT EXISTS (SELECT 1 FROM stay_occupancy_block b
                WHERE b.room_id=r.id AND b.status='active' AND b.deleted_at IS NULL
-                 AND b.span && daterange($2::date,$3::date,'[)')) AS free
+                 AND b.span && daterange($2::date,$3::date,'[)'))
+             AND NOT (su.rental_mode <> 'daily' AND r.occupancy_status IS NOT NULL AND r.occupancy_status <> 'vacant'
+                      AND (r.occupied_until IS NULL OR r.occupied_until > $2::date))) AS free
        FROM stay_room r LEFT JOIN stay_units su ON su.id=r.stay_unit_id
       WHERE r.id=$1 AND r.place_id=$4 AND r.deleted_at IS NULL AND r.status='active'`,
     [roomId, from, to, acc.place_id]);
