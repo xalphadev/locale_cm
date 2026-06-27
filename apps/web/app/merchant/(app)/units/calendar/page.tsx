@@ -34,7 +34,6 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
   const endExcl = addDays(start, WIN);
   const prev = addDays(start, -WIN), next = addDays(start, WIN);
   const qs = (d: string) => `?d=${d}${month ? '&w=month' : ''}`;
-  const vqs = (w: string) => `?${w === 'month' ? 'w=month&' : ''}d=${start}`;
 
   const rooms = await q<any>(
     `SELECT r.id, r.code, r.floor, r.occupancy_status, to_char(r.occupied_until,'YYYY-MM-DD') occupied_until, su.rental_mode,
@@ -85,10 +84,6 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
           <Link className="calstep-b" href={`/merchant/units/calendar${qs(prev)}`} aria-label="ก่อนหน้า"><Icon n="chevL" size={18} /></Link>
           <CalSheet start={start} winLen={WIN} month={month} today={today} label={fmtRange(start, days[WIN - 1])} />
           <Link className="calstep-b" href={`/merchant/units/calendar${qs(next)}`} aria-label="ถัดไป"><Icon n="chevR" size={18} /></Link>
-        </div>
-        <div className="calview2">
-          <Link className={`calview-i ${!month ? 'on' : ''}`} href={`/merchant/units/calendar${vqs('2wk')}`}>2สัปดาห์</Link>
-          <Link className={`calview-i ${month ? 'on' : ''}`} href={`/merchant/units/calendar${vqs('month')}`}>เดือน</Link>
         </div>
         {start !== today && <Link className="calstep-today" href={`/merchant/units/calendar${month ? '?w=month' : ''}`}>วันนี้</Link>}
       </div>

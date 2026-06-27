@@ -21,6 +21,7 @@ export function CalSheet({ start, winLen, month, today, label }: { start: string
   const shown = useSheetAnim(open);
 
   const go = (s: string) => { router.push(`/merchant/units/calendar?d=${s}${month ? '&w=month' : ''}`); setOpen(false); };
+  const setView = (m: boolean) => router.push(`/merchant/units/calendar?d=${start}${m ? '&w=month' : ''}`);   // keep the sheet open
   const winEnd = addD(start, winLen - 1);   // inclusive last day of the viewed window
   const first = new Date(Date.UTC(cur.y, cur.m, 1));
   const gridStart = new Date(first); gridStart.setUTCDate(1 - first.getUTCDay());
@@ -38,6 +39,10 @@ export function CalSheet({ start, winLen, month, today, label }: { start: string
           <div className={`mbsheet ${shown ? 'in' : ''}`} role="dialog" aria-label="เลือกวันที่">
             <span className="mbsheet-handle" onClick={() => setOpen(false)} aria-hidden />
             <div className="mbsheet-body calsheet-body">
+              <div className="calsheet-seg">
+                <button type="button" className={`calsheet-segb ${!month ? 'on' : ''}`} onClick={() => setView(false)}>2 สัปดาห์</button>
+                <button type="button" className={`calsheet-segb ${month ? 'on' : ''}`} onClick={() => setView(true)}>1 เดือน</button>
+              </div>
               <div className="calsheet-mh">
                 <button type="button" className="calsheet-mb" onClick={() => shift(-1)} aria-label="เดือนก่อน"><Icon n="chevL" size={18} /></button>
                 <b>{TH_M[cur.m]} {cur.y + 543}</b>

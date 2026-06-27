@@ -1379,8 +1379,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* ROW 1 — date window, NEVER wraps (was .calbar with flex-wrap → 2 rows) */
 .merchant-root .calbar2{display:flex;align-items:stretch;flex-wrap:nowrap;gap:8px;margin:2px 0 8px}
 .merchant-root .calbar2 .calstep{flex:1 1 auto;min-width:0}
-.merchant-root .calview2{flex:none;display:inline-flex;align-items:stretch;border:1px solid var(--m-line);border-radius:10px;overflow:hidden}
-.merchant-root .calview2 .calview-i{padding:6px 11px;font-size:.8rem;line-height:1.7;white-space:nowrap}
 .merchant-root .calbar2 .calstep-today{flex:none;align-self:center}
 /* ROW 2 — control strip, NEVER wraps (type filter / search / today / tools) */
 .merchant-root .calctl{display:flex;align-items:center;flex-wrap:nowrap;gap:7px;margin:0 0 11px;min-height:38px}
@@ -1434,9 +1432,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .caltl-c.tdy{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent),inset -1px 0 0 color-mix(in srgb,var(--m-accent,#2b74ff) 38%,transparent)}
 .caltl-guest{color:var(--m-accent,#2b74ff);font-weight:700;font-size:.76rem}
 /* Wave A — 2wk/month toggle, floor filter + search, continuous bars, collapsible floor groups */
-.merchant-root .calview-i{padding:6px 15px;font-size:.84rem;font-weight:700;color:var(--m-muted);text-decoration:none;background:#fff}
-.merchant-root .calview-i.on{background:var(--m-accent);color:#fff}
-.merchant-root .calview-i+.calview-i{border-left:1px solid var(--m-line)}
+/* view-length toggle (2 สัปดาห์ / 1 เดือน), now at the top of the date sheet instead of the date row */
+.merchant-root .calsheet-seg{display:flex;border:1px solid var(--m-line);border-radius:10px;overflow:hidden;margin:2px 0 12px}
+.merchant-root .calsheet-segb{flex:1;border:none;background:#fff;font:inherit;font-size:.86rem;font-weight:800;color:var(--m-muted);padding:9px 0;cursor:pointer}
+.merchant-root .calsheet-segb.on{background:var(--m-accent);color:#fff}
+.merchant-root .calsheet-segb+.calsheet-segb{border-left:1px solid var(--m-line)}
 .merchant-root .calsearch{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--m-line);border-radius:12px;background:var(--m-sunk,#f1f3f7);color:var(--m-muted)}
 .merchant-root .calsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text);outline:none;min-width:0}
 .merchant-root .calsearch button{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;padding:0;display:flex}
