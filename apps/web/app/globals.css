@@ -663,8 +663,17 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mswitch-names i{font-style:normal;font-size:.74rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:54vw}
 .merchant-root .mswitch-caret{flex:none;color:var(--m-hint);transition:transform .2s}
 .merchant-root .mswitch[open] .mswitch-caret{transform:rotate(180deg)}
-.merchant-root .mswitch-pop{position:absolute;top:calc(100% + 12px);left:0;z-index:60;width:min(88vw,372px);max-height:72vh;overflow:auto;background:var(--m-surface);border:1px solid var(--m-line);border-radius:18px;box-shadow:var(--m-shlg);padding:8px;animation:mswpop .18s cubic-bezier(.2,.8,.2,1)}
-@keyframes mswpop{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* .mtop is a sticky z-20 stacking context, so its fixed sheet would be trapped under the z-40 nav —
+   lift the whole header above the nav while the sheet is open (so the sheet + backdrop sit on top) */
+.merchant-root .mtop:has(.mswitch[open]){z-index:80}
+/* bottom sheet — slides up from the bottom: full width, big tap targets, never clips (was a clipped dropdown) */
+.merchant-root .mswitch-pop{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0 auto;width:100%;max-width:440px;max-height:82vh;overflow:auto;background:var(--m-surface);border-radius:22px 22px 0 0;box-shadow:0 -12px 44px -8px rgba(16,20,12,.34);padding:4px 14px calc(18px + env(safe-area-inset-bottom));animation:mswsheet .24s cubic-bezier(.2,.8,.2,1)}
+@keyframes mswsheet{from{transform:translateY(100%)}to{transform:none}}
+/* dim backdrop — it's a ::before of <summary>, so a tap anywhere on it toggles the <details> shut (no JS) */
+.merchant-root .mswitch[open]>summary::before{content:'';position:fixed;inset:0;z-index:59;background:rgba(16,20,12,.42);animation:mswfade .24s ease}
+@keyframes mswfade{from{opacity:0}to{opacity:1}}
+.merchant-root .mswitch-handle{display:block;width:38px;height:4px;border-radius:999px;background:var(--m-line);margin:9px auto 4px}
+.merchant-root .mswitch-title{font-size:.78rem;font-weight:800;color:var(--m-muted);padding:2px 4px 6px;text-align:center}
 .merchant-root .mswitch-grp{padding:4px 0}
 .merchant-root .mswitch-grp+.mswitch-grp{border-top:1px solid var(--m-line);margin-top:2px;padding-top:8px}
 .merchant-root .mswitch-bh{display:flex;align-items:center;gap:8px;padding:2px 6px 6px}
@@ -672,12 +681,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mswitch-bhn{flex:1;min-width:0;font-size:.82rem;font-weight:800;letter-spacing:-.01em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .mswitch-addbr{flex:none;font-size:.74rem;font-weight:700;color:var(--m-accent);text-decoration:none;background:var(--m-soft);border-radius:999px;padding:.2rem .58rem}
 .merchant-root .mswitch form{margin:0}
-.merchant-root .mswitch-b{width:100%;display:flex;align-items:center;gap:8px;text-align:left;background:none;border:none;border-radius:12px;padding:.55rem .65rem;font:inherit;cursor:pointer;color:var(--m-text);transition:transform .12s,background .12s}
+.merchant-root .mswitch-b{width:100%;min-height:54px;display:flex;align-items:center;gap:10px;text-align:left;background:none;border:none;border-radius:13px;padding:.6rem .7rem;font:inherit;cursor:pointer;color:var(--m-text);transition:transform .12s,background .12s}
+.merchant-root .mswitch-btx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .merchant-root .mswitch-b:hover{background:var(--m-sunk)}
 .merchant-root .mswitch-b:active{transform:scale(.98)}
 .merchant-root .mswitch-b.on{background:var(--m-soft)}
-.merchant-root .mswitch-bn{flex:1;min-width:0;font-weight:700;font-size:.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.merchant-root .mswitch-bt{flex:none;font-size:.68rem;color:var(--m-muted)}
+.merchant-root .mswitch-bn{min-width:0;font-weight:700;font-size:.96rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .mswitch-bt{font-size:.74rem;color:var(--m-muted)}
 .merchant-root .mswitch-b.on .mswitch-bt{color:var(--m-accent)}
 .merchant-root .mswitch-ok{flex:none;color:var(--m-accent);font-weight:800}
 .merchant-root .mswitch-foot{display:flex;gap:8px;padding:8px 4px 2px;border-top:1px solid var(--m-line);margin-top:6px}

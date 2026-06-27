@@ -41,7 +41,9 @@ export default async function Switcher({
         </span>
         <svg className="mswitch-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
       </summary>
-      <div className="mswitch-pop">
+      <div className="mswitch-pop" role="dialog" aria-label="สลับร้าน / สาขา">
+        <span className="mswitch-handle" aria-hidden />
+        <div className="mswitch-title">สลับร้าน / สาขา</div>
         {brands.map((br) => (
           <div className="mswitch-grp" key={br.id}>
             <div className="mswitch-bh">
@@ -56,8 +58,10 @@ export default async function Switcher({
               return (
                 <form action={setActiveContextAction.bind(null, b.place_id)} key={b.place_id}>
                   <button type="submit" className={`mswitch-b ${on ? 'on' : ''}`}>
-                    <span className="mswitch-bn">{i18n(b.place_name)}</span>
-                    <span className="mswitch-bt">{kind} · {live ? 'เผยแพร่' : 'รอตรวจ'}</span>
+                    <span className="mswitch-btx">
+                      <span className="mswitch-bn">{i18n(b.place_name)}</span>
+                      <span className="mswitch-bt">{kind} · {live ? 'เผยแพร่' : 'รอตรวจ'}</span>
+                    </span>
                     {on ? <span className="mswitch-ok" aria-hidden>✓</span> : null}
                   </button>
                 </form>
