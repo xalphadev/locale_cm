@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useMemo, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from 'react';
 import { Icon } from './ui';
 
 // OTA-style date-range picker (merchant build — mirrors the consumer one). Full-screen scrolling
@@ -14,14 +14,16 @@ const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
 const fmtPill = (d: Date) => `${THDOW[d.getDay()]} ${d.getDate()} ${THMON_ABBR[d.getMonth()]}`;
 const midnight = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 
-export default function DateRangePicker({
-  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, allowPast = false, onChange,
-}: {
+export type DateRangePickerHandle = { open: () => void };
+const DateRangePicker = forwardRef<DateRangePickerHandle, {
   mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; allowPast?: boolean;
   onChange?: (from: string | null, to: string | null) => void;
-}) {
+}>(function DateRangePicker({
+  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, allowPast = false, onChange,
+}, ref) {
   const today = useMemo(() => midnight(new Date()), []);
   const [open, setOpen] = useState(false);
+  useImperativeHandle(ref, () => ({ open: () => setOpen(true) }), []);
   const [from, setFrom] = useState<Date | null>(null);
   const [to, setTo] = useState<Date | null>(null);
 
@@ -133,4 +135,5 @@ export default function DateRangePicker({
       )}
     </div>
   );
-}
+});
+export default DateRangePicker;
