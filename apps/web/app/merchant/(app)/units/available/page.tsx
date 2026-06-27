@@ -118,7 +118,7 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                   <details className="avail-room" key={r.id}>
                     <summary className="avail-room-sum">
                       <span className="avail-rt">
-                        <span className="avail-rt-1"><b>ห้อง {r.code}</b>{r.capacity ? <em className={capWarn ? 'cap-warn' : 'cap-ok'}>{capWarn ? `พอ ${r.capacity} คน` : `รับ ${r.capacity} คน`}</em> : null}</span>
+                        <span className="avail-rt-1"><b>ห้อง {r.code}</b>{r.capacity ? <em className={capWarn ? 'cap-warn' : 'cap-ok'}>{capWarn ? `รับได้แค่ ${r.capacity} คน` : `รับ ${r.capacity} คน`}</em> : null}</span>
                         <i>{[r.unitName, r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</i>
                         {extra ? <i className="avail-rt-q">{extra}</i> : null}
                       </span>

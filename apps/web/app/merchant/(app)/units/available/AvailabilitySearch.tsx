@@ -4,7 +4,11 @@ import DateRangePicker from '../../DateRangePicker';
 
 // The search form on หาห้องว่าง. รายเดือน = move-in date + a months stepper (computes the checkout); รายวัน =
 // a date range. Plus a pax chip-stepper. All write hidden inputs the GET form carries to ?from&to&mode&pax.
-const addMonths = (ymd: string, n: number) => { const [y, m, d] = ymd.split('-').map(Number); const dt = new Date(Date.UTC(y, m - 1 + n, d)); return dt.toISOString().slice(0, 10); };
+const addMonths = (ymd: string, n: number) => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const lastDay = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate();   // clamp the day so 31 ม.ค. + 1 = 28 ก.พ. (not 3 มี.ค.)
+  return new Date(Date.UTC(y, m - 1 + n, Math.min(d, lastDay))).toISOString().slice(0, 10);
+};
 
 export default function AvailabilitySearch({ defaultMode, minMonths }: { defaultMode: 'monthly' | 'daily'; minMonths: number }) {
   const [mode, setMode] = useState<'monthly' | 'daily'>(defaultMode);
