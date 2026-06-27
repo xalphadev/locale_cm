@@ -33,9 +33,6 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const [moving, setMoving] = useState(false);
   const [typeF, setTypeF] = useState('all');
   const [qstr, setQstr] = useState('');
-  const [findMode, setFindMode] = useState(false);
-  const [fFrom, setFFrom] = useState<string | null>(null);
-  const [fTo, setFTo] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSel, setBulkSel] = useState<Set<string>>(new Set());
   const [bulkKind, setBulkKind] = useState<'maintenance' | 'hold'>('maintenance');
@@ -80,29 +77,12 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const inSel = (r: TLRoom, day: string) => !!sel && sel.roomId === r.id && (sel.b ? day >= sel.a && day < sel.b : day === sel.a);
   const rangeClear = (r: TLRoom, a: string, b: string) => days.every((d) => !(d >= a && d < b) || (!cover(r, d).blk && !cover(r, d).flag));
   const onFree = (r: TLRoom, day: string) => {
-    if (findMode || day < today) return;   // in find-mode the header drives the range, not room cells
+    if (day < today) return;
     setOpen(null);
     if (!sel || sel.roomId !== r.id || sel.b) setSel({ roomId: r.id, code: r.code, a: day, b: null });
     else if (day > sel.a && rangeClear(r, sel.a, day)) setSel({ ...sel, b: day });
     else setSel({ roomId: r.id, code: r.code, a: day, b: null });
   };
-
-  // "หาห้องว่าง": tap two header dates → rooms free EVERY day across [from,to); tap a result → prefilled create
-  const onHeader = (day: string) => {
-    if (!findMode || day < today) return;
-    if (!fFrom || fTo) { setFFrom(day); setFTo(null); }
-    else if (day > fFrom) setFTo(day);
-    else { setFFrom(day); setFTo(null); }
-  };
-  const findDays = fFrom && fTo ? days.filter((d) => d >= fFrom && d < fTo) : [];
-  const freeRooms = fFrom && fTo ? rooms.filter((r) => findDays.every((d) => { const c = cover(r, d); return !c.blk && !c.flag; })) : [];
-  const freeSet = new Set(freeRooms.map((r) => r.id));
-  const exitFind = () => { setFindMode(false); setFFrom(null); setFTo(null); };
-  const clearDates = () => { setFFrom(null); setFTo(null); };   // re-pick without leaving find-mode
-  const quickBook = (r: TLRoom) => { setSel({ roomId: r.id, code: r.code, a: fFrom!, b: fTo! }); exitFind(); };
-  // Thai short date "29 มิ.ย." — UTC getters (every date here is a YYYY-MM-DD UTC-compared string)
-  const fmtTh = (s: string) => new Date(s + 'T00:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
-  const findRange = fFrom && fTo ? `${fmtTh(fFrom)} – ${fmtTh(fTo)} · ${findDays.length} คืน` : '';
 
   // today's arrivals / departures (computed from the blocks already loaded) — only when today is in view
   const todayIn = days.includes(today);
@@ -115,7 +95,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
     }
   }
   const openBlk = (m: Mv) => { setOpen({ blk: m.blk, code: m.code, roomId: m.roomId }); setEditing(false); setMoving(false); setSel(null); setMovesOpen(false); };
-  const activeTool = findMode ? 'หาห้องว่าง' : bulkOpen ? 'ปิดหลายห้อง' : null;   // a tool mode is live → trigger flips to exit
+  const activeTool = bulkOpen ? 'ปิดหลายห้อง' : null;   // a tool mode is live → trigger flips to exit
   const hasMoves = arrivals.length > 0 || departures.length > 0;
   const typeLabel = typeF === 'all' ? 'ทุกประเภท' : (types.find(([id]) => id === typeF)?.[1].name ?? 'ประเภท');
   const oneType = types.length <= 1;
@@ -173,7 +153,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
             <Icon n="calendar" size={17} /><i className="calctl-bdg">{arrivals.length + departures.length}</i>
           </button>
         )}
-        <button type="button" className={`calctl-ic ${activeTool ? 'on' : ''}`} onClick={() => { activeTool ? (exitFind(), bulkExit()) : setToolsOpen(true); }} aria-label={activeTool ? `ออกจาก ${activeTool}` : 'เครื่องมือ'}>
+        <button type="button" className={`calctl-ic ${activeTool ? 'on' : ''}`} onClick={() => { activeTool ? bulkExit() : setToolsOpen(true); }} aria-label={activeTool ? `ออกจาก ${activeTool}` : 'เครื่องมือ'}>
           <Icon n={activeTool ? 'x' : 'grid'} size={17} />
         </button>
       </div>
@@ -185,12 +165,12 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
             <span className="mbsheet-handle" onClick={() => setToolsOpen(false)} aria-hidden />
             <div className="mbsheet-hd"><b>เครื่องมือ</b><button type="button" className="mbsheet-x" onClick={() => setToolsOpen(false)} aria-label="ปิด"><Icon n="x" size={16} /></button></div>
             <div className="mbsheet-body">
-              <button type="button" className="caltools-row" onClick={() => { setToolsOpen(false); setFindMode(true); bulkExit(); setSel(null); setOpen(null); setMovesOpen(false); }}>
+              <Link href="/merchant/units/available" className="caltools-row" onClick={() => setToolsOpen(false)}>
                 <span className="caltools-ic"><Icon n="search" size={18} /></span>
-                <span className="caltools-tx"><b>หาห้องว่าง</b><i>เลือกช่วงวัน แล้วดูห้องที่ว่างทุกวัน</i></span>
+                <span className="caltools-tx"><b>หาห้องว่าง</b><i>เลือกช่วงวัน แล้วดูห้องที่ว่าง</i></span>
                 <Icon n="chevR" size={16} />
-              </button>
-              <button type="button" className="caltools-row" onClick={() => { setToolsOpen(false); setBulkOpen(true); setFindMode(false); setFFrom(null); setFTo(null); setSel(null); setOpen(null); setMovesOpen(false); }}>
+              </Link>
+              <button type="button" className="caltools-row" onClick={() => { setToolsOpen(false); setBulkOpen(true); setSel(null); setOpen(null); setMovesOpen(false); }}>
                 <span className="caltools-ic"><Icon n="grid" size={18} /></span>
                 <span className="caltools-tx"><b>ปิดหลายห้อง</b><i>ปิดซ่อม / กันห้องหลายห้องพร้อมกัน</i></span>
                 <Icon n="chevR" size={16} />
@@ -218,41 +198,6 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
             </div>
           </div>
         </>
-      )}
-
-      {findMode && (
-        <div className="calfind">
-          {!(fFrom && fTo) ? (
-            <div className="calfind-row1">
-              <span className="calfind-hint"><Icon n="calendar" size={14} /> {!fFrom ? 'แตะ “วันเข้า” บนหัวตาราง' : 'แตะ “วันออก” (เช็คเอาท์)'}</span>
-              <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={15} /></button>
-            </div>
-          ) : (
-            <>
-              <div className="calfind-top">
-                <span className={`calfind-badge ${freeRooms.length ? 'ok' : 'no'}`}><Icon n={freeRooms.length ? 'check' : 'x'} size={15} /></span>
-                <div className="calfind-head">
-                  <b>{freeRooms.length > 0 ? `ว่าง ${freeRooms.length} ห้อง` : 'ไม่มีห้องว่างช่วงนี้'}</b>
-                  <span className="calfind-sub">{findRange}<button type="button" className="calfind-redo" onClick={clearDates}>เปลี่ยนวัน</button></span>
-                </div>
-                <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={16} /></button>
-              </div>
-              {freeRooms.length > 0 && (
-                <div className="calfind-list">
-                  {freeRooms.map((r) => (
-                    <button type="button" key={r.id} className="calfind-room" onClick={() => quickBook(r)}>
-                      <span className="calfind-rt">
-                        <b>ห้อง {r.code}</b>
-                        <i>{[r.unitName, r.floor ? `${term} ${r.floor}` : '', money(r.priceMinor, r.pricePeriod)].filter(Boolean).join(' · ')}</i>
-                      </span>
-                      <span className="calfind-go">จอง <Icon n="chevR" size={14} /></span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </div>
       )}
 
       {bulkOpen && (
@@ -320,7 +265,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
           <table className="caltl-t calbars">
             <colgroup><col className="cal-col-rh" />{days.map((d) => <col key={d} className="cal-col-d" />)}</colgroup>
             <thead>
-              <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); const o = dayOcc(d); const inR = findMode && ((fFrom && fTo && d >= fFrom && d < fTo) || (fFrom && !fTo && d === fFrom)); return <th key={d} onClick={() => onHeader(d)} className={`caltl-dh ${d === today ? 'tdy' : ''} ${findMode && d >= today ? 'pick' : ''} ${inR ? 'inr' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b><span className={`caltl-occ ${o.occ ? '' : 'z'}`} title={`เข้าพัก ${o.occ}/${rooms.length}`}><i>{o.occ}</i>{o.pct}%</span></th>; })}</tr>
+              <tr><th className="caltl-rh">ห้อง</th>{days.map((d) => { const dt = new Date(d + 'T00:00:00Z'); const o = dayOcc(d); return <th key={d} className={`caltl-dh ${d === today ? 'tdy' : ''}`}><span>{DOW[dt.getUTCDay()]}</span><b>{dt.getUTCDate()}</b><span className={`caltl-occ ${o.occ ? '' : 'z'}`} title={`เข้าพัก ${o.occ}/${rooms.length}`}><i>{o.occ}</i>{o.pct}%</span></th>; })}</tr>
             </thead>
             <tbody>
               {groups.map((g) => { const t = g.rooms[0]; const col = collapsed.has(g.id); const sub = [`${g.rooms.length} ห้อง`, money(t.priceMinor, t.pricePeriod), bedTag(t)].filter(Boolean).join(' · '); return (
@@ -341,7 +286,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
                     </tr>
                   )}
                   {!col && g.rooms.map((r) => (
-                    <tr key={r.id} className={findMode && fFrom && fTo ? (freeSet.has(r.id) ? 'cal-find-free' : 'cal-find-busy') : ''}>
+                    <tr key={r.id}>
                       <th className="caltl-rh"><Link href={`/merchant/units/${r.id}`}><b className="caltl-code">{r.code}</b>{r.floor ? <span className="caltl-fl">{term} {r.floor}</span> : null}</Link></th>
                       {cells(r)}
                     </tr>

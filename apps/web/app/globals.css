@@ -1444,34 +1444,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .calsearch{display:flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--m-line);border-radius:12px;background:var(--m-sunk,#f1f3f7);color:var(--m-muted)}
 .merchant-root .calsearch input{flex:1;border:none;background:none;font:inherit;font-size:.92rem;color:var(--m-text);outline:none;min-width:0}
 .merchant-root .calsearch button{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;padding:0;display:flex}
-/* "หาห้องว่าง" — find rooms free across a tapped date range */
-/* find-available RESULT — calm inline panel above the grid */
-.merchant-root .calfind{display:flex;flex-direction:column;gap:9px;margin:0 0 11px;padding:11px 12px;border:1px solid #cfe0ff;border-radius:14px;background:#f3f8ff}
-.merchant-root .calfind-row1{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.merchant-root .calfind-hint{display:inline-flex;align-items:center;gap:7px;font-size:.88rem;font-weight:700;color:var(--m-accent)}
-.merchant-root .calfind-top{display:flex;align-items:flex-start;gap:10px}
-.merchant-root .calfind-badge{flex:none;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.merchant-root .calfind-badge.ok{background:#e4f6ec;color:var(--m-jade)}
-.merchant-root .calfind-badge.no{background:#fdecec;color:#c0392b}
-.merchant-root .calfind-head{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;line-height:1.25}
-.merchant-root .calfind-head b{font-size:1rem;font-weight:800;color:var(--m-text)}
-.merchant-root .calfind-sub{font-size:.8rem;font-weight:600;color:var(--m-muted);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.merchant-root .calfind-redo{border:none;background:none;padding:0;font:inherit;font-size:.8rem;font-weight:800;color:var(--m-accent);cursor:pointer}
-.merchant-root .calfind-x{flex:none;border:none;background:none;color:var(--m-muted);cursor:pointer;display:flex;padding:2px}
-.merchant-root .calfind-list{display:flex;flex-direction:column;gap:7px;max-height:40vh;overflow:auto;-webkit-overflow-scrolling:touch;padding:1px}
-.merchant-root .calfind-room{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:none;background:var(--m-surface);border-radius:12px;padding:11px 12px;font:inherit;cursor:pointer;box-shadow:inset 0 0 0 1px #dbe6fb}
-.merchant-root .calfind-room:active{transform:scale(.99);background:var(--m-soft)}
-.merchant-root .calfind-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.merchant-root .calfind-rt b{font-size:.94rem;font-weight:800;color:var(--m-text)}
-.merchant-root .calfind-rt i{font-style:normal;font-size:.8rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.merchant-root .calfind-go{flex:none;display:inline-flex;align-items:center;gap:2px;padding:7px 13px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.84rem;font-weight:800}
-/* date headers become tappable in find-mode; the picked span highlights */
-.merchant-root .caltl-dh.pick{cursor:pointer}
-.merchant-root .caltl-dh.inr{background:color-mix(in srgb,var(--m-accent,#2b74ff) 18%,#fff)}
-.merchant-root .caltl-dh.inr b{color:var(--m-accent,#2b74ff)}
-/* free rooms pop, busy rooms fade — at a glance which rooms take the whole range */
-.merchant-root tr.cal-find-free .caltl-rh{box-shadow:inset 3px 0 0 var(--m-jade,#12b76a)}
-.merchant-root tr.cal-find-busy{opacity:.4}
 /* two calendar action buttons (หาห้องว่าง / ปิดหลายห้อง) side by side */
 /* "เครื่องมือ" pill on the search row → opens the tools sheet (replaces the permanent .calacts row) */
 /* tool rows inside the shared .mbsheet */
@@ -1482,6 +1454,30 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .caltools-tx b{font-size:.96rem;font-weight:800;letter-spacing:-.01em}
 .merchant-root .caltools-tx i{font-style:normal;font-size:.76rem;font-weight:600;color:var(--m-muted)}
 .merchant-root .caltools-row>svg{flex:none;color:var(--m-hint)}
+/* ── หาห้องว่าง search page (/units/available) ── */
+.merchant-root .avail-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:34px 18px 22px}
+.merchant-root .avail-empty-ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--m-soft);color:var(--m-accent)}
+.merchant-root .avail-empty-t{font-size:1.06rem;font-weight:800;margin:8px 0 0;color:var(--m-text)}
+.merchant-root .avail-empty-s{font-size:.82rem;color:var(--m-muted);margin:0 0 6px}
+.merchant-root .avail-search{display:flex;flex-direction:column;gap:11px;width:100%;max-width:360px;margin:4px 0 14px}
+.merchant-root .avail-go{width:100%}
+.merchant-root .avail-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 11px;padding:10px 12px;border:1px solid #cfe0ff;border-radius:14px;background:#f3f8ff}
+.merchant-root .avail-bar b{font-size:1rem;font-weight:800;color:var(--m-text)}
+.merchant-root .avail-range{flex:1;min-width:0;font-size:.82rem;font-weight:600;color:var(--m-muted)}
+.merchant-root .avail-redo{border:none;background:none;font:inherit;font-size:.82rem;font-weight:800;color:var(--m-accent);text-decoration:none;cursor:pointer}
+.merchant-root .avail-grp{margin:0 0 12px}
+.merchant-root .avail-grp-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 2px;font-size:.9rem;font-weight:800;color:var(--m-text)}
+.merchant-root .avail-grp-h i{font-style:normal;font-size:.76rem;font-weight:700;color:var(--m-jade)}
+.merchant-root .avail-room{border-radius:12px;background:var(--m-surface);box-shadow:inset 0 0 0 1px #dbe6fb;margin:0 0 7px;overflow:hidden}
+.merchant-root .avail-room-sum{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer;list-style:none}
+.merchant-root .avail-room-sum::-webkit-details-marker{display:none}
+.merchant-root .avail-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.merchant-root .avail-rt b{font-size:.94rem;font-weight:800;color:var(--m-text)}
+.merchant-root .avail-rt i{font-style:normal;font-size:.8rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .avail-go-pill{flex:none;display:inline-flex;align-items:center;gap:2px;padding:7px 13px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.84rem;font-weight:800}
+.merchant-root details.avail-room[open] .avail-go-pill{background:var(--m-soft);color:var(--m-accent)}
+.merchant-root .avail-book{display:flex;flex-direction:column;gap:9px;padding:0 12px 12px;border-top:1px solid #eef2f8}
+.merchant-root .avail-book .dbtn.primary{width:100%}
 /* today's arrivals / departures strip */
 /* today's-moves section labels (reused inside the moves sheet) */
 .merchant-root .caltoday-l{flex:none;font-size:.86rem;font-weight:800}

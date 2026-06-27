@@ -1163,11 +1163,13 @@ export async function setStayUnitManagedAction(unitId: string, on: boolean) {
 export async function addRoomBlockAction(roomId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
+  const back = s(formData, 'returnTo');   // e.g. the หาห้องว่าง list — return there instead of the room page
+  const fail = (e: string) => redirect(back ? `${back}${back.includes('?') ? '&' : '?'}error=${e}` : `/merchant/units/${roomId}?error=${e}`);
   const from = s(formData, 'start_date');
   const to = s(formData, 'end_date');
-  if (!isDate(from)) redirect(`/merchant/units/${roomId}?error=date`);
+  if (!isDate(from)) fail('date');
   const end = isDate(to) ? to : null;
-  if (end && end <= from) redirect(`/merchant/units/${roomId}?error=daterange`);   // no 0-/negative-day spans (GiST only guards overlap)
+  if (end && end <= from) fail('daterange');   // no 0-/negative-day spans (GiST only guards overlap)
   const note = s(formData, 'note') || null;
   const [r] = await q<{ stay_unit_id: string | null; rental_mode: string | null }>(`SELECT r.stay_unit_id, su.rental_mode FROM stay_room r LEFT JOIN stay_units su ON su.id=r.stay_unit_id WHERE r.id=$1 AND r.place_id=$2 AND r.deleted_at IS NULL`, [roomId, acc.place_id]);
   if (!r) redirect('/merchant/units');
@@ -1185,12 +1187,13 @@ export async function addRoomBlockAction(roomId: string, formData: FormData) {
        VALUES($1,$2,'booking',$3,$4,$5,$6,$7,'walk_in','converted',$8, now() + interval '60 days')`,
       [acc.place_id, r.stay_unit_id, leadMode, from, end, guestName, guestPhone || null, blk.id]);
   } catch (e: any) {
-    if (e?.code === '23P01') redirect(`/merchant/units/${roomId}?error=overlap`); // exclusion_violation (double-book)
+    if (e?.code === '23P01') fail('overlap'); // exclusion_violation (double-book)
     throw e;
   }
   await refreshUnitVacancy(r.stay_unit_id);
   revalidatePath(`/merchant/units/${roomId}`); revalidatePath('/merchant/units');
-  redirect(`/merchant/units/${roomId}?ok=${guestName ? 'booked' : 'blocked'}`);
+  const okk = guestName ? 'booked' : 'blocked';
+  redirect(back ? `${back}${back.includes('?') ? '&' : '?'}ok=${okk}` : `/merchant/units/${roomId}?ok=${okk}`);
 }
 
 /** Edit an existing occupancy block's dates/note (gap: bookings were cancel-only). GiST EXCLUDE still
