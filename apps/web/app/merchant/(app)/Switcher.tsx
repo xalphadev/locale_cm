@@ -1,4 +1,4 @@
-// Brand/branch context switcher (server component, no client JS — a native <details> dropdown).
+// Brand/branch context switcher (server component, no client JS — a checkbox-toggled bottom sheet).
 // One account owns many brands ("ร้าน"), each many branches/accommodations ("สาขา"/"ที่พัก").
 // Selecting a branch posts setActiveContextAction (ownership re-checked server-side).
 import Link from 'next/link';
@@ -33,14 +33,18 @@ export default async function Switcher({
   const showBranchLine = (multiBrand || rows.length > 1) && activePlaceName && activePlaceName !== activeBrandName;
 
   return (
-    <details className="mswitch">
-      <summary className="mswitch-cur" title="สลับร้าน / สาขา">
+    // checkbox+label modal (no client JS) — the scrim <label> reliably closes on tap (the older
+    // <details> + summary::before backdrop didn't fire the toggle on iOS Safari)
+    <div className="mswitch">
+      <input type="checkbox" id="mswitch-tg" className="mswitch-tg" aria-label="สลับร้าน / สาขา" />
+      <label htmlFor="mswitch-tg" className="mswitch-cur" title="สลับร้าน / สาขา">
         <span className="mswitch-names">
           <b>{activeBrandName || activePlaceName || 'ร้านของฉัน'}</b>
           {showBranchLine ? <i>{activePlaceName}</i> : null}
         </span>
         <svg className="mswitch-caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-      </summary>
+      </label>
+      <label htmlFor="mswitch-tg" className="mswitch-scrim" aria-hidden />
       <div className="mswitch-pop" role="dialog" aria-label="สลับร้าน / สาขา">
         <span className="mswitch-handle" aria-hidden />
         <div className="mswitch-title">สลับร้าน / สาขา</div>
@@ -74,6 +78,6 @@ export default async function Switcher({
           <Link className="mswitch-mng" href="/merchant/shops">จัดการทั้งหมด</Link>
         </div>
       </div>
-    </details>
+    </div>
   );
 }
