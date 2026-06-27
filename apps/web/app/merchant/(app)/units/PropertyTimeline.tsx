@@ -5,6 +5,7 @@ import { Icon } from '../ui';
 import { ConfirmSubmit } from '../ConfirmSubmit';
 import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction, moveBlockAction, bulkBlockRoomsAction } from '../../actions';
 import { useSheetAnim } from './useSheetAnim';
+import DateRangePicker from '../DateRangePicker';
 
 // Interactive property timeline (rooms × the visible day window). Bookings render as CONTINUOUS BARS with
 // the guest name on them; rooms group by floor (collapsible) and are filterable + searchable for big
@@ -37,9 +38,11 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const [fTo, setFTo] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkSel, setBulkSel] = useState<Set<string>>(new Set());
+  const [bulkKind, setBulkKind] = useState<'maintenance' | 'hold'>('maintenance');
+  const [bulkDates, setBulkDates] = useState(false);
   const toggleRoom = (id: string) => setBulkSel((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const toggleType = (rs: TLRoom[]) => setBulkSel((p) => { const n = new Set(p); const all = rs.every((r) => n.has(r.id)); rs.forEach((r) => all ? n.delete(r.id) : n.add(r.id)); return n; });
-  const bulkExit = () => { setBulkOpen(false); setBulkSel(new Set()); };
+  const bulkExit = () => { setBulkOpen(false); setBulkSel(new Set()); setBulkKind('maintenance'); setBulkDates(false); };
   const [movesOpen, setMovesOpen] = useState(false);
   const [mvq, setMvq] = useState('');
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -49,6 +52,7 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const movesShown = useSheetAnim(movesOpen);
   const toolsShown = useSheetAnim(toolsOpen);
   const typeShown = useSheetAnim(typeOpen);
+  const bulkShown = useSheetAnim(bulkOpen);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggle = (t: string) => setCollapsed((p) => { const n = new Set(p); n.has(t) ? n.delete(t) : n.add(t); return n; });
   const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
@@ -94,7 +98,11 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const freeRooms = fFrom && fTo ? rooms.filter((r) => findDays.every((d) => { const c = cover(r, d); return !c.blk && !c.flag; })) : [];
   const freeSet = new Set(freeRooms.map((r) => r.id));
   const exitFind = () => { setFindMode(false); setFFrom(null); setFTo(null); };
+  const clearDates = () => { setFFrom(null); setFTo(null); };   // re-pick without leaving find-mode
   const quickBook = (r: TLRoom) => { setSel({ roomId: r.id, code: r.code, a: fFrom!, b: fTo! }); exitFind(); };
+  // Thai short date "29 มิ.ย." — UTC getters (every date here is a YYYY-MM-DD UTC-compared string)
+  const fmtTh = (s: string) => new Date(s + 'T00:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const findRange = fFrom && fTo ? `${fmtTh(fFrom)} – ${fmtTh(fTo)} · ${findDays.length} คืน` : '';
 
   // today's arrivals / departures (computed from the blocks already loaded) — only when today is in view
   const todayIn = days.includes(today);
@@ -215,54 +223,94 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
       {findMode && (
         <div className="calfind">
           {!(fFrom && fTo) ? (
-            <span className="calfind-hint"><Icon n="calendar" size={14} /> {!fFrom ? 'แตะ “วันเข้า” บนหัวตาราง' : 'แตะ “วันออก” (เช็คเอาท์)'}</span>
+            <div className="calfind-row1">
+              <span className="calfind-hint"><Icon n="calendar" size={14} /> {!fFrom ? 'แตะ “วันเข้า” บนหัวตาราง' : 'แตะ “วันออก” (เช็คเอาท์)'}</span>
+              <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={15} /></button>
+            </div>
           ) : (
             <>
-              <div className="calfind-head"><b>{freeRooms.length > 0 ? `ว่าง ${freeRooms.length} ห้อง` : 'ไม่มีห้องว่าง'}</b><span>{fFrom} → {fTo}</span></div>
+              <div className="calfind-top">
+                <span className={`calfind-badge ${freeRooms.length ? 'ok' : 'no'}`}><Icon n={freeRooms.length ? 'check' : 'x'} size={15} /></span>
+                <div className="calfind-head">
+                  <b>{freeRooms.length > 0 ? `ว่าง ${freeRooms.length} ห้อง` : 'ไม่มีห้องว่างช่วงนี้'}</b>
+                  <span className="calfind-sub">{findRange}<button type="button" className="calfind-redo" onClick={clearDates}>เปลี่ยนวัน</button></span>
+                </div>
+                <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={16} /></button>
+              </div>
               {freeRooms.length > 0 && (
-                <div className="calfind-chips">
-                  {freeRooms.map((r) => <button type="button" key={r.id} className="calfind-chip" onClick={() => quickBook(r)}>ห้อง {r.code}{r.priceMinor != null ? <em>{money(r.priceMinor, r.pricePeriod)}</em> : null} <i>จอง ›</i></button>)}
+                <div className="calfind-list">
+                  {freeRooms.map((r) => (
+                    <button type="button" key={r.id} className="calfind-room" onClick={() => quickBook(r)}>
+                      <span className="calfind-rt">
+                        <b>ห้อง {r.code}</b>
+                        <i>{[r.unitName, r.floor ? `${term} ${r.floor}` : '', money(r.priceMinor, r.pricePeriod)].filter(Boolean).join(' · ')}</i>
+                      </span>
+                      <span className="calfind-go">จอง <Icon n="chevR" size={14} /></span>
+                    </button>
+                  ))}
                 </div>
               )}
             </>
           )}
-          <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={15} /></button>
         </div>
       )}
 
       {bulkOpen && (
-        <form className="tl-add" action={bulkBlockRoomsAction}>
-          <input type="hidden" name="returnTo" value={returnTo} />
-          <div className="tl-add-h">ปิดหลายห้องพร้อมกัน <span className="muted">(ปิดซ่อม / กันห้อง)</span></div>
-          <div className="fgrid">
-            <div className="field"><label>เริ่ม</label><input type="date" name="start_date" defaultValue={today} min={today} required /></div>
-            <div className="field"><label>ถึง (เช็คเอาท์)</label><input type="date" name="end_date" min={today} required /></div>
-          </div>
-          <div className="field"><label>ประเภท</label>
-            <select name="block_kind" defaultValue="maintenance"><option value="maintenance">ปิดซ่อม</option><option value="hold">กันห้อง (ชั่วคราว)</option></select>
-          </div>
-          <div className="field"><label>เลือกห้อง <span className="muted">({bulkSel.size} ห้อง)</span></label>
-            <div className="bulkrooms">
-              {groups.map((g) => (
-                <div className="bulkrooms-g" key={g.id || '_'}>
-                  <button type="button" className="bulkrooms-th" onClick={() => toggleType(g.rooms)}>{g.rooms[0].unitName} · {g.rooms.every((r) => bulkSel.has(r.id)) ? 'เอาออกทั้งหมด' : 'เลือกทั้งหมด'}</button>
-                  <div className="bulkrooms-r">
-                    {g.rooms.map((r) => (
-                      <label key={r.id} className={`bulkroom ${bulkSel.has(r.id) ? 'on' : ''}`}>
-                        <input type="checkbox" name="room" value={r.id} checked={bulkSel.has(r.id)} onChange={() => toggleRoom(r.id)} />{r.code}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              ))}
+        <>
+          <div className={`mbsheet-scrim ${bulkShown ? 'in' : ''}`} onClick={bulkExit} />
+          <form className={`mbsheet bulksheet ${bulkShown ? 'in' : ''}`} action={bulkBlockRoomsAction} role="dialog" aria-label="ปิดหลายห้อง">
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <input type="hidden" name="block_kind" value={bulkKind} />
+            {[...bulkSel].map((id) => <input key={id} type="hidden" name="room" value={id} />)}
+            <span className="mbsheet-handle" onClick={bulkExit} aria-hidden />
+            <div className="mbsheet-hd"><b>ปิดหลายห้อง</b><button type="button" className="mbsheet-x" onClick={bulkExit} aria-label="ปิด"><Icon n="x" size={16} /></button></div>
+            <div className="mbsheet-body bulksheet-body">
+              <label className="bulk-lbl">ช่วงวันที่</label>
+              <DateRangePicker fromName="start_date" toName="end_date" labelFrom="เริ่ม" labelTo="ถึง (เช็คเอาท์)" onChange={(f, t) => setBulkDates(!!(f && t))} />
+
+              <label className="bulk-lbl">ปิดเพราะอะไร</label>
+              <div className="bulkkind">
+                <button type="button" className={`bulkkind-c ${bulkKind === 'maintenance' ? 'on' : ''}`} onClick={() => setBulkKind('maintenance')}>
+                  <b>ปิดซ่อม</b><i>งานปรับปรุง</i>{bulkKind === 'maintenance' && <Icon n="check" size={15} />}
+                </button>
+                <button type="button" className={`bulkkind-c ${bulkKind === 'hold' ? 'on' : ''}`} onClick={() => setBulkKind('hold')}>
+                  <b>กันห้อง</b><i>เก็บชั่วคราว</i>{bulkKind === 'hold' && <Icon n="check" size={15} />}
+                </button>
+              </div>
+
+              <label className="bulk-lbl">เลือกห้อง</label>
+              <div className="bulkpick">
+                {groups.map((g) => {
+                  const allOn = g.rooms.every((r) => bulkSel.has(r.id));
+                  return (
+                    <div className="bulkpick-g" key={g.id || '_'}>
+                      <div className="bulkpick-gh">
+                        <span>{g.rooms[0].unitName}</span>
+                        <button type="button" className="bulkpick-all" onClick={() => toggleType(g.rooms)}>{allOn ? 'เอาออกทั้งหมด' : 'เลือกทั้งหมด'}</button>
+                      </div>
+                      <div className="bulkpick-r">
+                        {g.rooms.map((r) => {
+                          const on = bulkSel.has(r.id);
+                          return (
+                            <button type="button" key={r.id} className={`bulkchip ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggleRoom(r.id)}>
+                              {r.code}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <input name="note" className="bulk-note" placeholder="โน้ต (เช่น ทำความสะอาดใหญ่ / งานปรับปรุง)" maxLength={120} />
             </div>
-          </div>
-          <input name="note" placeholder="โน้ต (เช่น ทำความสะอาดใหญ่ / งานปรับปรุง)" maxLength={120} />
-          <div className="tl-add-acts">
-            <button type="button" className="dbtn" onClick={bulkExit}>ยกเลิก</button>
-            <button type="submit" className="dbtn primary" disabled={bulkSel.size === 0}>ปิด {bulkSel.size} ห้อง</button>
-          </div>
-        </form>
+            <div className="mbsheet-foot">
+              <span className="bulk-count">{bulkSel.size > 0 ? `เลือก ${bulkSel.size} ห้อง` : 'ยังไม่ได้เลือกห้อง'}</span>
+              <button type="submit" className="dbtn primary bulk-go" disabled={bulkSel.size === 0 || !bulkDates}>ปิด {bulkSel.size} ห้อง</button>
+            </div>
+          </form>
+        </>
       )}
 
       {shown.length === 0 ? (

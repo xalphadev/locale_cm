@@ -15,9 +15,10 @@ const fmtPill = (d: Date) => `${THDOW[d.getDay()]} ${d.getDate()} ${THMON_ABBR[d
 const midnight = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
 
 export default function DateRangePicker({
-  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, allowPast = false,
+  mode = 'range', fromName, toName, labelFrom = 'เช็คอิน', labelTo = 'เช็คเอาท์', months = 12, allowPast = false, onChange,
 }: {
   mode?: 'range' | 'single'; fromName: string; toName?: string; labelFrom?: string; labelTo?: string; months?: number; allowPast?: boolean;
+  onChange?: (from: string | null, to: string | null) => void;
 }) {
   const today = useMemo(() => midnight(new Date()), []);
   const [open, setOpen] = useState(false);
@@ -41,6 +42,9 @@ export default function DateRangePicker({
     if (+d <= +from) { setFrom(d); setTo(null); return; }
     setTo(d);
   };
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onChange?.(from ? ymd(from) : null, to ? ymd(to) : null); }, [from, to]);
 
   const nights = from && to ? Math.round((+to - +from) / DAY) : 0;
   const valid = mode === 'single' ? !!from : !!(from && to);
