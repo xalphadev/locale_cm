@@ -1454,19 +1454,20 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .caltools-tx b{font-size:.96rem;font-weight:800;letter-spacing:-.01em}
 .merchant-root .caltools-tx i{font-style:normal;font-size:.76rem;font-weight:600;color:var(--m-muted)}
 .merchant-root .caltools-row>svg{flex:none;color:var(--m-hint)}
-/* ── หาห้องว่าง search page (/units/available) ── */
-.merchant-root .avail-empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:34px 18px 22px}
-.merchant-root .avail-empty-ic{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--m-soft);color:var(--m-accent)}
-.merchant-root .avail-empty-t{font-size:1.06rem;font-weight:800;margin:8px 0 0;color:var(--m-text)}
-.merchant-root .avail-empty-s{font-size:.82rem;color:var(--m-muted);margin:0 0 6px}
-.merchant-root .avail-search{display:flex;flex-direction:column;gap:13px;width:100%;max-width:360px;margin:4px 0 14px;text-align:left}
+/* ── หาห้องว่าง search→book — "Calm Console" (airy card · match badge · one-tap re-search) ── */
+/* EMPTY: pale-blue hero (ask) + airy white form card (answer) */
+.merchant-root .avail-empty{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:18px 16px 24px;max-width:380px;margin:0 auto}
+.merchant-root .avail-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;background:linear-gradient(160deg,var(--m-soft),color-mix(in srgb,var(--m-soft) 35%,#fff));border:1px solid #cfe0ff;border-radius:20px;padding:26px 20px 22px}
+.merchant-root .avail-empty-ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:#fff;color:var(--m-accent);box-shadow:inset 0 0 0 1px #cfe0ff}
+.merchant-root .avail-empty-t{font-size:1.12rem;font-weight:800;letter-spacing:-.01em;margin:6px 0 0;color:var(--m-ink)}
+.merchant-root .avail-empty-s{font-size:.84rem;color:var(--m-muted);margin:0;line-height:1.4}
+.merchant-root .avail-search{display:flex;flex-direction:column;gap:15px;width:100%;max-width:none;margin:0;text-align:left;background:var(--m-surface);border:1px solid var(--m-line);border-radius:18px;padding:18px 16px}
 .merchant-root .avail-go{width:100%}
-.merchant-root .avail-mode{display:flex;border:1px solid var(--m-line);border-radius:11px;overflow:hidden}
-.merchant-root .avail-mode button{flex:1;border:none;background:#fff;font:inherit;font-size:.88rem;font-weight:800;color:var(--m-muted);padding:10px 0;cursor:pointer}
-.merchant-root .avail-mode button.on{background:var(--m-accent);color:#fff}
-.merchant-root .avail-mode button+button{border-left:1px solid var(--m-line)}
+.merchant-root .avail-mode{display:flex;gap:4px;background:var(--m-sunk);border:none;border-radius:13px;padding:4px}
+.merchant-root .avail-mode button{flex:1;border:none;background:transparent;font:inherit;font-size:.88rem;font-weight:800;color:var(--m-muted);padding:9px 0;border-radius:10px;cursor:pointer;transition:background-color .14s,color .14s}
+.merchant-root .avail-mode button.on{background:#fff;color:var(--m-accent);box-shadow:inset 0 0 0 1px #cfe0ff}
 .merchant-root .avail-fld{display:flex;flex-direction:column;gap:7px}
-.merchant-root .avail-fld>label{font-size:.82rem;font-weight:800;color:var(--m-muted)}
+.merchant-root .avail-fld>label{font-size:.78rem;font-weight:800;color:color-mix(in srgb,var(--m-text) 60%,var(--m-muted));letter-spacing:.01em}
 .merchant-root .avail-step{display:inline-flex;align-items:center;align-self:flex-start;gap:14px;border:1px solid var(--m-line);border-radius:12px;padding:4px 6px;background:#fff}
 .merchant-root .avail-step button{width:36px;height:36px;border:none;border-radius:9px;background:var(--m-sunk);font-size:1.3rem;font-weight:700;color:var(--m-text);cursor:pointer;line-height:1}
 .merchant-root .avail-step button:active{transform:scale(.94)}
@@ -1474,31 +1475,44 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .pax-chips{display:flex;gap:8px;flex-wrap:wrap}
 .merchant-root .pax-chips button{min-width:46px;min-height:44px;border-radius:12px;border:1px solid var(--m-line);background:var(--m-surface);font:inherit;font-size:.95rem;font-weight:800;color:var(--m-text);cursor:pointer}
 .merchant-root .pax-chips button:active{transform:scale(.94)}
-.merchant-root .pax-chips button.on{background:var(--m-soft);color:var(--m-accent);border-color:var(--m-accent)}
-.merchant-root .avail-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 11px;padding:10px 12px;border:1px solid #cfe0ff;border-radius:14px;background:#f3f8ff}
-.merchant-root .avail-bar b{font-size:1rem;font-weight:800;color:var(--m-text)}
-.merchant-root .avail-range{flex:1;min-width:0;font-size:.82rem;font-weight:600;color:var(--m-muted)}
-.merchant-root .avail-redo{border:none;background:none;font:inherit;font-size:.82rem;font-weight:800;color:var(--m-accent);text-decoration:none;cursor:pointer}
-.merchant-root .avail-grp{margin:0 0 12px}
-.merchant-root .avail-grp-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:4px 2px;font-size:.9rem;font-weight:800;color:var(--m-text)}
-.merchant-root .avail-grp-h i{font-style:normal;font-size:.76rem;font-weight:700;color:var(--m-jade)}
-.merchant-root .avail-room{border-radius:12px;background:var(--m-surface);box-shadow:inset 0 0 0 1px #dbe6fb;margin:0 0 7px;overflow:hidden}
-.merchant-root .avail-room-sum{display:flex;align-items:center;gap:10px;padding:11px 12px;cursor:pointer;list-style:none}
+.merchant-root .pax-chips button.on{background:var(--m-soft);color:var(--m-accent);border-color:var(--m-accent);box-shadow:inset 0 0 0 1px var(--m-accent)}
+/* RESULTS: sticky bar = one tap re-search target */
+.merchant-root .avail-bar{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:11px 14px;border:1px solid #cfe0ff;border-radius:16px;background:linear-gradient(160deg,#f3f8ff,#fbfdff);text-decoration:none;color:inherit}
+.merchant-root .avail-bar:active{background:#e9f2ff}
+.merchant-root .avail-bar-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.merchant-root .avail-bar b{font-size:1.02rem;font-weight:800;color:var(--m-ink);line-height:1.1}
+.merchant-root .avail-range{font-size:.78rem;font-weight:600;color:var(--m-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.merchant-root .avail-redo{flex:none;display:inline-flex;align-items:center;gap:2px;border:1px solid #cfe0ff;background:#fff;border-radius:999px;padding:.4rem .55rem .4rem .8rem;font-size:.8rem;font-weight:800;color:var(--m-accent)}
+.merchant-root .avail-grp{margin:0 0 18px}
+.merchant-root .avail-grp-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:2px 4px 8px;font-size:.82rem;font-weight:800;letter-spacing:.02em;color:color-mix(in srgb,var(--m-text) 62%,var(--m-muted))}
+.merchant-root .avail-grp-h i{font-style:normal;font-size:.74rem;font-weight:800;color:var(--m-jade)}
+.merchant-root .avail-room{border:1px solid var(--m-line);border-radius:16px;background:var(--m-surface);margin:0 0 10px;overflow:hidden;transition:border-color .14s}
+.merchant-root details.avail-room[open]{border-color:#cfe0ff}
+.merchant-root .avail-room-sum{display:flex;align-items:flex-start;gap:12px;padding:14px;cursor:pointer;list-style:none}
 .merchant-root .avail-room-sum::-webkit-details-marker{display:none}
-.merchant-root .avail-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.merchant-root .avail-rt b{font-size:.94rem;font-weight:800;color:var(--m-text)}
-.merchant-root .avail-rt i{font-style:normal;font-size:.8rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.merchant-root .avail-go-pill{flex:none;display:inline-flex;align-items:center;gap:2px;padding:7px 13px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.84rem;font-weight:800}
-.merchant-root details.avail-room[open] .avail-go-pill{background:var(--m-soft);color:var(--m-accent)}
-.merchant-root .avail-rt-1{display:flex;align-items:baseline;gap:8px}
-.merchant-root .avail-rt-1 em{font-style:normal;font-size:.74rem;font-weight:800}
-.merchant-root .cap-ok{color:var(--m-jade)}
-.merchant-root .cap-warn{color:#b45309}
-.merchant-root .avail-rt-q{color:var(--m-accent) !important;font-weight:700 !important}
-.merchant-root .avail-minwarn{display:flex;align-items:center;gap:6px;margin:0;padding:8px 12px;font-size:.78rem;font-weight:700;color:#b45309;background:#fff7ed}
-.merchant-root .avail-book{display:flex;flex-direction:column;gap:9px;padding:10px 12px 12px;border-top:1px solid #eef2f8}
-.merchant-root .avail-book .dbtn{width:100%}
-.merchant-root .avail-book .dbtn.avail-hold{background:var(--m-sunk);color:var(--m-text);border:1px solid var(--m-line)}
+.merchant-root .avail-rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.merchant-root .avail-rt-1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.merchant-root .avail-rt-1 b{font-size:1.04rem;font-weight:800;letter-spacing:-.01em;color:var(--m-ink)}
+.merchant-root .avail-match{display:inline-flex;align-items:center;gap:3px;font-size:.69rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;line-height:1.5}
+.merchant-root .avail-match.ok{color:var(--m-jade);background:#E4F6EC}
+.merchant-root .avail-match.warn{color:#b45309;background:#fff7ed}
+.merchant-root .avail-match svg{flex:none}
+.merchant-root .avail-rt-meta{font-size:.8rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merchant-root .avail-quote{display:flex;align-items:baseline;gap:7px;margin-top:3px}
+.merchant-root .avail-quote b{font-size:1.18rem;font-weight:800;letter-spacing:-.02em;color:var(--m-ink)}
+.merchant-root .avail-quote i{font-style:normal;font-size:.76rem;font-weight:700;color:var(--m-muted)}
+.merchant-root .avail-fine{font-size:.72rem;font-weight:600;color:var(--m-hint);margin-top:1px}
+.merchant-root .avail-go-pill{flex:none;align-self:center;display:inline-flex;align-items:center;gap:2px;padding:9px 14px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.85rem;font-weight:800;box-shadow:0 6px 14px -8px rgba(22,160,106,.7)}
+.merchant-root details.avail-room[open] .avail-go-pill{background:var(--m-soft);color:var(--m-accent);box-shadow:none}
+.merchant-root .avail-minwarn{display:flex;align-items:center;gap:6px;margin:0;padding:9px 14px;font-size:.76rem;font-weight:700;color:#b45309;background:#fff7ed;border-top:1px solid #fde9d3}
+/* BOOK: a focused mini-booking — recap strip + fields + verb-led CTA */
+.merchant-root .avail-book{display:flex;flex-direction:column;gap:11px;padding:14px;background:linear-gradient(180deg,#fbfdff,var(--m-surface));border-top:1px solid #eef2f8}
+.merchant-root .avail-book-recap{display:flex;align-items:center;gap:7px;font-size:.82rem;font-weight:800;color:var(--m-accent);background:var(--m-soft);border-radius:11px;padding:.55rem .8rem}
+.merchant-root .avail-book-recap svg{flex:none}
+.merchant-root .avail-book-amt{margin-left:auto;font-weight:800;color:var(--m-ink)}
+.merchant-root .avail-book .dbtn{width:100%;margin-top:1px}
+.merchant-root .avail-book .dbtn.avail-hold{background:var(--m-sunk);color:var(--m-text);border:1px solid var(--m-line);box-shadow:none}
+.merchant-root .avail-book-hint{margin:-2px 0 0;font-size:.72rem;font-weight:600;color:var(--m-hint);text-align:center;line-height:1.4}
 /* today's arrivals / departures strip */
 /* today's-moves section labels (reused inside the moves sheet) */
 .merchant-root .caltoday-l{flex:none;font-size:.86rem;font-weight:800}

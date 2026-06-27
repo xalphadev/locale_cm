@@ -84,24 +84,28 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
 
       {!ready ? (
         <div className="avail-empty">
-          <span className="avail-empty-ic"><Icon n="calendar" size={28} /></span>
-          <p className="avail-empty-t">ลูกค้าอยากเข้าพักช่วงไหน?</p>
-          <p className="avail-empty-s">เลือกช่วงวัน + จำนวนคน แล้วดูห้องที่ว่าง</p>
+          <div className="avail-hero">
+            <span className="avail-empty-ic"><Icon n="calendar" size={26} /></span>
+            <p className="avail-empty-t">ลูกค้าอยากเข้าพักช่วงไหน?</p>
+            <p className="avail-empty-s">เลือกช่วงวัน · จำนวนคน แล้วดูห้องที่ว่างทันที</p>
+          </div>
           <AvailabilitySearch defaultMode={defaultMode} minMonths={minMonths} />
         </div>
       ) : (
         <section className="avail-results">
-          <div className="avail-bar">
-            <b>ว่าง {freeCount} ห้อง</b>
-            <span className="avail-range">{fmtTh(from)} – {fmtTh(to)} · {barSpan}{pax ? ` · ${pax} คน` : ''}</span>
-            <a className="avail-redo" href="/merchant/units/available">เปลี่ยน</a>
-          </div>
+          <a className="avail-bar" href="/merchant/units/available">
+            <span className="avail-bar-main">
+              <b>ว่าง {freeCount} ห้อง</b>
+              <span className="avail-range">{fmtTh(from)} – {fmtTh(to)} · {barSpan}{pax ? ` · ${pax} คน` : ''}</span>
+            </span>
+            <span className="avail-redo">เปลี่ยน<Icon n="chevR" size={13} /></span>
+          </a>
           {freeCount === 0 ? (
             <div className="mempty"><span className="mempty-ic"><Icon n="bed" size={26} /></span>
               <p>ไม่มีห้องว่างช่วง {fmtTh(from)} – {fmtTh(to)} — <a href="/merchant/units/available">เปลี่ยนวัน</a></p></div>
           ) : groups.map((g) => (
             <div className="avail-grp" key={g.id || '_'}>
-              <div className="avail-grp-h"><span>{g.name}</span><i>{g.rooms.length} ห้องว่าง</i></div>
+              <div className="avail-grp-h"><span>{g.name}</span><i>{g.rooms.length} ว่าง</i></div>
               {g.rooms.map((r: any) => {
                 const span = r.monthly ? months : nights;
                 const spanLabel = r.monthly ? `${months} เดือน` : `${nights} คืน`;
@@ -109,8 +113,9 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                 const capWarn = pax > 0 && r.capacity != null && r.capacity < pax;
                 const minWarn = r.minStay > 0 && span < r.minStay;
                 const depositNote = r.depositMinor ? `มัดจำ ${baht(r.depositMinor)} — เก็บตอนเข้าพัก` : '';
-                const extra = [
-                  quoteMinor != null ? `≈ ${baht(quoteMinor)} · ${spanLabel}` : '',
+                const matchOk = !capWarn && !minWarn;
+                const matchLabel = capWarn ? `รับได้แค่ ${r.capacity} คน` : minWarn ? `ขั้นต่ำ ${r.minStay} ${r.monthly ? 'เดือน' : 'คืน'}` : 'ว่างครบช่วงนี้';
+                const fine = [
                   r.minStay > 0 ? `ขั้นต่ำ ${r.minStay} ${r.monthly ? 'เดือน' : 'คืน'}` : '',
                   r.depositMinor ? `มัดจำ ${baht(r.depositMinor)}` : '',
                 ].filter(Boolean).join(' · ');
@@ -118,9 +123,13 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                   <details className="avail-room" key={r.id}>
                     <summary className="avail-room-sum">
                       <span className="avail-rt">
-                        <span className="avail-rt-1"><b>ห้อง {r.code}</b>{r.capacity ? <em className={capWarn ? 'cap-warn' : 'cap-ok'}>{capWarn ? `รับได้แค่ ${r.capacity} คน` : `รับ ${r.capacity} คน`}</em> : null}</span>
-                        <i>{[r.unitName, r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</i>
-                        {extra ? <i className="avail-rt-q">{extra}</i> : null}
+                        <span className="avail-rt-1">
+                          <b>ห้อง {r.code}</b>
+                          <span className={`avail-match ${matchOk ? 'ok' : 'warn'}`}><Icon n={matchOk ? 'check' : 'clock'} size={11} />{matchLabel}</span>
+                        </span>
+                        <span className="avail-rt-meta">{[r.unitName, r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</span>
+                        {quoteMinor != null && <span className="avail-quote"><b>≈ {baht(quoteMinor)}</b><i>{spanLabel}</i></span>}
+                        {fine ? <span className="avail-fine">{fine}</span> : null}
                       </span>
                       <span className="avail-go-pill">จอง<Icon n="chevR" size={14} /></span>
                     </summary>
