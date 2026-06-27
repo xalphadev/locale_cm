@@ -1409,6 +1409,24 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* free rooms pop, busy rooms fade — at a glance which rooms take the whole range */
 .merchant-root tr.cal-find-free .caltl-rh{box-shadow:inset 3px 0 0 var(--m-jade,#12b76a)}
 .merchant-root tr.cal-find-busy{opacity:.4}
+.merchant-root .calfind-chip em{font-style:normal;font-size:.78rem;font-weight:800;color:var(--m-accent);margin-left:5px}
+/* two calendar action buttons (หาห้องว่าง / ปิดหลายห้อง) side by side */
+.merchant-root .calacts{display:flex;gap:8px;flex-wrap:wrap}
+/* today's arrivals / departures strip */
+.merchant-root .caltoday{display:flex;flex-direction:column;gap:7px;margin:0 0 11px;padding:10px 12px;border:1px solid var(--m-line);border-radius:13px;background:var(--m-surface)}
+.merchant-root .caltoday-g{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.merchant-root .caltoday-l{flex:none;font-size:.8rem;font-weight:800}
+.merchant-root .caltoday-l.in{color:var(--m-jade,#12b76a)}
+.merchant-root .caltoday-l.out{color:#c2410c}
+.merchant-root .caltoday-chip{padding:5px 10px;border-radius:8px;border:none;background:var(--m-sunk);font:inherit;font-size:.82rem;font-weight:700;color:var(--m-text);cursor:pointer}
+.merchant-root .caltoday-chip:active{transform:scale(.96)}
+/* bulk-close room picker */
+.merchant-root .bulkrooms{display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow:auto;padding:2px}
+.merchant-root .bulkrooms-th{align-self:flex-start;border:none;background:none;font:inherit;font-size:.82rem;font-weight:800;color:var(--m-accent);cursor:pointer;padding:0}
+.merchant-root .bulkrooms-r{display:flex;flex-wrap:wrap;gap:7px;margin-top:5px}
+.merchant-root .bulkroom{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;border-radius:9px;border:1px solid var(--m-line);background:#fff;font-size:.84rem;font-weight:700;color:var(--m-text);cursor:pointer}
+.merchant-root .bulkroom.on{background:var(--m-soft);border-color:var(--m-accent);color:var(--m-accent)}
+.merchant-root .bulkroom input{accent-color:var(--m-accent);margin:0}
 .merchant-root .caltl-t.calbars{table-layout:fixed;width:auto;min-width:100%}
 .merchant-root .cal-col-rh{width:98px}
 .merchant-root .cal-col-d{width:34px}

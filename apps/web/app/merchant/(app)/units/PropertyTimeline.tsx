@@ -3,7 +3,7 @@ import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '../ui';
 import { ConfirmSubmit } from '../ConfirmSubmit';
-import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction, moveBlockAction } from '../../actions';
+import { addRoomBlockAction, cancelRoomBlockAction, checkInAction, checkOutAction, editRoomBlockAction, moveBlockAction, bulkBlockRoomsAction } from '../../actions';
 
 // Interactive property timeline (rooms × the visible day window). Bookings render as CONTINUOUS BARS with
 // the guest name on them; rooms group by floor (collapsible) and are filterable + searchable for big
@@ -34,6 +34,11 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const [findMode, setFindMode] = useState(false);
   const [fFrom, setFFrom] = useState<string | null>(null);
   const [fTo, setFTo] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkSel, setBulkSel] = useState<Set<string>>(new Set());
+  const toggleRoom = (id: string) => setBulkSel((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleType = (rs: TLRoom[]) => setBulkSel((p) => { const n = new Set(p); const all = rs.every((r) => n.has(r.id)); rs.forEach((r) => all ? n.delete(r.id) : n.add(r.id)); return n; });
+  const bulkExit = () => { setBulkOpen(false); setBulkSel(new Set()); };
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggle = (t: string) => setCollapsed((p) => { const n = new Set(p); n.has(t) ? n.delete(t) : n.add(t); return n; });
   const money = (m: number | null, p: string | null) => (m == null ? '' : `฿${(m / 100).toLocaleString('th-TH')}${p === 'night' ? '/คืน' : p === 'month' ? '/เดือน' : ''}`);
@@ -81,6 +86,18 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
   const exitFind = () => { setFindMode(false); setFFrom(null); setFTo(null); };
   const quickBook = (r: TLRoom) => { setSel({ roomId: r.id, code: r.code, a: fFrom!, b: fTo! }); exitFind(); };
 
+  // today's arrivals / departures (computed from the blocks already loaded) — only when today is in view
+  const todayIn = days.includes(today);
+  type Mv = { code: string; guest: string | null; blk: Blk; roomId: string };
+  const arrivals: Mv[] = []; const departures: Mv[] = [];
+  if (todayIn) for (const r of rooms) for (const bl of r.blocks) {
+    if ((bl.k === 'stay' || bl.k === 'tenancy')) {
+      if (bl.s === today) arrivals.push({ code: r.code, guest: bl.guest, blk: bl, roomId: r.id });
+      if (bl.e === today) departures.push({ code: r.code, guest: bl.guest, blk: bl, roomId: r.id });
+    }
+  }
+  const openBlk = (m: Mv) => { setOpen({ blk: m.blk, code: m.code, roomId: m.roomId }); setEditing(false); setMoving(false); setSel(null); };
+
   // build a room's cells: continuous bars (colSpan) for booked spans, single cells for free/flag days
   const cells = (r: TLRoom) => {
     const out: any[] = [];
@@ -114,6 +131,23 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
 
   return (
     <>
+      {(arrivals.length > 0 || departures.length > 0) && (
+        <div className="caltoday">
+          {arrivals.length > 0 && (
+            <div className="caltoday-g">
+              <span className="caltoday-l in">🛬 เข้าวันนี้ {arrivals.length}</span>
+              {arrivals.map((m, i) => <button type="button" key={'a' + i} className="caltoday-chip" onClick={() => openBlk(m)}>{m.code}{m.guest ? ` · ${m.guest}` : ''}</button>)}
+            </div>
+          )}
+          {departures.length > 0 && (
+            <div className="caltoday-g">
+              <span className="caltoday-l out">🛫 ออกวันนี้ {departures.length}</span>
+              {departures.map((m, i) => <button type="button" key={'d' + i} className="caltoday-chip" onClick={() => openBlk(m)}>{m.code}{m.guest ? ` · ${m.guest}` : ''}</button>)}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="caltools">
         {types.length > 1 && (
           <div className="calchips">
@@ -126,9 +160,14 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
           <input value={qstr} onChange={(e) => setQstr(e.target.value)} placeholder="ค้นหาเลขห้อง / ชื่อแขก" inputMode="search" />
           {qstr && <button type="button" onClick={() => setQstr('')} aria-label="ล้าง"><Icon n="x" size={13} /></button>}
         </div>
-        <button type="button" className={`calfind-tg ${findMode ? 'on' : ''}`} onClick={() => { findMode ? exitFind() : (setFindMode(true), setSel(null), setOpen(null)); }}>
-          <Icon n="search" size={14} /> หาห้องว่าง
-        </button>
+        <div className="calacts">
+          <button type="button" className={`calfind-tg ${findMode ? 'on' : ''}`} onClick={() => { findMode ? exitFind() : (setFindMode(true), bulkExit(), setSel(null), setOpen(null)); }}>
+            <Icon n="search" size={14} /> หาห้องว่าง
+          </button>
+          <button type="button" className={`calfind-tg ${bulkOpen ? 'on' : ''}`} onClick={() => { bulkOpen ? bulkExit() : (setBulkOpen(true), setFindMode(false), setFFrom(null), setFTo(null), setSel(null), setOpen(null)); }}>
+            <Icon n="grid" size={14} /> ปิดหลายห้อง
+          </button>
+        </div>
       </div>
 
       {findMode && (
@@ -140,13 +179,48 @@ export function PropertyTimeline({ rooms, days, today, term, returnTo }: { rooms
               <div className="calfind-head"><b>{freeRooms.length > 0 ? `ว่าง ${freeRooms.length} ห้อง` : 'ไม่มีห้องว่าง'}</b><span>{fFrom} → {fTo}</span></div>
               {freeRooms.length > 0 && (
                 <div className="calfind-chips">
-                  {freeRooms.map((r) => <button type="button" key={r.id} className="calfind-chip" onClick={() => quickBook(r)}>ห้อง {r.code} <i>จอง ›</i></button>)}
+                  {freeRooms.map((r) => <button type="button" key={r.id} className="calfind-chip" onClick={() => quickBook(r)}>ห้อง {r.code}{r.priceMinor != null ? <em>{money(r.priceMinor, r.pricePeriod)}</em> : null} <i>จอง ›</i></button>)}
                 </div>
               )}
             </>
           )}
           <button type="button" className="calfind-x" onClick={exitFind} aria-label="ปิด"><Icon n="x" size={15} /></button>
         </div>
+      )}
+
+      {bulkOpen && (
+        <form className="tl-add" action={bulkBlockRoomsAction}>
+          <input type="hidden" name="returnTo" value={returnTo} />
+          <div className="tl-add-h">ปิดหลายห้องพร้อมกัน <span className="muted">(ปิดซ่อม / กันห้อง)</span></div>
+          <div className="fgrid">
+            <div className="field"><label>เริ่ม</label><input type="date" name="start_date" defaultValue={today} min={today} required /></div>
+            <div className="field"><label>ถึง (เช็คเอาท์)</label><input type="date" name="end_date" min={today} required /></div>
+          </div>
+          <div className="field"><label>ประเภท</label>
+            <select name="block_kind" defaultValue="maintenance"><option value="maintenance">ปิดซ่อม</option><option value="hold">กันห้อง (ชั่วคราว)</option></select>
+          </div>
+          <div className="field"><label>เลือกห้อง <span className="muted">({bulkSel.size} ห้อง)</span></label>
+            <div className="bulkrooms">
+              {groups.map((g) => (
+                <div className="bulkrooms-g" key={g.id || '_'}>
+                  <button type="button" className="bulkrooms-th" onClick={() => toggleType(g.rooms)}>{g.rooms[0].unitName} · {g.rooms.every((r) => bulkSel.has(r.id)) ? 'เอาออกทั้งหมด' : 'เลือกทั้งหมด'}</button>
+                  <div className="bulkrooms-r">
+                    {g.rooms.map((r) => (
+                      <label key={r.id} className={`bulkroom ${bulkSel.has(r.id) ? 'on' : ''}`}>
+                        <input type="checkbox" name="room" value={r.id} checked={bulkSel.has(r.id)} onChange={() => toggleRoom(r.id)} />{r.code}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <input name="note" placeholder="โน้ต (เช่น ทำความสะอาดใหญ่ / งานปรับปรุง)" maxLength={120} />
+          <div className="tl-add-acts">
+            <button type="button" className="dbtn" onClick={bulkExit}>ยกเลิก</button>
+            <button type="submit" className="dbtn primary" disabled={bulkSel.size === 0}>ปิด {bulkSel.size} ห้อง</button>
+          </div>
+        </form>
       )}
 
       {shown.length === 0 ? (

@@ -20,7 +20,7 @@ const fmtRange = (a: string, b: string) => {
 };
 const coll = (x: string, y: string) => (x || '').localeCompare(y || '', undefined, { numeric: true, sensitivity: 'base' });
 
-export default async function PropertyCalendar({ searchParams }: { searchParams: { d?: string; w?: string; ok?: string; error?: string } }) {
+export default async function PropertyCalendar({ searchParams }: { searchParams: { d?: string; w?: string; ok?: string; error?: string; made?: string; skipped?: string } }) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
@@ -74,6 +74,8 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
 
       {searchParams?.ok === 'moved' && <div className="banner-ok">✓ ย้ายห้องแล้ว</div>}
       {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ บันทึกแล้ว</div>}
+      {searchParams?.ok === 'bulk' && <div className="banner-ok">✓ ปิด {searchParams.made || 0} ห้องแล้ว{Number(searchParams.skipped) > 0 ? ` · ข้าม ${searchParams.skipped} ห้อง (มีจองทับช่วงนี้)` : ''}</div>}
+      {searchParams?.error === 'norooms' && <div className="banner-err">เลือกห้องอย่างน้อยหนึ่งห้อง</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ห้องปลายทางมีจองทับช่วงนี้แล้ว — เลือกห้องอื่น</div>}
       {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
       {searchParams?.error === 'daterange' && <div className="banner-err">วันเช็คเอาท์ต้องอยู่หลังวันเช็คอิน</div>}

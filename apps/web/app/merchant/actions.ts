@@ -1312,6 +1312,35 @@ export async function moveBlockAction(blockId: string, formData: FormData) {
   redirect(back + (back.includes('?') ? '&' : '?') + 'ok=moved');
 }
 
+/** Close MANY rooms for one date range at once (whole floor/type for an event, deep-clean, flood…). Each
+ *  room gets its own block; the GiST EXCLUDE skips any that already overlap (counted, not fatal). No money. */
+export async function bulkBlockRoomsAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const back = s(formData, 'returnTo') || '/merchant/units/calendar';
+  const err = (c: string) => redirect(back + (back.includes('?') ? '&' : '?') + 'error=' + c);
+  const from = s(formData, 'start_date'); const to = s(formData, 'end_date');
+  if (!isDate(from) || !isDate(to) || to <= from) err('daterange');
+  const roomIds = formData.getAll('room').map(String).filter((x) => UUID_RE.test(x));
+  if (roomIds.length === 0) err('norooms');
+  const kindIn = s(formData, 'block_kind');
+  const kind = ['maintenance', 'hold'].includes(kindIn) ? kindIn : 'maintenance';
+  const note = s(formData, 'note') || null;
+  const rows = await q<{ id: string; stay_unit_id: string | null }>(
+    `SELECT id, stay_unit_id FROM stay_room WHERE id = ANY($1::uuid[]) AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [roomIds, acc.place_id]);
+  let made = 0, skipped = 0; const units = new Set<string>();
+  for (const r of rows) {
+    try {
+      await q(`INSERT INTO stay_occupancy_block(place_id, room_id, start_date, end_date, block_kind, status, note) VALUES($1,$2,$3,$4,$5,'active',$6)`,
+        [acc.place_id, r.id, from, to, kind, note]);
+      made++; if (r.stay_unit_id) units.add(r.stay_unit_id);
+    } catch (e: any) { if (e?.code === '23P01') { skipped++; continue; } throw e; }
+  }
+  for (const u of units) await refreshUnitVacancy(u);
+  revalidatePath('/merchant/units', 'layout');
+  redirect(back + (back.includes('?') ? '&' : '?') + `ok=bulk&made=${made}&skipped=${skipped}`);
+}
+
 /** Close the loop: turn an agreed booking lead into a real calendar block (daily/managed). Auto-assigns
  *  the first room of the type free for the requested dates; the GiST EXCLUDE resolves any off-app race.
  *  No money — it only records the agreed dates as occupied + links the lead. */
