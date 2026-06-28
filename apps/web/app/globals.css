@@ -1565,26 +1565,26 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-quote i{font-weight:600}
 .merchant-root .avail-fine{font-weight:500;color:color-mix(in srgb,var(--m-muted) 90%,#fff)}
 /* จอง pill — soft jade fill + hairline ring (still a button, stops shouting on a list of 10) */
-.merchant-root .avail-go-pill{background:color-mix(in srgb,var(--m-jade) 16%,#fff);color:var(--m-jade);box-shadow:none;border:1px solid color-mix(in srgb,var(--m-jade) 30%,#fff)}
+.merchant-root .avail-go-pill{background:color-mix(in srgb,var(--m-jade) 16%,#fff);color:#0B6B45;box-shadow:none;border:1px solid color-mix(in srgb,var(--m-jade) 30%,#fff)}
 .merchant-root .avail-room--link:active .avail-go-pill{background:color-mix(in srgb,var(--m-jade) 26%,#fff)}
 /* one-shot results reveal (reduced-motion respected) */
 @keyframes availIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .merchant-root .avail-grp{animation:availIn .26s ease both}
-.merchant-root .avail-grp:nth-child(2){animation-delay:.04s}
-.merchant-root .avail-grp:nth-child(3){animation-delay:.08s}
+.merchant-root .avail-grp:nth-of-type(2){animation-delay:.04s}
+.merchant-root .avail-grp:nth-of-type(3){animation-delay:.08s}
 @media (prefers-reduced-motion:reduce){.merchant-root .avail-grp{animation:none}}
 /* BookReview consistency */
 .merchant-root .bookrev-sum{box-shadow:var(--av-lift);border-radius:20px}
 .merchant-root .bookrev-price b{font-size:1.16rem;font-variant-numeric:tabular-nums}
-.merchant-root .bookrev-verdict.is-book{background:color-mix(in srgb,var(--m-jade) 12%,#fff);color:var(--m-jade)}
+.merchant-root .bookrev-verdict.is-book{background:color-mix(in srgb,var(--m-jade) 12%,#fff);color:#0B6B45}
 /* WKWebView fallbacks — every modern primitive degrades to today's solid look */
 @supports not (background:color-mix(in srgb,#000 50%,#fff)){
   .merchant-root .avail-search,.merchant-root .avail-room{border-color:#ECEEF3}
   .merchant-root .avail-hero{border-color:#cfe0ff}
   .merchant-root .avail-fine{color:var(--m-muted)}
-  .merchant-root .avail-go-pill{background:#E4F6EC;color:#16A06A;border-color:#bfe6d4}
+  .merchant-root .avail-go-pill{background:#E4F6EC;color:#0B6B45;border-color:#bfe6d4}
   .merchant-root .avail-room--link:active .avail-go-pill{background:#d2efdf}
-  .merchant-root .bookrev-verdict.is-book{background:#E4F6EC;color:#16A06A}
+  .merchant-root .bookrev-verdict.is-book{background:#E4F6EC;color:#0B6B45}
 }
 @supports not ((-webkit-backdrop-filter:blur(2px)) or (backdrop-filter:blur(2px))){
   .merchant-root .avail-bar{background:linear-gradient(160deg,#f3f8ff,#fbfdff)}
