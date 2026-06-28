@@ -240,7 +240,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .mshell{max-width:440px;margin:0 auto;min-height:100vh;background:#fff;position:relative;padding-bottom:calc(100px + env(safe-area-inset-bottom));box-shadow:0 0 60px rgba(16,20,12,.14);overflow-x:hidden}
 /* header — clean frosted-white app bar (consumer-style), accent avatar, no heavy banner */
 .mtop{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;background:#fff;color:var(--m-text);padding:calc(13px + env(safe-area-inset-top)) 16px 13px}
-.mtop-ava{flex:none;width:42px;height:42px;border-radius:13px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.18rem;box-shadow:inset 0 0 0 1px rgba(26,115,232,.12)}
+.mtop-ava{flex:none;width:42px;height:42px;border-radius:13px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.18rem;box-shadow:inset 0 0 0 1px rgba(53,81,214,.12)}
 .mtop-l{flex:1;min-width:0}
 .mtop-brand{font-size:.6rem;font-weight:800;letter-spacing:.13em;color:var(--m-accent);text-transform:uppercase}
 .mtop-shop{font-size:1.12rem;font-weight:800;margin-top:1px;letter-spacing:-.02em;line-height:1.2;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -483,7 +483,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .mrow-nm{font-size:1rem}
 .merchant-root .mlist .mrow{box-shadow:var(--m-sh-soft)}   /* list rows sit flatter than floating cards */
 .merchant-root .dhero{border-radius:var(--r-card)}
-.merchant-root .rsec-ic,.merchant-root .pstat-ic,.merchant-root .fsec-ic,.merchant-root .factitem-ic{box-shadow:inset 0 0 0 1px rgba(26,115,232,.07)}
+.merchant-root .rsec-ic,.merchant-root .pstat-ic,.merchant-root .fsec-ic,.merchant-root .factitem-ic{box-shadow:inset 0 0 0 1px rgba(53,81,214,.07)}
 .merchant-root .pstat .n{font-size:2.15rem;letter-spacing:-.02em}
 .merchant-root .btn:active,.merchant-root .dbtn:active,.merchant-root .fchip:active{transform:scale(.98)}
 
@@ -714,7 +714,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* portfolio: brand card → branch rows */
 .merchant-root .bcard{background:var(--m-surface);border:1px solid var(--m-line);border-radius:var(--r-card);box-shadow:var(--m-sh-soft);padding:12px;margin-bottom:13px}
 .merchant-root .bcard-h{display:flex;align-items:center;gap:11px;padding:2px 2px 11px;border-bottom:1px solid var(--m-line)}
-.merchant-root .bcard-av{flex:none;width:40px;height:40px;border-radius:12px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;box-shadow:inset 0 0 0 1px rgba(26,115,232,.1)}
+.merchant-root .bcard-av{flex:none;width:40px;height:40px;border-radius:12px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;box-shadow:inset 0 0 0 1px rgba(53,81,214,.1)}
 .merchant-root .bcard-tx{flex:1;min-width:0}
 .merchant-root .bcard-nm{font-weight:800;font-size:1.04rem;letter-spacing:-.01em;color:var(--m-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .bcard-sub{font-size:.76rem;color:var(--m-muted);margin-top:1px}
@@ -752,7 +752,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .menu-row{display:flex;align-items:center;gap:12px;padding:.78rem .9rem;color:var(--m-text);border-bottom:1px solid var(--m-line);transition:background .12s}
 .merchant-root .menu-row:last-child{border-bottom:none}
 .merchant-root .menu-row:active{background:var(--m-sunk)}
-.merchant-root .menu-ic{flex:none;width:40px;height:40px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(26,115,232,.08)}
+.merchant-root .menu-ic{flex:none;width:40px;height:40px;border-radius:11px;background:var(--m-soft);color:var(--m-accent);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(53,81,214,.08)}
 .merchant-root .menu-tx{flex:1;min-width:0;font-weight:700;font-size:.95rem;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .merchant-root .menu-val{flex:none;font-weight:800;font-size:.95rem;color:var(--m-navy)}
 .merchant-root .menu-go{flex:none;color:#C2C9D4}
@@ -798,7 +798,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .bk-link:active{opacity:.65}
 .bk-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 /* summary card — the room-management home dashboard (occupancy + today's ops) */
-.bk-summary{margin:2px 0 14px;padding:16px 17px;border:1px solid #f1f4fa;border-radius:20px;background:linear-gradient(158deg,#f4f8ff,#fff 62%);box-shadow:0 6px 20px -10px rgba(20,24,52,.10),0 1px 2px rgba(20,24,52,.04)}
+.bk-summary{margin:2px 0 14px;padding:16px 17px;border:1px solid #f1f4fa;border-radius:20px;background:linear-gradient(158deg,#f6f7fd,#fff 62%);box-shadow:0 6px 20px -10px rgba(20,24,52,.10),0 1px 2px rgba(20,24,52,.04)}
 .bk-summary .occbar-track{height:12px}
 .bk-summary .occbar-track span{transition:width .55s cubic-bezier(.2,.8,.2,1)}
 .bk-sum-stats{display:flex;gap:8px}
@@ -825,7 +825,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .xlink-tx span{font-size:.8rem;color:var(--m-muted)}
 .merchant-root .xlink-go{color:var(--m-muted);flex:none}
 /* FAB — floating "+" add button (bottom-right) on the spoke list pages (no bottom nav to collide with) */
-.merchant-root .fab{position:fixed;z-index:45;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--m-accent);color:#fff;box-shadow:0 10px 24px -6px rgba(43,116,255,.5),0 3px 9px rgba(16,20,12,.18)}
+.merchant-root .fab{position:fixed;z-index:45;right:18px;bottom:calc(20px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--m-accent);color:#fff;box-shadow:0 10px 24px -6px rgba(53,81,214,.5),0 3px 9px rgba(16,20,12,.18)}
 .merchant-root .fab:active{transform:scale(.92)}
 .stayhub-h{font-size:.82rem;font-weight:700;color:var(--muted,#6b7280);margin:18px 0 9px}
 .stayhub-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
@@ -833,15 +833,15 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .stayhub-tile:hover{box-shadow:0 10px 26px -12px rgba(20,24,52,.18),0 2px 4px rgba(20,24,52,.05);border-color:#e9edf6}
 .stayhub-tile:active{transform:scale(.965);box-shadow:0 3px 10px -5px rgba(20,24,52,.14)}
 .stayhub-tile.hot{border-color:#f6d9a8;background:linear-gradient(165deg,#fffaf1,#fff 65%)}
-.stayhub-ic{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#eef3ff,#e1eaff);color:var(--m-accent,#3551D6);box-shadow:inset 0 0 0 1px rgba(43,116,255,.07)}
+.stayhub-ic{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#f1f3fc,#e6e9fa);color:var(--m-accent,#3551D6);box-shadow:inset 0 0 0 1px rgba(53,81,214,.07)}
 .stayhub-tile.hot .stayhub-ic{background:linear-gradient(150deg,#fdeccc,#fbe0b3);color:#e08c1d;box-shadow:inset 0 0 0 1px rgba(224,140,29,.1)}
 .stayhub-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .stayhub-badge{flex:none;background:#fbe7c6;color:#b46a04;font-size:.72rem;font-weight:800;padding:2px 9px;border-radius:999px}
 .stayhub-lb{font-weight:800;font-size:1.04rem}
 .stayhub-st{font-size:.8rem;color:var(--muted,#6b7280);font-weight:600}
 /* hub: getting-started card (brand-new property) */
-.stay-onboard{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:2px 0 4px;padding:15px 16px;border:1px solid #d3d9f6;border-radius:17px;background:linear-gradient(180deg,#f2f7ff,#fff)}
-.stay-onboard-ic{flex:0 0 auto;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#e3edff;color:var(--accent,#3551D6)}
+.stay-onboard{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:2px 0 4px;padding:15px 16px;border:1px solid #d3d9f6;border-radius:17px;background:linear-gradient(180deg,#f5f6fd,#fff)}
+.stay-onboard-ic{flex:0 0 auto;width:46px;height:46px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:#e9ecfa;color:var(--accent,#3551D6)}
 .stay-onboard-tx{flex:1 1 150px;min-width:0}
 .stay-onboard-t{font-weight:800;font-size:1.02rem;color:var(--text,#1a1a2e)}
 .stay-onboard-d{font-size:.83rem;color:var(--muted,#5b6470);margin-top:2px;line-height:1.35}
@@ -858,14 +858,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* home: occupancy label (F7) + alert rows (F2/F3) + activity feed (F3) */
 .merchant-root .occ-label{font-size:.82rem;font-weight:700;color:var(--m-muted);margin-top:3px}
 /* home hero summary — vivid gradient card + a conic-gradient occupancy donut */
-.merchant-root .bk-summary.occ-hero{background:linear-gradient(135deg,#dbe8ff 0%,#e8f1ff 52%,#fbfdff 100%);border:1px solid #ecf2fc;box-shadow:0 12px 30px -14px rgba(43,100,220,.26),0 2px 6px -2px rgba(20,24,52,.05)}
+.merchant-root .bk-summary.occ-hero{background:linear-gradient(135deg,#e3e7f9 0%,#eef0fc 52%,#fbfdff 100%);border:1px solid #eff1fc;box-shadow:0 12px 30px -14px rgba(53,81,214,.26),0 2px 6px -2px rgba(20,24,52,.05)}
 .merchant-root .occ-head{display:flex;align-items:center;justify-content:space-between;gap:14px}
 .merchant-root .occ-num{display:flex;flex-direction:column;line-height:1.1;min-width:0}
 .merchant-root .occ-num>b{font-size:2.5rem;font-weight:800;letter-spacing:-.02em;line-height:1}
 .merchant-root .occ-num-u{font-size:.92rem;font-weight:700;color:var(--m-text,#0e1322);margin-top:2px}
 .merchant-root .occ-num-u .muted{font-weight:600}
 .merchant-root .occ-num .occ-label{margin-top:5px;font-size:.8rem}
-.merchant-root .occ-ring{position:relative;flex:none;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--m-accent,#3551D6) calc(var(--p,0)*1%), #dfe6f5 0);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px -5px rgba(43,116,255,.4)}
+.merchant-root .occ-ring{position:relative;flex:none;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--m-accent,#3551D6) calc(var(--p,0)*1%), #dfe6f5 0);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 12px -5px rgba(53,81,214,.4)}
 .merchant-root .occ-ring::after{content:'';position:absolute;inset:7px;border-radius:50%;background:#fff}
 .merchant-root .occ-ring>span{position:relative;z-index:1;font-weight:800;font-size:1.15rem;color:var(--m-text,#0e1322);line-height:1}
 .merchant-root .occ-ring>span i{font-style:normal;font-size:.64rem;font-weight:700;color:var(--m-muted)}
@@ -970,7 +970,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .rb-hero-leg em{font-style:normal;font-size:.74rem;line-height:1;margin-left:-2px}
 /* FAB speed-dial menu (add room · multi-select · group-by · print) + group-by bottom sheet */
 .fabwrap{position:fixed;right:18px;bottom:22px;z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:11px}
-.rb-fabbtn{align-self:flex-end;width:56px;height:56px;border-radius:50%;background:var(--m-accent,#3551D6);color:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -6px rgba(43,100,220,.5);cursor:pointer;transition:transform .2s}
+.rb-fabbtn{align-self:flex-end;width:56px;height:56px;border-radius:50%;background:var(--m-accent,#3551D6);color:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px -6px rgba(53,81,214,.5);cursor:pointer;transition:transform .2s}
 .rb-fabbtn.fab-open{transform:rotate(45deg)}
 .fabmenu{display:flex;flex-direction:column;align-items:flex-end;gap:9px;animation:fabin .15s ease}
 @keyframes fabin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -1001,7 +1001,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .roomview-i.on{background:#fff;color:var(--m-accent);box-shadow:0 2px 7px -2px rgba(20,24,52,.16)}
 .merchant-root .roomview-i svg{flex:none}
 /* "ผู้เข้าพักตอนนี้" box on the room detail (who's-in-which-room) */
-.merchant-root .guestbox{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;border:1px solid var(--m-line);border-radius:14px;background:linear-gradient(180deg,#f4f8ff,#fff)}
+.merchant-root .guestbox{display:flex;align-items:center;gap:10px;margin:0 0 14px;padding:13px 15px;border:1px solid var(--m-line);border-radius:14px;background:linear-gradient(180deg,#f6f7fd,#fff)}
 .merchant-root .guestbox-l{flex:1;min-width:0}
 .merchant-root .guestbox-k{font-size:.72rem;font-weight:700;color:var(--m-muted);text-transform:uppercase;letter-spacing:.02em}
 .merchant-root .guestbox-nm{font-size:1.1rem;font-weight:800;color:var(--m-text);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1188,13 +1188,13 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .setupcard{background:var(--m-surface);border:1px solid var(--m-line);border-radius:16px;padding:14px 15px;margin:0 0 14px;box-shadow:var(--m-sh-soft)}
 .merchant-root .setupcard-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
 .merchant-root .setupcard-ttl{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1rem;color:var(--m-text)}
-.merchant-root .setupcard-spark{flex:none;width:27px;height:27px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:rgba(43,116,255,.12);color:#3551D6}
-.merchant-root .setupcard-badge{flex:none;font-weight:700;font-size:.8rem;color:#3551D6;background:rgba(43,116,255,.10);padding:3px 11px;border-radius:999px}
+.merchant-root .setupcard-spark{flex:none;width:27px;height:27px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:rgba(53,81,214,.12);color:#3551D6}
+.merchant-root .setupcard-badge{flex:none;font-weight:700;font-size:.8rem;color:#3551D6;background:rgba(53,81,214,.10);padding:3px 11px;border-radius:999px}
 .merchant-root .setupbar{height:6px;border-radius:999px;background:var(--m-sunk);overflow:hidden;margin-bottom:13px}
 .merchant-root .setupbar>span{display:block;height:100%;border-radius:999px;background:#3551D6;transition:width .35s ease}
 .merchant-root .setupsteps{display:flex;flex-direction:column;gap:7px}
 .merchant-root .setupstep{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--m-sunk);text-decoration:none;color:var(--m-text);font-weight:600;font-size:.9rem;border:1px solid transparent}
-.merchant-root .setupstep.now{background:rgba(43,116,255,.07);border-color:rgba(43,116,255,.28)}
+.merchant-root .setupstep.now{background:rgba(53,81,214,.07);border-color:rgba(53,81,214,.28)}
 .merchant-root .setupstep.done{background:transparent}
 .merchant-root .setupstep-tx{flex:1}
 .merchant-root .setupstep.done .setupstep-tx{color:var(--m-muted);text-decoration:line-through;text-decoration-color:var(--m-line)}
@@ -1705,7 +1705,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .rev-mn-l{font-size:1rem;font-weight:800;color:var(--m-text);min-width:120px;text-align:center}
 .merchant-root .rev-mn-b{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:1px solid var(--m-line);background:#fff;color:var(--m-accent);text-decoration:none}
 .merchant-root .rev-mn-b.off{opacity:.3;pointer-events:none}
-.merchant-root .rev-hero{display:flex;align-items:center;gap:12px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#dbe8ff,#eef4ff);border:1px solid #e2ecfb;box-shadow:0 10px 26px -14px rgba(43,100,220,.28)}
+.merchant-root .rev-hero{display:flex;align-items:center;gap:12px;padding:18px;border-radius:18px;background:linear-gradient(135deg,#e3e7f9,#f2f4fc);border:1px solid #e8ebfa;box-shadow:0 10px 26px -14px rgba(53,81,214,.28)}
 .merchant-root .rev-hero-l{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .merchant-root .rev-cap{font-size:.82rem;font-weight:700;color:#3b5a8c}
 .merchant-root .rev-rev{font-size:2rem;font-weight:800;color:#16306a;line-height:1.1}
@@ -1729,7 +1729,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .rev-chart-h{font-weight:800;font-size:.92rem;color:var(--m-text);margin-bottom:14px}
 .merchant-root .rev-chart{display:flex;align-items:flex-end;gap:4px;height:130px}
 .merchant-root .rev-bar-w{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
-.merchant-root .rev-bar{width:100%;max-width:22px;min-height:3px;background:linear-gradient(180deg,#4d90ff,#3551D6);border-radius:5px 5px 0 0;position:relative;display:flex;justify-content:center}
+.merchant-root .rev-bar{width:100%;max-width:22px;min-height:3px;background:linear-gradient(180deg,#7b8de4,#3551D6);border-radius:5px 5px 0 0;position:relative;display:flex;justify-content:center}
 .merchant-root .rev-bar i{position:absolute;top:-15px;font-style:normal;font-size:.66rem;font-weight:800;color:var(--m-accent)}
 .merchant-root .rev-bar-w span{font-size:.58rem;color:var(--m-muted);font-weight:600;white-space:nowrap}
 /* small phones (iPhone SE / Flutter portrait): keep the revenue hero from crowding */
@@ -1755,7 +1755,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .hubpop-row{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:12px;background:var(--m-sunk);margin-bottom:8px}
 .merchant-root .hubpop-k{font-weight:700;font-size:.86rem;color:#3551D6}
 .merchant-root .hubpop-v{font-size:.85rem;line-height:1.5;color:var(--m-text)}
-.merchant-root .hubpop-foot{display:flex;align-items:center;gap:6px;margin:2px 0 0;padding:9px 11px;border-radius:10px;background:rgba(43,116,255,.09);color:#3551D6;font-size:.82rem;font-weight:600;line-height:1.4}
+.merchant-root .hubpop-foot{display:flex;align-items:center;gap:6px;margin:2px 0 0;padding:9px 11px;border-radius:10px;background:rgba(53,81,214,.09);color:#3551D6;font-size:.82rem;font-weight:600;line-height:1.4}
 
 /* ── section color identity (muted pastel duotone) — variety, not loud; CTAs/forms/anchor stay blue ── */
 .merchant-root{
