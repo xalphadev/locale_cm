@@ -106,8 +106,7 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                 const capWarn = pax > 0 && r.capacity != null && r.capacity < pax;
                 const minWarn = r.minStay > 0 && span < r.minStay;
                 const unit = r.monthly ? 'เดือน' : 'คืน';
-                const raw = r.imageUrls[0] || '';
-                const img = raw ? (raw.endsWith('.webp') ? raw.replace(/\.webp$/, '_thumb.webp') : raw) : '';
+                const img = r.imageUrls[0] || '';   // the display URL (always exists); a per-size thumb helper can come later
                 const rate = r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : '';
                 return (
                   <Link key={r.id} className="avail-card"

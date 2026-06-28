@@ -1570,7 +1570,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-mrow.under svg{color:#b45309}
 .merchant-root .avail-card-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border-top:1px solid var(--m-line);background:linear-gradient(180deg,#fbfdff,var(--m-surface))}
 .merchant-root .avail-card-price{display:flex;align-items:baseline;gap:6px;min-width:0}
-.merchant-root .avail-card-price b{font-size:1.16rem;font-weight:800;letter-spacing:-.02em;color:var(--m-ink);font-variant-numeric:tabular-nums}
+.merchant-root .avail-card-price b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:1.16rem;font-weight:800;letter-spacing:-.02em;color:var(--m-ink);font-variant-numeric:tabular-nums}
 .merchant-root .avail-card-price i{font-style:normal;font-size:.76rem;font-weight:600;color:var(--m-muted)}
 .merchant-root .avail-card-go{flex:none;display:inline-flex;align-items:center;gap:3px;padding:10px 18px;border-radius:999px;background:var(--m-accent);color:#fff;font-size:.9rem;font-weight:800;box-shadow:0 7px 16px -8px var(--m-accent)}
 .merchant-root .avail-card:active .avail-card-go{background:var(--m-accent-press)}
