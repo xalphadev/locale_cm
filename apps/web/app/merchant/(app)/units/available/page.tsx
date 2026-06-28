@@ -105,10 +105,11 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                 const quoteMinor = r.priceMinor != null ? r.priceMinor * span : null;
                 const capWarn = pax > 0 && r.capacity != null && r.capacity < pax;
                 const minWarn = r.minStay > 0 && span < r.minStay;
-                const matchOk = !capWarn && !minWarn;
-                const matchLabel = capWarn ? `รับได้แค่ ${r.capacity} คน` : minWarn ? `ขั้นต่ำ ${r.minStay} ${r.monthly ? 'เดือน' : 'คืน'}` : 'ว่างครบช่วงนี้';
-                const fine = [
-                  r.minStay > 0 ? `ขั้นต่ำ ${r.minStay} ${r.monthly ? 'เดือน' : 'คืน'}` : '',
+                const unit = r.monthly ? 'เดือน' : 'คืน';
+                // capacity + min-stay-info + deposit live in the quiet fine line; only an UNDER-MINIMUM stay earns a
+                // loud flag (it's the one actionable mismatch). capacity-under is a calm amber-text note, not a pill.
+                const fineRest = [
+                  r.minStay > 0 && !minWarn ? `ขั้นต่ำ ${r.minStay} ${unit}` : '',
                   r.depositMinor ? `มัดจำ ${baht(r.depositMinor)}` : '',
                 ].filter(Boolean).join(' · ');
                 return (
@@ -118,11 +119,16 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
                       <span className="avail-rt">
                         <span className="avail-rt-1">
                           <b>ห้อง {r.code}</b>
-                          <span className={`avail-match ${matchOk ? 'ok' : 'warn'}`}><Icon n={matchOk ? 'check' : 'clock'} size={11} />{matchLabel}</span>
+                          {minWarn && <span className="avail-match warn"><Icon n="clock" size={11} />ขั้นต่ำ {r.minStay} {unit}</span>}
                         </span>
-                        <span className="avail-rt-meta">{[r.unitName, r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</span>
+                        <span className="avail-rt-meta">{[r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</span>
                         {quoteMinor != null && <span className="avail-quote"><b>≈ {baht(quoteMinor)}</b><i>{spanLabel}</i></span>}
-                        {fine ? <span className="avail-fine">{fine}</span> : null}
+                        {(r.capacity || fineRest) && (
+                          <span className="avail-fine">
+                            {r.capacity ? <span className={capWarn ? 'fine-cap' : ''}>รับ {r.capacity} คน</span> : null}
+                            {r.capacity && fineRest ? ' · ' : ''}{fineRest}
+                          </span>
+                        )}
                       </span>
                       <span className="avail-go-pill">จอง<Icon n="chevR" size={14} /></span>
                     </span>

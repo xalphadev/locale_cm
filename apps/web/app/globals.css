@@ -1493,7 +1493,6 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-rt-1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .merchant-root .avail-rt-1 b{font-size:1.04rem;font-weight:800;letter-spacing:-.01em;color:var(--m-ink)}
 .merchant-root .avail-match{display:inline-flex;align-items:center;gap:3px;font-size:.69rem;font-weight:800;border-radius:999px;padding:.12rem .5rem;line-height:1.5}
-.merchant-root .avail-match.ok{color:var(--m-jade);background:#E4F6EC}
 .merchant-root .avail-match.warn{color:#b45309;background:#fff7ed}
 .merchant-root .avail-match svg{flex:none}
 .merchant-root .avail-rt-meta{font-size:.8rem;font-weight:600;color:var(--m-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1501,6 +1500,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-quote b{font-size:1.18rem;font-weight:800;letter-spacing:-.02em;color:var(--m-ink)}
 .merchant-root .avail-quote i{font-style:normal;font-size:.76rem;font-weight:700;color:var(--m-muted)}
 .merchant-root .avail-fine{font-size:.72rem;font-weight:600;color:var(--m-hint);margin-top:1px}
+.merchant-root .avail-fine .fine-cap{color:#b45309;font-weight:700}
 .merchant-root .avail-go-pill{flex:none;align-self:center;display:inline-flex;align-items:center;gap:2px;padding:9px 14px;border-radius:999px;background:var(--m-jade);color:#fff;font-size:.85rem;font-weight:800;box-shadow:0 6px 14px -8px rgba(22,160,106,.7)}
 /* date = the required step 1; CTA is never a silent dead-end (all scoped to .avail-search) */
 .merchant-root .avail-search .drp-trigger{--bg:var(--m-surface);--hairline:var(--m-line);--text:var(--m-text);--muted:var(--m-muted);--hint:var(--m-hint)}
