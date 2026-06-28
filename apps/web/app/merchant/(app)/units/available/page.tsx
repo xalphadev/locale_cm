@@ -39,7 +39,7 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
     nights = nightsOf(from, to); months = monthsOf(from, to);
     const rows = await q<any>(
       `SELECT r.id, r.code, r.floor, r.stay_unit_id,
-              su.name_i18n unit_name, su.price_minor, su.price_period, su.capacity, su.sort unit_sort, su.rental_mode, su.min_stay, su.deposit_minor
+              su.name_i18n unit_name, su.price_minor, su.price_period, su.capacity, su.sort unit_sort, su.rental_mode, su.min_stay, su.deposit_minor, su.image_urls
          FROM stay_room r
          LEFT JOIN stay_units su ON su.id = r.stay_unit_id
         WHERE r.place_id = $1 AND r.deleted_at IS NULL AND r.status='active'
@@ -57,6 +57,7 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
       priceMinor: r.price_minor != null ? Number(r.price_minor) : null, pricePeriod: r.price_period || null,
       capacity: r.capacity || null, unitSort: r.unit_sort ?? 9999,
       monthly: r.rental_mode === 'monthly', minStay: r.min_stay || 0, depositMinor: r.deposit_minor != null ? Number(r.deposit_minor) : 0,
+      imageUrls: Array.isArray(r.image_urls) ? r.image_urls.filter(Boolean) : [],
     })).sort((a, b) => (a.unitSort - b.unitSort) || coll(a.unitName, b.unitName) || coll(a.code, b.code));
     freeCount = mapped.length;
     for (const r of mapped) { const g = groups[groups.length - 1]; if (!g || g.id !== r.unitId) groups.push({ id: r.unitId, name: r.unitName, rooms: [r] }); else g.rooms.push(r); }
@@ -96,47 +97,49 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
           {freeCount === 0 ? (
             <div className="mempty"><span className="mempty-ic"><Icon n="bed" size={26} /></span>
               <p>ไม่มีห้องว่างช่วง {fmtTh(from)} – {fmtTh(to)} — <a href="/merchant/units/available">เปลี่ยนวัน</a></p></div>
-          ) : groups.map((g) => (
-            <div className="avail-grp" key={g.id || '_'}>
-              <div className="avail-grp-h"><span>{g.name}</span><i>{g.rooms.length} ว่าง</i></div>
-              {g.rooms.map((r: any) => {
+          ) : (
+            <div className="avail-list">
+              {groups.flatMap((g) => g.rooms).map((r: any) => {
                 const span = r.monthly ? months : nights;
                 const spanLabel = r.monthly ? `${months} เดือน` : `${nights} คืน`;
                 const quoteMinor = r.priceMinor != null ? r.priceMinor * span : null;
                 const capWarn = pax > 0 && r.capacity != null && r.capacity < pax;
                 const minWarn = r.minStay > 0 && span < r.minStay;
                 const unit = r.monthly ? 'เดือน' : 'คืน';
-                // capacity + min-stay-info + deposit live in the quiet fine line; only an UNDER-MINIMUM stay earns a
-                // loud flag (it's the one actionable mismatch). capacity-under is a calm amber-text note, not a pill.
-                const fineRest = [
-                  r.minStay > 0 && !minWarn ? `ขั้นต่ำ ${r.minStay} ${unit}` : '',
-                  r.depositMinor ? `มัดจำ ${baht(r.depositMinor)}` : '',
-                ].filter(Boolean).join(' · ');
+                const raw = r.imageUrls[0] || '';
+                const img = raw ? (raw.endsWith('.webp') ? raw.replace(/\.webp$/, '_thumb.webp') : raw) : '';
+                const rate = r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : '';
                 return (
-                  <Link key={r.id} className="avail-room avail-room--link"
+                  <Link key={r.id} className="avail-card"
                     href={`/merchant/units/available/book?room=${r.id}&from=${from}&to=${to}${searchMonthly ? '&mode=monthly' : ''}${pax ? `&pax=${pax}` : ''}`}>
-                    <span className="avail-room-sum">
-                      <span className="avail-rt">
-                        <span className="avail-rt-1">
+                    <div className="avail-card-top">
+                      {img
+                        ? <img className="avail-thumb" src={img} alt="" loading="lazy" />
+                        : <span className="avail-thumb avail-thumb-ph"><Icon n="bed" size={24} /></span>}
+                      <div className="avail-card-main">
+                        <div className="avail-card-h">
                           <b>ห้อง {r.code}</b>
-                          {minWarn && <span className="avail-match warn"><Icon n="clock" size={11} />ขั้นต่ำ {r.minStay} {unit}</span>}
-                        </span>
-                        <span className="avail-rt-meta">{[r.floor ? `${term} ${r.floor}` : '', r.priceMinor != null ? `${baht(r.priceMinor)}${perTh(r.pricePeriod)}` : ''].filter(Boolean).join(' · ')}</span>
-                        {quoteMinor != null && <span className="avail-quote"><b>≈ {baht(quoteMinor)}</b><i>{spanLabel}</i></span>}
-                        {(r.capacity || fineRest) && (
-                          <span className="avail-fine">
-                            {r.capacity ? <span className={capWarn ? 'fine-cap' : ''}>รับ {r.capacity} คน</span> : null}
-                            {r.capacity && fineRest ? ' · ' : ''}{fineRest}
-                          </span>
-                        )}
+                          {r.capacity ? <span className={`avail-cap${capWarn ? ' under' : ''}`}><Icon n="users" size={12} />{r.capacity}</span> : null}
+                        </div>
+                        <div className="avail-card-meta">
+                          <span className="avail-mrow"><Icon n="bed" size={13} />{r.unitName}</span>
+                          {r.floor ? <span className="avail-mrow"><Icon n="pin" size={13} />{term} {r.floor}</span> : null}
+                          {rate ? <span className="avail-mrow"><Icon n="tag" size={13} />{rate}</span> : null}
+                          {minWarn && <span className="avail-mrow under"><Icon n="clock" size={13} />ต่ำกว่าขั้นต่ำ {r.minStay} {unit}</span>}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="avail-card-foot">
+                      <span className="avail-card-price">
+                        {quoteMinor != null ? <><b>≈ {baht(quoteMinor)}</b><i>{spanLabel}</i></> : <i>{spanLabel}</i>}
                       </span>
-                      <span className="avail-go-pill">จอง<Icon n="chevR" size={14} /></span>
-                    </span>
+                      <span className="avail-card-go">จอง<Icon n="chevR" size={15} /></span>
+                    </div>
                   </Link>
                 );
               })}
             </div>
-          ))}
+          )}
         </section>
       )}
     </>
