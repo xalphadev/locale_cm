@@ -1488,12 +1488,76 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .avail-datefld>label{display:flex;align-items:center;gap:7px}
 .merchant-root .avail-req{font-size:.64rem;font-weight:800;letter-spacing:.02em;color:var(--m-accent);background:var(--m-soft);border-radius:999px;padding:.1rem .45rem}
 .merchant-root .avail-datefld:not(:has(.drp-tv.ph)) .avail-req{display:none}     /* relax the "จำเป็น" chip once a date is chosen */
-/* EMPTY trigger = the bright primary next-tap; auto-calms when the date drops the .ph placeholder class */
-.merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph){border-color:var(--m-accent);box-shadow:inset 0 0 0 1px var(--m-accent);background:var(--m-soft)}
-.merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph) .drp-tv.ph{color:var(--m-accent);font-weight:800}
-.merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph)>svg{color:var(--m-accent)}
+/* DATE TRIGGER — "anchored field": D3's softly-pressed iOS-settings groove (kept — founder hasn't rejected the
+   inset), but the affordance is re-anchored to a LEFT calendar TILE (::before, since the component's right-side
+   <svg> is fixed markup). The empty state breaks the all-blue read: accent lives ONLY in the tile, the
+   placeholder "เลือกวัน" is a calm INK-MUTED hint (so it reads empty, never a chosen value), and the redundant
+   in-trigger "เข้าพักวันที่" label is hidden while empty so the prompt centers against the tile. The :has(.drp-tv.ph)
+   hook flips to a clean filled state: ink-bold tabular date, label returns, tile fills solid accent (a quiet "done"). */
+.merchant-root .avail-datefld .drp-trigger{
+  position:relative;gap:12px;padding:.62rem .72rem;border-radius:14px;
+  border:1px solid color-mix(in srgb,var(--m-accent) 18%,var(--m-line));
+  background:linear-gradient(180deg,color-mix(in srgb,var(--m-soft) 24%,#fff),#fff);
+  /* tactile inner shadow: a darker top lip + a soft inset floor = "pressable groove", not a flat box */
+  box-shadow:inset 0 1px 1.5px rgba(14,19,34,.05),inset 0 0 0 1px rgba(255,255,255,.6);
+  transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease;
+}
+.merchant-root .avail-datefld .drp-trigger:active{transform:scale(.995);box-shadow:inset 0 2px 3px rgba(14,19,34,.1)}
+/* LEFT calendar TILE — our anchor, drawn with ::before so the component's HTML stays untouched. A 40px rounded
+   square holds the calendar glyph (data-URI SVG, accent stroke baked in → no color-mix needed for the icon). */
+.merchant-root .avail-datefld .drp-trigger::before{
+  content:"";flex:none;width:40px;height:40px;border-radius:11px;
+  background:color-mix(in srgb,var(--m-soft) 70%,#fff) center/21px 21px no-repeat;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232b69fe' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='16' rx='2.5'/%3E%3Cpath d='M3 9h18M8 2.5v4M16 2.5v4'/%3E%3C/svg%3E");
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-accent) 16%,transparent);
+  transition:background-color .16s ease,box-shadow .16s ease;
+}
+/* the tile is the single anchor → drop the component's far-right glyph in both states */
+.merchant-root .avail-datefld .drp-trigger>svg{display:none}
+.merchant-root .avail-datefld .drp-trigger .drp-tl{font-size:.72rem;letter-spacing:.01em;color:var(--m-hint)}
+.merchant-root .avail-datefld .drp-trigger .drp-tv{font-variant-numeric:tabular-nums;letter-spacing:-.005em}
+
+/* EMPTY — break the monochrome-blue: the prompt is a calm ink-muted hint (NOT accent, NOT 800) so it reads as an
+   empty invitation, never a selected value. Hide the redundant in-trigger label so "เลือกวัน" centers on the tile. */
+.merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph){
+  border-color:color-mix(in srgb,var(--m-accent) 28%,var(--m-line));
+}
+.merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph) .drp-tl{display:none}
+.merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph) .drp-tv.ph{
+  font-size:.95rem;font-weight:600;color:color-mix(in srgb,var(--m-ink) 48%,var(--m-muted));
+}
+/* FILLED — confirmed: label returns, ink-bold tabular value, surface flattens to white, tile fills solid accent */
+.merchant-root .avail-datefld .drp-trigger:not(:has(.drp-tv.ph)){background:#fff;border-color:var(--m-line)}
+.merchant-root .avail-datefld .drp-trigger:not(:has(.drp-tv.ph)) .drp-tv{color:var(--m-ink);font-weight:800}
+.merchant-root .avail-datefld .drp-trigger:not(:has(.drp-tv.ph))::before{
+  background-color:var(--m-accent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-ink) 8%,transparent);
+  /* white glyph on the solid accent tile */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4.5' width='18' height='16' rx='2.5'/%3E%3Cpath d='M3 9h18M8 2.5v4M16 2.5v4'/%3E%3C/svg%3E");
+}
+
+/* CTA-points-here pulse — a soft accent halo blooms, no harsh ring flash */
 .merchant-root .avail-datefld.pulse .drp-trigger{animation:availPulse 1.2s ease}
-@keyframes availPulse{0%,100%{box-shadow:inset 0 0 0 1px var(--m-accent)}30%{box-shadow:inset 0 0 0 2px var(--m-accent),0 0 0 4px var(--m-soft)}}
+@keyframes availPulse{
+  0%,100%{box-shadow:inset 0 1px 1.5px rgba(14,19,34,.05),0 0 0 0 transparent}
+  30%{box-shadow:inset 0 1px 1.5px rgba(14,19,34,.05),0 0 0 4px color-mix(in srgb,var(--m-soft) 80%,transparent)}
+}
+/* WKWebView fallback — no color-mix: solid pale-blue tint + flat accent hairline; the data-URI tile still renders */
+@supports not (background:color-mix(in srgb,#000 50%,#fff)){
+  .merchant-root .avail-datefld .drp-trigger{background:#fff;border-color:#cbdaff}
+  .merchant-root .avail-datefld .drp-trigger::before{background-color:var(--m-soft);box-shadow:inset 0 0 0 1px #cbdaff}
+  .merchant-root .avail-datefld .drp-trigger:has(.drp-tv.ph) .drp-tv.ph{color:#4a5570}
+  .merchant-root .avail-datefld .drp-trigger:not(:has(.drp-tv.ph))::before{background-color:var(--m-accent)}
+  @keyframes availPulse{0%,100%{box-shadow:inset 0 0 0 1px #cbdaff}30%{box-shadow:inset 0 0 0 1px var(--m-accent),0 0 0 4px var(--m-soft)}}
+}
+/* FORM COHESION (restrained) — the inset toggle/stepper/chips echo the date field's tactile, calm-accent language */
+.merchant-root .avail-req{font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;color:color-mix(in srgb,var(--m-accent) 70%,var(--m-muted));background:color-mix(in srgb,var(--m-soft) 60%,#fff);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-accent) 20%,transparent)}
+.merchant-root .avail-mode{box-shadow:inset 0 1px 1.5px rgba(14,19,34,.05)}
+.merchant-root .avail-mode button.on{box-shadow:0 1px 2px rgba(14,19,34,.08),inset 0 0 0 1px color-mix(in srgb,var(--m-accent) 22%,transparent)}
+.merchant-root .avail-step{box-shadow:inset 0 1px 1.5px rgba(14,19,34,.05)}
+.merchant-root .avail-step b{font-variant-numeric:tabular-nums}
+.merchant-root .pax-chips button.on{box-shadow:inset 0 0 0 1px var(--m-accent),0 1px 2px rgba(43,105,254,.14)}
+/* not-ready CTA — keep the soft-blue affordance, lift it onto the same soft-elevation tier as the card */
+.merchant-root .avail-go:not(.primary){box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--m-accent) 18%,transparent)}
 /* not-ready CTA = soft blue, still clearly tappable (it opens the calendar) — never a dead grey box */
 .merchant-root .avail-go:not(.primary){background:var(--m-soft);color:var(--m-accent);border-color:#cbdaff;box-shadow:none}
 .merchant-root .avail-go:not(.primary):active{transform:scale(.99);background:#cbdaff}
