@@ -1535,6 +1535,60 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .bookrev-cta{margin-top:2px}
 .merchant-root .bookrev-cta .dbtn{width:100%}
 .merchant-root .bookrev-confirm{margin:8px 0 0;font-size:.9rem;font-weight:600;color:var(--m-text);line-height:1.55}
+
+/* ───── หาห้องว่าง — "Soft Material" modern pass (scoped; tabular money · one soft-elevation tier · frosted bar) ───── */
+/* one ink-tinted soft-elevation tier, declared only on the avail/book roots so it can't leak app-wide */
+.merchant-root .avail-results,.merchant-root .avail-empty,.merchant-root .bookrev{--av-lift:0 1px 2px rgba(14,19,34,.045),0 10px 24px -16px rgba(14,19,34,.16)}
+/* EMPTY / SEARCH */
+.merchant-root .avail-hero{border-color:color-mix(in srgb,#cfe0ff 75%,#fff);box-shadow:0 1px 2px rgba(14,19,34,.04),0 8px 22px -14px rgba(14,19,34,.14)}
+.merchant-root .avail-empty-t{font-size:1.16rem;letter-spacing:-.012em}
+.merchant-root .avail-empty-s{font-weight:500}
+.merchant-root .avail-search{border-radius:20px;border-color:color-mix(in srgb,var(--m-line) 60%,transparent);box-shadow:var(--av-lift)}
+.merchant-root .avail-fld>label{font-size:.76rem;font-weight:700;letter-spacing:.02em;color:var(--m-muted)}
+.merchant-root .avail-mode{border-radius:12px}
+.merchant-root .avail-mode button{border-radius:10px;transition:background-color .14s,color .14s,transform .14s}
+.merchant-root .avail-mode button:active{transform:scale(.97)}
+.merchant-root .avail-step{border-radius:12px}
+.merchant-root .pax-chips button,.merchant-root .avail-step button{transition:transform .14s ease,background-color .14s}
+/* RESULTS — frosted sticky bar (.mtab already proves backdrop-filter ships in this webview) */
+.merchant-root .avail-bar{background:color-mix(in srgb,#fff 74%,transparent);-webkit-backdrop-filter:saturate(1.5) blur(14px);backdrop-filter:saturate(1.5) blur(14px);border:1px solid color-mix(in srgb,var(--m-soft) 70%,#fff);box-shadow:0 6px 16px -12px rgba(14,19,34,.26)}
+.merchant-root .avail-bar b{letter-spacing:-.015em;font-variant-numeric:tabular-nums}
+.merchant-root .avail-range{font-weight:500}
+.merchant-root .avail-grp-h i{color:var(--m-muted);font-variant-numeric:tabular-nums}
+/* soft floating room card + a FELT press (lift drops) instead of a blue flash */
+.merchant-root .avail-room{border-color:color-mix(in srgb,var(--m-line) 60%,transparent);box-shadow:var(--av-lift);transition:transform .14s ease,box-shadow .14s ease,border-color .14s}
+.merchant-root .avail-room--link:active{transform:translateY(1px) scale(.992);box-shadow:0 1px 2px rgba(14,19,34,.05);background:var(--m-surface);border-color:color-mix(in srgb,var(--m-line) 60%,transparent)}
+/* trusted numbers + weight contrast — one loud price, the rest hushed */
+.merchant-root .avail-rt-1 b{font-variant-numeric:tabular-nums}
+.merchant-root .avail-rt-meta{font-weight:500;font-variant-numeric:tabular-nums}
+.merchant-root .avail-quote b{font-size:1.26rem;font-variant-numeric:tabular-nums}
+.merchant-root .avail-quote i{font-weight:600}
+.merchant-root .avail-fine{font-weight:500;color:color-mix(in srgb,var(--m-muted) 90%,#fff)}
+/* จอง pill — soft jade fill + hairline ring (still a button, stops shouting on a list of 10) */
+.merchant-root .avail-go-pill{background:color-mix(in srgb,var(--m-jade) 16%,#fff);color:var(--m-jade);box-shadow:none;border:1px solid color-mix(in srgb,var(--m-jade) 30%,#fff)}
+.merchant-root .avail-room--link:active .avail-go-pill{background:color-mix(in srgb,var(--m-jade) 26%,#fff)}
+/* one-shot results reveal (reduced-motion respected) */
+@keyframes availIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.merchant-root .avail-grp{animation:availIn .26s ease both}
+.merchant-root .avail-grp:nth-child(2){animation-delay:.04s}
+.merchant-root .avail-grp:nth-child(3){animation-delay:.08s}
+@media (prefers-reduced-motion:reduce){.merchant-root .avail-grp{animation:none}}
+/* BookReview consistency */
+.merchant-root .bookrev-sum{box-shadow:var(--av-lift);border-radius:20px}
+.merchant-root .bookrev-price b{font-size:1.16rem;font-variant-numeric:tabular-nums}
+.merchant-root .bookrev-verdict.is-book{background:color-mix(in srgb,var(--m-jade) 12%,#fff);color:var(--m-jade)}
+/* WKWebView fallbacks — every modern primitive degrades to today's solid look */
+@supports not (background:color-mix(in srgb,#000 50%,#fff)){
+  .merchant-root .avail-search,.merchant-root .avail-room{border-color:#ECEEF3}
+  .merchant-root .avail-hero{border-color:#cfe0ff}
+  .merchant-root .avail-fine{color:var(--m-muted)}
+  .merchant-root .avail-go-pill{background:#E4F6EC;color:#16A06A;border-color:#bfe6d4}
+  .merchant-root .avail-room--link:active .avail-go-pill{background:#d2efdf}
+  .merchant-root .bookrev-verdict.is-book{background:#E4F6EC;color:#16A06A}
+}
+@supports not ((-webkit-backdrop-filter:blur(2px)) or (backdrop-filter:blur(2px))){
+  .merchant-root .avail-bar{background:linear-gradient(160deg,#f3f8ff,#fbfdff)}
+}
 /* today's arrivals / departures strip */
 /* today's-moves section labels (reused inside the moves sheet) */
 .merchant-root .caltoday-l{flex:none;font-size:.86rem;font-weight:800}
