@@ -18,6 +18,9 @@ export default async function StayHome() {
   if (!acc.offers_stay && !acc.manages_stay) redirect('/merchant');
 
   const managed = !!acc.manages_stay && acc.room_mode !== 'unique';
+  // ปฏิทินรวม (a 14/30-day timeline) is a night-by-night tool — a รายเดือน-only property hides it.
+  // (หาห้องว่าง STAYS: it also does monthly move-in search. Per-unit rental_mode still rules bookings.)
+  const nightly = acc.stay_mode !== 'monthly';
   const [reqs] = await q<any>(`SELECT count(*) FILTER (WHERE status='new')::int new_n, count(*)::int total FROM stay_booking_request WHERE place_id=$1 AND deleted_at IS NULL`, [acc.place_id]);
   const [tc] = await q<any>(`SELECT count(*)::int n FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL`, [acc.place_id]);
   const newN = reqs?.new_n || 0;
@@ -53,7 +56,7 @@ export default async function StayHome() {
   const usePct = total ? Math.round((rs!.occupied / total) * 100) : 0;
   const pct = (n: number) => (total ? `${(n / total) * 100}%` : '0%');
   const fmtD = (d: string) => (d ? new Date(d + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
-  const occLabel = total === 0 ? '' : usePct === 0 ? 'พร้อมรับแขก — ยังไม่มีจองวันนี้' : usePct >= 90 ? 'เกือบเต็มแล้ว' : usePct >= 50 ? 'มีผู้พักดี' : 'ห้องว่างเยอะ';
+  const occLabel = total === 0 ? '' : usePct === 0 ? (nightly ? 'พร้อมรับแขก — ยังไม่มีจองวันนี้' : 'ห้องว่างทั้งหมด — รอผู้เช่า') : usePct >= 90 ? 'เกือบเต็มแล้ว' : usePct >= 50 ? (nightly ? 'มีผู้พักดี' : 'มีผู้เช่าเข้าอยู่ดี') : 'ห้องว่างเยอะ';
   const soonTone = (d: string) => { const dd = Math.round((new Date(d + 'T00:00:00').getTime() - Date.now()) / 86400000); return dd <= 3 ? 'red' : dd <= 7 ? 'amber' : 'soon'; };
   const arrivals = today.filter((t) => t.is_in);
   const departures = today.filter((t) => t.is_out);
@@ -67,7 +70,7 @@ export default async function StayHome() {
     ...(booking ? [{ href: '/merchant/bookings', icon: 'chat', label: 'การจอง', stat: newN > 0 ? 'มีคำขอรอตอบ' : 'คำขอ + การจอง', hot: newN > 0, badge: newN || undefined }] : []),
     ...(managed ? [{ href: '/merchant/units', icon: 'grid', label: 'ผังห้อง', stat: total > 0 ? `${rs!.vacant} ห้องว่าง` : 'เพิ่มห้องจริง' }] : []),
     { href: '/merchant/rooms', icon: 'tag', label: 'ประเภท & ราคา', stat: `${tc?.n || 0} รูปแบบ` },
-    ...(managed ? [{ href: '/merchant/units/calendar', icon: 'calendar', label: 'ปฏิทินรวม', stat: 'ดูทั้งเดือน' }] : []),
+    ...((managed && nightly) ? [{ href: '/merchant/units/calendar', icon: 'calendar', label: 'ปฏิทินรวม', stat: 'ดูทั้งเดือน' }] : []),
     ...(managed ? [{ href: '/merchant/units/available', icon: 'search', label: 'หาห้องว่าง', stat: 'เช็คว่างตามวัน' }] : []),
     ...(booking ? [{ href: '/merchant/revenue', icon: 'wallet', label: 'รายได้ & สถิติ', stat: 'รายได้ · อัตราเข้าพัก' }] : []),
   ];

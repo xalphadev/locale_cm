@@ -22,7 +22,7 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   if (!acc?.place_id) redirect('/merchant/login');
   const [p] = await q<any>(
     `SELECT name_i18n, description_i18n, address_i18n, image_urls, opening_hours, phone, line_id, website, socials,
-            category::text category, subcategory, amenities, details, sells_products, offers_stay, manages_stay, room_mode, geo::text geo
+            category::text category, subcategory, amenities, details, sells_products, offers_stay, manages_stay, room_mode, stay_mode, geo::text geo
        FROM places WHERE id=$1`, [acc.place_id]);
   const socials: Record<string, string> = p?.socials || {};
   const details: Record<string, string> = p?.details || {};
@@ -104,6 +104,24 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
           <label className="check" style={{ marginTop: 8 }}><input type="checkbox" name="offers_stay" defaultChecked={!!p?.offers_stay} /> มีห้องพักให้เช่า — ขึ้นในหน้า “ที่พัก” ของลูกค้า + เปิดเมนูจัดการห้องพัก</label>
           {/* "ระบบการจอง" (manages_stay) + room-mode are details of "มีห้องพัก" — nested under it, auto-hidden when offers_stay is off (pure CSS :has, no JS). manages_stay value persists either way so a manage-only owner is never silently wiped. */}
           <div className="staygrp">
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>โหมดการเช่า</label>
+              <div className="modecards">
+                <label className="modecard">
+                  <input type="radio" name="stay_mode" value="nightly" defaultChecked={p?.stay_mode === 'nightly'} />
+                  <span className="modecard-b"><b>รายวัน</b><span>โรงแรม · โฮมสเตย์ · เกสต์เฮาส์ — จองเป็นคืน</span></span>
+                </label>
+                <label className="modecard">
+                  <input type="radio" name="stay_mode" value="monthly" defaultChecked={p?.stay_mode === 'monthly'} />
+                  <span className="modecard-b"><b>รายเดือน</b><span>หอพัก · อพาร์ตเมนต์ · คอนโด — เช่าระยะยาว</span></span>
+                </label>
+                <label className="modecard">
+                  <input type="radio" name="stay_mode" value="both" defaultChecked={(p?.stay_mode || 'both') === 'both'} />
+                  <span className="modecard-b"><b>ทั้งสองแบบ</b><span>มีทั้งห้องรายวันและรายเดือน</span></span>
+                </label>
+              </div>
+              <p className="fhint">เลือกให้ตรงกับที่พัก — ระบบจะแสดงเฉพาะเมนูที่เกี่ยวข้อง (รายเดือนจะซ่อนปฏิทินรายวัน/หาห้องว่าง)</p>
+            </div>
             <label className="check"><input type="checkbox" name="manages_stay" defaultChecked={!!p?.manages_stay} /> เปิดระบบการจอง — รับจองในแอป (คำขอจอง · จองออนไลน์+จ่ายเงิน) + ผังห้อง · ปฏิทิน · เช็คอิน/เช็คเอาท์</label>
             <p className="fhint">ปิดไว้ = ลูกค้าเห็นห้อง+ราคา แล้ว<b>โทร/แอดไลน์หาเอง</b> (ไม่มีปุ่มจองในแอป) · เปิด = รับจอง + บริหารห้องครบในระบบ</p>
             <div className="field" style={{ marginTop: 12 }}>

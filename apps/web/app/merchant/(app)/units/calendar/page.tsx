@@ -24,6 +24,7 @@ export default async function PropertyCalendar({ searchParams }: { searchParams:
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
+  if (acc.stay_mode === 'monthly') redirect('/merchant/stay');   // day-by-day timeline is nightly-only; รายเดือน has no tile for it
   const term = acc.room_group_term || 'ชั้น';
 
   const month = searchParams?.w === 'month';

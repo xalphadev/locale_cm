@@ -102,9 +102,15 @@ async function createBranchPlace(c: any, opts: {
   // in-app booking) — small unique-room places start listing-only (contact direct) and can opt in later.
   // All editable in /merchant/shop.
   const roomMode = spec.stay && ['homestay', 'guesthouse', 'house'].includes(opts.type) ? 'unique' : 'multi';
+  // operating mode (0057) defaulted from the accommodation kind: long-stay kinds → 'monthly',
+  // night-stay kinds → 'nightly', a rental house could be either → 'both'. Editable in /merchant/shop.
+  const stayMode = !spec.stay ? 'both'
+    : ['dorm', 'apartment', 'condo', 'mansion'].includes(opts.type) ? 'monthly'
+    : ['homestay', 'guesthouse', 'hotel'].includes(opts.type) ? 'nightly'
+    : 'both';
   await c.query(
-    `UPDATE places SET sells_products=$2, offers_stay=$3, manages_stay=$4, room_mode=$5, stay_kind=$6, source='merchant', brand_id=$7 WHERE id=$1`,
-    [pl.id, !!spec.sells, !!spec.stay, !!spec.stay && roomMode === 'multi', roomMode, spec.stay ? spec.subcategory : null, opts.brandId]);
+    `UPDATE places SET sells_products=$2, offers_stay=$3, manages_stay=$4, room_mode=$5, stay_kind=$6, stay_mode=$8, source='merchant', brand_id=$7 WHERE id=$1`,
+    [pl.id, !!spec.sells, !!spec.stay, !!spec.stay && roomMode === 'multi', roomMode, spec.stay ? spec.subcategory : null, opts.brandId, stayMode]);
   return pl.id as string;
 }
 
@@ -339,6 +345,7 @@ export async function updateShopAction(formData: FormData) {
   const offersStay = !!formData.get('offers_stay');
   const managesStay = !!formData.get('manages_stay');   // runs the room-management SaaS (0031); orthogonal to publishing
   const roomMode = ['multi', 'unique'].includes(s(formData, 'room_mode')) ? s(formData, 'room_mode') : 'multi';
+  const stayMode = ['nightly', 'monthly', 'both'].includes(s(formData, 'stay_mode')) ? s(formData, 'stay_mode') : 'both';
   const addressTh = s(formData, 'address_th').slice(0, 300).trim();
   // shop gallery: new files → MinIO, then rebuild image_urls from the PhotoManager order manifest (photo_order:
   // a JSON array of existing-URL | "new:k"). Existing URLs are validated against this place's own set so a
@@ -395,7 +402,7 @@ export async function updateShopAction(formData: FormData) {
        description_i18n = CASE WHEN $3<>'' THEN jsonb_set(COALESCE(description_i18n,'{}'),'{th}',to_jsonb($3::text)) ELSE description_i18n END,
        address_i18n = CASE WHEN $11<>'' THEN jsonb_build_object('th',$11::text) ELSE NULL END,
        phone = NULLIF($4,''), line_id = NULLIF($5,''), website = NULLIF($6,''),
-       sells_products = $7, offers_stay = $8, manages_stay = $9, room_mode = $10,
+       sells_products = $7, offers_stay = $8, manages_stay = $9, room_mode = $10, stay_mode = $17,
        image_urls  = CASE WHEN $12::text[] IS NOT NULL THEN $12 ELSE image_urls END,
        image_count = CASE WHEN $12::text[] IS NOT NULL THEN COALESCE(array_length($12,1),0) ELSE image_count END,
        opening_hours = CASE WHEN $13::jsonb IS NOT NULL THEN $13::jsonb ELSE opening_hours END,
@@ -404,7 +411,7 @@ export async function updateShopAction(formData: FormData) {
        details = $16::jsonb,
        updated_at = now()
      WHERE id = $1`,
-    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, imageUrls, hrsJson, socialsJson, amen.length ? amen : null, detailsJson]);
+    [acc.place_id, nameTh, descTh, phone, lineId, website, sells, offersStay, managesStay, roomMode, addressTh, imageUrls, hrsJson, socialsJson, amen.length ? amen : null, detailsJson, stayMode]);
 
   // Toggling a capability OFF hides its child rows (the tab disappears); toggling it back ON restores
   // exactly those, so re-enabling brings the listings back instead of stranding them as hidden.

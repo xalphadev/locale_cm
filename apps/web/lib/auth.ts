@@ -86,7 +86,7 @@ export async function currentAccount(): Promise<any | null> {
             r.eff_place_id AS place_id,
             p.name_i18n place_name, p.status::text place_status,
             (p.claim_verified_at IS NOT NULL) AS verified, p.phone AS place_phone, p.source::text AS place_source,
-            p.sells_products, p.offers_stay, p.manages_stay, p.room_group_term, p.room_mode, p.stay_kind, p.category::text category, p.subcategory,
+            p.sells_products, p.offers_stay, p.manages_stay, p.room_group_term, p.room_mode, p.stay_mode, p.stay_kind, p.category::text category, p.subcategory,
             b.id AS brand_id, b.name_i18n AS brand_name,
             (SELECT count(*)::int FROM brands bb
                WHERE bb.owner_account_id = r.id AND bb.status = 'active' AND bb.deleted_at IS NULL) AS brand_count,
