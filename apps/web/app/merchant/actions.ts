@@ -1388,7 +1388,7 @@ export async function convertLeadToBlockAction(leadId: string) {
 export async function convertMonthlyLeadAction(leadId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_months, rental_mode, contact_name FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
+  const [b] = await q<any>(`SELECT id, stay_unit_id, desired_from, desired_months, rental_mode, contact_name, contact_phone, contact_line, requester_user_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leadId, acc.place_id]);
   if (!b || !b.stay_unit_id || b.rental_mode !== 'monthly') redirect('/merchant/bookings?error=cvt');
   const months = Math.max(1, Math.min(36, Number(b.desired_months) || 1));
   const [su] = await q<{ managed: boolean }>(`SELECT managed FROM stay_units WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [b.stay_unit_id, acc.place_id]);
@@ -1416,6 +1416,17 @@ export async function convertMonthlyLeadAction(leadId: string) {
     await q(
       `UPDATE stay_room SET occupancy_status='occupied', occupied_until=(COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, note=$5, updated_at=now() WHERE id=$1 AND place_id=$2`,
       [room.id, acc.place_id, b.desired_from, String(months), tnote]);
+    // step 1: record a structured tenant + lease from the lead (record-only; reuse the lead's already-captured
+    // contact — no re-prompt, no consent: PDPA contract-performance basis). Terms (rent/deposit/วันชำระ) are
+    // added later on the booking/room detail via upsertLeaseAction. 0058.
+    const [tn] = await q<{ id: string }>(
+      `INSERT INTO stay_tenant(place_id, requester_user_id, full_name, phone, line_id)
+         VALUES($1,$2,$3,NULLIF($4,''),NULLIF($5,'')) RETURNING id`,
+      [acc.place_id, b.requester_user_id || null, b.contact_name || 'ผู้เช่า', b.contact_phone || '', b.contact_line || '']);
+    await q(
+      `INSERT INTO stay_lease(place_id, tenant_id, room_id, block_id, stay_unit_id, booking_request_id, start_date, end_date, status, created_by)
+         VALUES($1,$2,$3,$4,$5,$6, COALESCE($7::date, CURRENT_DATE), (COALESCE($7::date, CURRENT_DATE) + ($8 || ' months')::interval)::date, 'active', $9)`,
+      [acc.place_id, tn.id, room.id, blockId, b.stay_unit_id, leadId, b.desired_from, String(months), acc.id]);
   } else {
     const [u] = await q<{ available_units: number }>(
       `UPDATE stay_units SET available_units=GREATEST(0, available_units-1), availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND available_units>0 RETURNING available_units`, [b.stay_unit_id, acc.place_id]);
@@ -1425,6 +1436,39 @@ export async function convertMonthlyLeadAction(leadId: string) {
   await refreshUnitVacancy(b.stay_unit_id);
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout');
   redirect('/merchant/bookings?ok=converted_m');
+}
+
+/** Record/edit a TENANT + LEASE on an existing monthly tenancy block (0058) — record-only, no money custody.
+ *  Creates tenant+lease if none yet (the path for residents that pre-date this feature), else updates both.
+ *  สคบ.: deposit + advance ≤ 3× rent, billing day 1–31 — validated here (a record, not enforcement). */
+export async function upsertLeaseAction(blockId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(blockId)) redirect('/merchant/bookings');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/bookings';   // internal-only (no open redirect)
+  const [blk] = await q<any>(`SELECT bk.id, bk.room_id, r.stay_unit_id, bk.start_date, bk.end_date FROM stay_occupancy_block bk JOIN stay_room r ON r.id=bk.room_id WHERE bk.id=$1 AND bk.place_id=$2 AND bk.block_kind='tenancy' AND bk.deleted_at IS NULL`, [blockId, acc.place_id]);
+  if (!blk || !blk.room_id) redirect('/merchant/bookings');
+  const fullName = s(formData, 'full_name') || 'ผู้เช่า';
+  const idLast4 = s(formData, 'national_id_last4').replace(/\D/g, '').slice(-4);
+  const rent = bahtToMinor(s(formData, 'rent'));
+  const deposit = bahtToMinor(s(formData, 'deposit'));
+  const advance = bahtToMinor(s(formData, 'advance'));
+  const billRaw = parseInt(s(formData, 'billing_day'), 10);
+  const billingDay = billRaw >= 1 && billRaw <= 31 ? billRaw : null;
+  // สคบ.: advance + deposit ≤ 3 months' rent — only checkable once rent is recorded
+  if (rent && Number(deposit || 0) + Number(advance || 0) > 3 * rent) redirect(`${backTo}?error=deposit`);
+  const tArgs = [fullName, s(formData, 'phone'), s(formData, 'line_id'), idLast4, s(formData, 'emergency_name'), s(formData, 'emergency_phone')];
+  const [ex] = await q<{ id: string; tenant_id: string }>(`SELECT id, tenant_id FROM stay_lease WHERE block_id=$1 AND status='active' AND deleted_at IS NULL`, [blockId]);
+  if (ex) {
+    await q(`UPDATE stay_tenant SET full_name=$2, phone=NULLIF($3,''), line_id=NULLIF($4,''), national_id_last4=NULLIF($5,''), emergency_name=NULLIF($6,''), emergency_phone=NULLIF($7,''), updated_at=now() WHERE id=$1 AND place_id=$8`, [ex.tenant_id, ...tArgs, acc.place_id]);
+    await q(`UPDATE stay_lease SET rent_minor=$2, deposit_minor=$3, advance_minor=$4, billing_day=$5, updated_at=now() WHERE id=$1 AND place_id=$6`, [ex.id, rent, deposit, advance, billingDay, acc.place_id]);
+  } else {
+    const [tn] = await q<{ id: string }>(`INSERT INTO stay_tenant(place_id, full_name, phone, line_id, national_id_last4, emergency_name, emergency_phone) VALUES($1,$2,NULLIF($3,''),NULLIF($4,''),NULLIF($5,''),NULLIF($6,''),NULLIF($7,'')) RETURNING id`, [acc.place_id, ...tArgs]);
+    await q(`INSERT INTO stay_lease(place_id, tenant_id, room_id, block_id, stay_unit_id, start_date, end_date, rent_minor, deposit_minor, advance_minor, billing_day, status, created_by) VALUES($1,$2,$3,$4,$5, COALESCE($6::date,CURRENT_DATE), $7, $8,$9,$10,$11,'active',$12)`, [acc.place_id, tn.id, blk.room_id, blockId, blk.stay_unit_id, blk.start_date, blk.end_date, rent, deposit, advance, billingDay, acc.id]);
+  }
+  revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout');
+  redirect(`${backTo}?ok=lease`);
 }
 
 /** Host verifies an online-booking slip: mark the payment verified AND hold the room in one step (creates

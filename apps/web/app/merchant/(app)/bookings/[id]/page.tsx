@@ -4,7 +4,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction, markRefundedAction, collectBalanceAction } from '../../../actions';
+import { setLeadStatusAction, scheduleLeadAction, markNoShowAction, deleteLeadAction, convertLeadToBlockAction, convertMonthlyLeadAction, cancelBookingAction, checkInAction, checkOutAction, verifySlipAction, rejectSlipAction, markRefundedAction, collectBalanceAction, upsertLeaseAction } from '../../../actions';
 
 const PAY_TH: Record<string, string> = { submitted: 'รอตรวจสลิป', verified: 'ชำระแล้ว', rejected: 'สลิปไม่ผ่าน', refunded: 'คืนเงินแล้ว' };
 
@@ -56,11 +56,16 @@ export default async function BookingDetail({ params, searchParams }: { params: 
             (b.expires_at < now() AND b.status <> 'converted') expired_pii,
             b.status, b.scheduled_at, b.created_at, b.converted_block_id, b.checked_in_at, b.checked_out_at,
             b.ref, b.payment_status, b.amount_minor, b.deposit_minor, b.paid_minor, b.payment_method, b.slip_url, b.refunded_at, b.refunded_minor,
-            su.name_i18n unit_name, su.managed, r.code AS room_code, bk.note AS block_note
+            su.name_i18n unit_name, su.managed, r.code AS room_code, bk.note AS block_note,
+            l.id AS lease_id, l.rent_minor AS lease_rent, l.deposit_minor AS lease_deposit, l.advance_minor AS lease_advance,
+            l.billing_day, l.start_date AS lease_start, l.end_date AS lease_end,
+            t.full_name AS tenant_name, t.phone AS tenant_phone, t.line_id AS tenant_line, t.national_id_last4, t.emergency_name, t.emergency_phone
        FROM stay_booking_request b
        LEFT JOIN stay_units su ON su.id = b.stay_unit_id
        LEFT JOIN stay_occupancy_block bk ON bk.id = b.converted_block_id AND bk.deleted_at IS NULL
        LEFT JOIN stay_room r ON r.id = COALESCE(bk.room_id, b.room_id)
+       LEFT JOIN stay_lease l ON l.block_id = b.converted_block_id AND l.status='active' AND l.deleted_at IS NULL
+       LEFT JOIN stay_tenant t ON t.id = l.tenant_id AND t.deleted_at IS NULL
       WHERE b.id = $1 AND b.place_id = $2 AND b.deleted_at IS NULL`, [params.id, acc.place_id]) : [];
 
   if (!b) return (<MTopbar back="/merchant/bookings" backLabel="การจอง" title="ไม่พบการจอง" />);
@@ -85,6 +90,8 @@ export default async function BookingDetail({ params, searchParams }: { params: 
         {searchParams?.ok === 'rejected' && <div className="banner-ok">บันทึกว่าสลิปไม่ผ่านแล้ว</div>}
         {searchParams?.ok === 'collected' && <div className="banner-ok">✓ บันทึกรับเงินที่เหลือแล้ว</div>}
         {searchParams?.error === 'full' && <div className="banner-err">ห้องเต็มในช่วงวันนี้แล้ว — ติดต่อลูกค้าเพื่อเปลี่ยนวัน/คืนเงิน (กดสลิปไม่ผ่าน)</div>}
+        {searchParams?.ok === 'lease' && <div className="banner-ok">✓ บันทึกข้อมูลผู้เช่า/สัญญาแล้ว</div>}
+        {searchParams?.error === 'deposit' && <div className="banner-err">เงินประกัน + เงินล่วงหน้า รวมกันต้องไม่เกิน 3 เท่าของค่าเช่า/เดือน (ตาม สคบ.)</div>}
         <div className="bk-head">
           <span className={`t ${st.cls}`}>{st.label}</span>
           {b.checked_out_at ? <span className="t off">เช็คเอาท์แล้ว</span> : b.checked_in_at ? <span className="t season">กำลังเข้าพัก</span> : null}
@@ -148,6 +155,40 @@ export default async function BookingDetail({ params, searchParams }: { params: 
                 <form action={markRefundedAction.bind(null, b.id)}><ConfirmSubmit message="ยืนยันว่าได้คืนเงินให้ลูกค้าแล้ว? (คุณโอนคืนเอง — ระบบแค่บันทึก)" className="dbtn sm">บันทึกคืนเงิน ฿{Math.round(Number(b.paid_minor || b.amount_minor) / 100).toLocaleString()}</ConfirmSubmit></form>
               </div>
             )}
+          </>
+        )}
+
+        {b.rental_mode === 'monthly' && b.converted_block_id && (
+          <>
+            <h2 className="rsec"><span className="rsec-ic"><Icon n="users" size={15} /></span> ผู้เช่า · สัญญาเช่า</h2>
+            {b.lease_id ? (
+              <div className="factgrid">
+                <Fact ic="chat" l="ผู้เช่า" v={b.tenant_name || '—'} />
+                {b.lease_rent ? <Fact ic="wallet" l="ค่าเช่า/เดือน" v={`฿${Math.round(Number(b.lease_rent) / 100).toLocaleString()}`} /> : null}
+                {b.lease_deposit ? <Fact ic="wallet" l="เงินประกัน" v={`฿${Math.round(Number(b.lease_deposit) / 100).toLocaleString()}`} /> : null}
+                {b.lease_advance ? <Fact ic="wallet" l="ล่วงหน้า" v={`฿${Math.round(Number(b.lease_advance) / 100).toLocaleString()}`} /> : null}
+                {b.billing_day ? <Fact ic="calendar" l="วันชำระ" v={`ทุกวันที่ ${b.billing_day}`} /> : null}
+                <Fact ic="calendar" l="สัญญา" v={`${fmtDate(b.lease_start)} – ${b.lease_end ? fmtDate(b.lease_end) : 'ไม่มีกำหนด'}`} />
+              </div>
+            ) : <p className="note" style={{ marginTop: 0 }}>ยังไม่มีข้อมูลผู้เช่า/สัญญา — เพิ่มด้านล่างเพื่อบันทึกค่าเช่า/เงินประกัน/วันชำระ</p>}
+            <details className="lead-sched-f">
+              <summary className="dbtn"><Icon n="tag" size={15} /> {b.lease_id ? 'แก้ไขผู้เช่า/สัญญา' : 'เพิ่มข้อมูลผู้เช่า/สัญญา'}</summary>
+              <form action={upsertLeaseAction.bind(null, b.converted_block_id)}>
+                <input type="hidden" name="back" value={`/merchant/bookings/${b.id}`} />
+                <div className="field"><label>ชื่อผู้เช่า</label><input name="full_name" defaultValue={b.tenant_name || b.contact_name || ''} required /></div>
+                <div className="field"><label>โทร</label><input name="phone" inputMode="tel" defaultValue={b.tenant_phone || b.contact_phone || ''} /></div>
+                <div className="field"><label>LINE</label><input name="line_id" defaultValue={b.tenant_line || b.contact_line || ''} /></div>
+                <div className="field"><label>ค่าเช่า/เดือน (บาท)</label><input name="rent" type="number" min={0} inputMode="numeric" defaultValue={b.lease_rent ? Math.round(Number(b.lease_rent) / 100) : ''} /></div>
+                <div className="field"><label>เงินประกัน (บาท)</label><input name="deposit" type="number" min={0} inputMode="numeric" defaultValue={b.lease_deposit ? Math.round(Number(b.lease_deposit) / 100) : ''} /></div>
+                <div className="field"><label>เงินล่วงหน้า (บาท)</label><input name="advance" type="number" min={0} inputMode="numeric" defaultValue={b.lease_advance ? Math.round(Number(b.lease_advance) / 100) : ''} /></div>
+                <div className="field"><label>วันชำระเงิน (วันที่ของเดือน)</label><input name="billing_day" type="number" min={1} max={31} inputMode="numeric" defaultValue={b.billing_day || ''} /></div>
+                <div className="field"><label>บัตรประชาชน 4 ตัวท้าย</label><input name="national_id_last4" maxLength={4} inputMode="numeric" defaultValue={b.national_id_last4 || ''} /></div>
+                <div className="field"><label>ผู้ติดต่อฉุกเฉิน</label><input name="emergency_name" defaultValue={b.emergency_name || ''} /></div>
+                <div className="field"><label>เบอร์ฉุกเฉิน</label><input name="emergency_phone" inputMode="tel" defaultValue={b.emergency_phone || ''} /></div>
+                <button className="dbtn sm primary" type="submit"><Icon n="check" size={15} /> บันทึก</button>
+                <p className="note" style={{ margin: '6px 0 0' }}>เก็บข้อมูลเท่าที่จำเป็นเพื่อทำสัญญา/ออกบิล · ไม่ต้องถ่ายสำเนาบัตรประชาชน</p>
+              </form>
+            </details>
           </>
         )}
 
