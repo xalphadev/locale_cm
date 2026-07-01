@@ -1901,6 +1901,8 @@ export async function saveUtilityRatesAction(formData: FormData) {
     water_flat_minor: bahtToMinor(s(formData, 'water_flat')) ?? 0,
     common_fee_minor: bahtToMinor(s(formData, 'common_fee')) ?? 0,
     water_mode: s(formData, 'water_mode') === 'flat' ? 'flat' : 'metered',
+    late_fee_minor: bahtToMinor(s(formData, 'late_fee')) ?? 0,                                    // flat ค่าปรับจ่ายช้า (owner-set; a flat fee is สคบ.-safer than %/day)
+    late_fee_grace_days: Math.max(0, Math.min(60, parseInt(s(formData, 'late_fee_grace') || '0', 10) || 0)),
   };
   await q(`UPDATE places SET utility_rates=$2::jsonb, updated_at=now() WHERE id=$1`, [acc.place_id, JSON.stringify(rates)]);
   revalidatePath('/merchant/pricing');
@@ -2056,6 +2058,32 @@ export async function voidInvoiceAction(invoiceId: string, formData: FormData) {
   await q(`UPDATE stay_invoice SET status='void', updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [invoiceId, acc.place_id]);
   revalidatePath(backTo); revalidatePath('/merchant/bills');
   redirect(`${backTo}?ok=voided`);
+}
+
+/** Add a flat late-fee line to an OVERDUE unpaid invoice (0059) — record-only. Amount = the property's
+ *  utility_rates.late_fee_minor (owner-set). Idempotent: won't double-add if a late-fee line already exists. */
+export async function applyLateFeeAction(invoiceId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(invoiceId)) redirect('/merchant/bills');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/bills';
+  const [iv] = await q<any>(
+    `SELECT i.id, p.utility_rates FROM stay_invoice i JOIN places p ON p.id=i.place_id
+      WHERE i.id=$1 AND i.place_id=$2 AND i.deleted_at IS NULL AND i.status='issued' AND i.due_date < CURRENT_DATE`, [invoiceId, acc.place_id]);
+  if (!iv) redirect(`${backTo}?error=notoverdue`);
+  const fee = Number(iv.utility_rates?.late_fee_minor || 0);
+  if (!(fee > 0)) redirect(`${backTo}?error=nolatefee`);
+  // atomic single-add: insert the fee line only if none exists yet (idempotent + narrows a double-submit race),
+  // and bump the invoice total ONLY when a line was actually inserted (VAT off → total == subtotal, so +fee to both).
+  const [ins] = await q<{ id: string }>(
+    `INSERT INTO stay_invoice_line(invoice_id, kind, label, amount_minor, sort)
+       SELECT $1,'other','ค่าปรับชำระล่าช้า',$2,9
+        WHERE NOT EXISTS (SELECT 1 FROM stay_invoice_line WHERE invoice_id=$1 AND kind='other' AND label='ค่าปรับชำระล่าช้า')
+     RETURNING id`, [invoiceId, fee]);
+  if (ins) await q(`UPDATE stay_invoice SET subtotal_minor=subtotal_minor+$2, total_minor=total_minor+$2, updated_at=now() WHERE id=$1 AND place_id=$3`, [invoiceId, fee, acc.place_id]);
+  revalidatePath(backTo); revalidatePath('/merchant/bills');
+  redirect(`${backTo}?ok=latefee`);
 }
 
 /** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for

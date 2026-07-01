@@ -74,7 +74,11 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
             <div className="field"><label>ค่าน้ำ (บาท/หน่วย)</label><input name="water_rate" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.water_minor_per_unit ? Number(ur.water_minor_per_unit) / 100 : ''} placeholder="เช่น 18" /></div>
             <div className="field"><label>ค่าน้ำเหมา (บาท/เดือน)</label><input name="water_flat" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.water_flat_minor ? Number(ur.water_flat_minor) / 100 : ''} placeholder="เช่น 100" /></div>
           </div>
-          <p className="fhint">ห้องที่ตั้ง “รวมค่าน้ำ/ไฟ” ในรูปแบบห้อง จะไม่ถูกคิดรายการนั้นในบิล</p>
+          <div className="fgrid">
+            <div className="field"><label>ค่าปรับจ่ายช้า (บาท)</label><input name="late_fee" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.late_fee_minor ? Number(ur.late_fee_minor) / 100 : ''} placeholder="เช่น 100" /></div>
+            <div className="field"><label>ผ่อนผัน (วันหลังครบกำหนด)</label><input name="late_fee_grace" type="number" min={0} max={60} inputMode="numeric" defaultValue={ur.late_fee_grace_days || ''} placeholder="เช่น 3" /></div>
+          </div>
+          <p className="fhint">ห้องที่ตั้ง “รวมค่าน้ำ/ไฟ” ในรูปแบบห้อง จะไม่ถูกคิดรายการนั้นในบิล · ค่าปรับเป็นยอดคงที่ (แจ้งเองในบัญชีลูกหนี้เมื่อเกินกำหนด)</p>
           <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกอัตรา</button>
         </form>
       )}

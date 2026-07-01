@@ -206,6 +206,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
               {lease.phone ? <Fact ic="phone" l="โทร" v={lease.phone} /> : null}
             </div>
           ) : <p className="note" style={{ marginTop: 0 }}>ยังไม่มีข้อมูลผู้เช่า/สัญญาของห้องนี้ — เพิ่มด้านล่างเพื่อบันทึกค่าเช่า/เงินประกัน/วันชำระ</p>}
+          {lease.lease_id && <Link className="dbtn sm" href={`/merchant/bills/tenant/${lease.lease_id}`} style={{ margin: '0 0 8px' }}><Icon n="wallet" size={14} /> บัญชีลูกหนี้ / สเตทเมนต์</Link>}
           <details className="usettings">
             <summary><Icon n="tag" size={14} /> {lease.lease_id ? 'แก้ไขผู้เช่า/สัญญา' : 'เพิ่มข้อมูลผู้เช่า/สัญญา'}</summary>
             <form className="fsec" action={upsertLeaseAction.bind(null, lease.block_id)}>
