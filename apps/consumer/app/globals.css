@@ -1570,7 +1570,7 @@ a.rvform-gate{color:#2b74ff;background:rgba(43,116,255,.08)}
 .rvsubmit:disabled{background:#c7d2e0;cursor:not-allowed}
 
 /* online booking + slip payment (host-direct; platform never holds funds) */
-.bookpay-cta{display:flex;align-items:center;gap:9px;margin:0 0 12px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;text-decoration:none;font-weight:800;box-shadow:0 8px 22px -10px rgba(37,99,235,.6)}
+.bookpay-cta{display:flex;align-items:center;gap:9px;margin:0 0 12px;padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent-press));color:#fff;text-decoration:none;font-weight:800;box-shadow:0 8px 22px -10px rgba(37,99,235,.6)}
 .bookpay-cta span{flex:1}
 .bookpay-cta b{font-size:1rem;white-space:nowrap}
 .bookpay{display:flex;flex-direction:column;gap:14px;padding:0 16px 28px}
@@ -1579,31 +1579,31 @@ a.rvform-gate{color:#2b74ff;background:rgba(43,116,255,.08)}
 .bp-h{margin:0;font-size:1.02rem;font-weight:800;color:#16181d}
 .bp-fld{display:flex;flex-direction:column;gap:5px;font-size:.84rem;font-weight:700;color:#5b626e}
 .bp-fld input{font:inherit;font-size:1rem;font-weight:500;color:#16181d;padding:11px 12px;border:1px solid #dde1e8;border-radius:10px;background:#fff;width:100%}
-.bp-fld input:focus{outline:none;border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.bp-fld input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
 .bookpay .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .bp-total{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;background:#eff5ff;border:1px solid #d6e4ff;border-radius:14px;padding:14px 16px}
 .bp-total span{font-weight:700;color:#3b4350}
-.bp-total b{font-size:1.5rem;color:#1d4ed8;margin-left:auto}
+.bp-total b{font-size:1.5rem;color:var(--accent-press);margin-left:auto}
 .bp-total small{width:100%;color:#5b626e;font-size:.82rem}
 .bp-methods{display:flex;gap:8px}
 .bp-methods button{flex:1;padding:10px;border:1px solid #dde1e8;border-radius:10px;background:#fff;font:inherit;font-weight:700;color:#5b626e;cursor:pointer}
-.bp-methods button.on{border-color:#2563eb;background:#eff5ff;color:#1d4ed8}
+.bp-methods button.on{border-color:var(--accent);background:#eff5ff;color:var(--accent-press)}
 .bp-acct{background:#f7f9fc;border:1px dashed #cdd5e2;border-radius:12px;padding:13px 15px;display:flex;flex-direction:column;gap:6px}
 .bp-acct-row{display:flex;justify-content:space-between;gap:10px;font-size:.92rem}
 .bp-acct-row span{color:#6b7280}
 .bp-acct-row b{font-weight:800;color:#16181d}
 .bp-acct-amt{margin-top:4px;padding-top:8px;border-top:1px solid #e6eaf1;font-size:.95rem;color:#3b4350}
-.bp-acct-amt b{color:#1d4ed8;font-size:1.1rem}
-.bp-slip{display:block;text-align:center;padding:15px;border:1.5px dashed #2563eb;border-radius:12px;background:#eff5ff;color:#1d4ed8;font-weight:800;cursor:pointer;position:relative}
+.bp-acct-amt b{color:var(--accent-press);font-size:1.1rem}
+.bp-slip{display:block;text-align:center;padding:15px;border:1.5px dashed var(--accent);border-radius:12px;background:#eff5ff;color:var(--accent-press);font-weight:800;cursor:pointer;position:relative}
 .bp-slip input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}
-.bp-submit{padding:15px;border:none;border-radius:14px;background:#2563eb;color:#fff;font:inherit;font-size:1.05rem;font-weight:800;cursor:pointer;box-shadow:0 8px 22px -10px rgba(37,99,235,.6)}
+.bp-submit{padding:15px;border:none;border-radius:14px;background:var(--accent);color:#fff;font:inherit;font-size:1.05rem;font-weight:800;cursor:pointer;box-shadow:0 8px 22px -10px rgba(37,99,235,.6)}
 .bp-foot{text-align:center;font-size:.8rem;color:#6b7280;margin:0;line-height:1.5}
 .bookedok{display:flex;gap:10px;align-items:flex-start;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:13px 15px;color:#065f46}
 .bookedok b{font-weight:800}
 .bookedok span{display:block;font-size:.85rem;color:#3b6b5a;margin-top:2px;font-weight:500}
 .bp-qr{display:flex;flex-direction:column;align-items:center;gap:7px;padding:4px 0 11px;border-bottom:1px solid #e6eaf1;margin-bottom:5px}
 .bp-qr img{width:200px;height:200px;border-radius:12px;background:#fff;padding:8px;box-shadow:0 4px 14px -8px rgba(20,40,90,.25)}
-.bp-qr span{font-size:.78rem;color:#1d4ed8;font-weight:700;text-align:center}
+.bp-qr span{font-size:.78rem;color:var(--accent-press);font-weight:700;text-align:center}
 /* "จองออนไลน์ได้" discoverability badge on stay cards */
-.scard-online{display:inline-flex;align-items:center;gap:3px;margin-top:7px;padding:3px 9px;border-radius:999px;background:#e7f0ff;color:#1d4ed8;font-size:.74rem;font-weight:800}
-.rcard-online{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;background:#e7f0ff;color:#1d4ed8;font-size:.64rem;font-weight:800;vertical-align:1px}
+.scard-online{display:inline-flex;align-items:center;gap:3px;margin-top:7px;padding:3px 9px;border-radius:999px;background:#e7f0ff;color:var(--accent-press);font-size:.74rem;font-weight:800}
+.rcard-online{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;background:#e7f0ff;color:var(--accent-press);font-size:.64rem;font-weight:800;vertical-align:1px}
