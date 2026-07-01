@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { q, demoUserId, i18n, cover, pickCover, getLocale } from '@/lib/db';
 import { Icon, CAT_ICON } from './icons';
+import GeoCapture from './GeoCapture';
 import MapPeek from './MapPeek';
 import LangSwitch from './LangSwitch';
 import { facetsFor, facetLabel } from '@/lib/facets';
@@ -22,6 +24,12 @@ const dealLabel = (t: string, pct: any, minor: any) =>
   t === 'percent_off' ? `ลด ${Math.round(Number(pct))}%` : t === 'fixed_off' ? `ลด ฿${Math.round(Number(minor) / 100)}`
     : t === 'bogo' ? '1 แถม 1' : t === 'freebie' ? 'ของแถมฟรี' : 'ดีล';
 const daysLeft = (e: any) => (e ? Math.max(0, Math.ceil((new Date(e).getTime() - Date.now()) / 86400000)) : null);
+// walking-scale distance label from a coarse position — round hard so it never reads as exact
+const distLabel = (m: any) => {
+  const v = Number(m);
+  if (m == null || !isFinite(v)) return null;
+  return v < 1000 ? `${Math.max(50, Math.round(v / 50) * 50)} ม.` : v < 10000 ? `${(v / 1000).toFixed(1)} กม.` : `${Math.round(v / 1000)} กม.`;
+};
 const THM =['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 const CATS = [
   { i: 'coffee', l: 'คาเฟ่', qs: 'sub=cafe' }, { i: 'bowl', l: 'อาหาร', qs: 'sub=restaurant' },
@@ -57,22 +65,31 @@ const PJOIN = `FROM places p
   LEFT JOIN LATERAL (SELECT 1 x FROM media mv
     WHERE mv.owner_type='place' AND mv.owner_id=p.id AND mv.kind='video' AND mv.moderation_status='approved' LIMIT 1) vid ON true`;
 
-async function load(tab: string, cat: string, sub: string, query: string, facets: string[], area: string, wantResults = false) {
+async function load(tab: string, cat: string, sub: string, query: string, facets: string[], area: string,
+  pt: { lat: number; lng: number } | null, wantResults = false) {
   const uid = await demoUserId();
   const isFilter = !!(cat || sub || query || facets.length || area || wantResults);
-  const order = isFilter ? 'p.verified_at DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
+  // Grab-style lens: with a known position, ใกล้ฉัน ranks by pure distance and the default/filtered
+  // lists rank near-FIRST in 2km rings (quality still breaks ties inside a ring). hot/new stay global
+  // on purpose — they answer "อะไรฮิต/มาใหม่ในเชียงใหม่", not "ใกล้ไหม". $6=lng $7=lat (coarse, from c_geo).
+  const distExpr = `ST_Distance(p.geo, ST_SetSRID(ST_MakePoint($6,$7),4326)::geography)`;
+  let order = isFilter ? 'p.verified_at DESC NULLS LAST' : (ORDER[tab] || ORDER['']);
+  if (pt) {
+    if (tab === 'near' && !isFilter) order = distExpr;
+    else if (!tab || isFilter) order = `width_bucket(${distExpr}, 0, 10000, 5), ${order}`;
+  }
   const areas = await q<any>(
     `SELECT dist.slug, dist.name_i18n, count(*)::int n FROM places p JOIN districts dist ON dist.id=p.district_id
       WHERE p.status='published' AND p.is_visible AND NOT p.offers_stay
       GROUP BY dist.slug, dist.name_i18n ORDER BY n DESC`);
   const places = await q<any>(
-    `SELECT ${PCOLS} ${PJOIN}
+    `SELECT ${PCOLS}${pt ? `, ${distExpr} dist_m` : ''} ${PJOIN}
      WHERE p.status='published' AND p.is_visible AND NOT p.offers_stay
        AND ($1='' OR p.category::text=$1) AND ($2='' OR p.subcategory=$2)
        AND ($3='' OR p.name_i18n->>'th' ILIKE '%'||$3||'%' OR p.name_i18n->>'en' ILIKE '%'||$3||'%')
        AND (cardinality($4::text[])=0 OR p.amenities @> $4::text[])
        AND ($5='' OR dist.slug=$5)
-     ORDER BY ${order} LIMIT 40`, [cat, sub, query, facets, area]);
+     ORDER BY ${order} LIMIT 40`, [cat, sub, query, facets, area, ...(pt ? [pt.lng, pt.lat] : [])]);
   if (isFilter) return { mode: 'filter' as const, places, areas };
   const community = await q<any>(
     `SELECT r.rating, r.body_i18n, pr.display_name, p.id pid, p.name_i18n pname
@@ -114,6 +131,7 @@ function LRow({ p, rank }: { p: any; rank?: number }) {
             : open.label ? <span className="openpip closed"><i /> {open.label}</span> : null}
           {p.deal_type && <span className="promopill"><Icon n="tag" size={10} /> {dealLabel(p.deal_type, p.value_pct, p.value_minor)}</span>}
           {vb && <span className={`btag ${vb.c}`}>{vb.l}</span>}
+          {distLabel(p.dist_m) && <span><Icon n="pin" size={11} style={{ verticalAlign: '-.12em', color: 'var(--accent)' }} /> {distLabel(p.dist_m)}</span>}
           <span>{p.subcategory || catTH(p.category)}</span>
           {p.price_band && <><span className="mdot">·</span><span>{'฿'.repeat(Number(p.price_band))}</span></>}
           {scored && <><span className="mdot">·</span><span>{n} รีวิว</span></>}
@@ -148,8 +166,12 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
     } else { nameQ = query; }
   }
 
+  // coarse position from the c_geo cookie (written client-side by GeoCapture) → the near-first lens
+  const gm = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(cookies().get('c_geo')?.value ?? '');
+  const userPt = gm ? { lat: +gm[1], lng: +gm[2] } : null;
+
   let d: any;
-  try { d = await load(tab, cat, sub, nameQ, facets, area, !!query); }
+  try { d = await load(tab, cat, sub, nameQ, facets, area, userPt, !!query); }
   catch {
     return (<><div className="appbar"><div><div className="greet">Locale</div><div className="loc">เชียงใหม่</div></div></div>
       <div className="body"><p className="empty">ตอนนี้เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง</p></div></>);
@@ -160,6 +182,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
 
   const header = (
     <>
+      <GeoCapture want={tab === 'near' || nearMe} has={!!userPt} />
       <div className="appbar">
         <div><div className="greet">สำรวจรอบตัวคุณ</div>
           <div className="loc"><Icon n="pin" size={18} style={{ color: 'var(--accent)' }} /> เชียงใหม่</div></div>
@@ -312,6 +335,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       </div>
 
       <div className="segmented">{SEGS.map((s) => <Link key={s.k} href={s.k ? `/?tab=${s.k}` : '/'} className={`seg ${tab === s.k ? 'on' : ''}`}>{s.l}</Link>)}</div>
+      {tab === 'near' && !userPt && <p className="note" style={{ padding: '6px 16px 0', margin: 0 }}>อนุญาตการเข้าถึงตำแหน่ง เพื่อเรียงร้านจากใกล้ไปไกล</p>}
       <div className="llist">{d.places.map((p: any, i: number) => <LRow key={p.id} p={p} rank={i + 1} />)}</div>
 
       {d.community.length > 0 && (
