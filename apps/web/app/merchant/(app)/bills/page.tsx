@@ -5,13 +5,13 @@ import { q } from '@/lib/db';
 import { Icon } from '../ui';
 import { MTopbar } from '../MTopbar';
 import { generateAllInvoicesAction, markInvoicePaidAction } from '../../actions';
+import { ConfirmSubmit } from '../ConfirmSubmit';
 
 export const dynamic = 'force-dynamic';
 
 // Bills hub (0059): every monthly rent+utility invoice across the property, one place to see who owes and to
 // mark paid — plus "ออกบิลทั้งหอเดือนนี้" (batch-generate this month for every active lease). Record-only:
 // marking paid records the owner collected offline; the platform never holds funds. Monthly-mode only.
-const INV_ST: Record<string, string> = { draft: 'ร่าง', issued: 'รอชำระ', paid: 'ชำระแล้ว', void: 'ยกเลิก' };
 const baht = (m: any) => '฿' + Math.round(Number(m || 0) / 100).toLocaleString();
 const FILTERS = [{ k: 'unpaid', label: 'รอชำระ' }, { k: 'paid', label: 'ชำระแล้ว' }, { k: 'all', label: 'ทั้งหมด' }];
 
@@ -78,10 +78,10 @@ export default async function Bills({ searchParams }: { searchParams: { f?: stri
               <div className="mrow" key={iv.id} style={{ cursor: 'default' }}>
                 <Link href={`/merchant/bills/${iv.id}`} className="mrow-body" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <span className="mrow-nm">ห้อง {iv.room_code} · {iv.tenant_name || 'ผู้เช่า'}{partial ? ' · จ่ายบางส่วน' : ''}</span>
-                  <span className="mrow-meta">{iv.period_ym} · {partial ? `เหลือ ${baht(remaining)} / ${baht(iv.total_minor)}` : baht(iv.total_minor)} · ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}</span>
+                  <span className="mrow-meta">{iv.period_ym} · {partial ? `เหลือ ${baht(remaining)} / ${baht(iv.total_minor)}` : baht(iv.total_minor)} · ครบกำหนด {iv.due_d}</span>
                 </Link>
                 {iv.status === 'issued'
-                  ? <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value="/merchant/bills" /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> จ่ายเต็ม</button></form>
+                  ? <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value="/merchant/bills" /><ConfirmSubmit message={`บันทึกว่าชำระเต็มจำนวน (${baht(remaining)}) แล้ว?`} className="dbtn sm primary"><Icon n="check" size={14} /> จ่ายเต็ม</ConfirmSubmit></form>
                   : iv.status === 'paid' ? <span className="t sold">ชำระแล้ว</span> : null}
               </div>
             );

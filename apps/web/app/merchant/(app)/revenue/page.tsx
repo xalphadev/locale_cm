@@ -128,7 +128,7 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
               <div className="rev-hero-l">
                 <span className="rev-cap">เก็บได้เดือน{MONTHS[mon]}</span>
                 <b className="rev-rev">{baht(Number(mb?.collected || 0))}</b>
-                <span className="rev-sub">ออกบิล {baht(Number(mb?.billed || 0))}{Number(mb?.outstanding || 0) > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระรวม {baht(Number(mb.outstanding))}</b></> : ''}</span>
+                <span className="rev-sub">ออกบิล {baht(Number(mb?.billed || 0))}{Number(mb?.outstanding || 0) > 0 ? <> · <b style={{ color: 'var(--m-warn)' }}>ค้างชำระรวม {baht(Number(mb.outstanding))}</b></> : ''}</span>
               </div>
               <div className="rev-occ" title={`${nights} ÷ ${capacity} คืน-ห้อง`}><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
             </div>
@@ -165,7 +165,7 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
                           <span className="mrow-nm">ห้อง {rm.code}{rm.tenant_name ? ` · ${rm.tenant_name}` : ''}</span>
                           <span className="mrow-meta">ออกบิล {baht(Number(rm.billed || 0))} · เก็บได้ {baht(Number(rm.collected || 0))}</span>
                         </span>
-                        {out > 0 ? <span className="t" style={{ background: '#fef0c7', color: '#b54708' }}>ค้าง {baht(out)}</span> : <span className="t sold">ครบ</span>}
+                        {out > 0 ? <span className="t" style={{ background: 'var(--m-warn-soft)', color: 'var(--m-warn)' }}>ค้าง {baht(out)}</span> : <span className="t sold">ครบ</span>}
                       </Link>
                     );
                   })}
@@ -180,7 +180,7 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
           <div className="rev-hero-l">
             <span className="rev-cap">รายได้เดือน{MONTHS[mon]}</span>
             <b className="rev-rev">{baht(revenue)}</b>
-            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · เข้าพัก {nights}/{capacity} คืน-ห้อง{outstanding > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}{refunded > 0 ? <> · คืนเงิน {baht(refunded)}</> : ''}</span>
+            <span className="rev-sub">รับจริง · {m?.bookings || 0} การจอง · เข้าพัก {nights}/{capacity} คืน-ห้อง{outstanding > 0 ? <> · <b style={{ color: 'var(--m-warn)' }}>ค้างชำระ {baht(outstanding)}</b></> : ''}{refunded > 0 ? <> · คืนเงิน {baht(refunded)}</> : ''}</span>
           </div>
           <div className="rev-occ" title={`${nights} ÷ ${capacity} คืน`}><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
         </div>

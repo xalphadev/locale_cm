@@ -298,10 +298,10 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
                       {iv.status !== 'paid' && iv.status !== 'void' && (<>
                         <form action={recordPaymentAction.bind(null, iv.id)} style={{ display: 'flex', gap: 4 }}>
                           <input type="hidden" name="back" value={`/merchant/units/${r.id}`} />
-                          <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" style={{ width: 80, padding: '5px 6px', border: '1px solid var(--m-line)', borderRadius: 7, fontSize: '.8rem' }} />
+                          <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" className="pay-inline" />
                           <button className="dbtn sm" type="submit">รับชำระ</button>
                         </form>
-                        <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> จ่ายเต็ม</button></form>
+                        <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><ConfirmSubmit message={`บันทึกว่าชำระเต็มจำนวน (${baht(remaining)}) แล้ว?`} className="dbtn sm primary"><Icon n="check" size={14} /> จ่ายเต็ม</ConfirmSubmit></form>
                         <form action={voidInvoiceAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><ConfirmSubmit message="ยกเลิกบิลนี้?" className="dbtn sm danger">ยกเลิกบิล</ConfirmSubmit></form>
                       </>)}
                     </div>

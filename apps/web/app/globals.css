@@ -89,6 +89,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   --m-bg:#F8F7F3; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
   --m-accent:#2b69fe; --m-accent-press:#2254cb; --m-soft:#e0e9ff; --m-navy:#16284D; --m-gold:#FFB81C; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
+  /* semantic status tokens — ONE value per role (was ad-hoc hex scattered across billing screens) */
+  --m-danger:#c0392b; --m-danger-soft:#fdecec; --m-warn:#c2410c; --m-warn-soft:#fef0c7; --m-ok:#16A06A; --m-ok-soft:#e6f5ee;
+  /* alias the consumer-namespaced vars to the merchant palette IN SCOPE: many rules were ported from the
+     consumer app (leadcard/stayhub/occupancy hero/.drp/.bk-*) referencing --muted/--text/--hairline/--accent/
+     --surface. Without these they'd inherit the legacy document :root (brown --muted #5C5346) or a bare fallback,
+     and a theme change to --m-accent wouldn't reach them. */
+  --muted:var(--m-muted); --text:var(--m-text); --hairline:var(--m-line); --accent:var(--m-accent);
+  --accent-press:var(--m-accent-press); --surface:var(--m-surface); --sunk:var(--m-sunk); --soft:var(--m-soft);
   --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
   /* flat & clean — definition comes from hairline borders + spacing, not floating shadows */
   --m-sh:none;
@@ -465,7 +473,14 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .merchant-root .dbtn:active{transform:scale(.99)}
 .merchant-root .dbtn.primary{background:var(--m-ink);color:#fff;border-color:var(--m-ink)}
 .merchant-root .dbtn.danger{color:#C0392B;border-color:#F2C9C4;box-shadow:none}
-.merchant-root .dbtn.sm{width:auto;padding:.55rem .9rem;font-size:.84rem;box-shadow:none;border-color:#b8cdff;color:var(--m-accent)}
+.merchant-root .dbtn.sm{width:auto;min-height:40px;padding:.5rem .9rem;font-size:.84rem;box-shadow:none;border-color:#b8cdff;color:var(--m-accent)}
+/* segmented filter tabs (bills hub, repairs) — were referenced but never defined (rendered as bare links) */
+.merchant-root .segtabs{display:flex;gap:6px;margin:4px 0 12px;flex-wrap:wrap}
+.merchant-root .segtab{flex:0 0 auto;min-height:38px;display:inline-flex;align-items:center;padding:.45rem 1rem;border:1px solid var(--m-line);border-radius:999px;background:var(--m-surface);color:var(--m-muted);font-weight:700;font-size:.86rem;text-decoration:none}
+.merchant-root .segtab.on{background:var(--m-soft);color:var(--m-accent);border-color:transparent}
+.merchant-root .segtab:active{transform:scale(.98)}
+/* inline "รับชำระ" amount input — 16px stops iOS zoom-on-focus, min-height clears the 44px tap target */
+.merchant-root .pay-inline{font:inherit;font-size:16px;min-height:44px;width:96px;padding:8px 10px;border:1px solid var(--m-line);border-radius:var(--r-sm);background:var(--m-surface);color:var(--m-text)}
 
 /* ===== SOFT & AIRY refinements (bigger radii, airier spacing, borderless cards) ===== */
 .merchant-root .mbody h1,.merchant-root .listhead h1{letter-spacing:-.03em}

@@ -8,6 +8,7 @@ import { Icon, isUuid } from '../../../ui';
 import { MTopbar } from '../../../MTopbar';
 import ShareLink from '../../../ShareLink';
 import CopyText from '../../../CopyText';
+import { ConfirmSubmit } from '../../../ConfirmSubmit';
 import { markInvoicePaidAction, applyLateFeeAction, recordPaymentAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -88,7 +89,7 @@ export default async function TenantStatement({ params, searchParams }: { params
           <div className="bk-stat"><span className="bk-stat-n">{baht(sm?.paid)}</span><span className="bk-stat-l">ชำระแล้ว</span></div>
           <div className="bk-stat"><span className="bk-stat-n">{baht(sm?.billed)}</span><span className="bk-stat-l">ออกบิลรวม</span></div>
         </div>
-        {(sm?.overdue_n || 0) > 0 && <p className="note" style={{ margin: '4px 0 0', color: '#d92d20' }}>⚠ เกินกำหนด {sm.overdue_n} บิล · {baht(sm.overdue)}</p>}
+        {(sm?.overdue_n || 0) > 0 && <p className="note" style={{ margin: '4px 0 0', color: 'var(--m-warn)' }}>เกินกำหนด {sm.overdue_n} บิล · {baht(sm.overdue)}</p>}
       </div>
 
       {outstanding > 0 && (
@@ -103,20 +104,20 @@ export default async function TenantStatement({ params, searchParams }: { params
             const remaining = Number(iv.total_minor) - Number(iv.paid_minor || 0);
             const partial = iv.status === 'issued' && Number(iv.paid_minor) > 0;
             return (
-              <div className="mrow" key={iv.id} style={{ cursor: 'default' }}>
+              <div className="mrow" key={iv.id} style={{ cursor: 'default', ...(iv.status === 'issued' ? { flexDirection: 'column', alignItems: 'stretch', gap: 8 } : {}) }}>
                 <Link href={`/merchant/bills/${iv.id}`} className="mrow-body" style={{ textDecoration: 'none', color: 'inherit' }}>
                   <span className="mrow-nm">{iv.period_ym} · {baht(iv.total_minor)}{iv.overdue ? ' · เกินกำหนด' : ''}{partial ? ' · จ่ายบางส่วน' : ''}</span>
                   <span className="mrow-meta">ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}{partial ? ` · จ่ายแล้ว ${baht(iv.paid_minor)} · เหลือ ${baht(remaining)}` : ''}</span>
                 </Link>
                 {iv.status === 'issued' ? (
-                  <div className="lead-acts">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                     {iv.overdue && lateFee > 0 && <form action={applyLateFeeAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm" type="submit">+ ค่าปรับ</button></form>}
                     <form action={recordPaymentAction.bind(null, iv.id)} style={{ display: 'flex', gap: 4 }}>
                       <input type="hidden" name="back" value={back} />
-                      <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" style={{ width: 76, padding: '5px 6px', border: '1px solid var(--m-line)', borderRadius: 7, fontSize: '.8rem' }} />
+                      <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" className="pay-inline" />
                       <button className="dbtn sm" type="submit">รับชำระ</button>
                     </form>
-                    <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> จ่ายเต็ม</button></form>
+                    <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><ConfirmSubmit message={`บันทึกว่าชำระเต็มจำนวน (${baht(remaining)}) แล้ว?`} className="dbtn sm primary"><Icon n="check" size={14} /> จ่ายเต็ม</ConfirmSubmit></form>
                   </div>
                 ) : iv.status === 'paid' ? <span className="t sold">ชำระแล้ว</span> : null}
               </div>
