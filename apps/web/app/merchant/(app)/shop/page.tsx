@@ -94,7 +94,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
         <div className="info">
           {DAYS.map(([k, label]) => (
             <div className="info-row" key={k} style={k === today ? { fontWeight: 800 } : undefined}>
-              <span style={k === today ? { color: 'var(--m-accent-ink)', fontWeight: 700 } : undefined}>{label}{k === today ? ' · วันนี้' : ''}</span>
+              <span style={k === today ? { color: 'var(--m-accent)' } : undefined}>{label}{k === today ? ' · วันนี้' : ''}</span>
               <b style={hours[k] && hours[k] !== 'closed' ? undefined : { color: 'var(--m-muted)', fontWeight: 600 }}>{hr(k)}</b>
             </div>
           ))}

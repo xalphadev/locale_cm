@@ -68,7 +68,7 @@ export default function GeoPicker({ lat0, lng0 }: { lat0?: number | null; lng0?:
         {!ready && <div className="geopick-loading">กำลังโหลดแผนที่…</div>}
         {ready && (
           <div className="geopick-pin" aria-hidden>
-            <svg width="34" height="44" viewBox="0 0 24 32"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.5 12 20 12 20s12-11.5 12-20C24 5.37 18.63 0 12 0z" fill="#84cc16" stroke="#fff" strokeWidth="1.5" /><circle cx="12" cy="12" r="4.4" fill="#fff" /></svg>
+            <svg width="34" height="44" viewBox="0 0 24 32"><path d="M12 0C5.37 0 0 5.37 0 12c0 8.5 12 20 12 20s12-11.5 12-20C24 5.37 18.63 0 12 0z" fill="#2b69fe" stroke="#fff" strokeWidth="1.5" /><circle cx="12" cy="12" r="4.4" fill="#fff" /></svg>
           </div>
         )}
         <button type="button" className="geopick-gps" onClick={locate} disabled={locating || !ready}>
