@@ -4,7 +4,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
 import { MTopbar } from '../MTopbar';
 import { ConfirmSubmit } from '../ConfirmSubmit';
-import { createSeasonAction, deleteSeasonAction, createRateAction, deleteRateAction, updateStayPaymentAction } from '../../actions';
+import { createSeasonAction, deleteSeasonAction, createRateAction, deleteRateAction, updateStayPaymentAction, saveUtilityRatesAction } from '../../actions';
 import DateRangePicker from '../DateRangePicker';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +28,8 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
       ORDER BY r.created_at`, [acc.place_id]);
   const ratesByUnit: Record<string, any[]> = {};
   for (const r of rates) (ratesByUnit[r.stay_unit_id] ||= []).push(r);
-  const [pay] = await q<any>(`SELECT pay_promptpay, pay_bank, pay_account_no, pay_account_name, pay_online_enabled, pay_deposit_pct FROM places WHERE id=$1`, [acc.place_id]);
+  const [pay] = await q<any>(`SELECT pay_promptpay, pay_bank, pay_account_no, pay_account_name, pay_online_enabled, pay_deposit_pct, utility_rates FROM places WHERE id=$1`, [acc.place_id]);
+  const ur = pay?.utility_rates || {};
 
   return (
     <>
@@ -54,6 +55,29 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
         <div className="field"><label>เก็บมัดจำ (%)</label><input name="pay_deposit_pct" type="number" min={0} max={90} defaultValue={pay?.pay_deposit_pct || 0} inputMode="numeric" /><span className="fhint">เช่น 30% = เก็บก่อนเช็คอิน ที่เหลือจ่ายตอนเข้าพัก · 0 = ชำระเต็มจำนวน</span></div>
         <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกบัญชี</button>
       </form>
+
+      {acc.stay_mode !== 'nightly' && (
+        <form className="paycard" action={saveUtilityRatesAction}>
+          <div className="paycard-h"><Icon n="wallet" size={17} /> ค่าน้ำ / ค่าไฟ / ส่วนกลาง (บิลรายเดือน)</div>
+          <p className="note" style={{ margin: 0 }}>ใส่อัตรา<b>ตามจริง</b>ของการไฟฟ้า/ประปา — ตอนออกบิลระบบคิด “หน่วยที่ใช้ × อัตรานี้” (กฎหมายห้ามเก็บเกินจริง)</p>
+          <div className="fgrid">
+            <div className="field"><label>ค่าไฟ (บาท/หน่วย)</label><input name="electricity_rate" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.electricity_minor_per_unit ? Number(ur.electricity_minor_per_unit) / 100 : ''} placeholder="เช่น 5" /></div>
+            <div className="field"><label>ค่าส่วนกลาง (บาท/เดือน)</label><input name="common_fee" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.common_fee_minor ? Number(ur.common_fee_minor) / 100 : ''} placeholder="เช่น 300" /></div>
+          </div>
+          <div className="field"><label>ค่าน้ำ คิดแบบ</label>
+            <div className="modecards">
+              <label className="modecard"><input type="radio" name="water_mode" value="metered" defaultChecked={(ur.water_mode || 'metered') !== 'flat'} /><span className="modecard-b"><b>ตามมิเตอร์</b><span>คิดตามหน่วยที่ใช้</span></span></label>
+              <label className="modecard"><input type="radio" name="water_mode" value="flat" defaultChecked={ur.water_mode === 'flat'} /><span className="modecard-b"><b>เหมาจ่าย</b><span>คงที่/เดือน</span></span></label>
+            </div>
+          </div>
+          <div className="fgrid">
+            <div className="field"><label>ค่าน้ำ (บาท/หน่วย)</label><input name="water_rate" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.water_minor_per_unit ? Number(ur.water_minor_per_unit) / 100 : ''} placeholder="เช่น 18" /></div>
+            <div className="field"><label>ค่าน้ำเหมา (บาท/เดือน)</label><input name="water_flat" type="number" step="0.01" min={0} inputMode="decimal" defaultValue={ur.water_flat_minor ? Number(ur.water_flat_minor) / 100 : ''} placeholder="เช่น 100" /></div>
+          </div>
+          <p className="fhint">ห้องที่ตั้ง “รวมค่าน้ำ/ไฟ” ในรูปแบบห้อง จะไม่ถูกคิดรายการนั้นในบิล</p>
+          <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกอัตรา</button>
+        </form>
+      )}
 
       <p className="note">ตั้งราคาต่อ “รูปแบบห้อง” แยกตามช่วง (ไฮ/โลว์ซีซั่น) — เป็นราคาที่ใช้ <b>คิดยอด</b> ตอนลูกค้าจอง (ฐานราคาอยู่ในฟอร์มห้อง)</p>
 

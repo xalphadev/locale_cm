@@ -1886,6 +1886,149 @@ export async function updateStayPaymentAction(formData: FormData) {
   redirect(`/merchant/pricing?ok=pay${!enabled && !!formData.get('pay_online_enabled') ? '&warn=nochannel' : ''}`);
 }
 
+// ── monthly billing + utility metering (0059): record-only. Rent comes from stay_lease; utilities are metered
+//    (units × the owner-entered ACTUAL authority rate — no markup, สคบ.) and shown itemized. Invoice issued
+//    ≥3 days before due (สคบ. 2562). "Mark paid" is a recorded event, never a money movement / ledger post. ──
+
+/** Per-property utility tariffs (0059). Owner enters the ACTUAL MEA/PEA/waterworks ฿/unit (no markup — สคบ.);
+ *  stored as satang-per-unit in places.utility_rates. Water can be metered or a flat monthly charge. */
+export async function saveUtilityRatesAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireStayOwner(acc);
+  const rates = {
+    electricity_minor_per_unit: bahtToMinor(s(formData, 'electricity_rate')) ?? 0,
+    water_minor_per_unit: bahtToMinor(s(formData, 'water_rate')) ?? 0,
+    water_flat_minor: bahtToMinor(s(formData, 'water_flat')) ?? 0,
+    common_fee_minor: bahtToMinor(s(formData, 'common_fee')) ?? 0,
+    water_mode: s(formData, 'water_mode') === 'flat' ? 'flat' : 'metered',
+  };
+  await q(`UPDATE places SET utility_rates=$2::jsonb, updated_at=now() WHERE id=$1`, [acc.place_id, JSON.stringify(rates)]);
+  revalidatePath('/merchant/pricing');
+  redirect('/merchant/pricing?ok=rates');
+}
+
+/** Record cumulative meter reading(s) for a room (0059). Enter electric and/or water; same-day re-entry updates. */
+export async function recordMeterAction(roomId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(roomId)) redirect('/merchant/units');
+  const [r] = await q<{ id: string }>(`SELECT id FROM stay_room WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [roomId, acc.place_id]);
+  if (!r) redirect('/merchant/units');
+  const leaseId = UUID_RE.test(s(formData, 'lease_id')) ? s(formData, 'lease_id') : null;
+  for (const u of ['electricity', 'water'] as const) {
+    const raw = s(formData, u);
+    if (!raw) continue;
+    const val = Number(raw);
+    if (!Number.isFinite(val) || val < 0) continue;
+    await q(`INSERT INTO stay_meter_reading(place_id, room_id, lease_id, utility, reading_value, created_by)
+               VALUES($1,$2,$3,$4,$5,$6)
+             ON CONFLICT (room_id, utility, read_on) DO UPDATE SET reading_value=EXCLUDED.reading_value, updated_at=now()`,
+      [acc.place_id, roomId, leaseId, u, val, acc.id]);
+  }
+  revalidatePath(`/merchant/units/${roomId}`);
+  redirect(`/merchant/units/${roomId}?ok=meter`);
+}
+
+/** Generate the monthly rent+utility invoice for a lease (0059): rent (from lease) + metered electricity/water
+ *  (units × actual rate, from the room's last two readings) + common fee. Itemized, record-only. Idempotent per
+ *  (lease, month). สคบ.: due ≥ issue+3; utilities shown units×rate; utilities in bills_included aren't charged. */
+export async function generateInvoiceAction(leaseId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(leaseId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  const [ls] = await q<any>(
+    `SELECT l.id, l.room_id, l.tenant_id, l.rent_minor, COALESCE(l.billing_day,1) billing_day, l.attrs,
+            su.bills_included, p.utility_rates
+       FROM stay_lease l
+       LEFT JOIN stay_units su ON su.id=l.stay_unit_id
+       JOIN places p ON p.id=l.place_id
+      WHERE l.id=$1 AND l.place_id=$2 AND l.status='active' AND l.deleted_at IS NULL`, [leaseId, acc.place_id]);
+  if (!ls) redirect(`${backTo}?error=lease`);
+  if (ls.rent_minor == null) redirect(`${backTo}?error=norent`);
+  const periodIn = s(formData, 'period');
+  const period = /^\d{4}-\d{2}$/.test(periodIn) ? periodIn : null;
+  // period + สคบ. dates computed in pg (no TZ drift): due = billing_day of the month (day clamped to month length),
+  // pushed to at least CURRENT_DATE+3 so the ≥3-day-notice rule always holds; issue = today.
+  const [dt] = await q<{ period: string; issue: string; due: string }>(
+    `WITH d AS (SELECT COALESCE($1, to_char(CURRENT_DATE,'YYYY-MM')) ym)
+     SELECT ym period, to_char(CURRENT_DATE,'YYYY-MM-DD') issue,
+            to_char(GREATEST(
+              (to_date(ym||'-01','YYYY-MM-DD')
+                 + (LEAST($2::int, EXTRACT(day FROM (to_date(ym||'-01','YYYY-MM-DD') + interval '1 month - 1 day'))::int) - 1) * interval '1 day')::date,
+              CURRENT_DATE + 3), 'YYYY-MM-DD') due
+       FROM d`, [period, ls.billing_day]);
+  const rates: any = { ...(ls.utility_rates || {}), ...((ls.attrs && ls.attrs.utility_rates) || {}) };
+  const bills: string[] = ls.bills_included || [];
+  const lines: any[] = [{ kind: 'rent', label: 'ค่าเช่า', amount: Number(ls.rent_minor), sort: 0 }];
+  const skipped: string[] = [];                                   // metered utilities configured but not billable yet
+  const meterLine = async (utility: 'electricity' | 'water', label: string, rate: number, sort: number) => {
+    if (!(rate > 0) || bills.includes(utility)) return;           // not charged (no rate, or included in rent)
+    const rows = await q<{ reading_value: string }>(
+      `SELECT reading_value FROM stay_meter_reading WHERE room_id=$1 AND utility=$2 ORDER BY read_on DESC, created_at DESC LIMIT 2`, [ls.room_id, utility]);
+    if (rows.length < 2) { skipped.push(utility); return; }        // need prev + curr → omit + warn (e.g. first month has only a baseline)
+    const curr = Number(rows[0].reading_value), prev = Number(rows[1].reading_value);
+    const units = curr - prev;
+    if (!(units >= 0)) { skipped.push(utility); return; }          // meter reset/typo → omit + warn (never bill negative)
+    lines.push({ kind: utility, label, units, rate_minor: rate, prev, curr, amount: Math.round(units * rate), sort });
+  };
+  await meterLine('electricity', 'ค่าไฟ', Number(rates.electricity_minor_per_unit || 0), 1);
+  if ((rates.water_mode || 'metered') === 'flat') {
+    const wf = Number(rates.water_flat_minor || 0);
+    if (wf > 0 && !bills.includes('water')) lines.push({ kind: 'water', label: 'ค่าน้ำ (เหมาจ่าย)', amount: wf, sort: 2 });
+  } else {
+    await meterLine('water', 'ค่าน้ำ', Number(rates.water_minor_per_unit || 0), 2);
+  }
+  const common = Number(rates.common_fee_minor || 0);
+  if (common > 0 && !bills.includes('common_fee')) lines.push({ kind: 'common_fee', label: 'ค่าส่วนกลาง', amount: common, sort: 3 });
+  const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
+  let invId: string;
+  try {
+    const [inv] = await q<{ id: string }>(
+      `INSERT INTO stay_invoice(place_id, lease_id, room_id, tenant_id, period_ym, issue_date, due_date, subtotal_minor, total_minor, status, created_by)
+         VALUES($1,$2,$3,$4,$5,$6::date,$7::date,$8,$8,'issued',$9) RETURNING id`,
+      [acc.place_id, leaseId, ls.room_id, ls.tenant_id, dt.period, dt.issue, dt.due, subtotal, acc.id]);
+    invId = inv.id;
+  } catch (e: any) {
+    if (e?.code === '23505') redirect(`${backTo}?error=billexists`);
+    throw e;
+  }
+  for (const l of lines) {
+    await q(`INSERT INTO stay_invoice_line(invoice_id, kind, label, units, rate_minor, prev_reading, curr_reading, amount_minor, sort)
+               VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      [invId, l.kind, l.label, l.units ?? null, l.rate_minor ?? null, l.prev ?? null, l.curr ?? null, l.amount, l.sort]);
+  }
+  await q(`UPDATE stay_invoice SET ref=$2 WHERE id=$1`, [invId, 'INV-' + invId.slice(0, 6).toUpperCase()]);
+  revalidatePath(`/merchant/units/${ls.room_id}`); revalidatePath('/merchant/bills');
+  // "no silent caps": if a metered utility was configured but omitted (needs 2 readings), tell the owner.
+  redirect(`${backTo}?ok=billed${skipped.length ? '&warn=nometer' : ''}`);
+}
+
+/** Mark an invoice paid (0059) — a RECORDED event only; owner collected offline. Never posts to the ledger. */
+export async function markInvoicePaidAction(invoiceId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(invoiceId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  await q(`UPDATE stay_invoice SET status='paid', paid_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND status<>'void' AND deleted_at IS NULL`, [invoiceId, acc.place_id]);
+  revalidatePath(backTo); revalidatePath('/merchant/bills');
+  redirect(`${backTo}?ok=paid`);
+}
+
+/** Void an invoice (0059) — wrong/duplicate bill. Record-only. */
+export async function voidInvoiceAction(invoiceId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(invoiceId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  await q(`UPDATE stay_invoice SET status='void', updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [invoiceId, acc.place_id]);
+  revalidatePath(backTo); revalidatePath('/merchant/bills');
+  redirect(`${backTo}?ok=voided`);
+}
+
 /** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for
  *  non-sequential / named units) — the fast way to lay out a dorm. Existing codes are skipped + reported. */
 export async function createRoomsBulkAction(formData: FormData) {
