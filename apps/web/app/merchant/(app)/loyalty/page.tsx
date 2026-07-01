@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../ui';
+import { ConfirmSubmit } from '../ConfirmSubmit';
 import { createLoyaltyProgramAction, deleteRewardAction } from '../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -104,7 +105,7 @@ export default async function Loyalty({ searchParams }: { searchParams: { ok?: s
               <div className="mrow-meta">{KIND_LABEL[r.kind] || r.kind} · ใช้ {r.cost_stamps} {pointsName} · แลกไป {r.redeemed_count} ครั้ง</div>
             </div>
             <form action={deleteRewardAction.bind(null, r.id)}>
-              <button className="dbtn danger sm" type="submit" aria-label="ลบ"><Icon n="trash" size={15} /></button>
+              <ConfirmSubmit message="ลบของรางวัลนี้ออกจากรายการ?" className="dbtn danger sm" aria-label="ลบ"><Icon n="trash" size={15} /></ConfirmSubmit>
             </form>
           </div>
         ))}

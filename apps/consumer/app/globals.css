@@ -31,7 +31,7 @@ body{-webkit-tap-highlight-color:transparent}
 .top{padding:22px 20px 4px}
 .top .hi{color:var(--muted);font-size:.84rem;font-weight:500}
 .top h1{margin:.15rem 0 0;font-size:1.75rem;font-weight:800;letter-spacing:-.025em;line-height:1.15}
-.top .city{color:var(--accent);font-weight:600;font-size:.9rem;margin-top:.25rem}
+.top .city{color:var(--accent-press);font-weight:600;font-size:.9rem;margin-top:.25rem}
 .top .back{display:inline-block;color:var(--accent);font-weight:600;font-size:.92rem;margin-bottom:.3rem}
 .body{padding:10px 18px 16px}
 h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75rem}
@@ -115,7 +115,7 @@ h2{font-size:1.18rem;font-weight:700;letter-spacing:-.015em;margin:1.6rem 0 .75r
 /* "เหมาะสำหรับ" quick-scan highlights (derived from amenities) */
 .goodfor{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:2px 0 14px}
 .goodfor .goodfor-h{display:inline-flex;align-items:center;gap:4px;font-size:.82rem;font-weight:800;color:var(--accent)}
-.goodfor .gfpill{background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:.28rem .7rem;font-size:.82rem;font-weight:700}
+.goodfor .gfpill{background:var(--accent-soft);color:var(--navy);border-radius:999px;padding:.28rem .7rem;font-size:.82rem;font-weight:700}
 /* collapsible opening hours (today shown; tap to expand the week) */
 .hoursbox{border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline);margin:14px 0}
 .hoursbox>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:13px 0;cursor:pointer;font-size:1.02rem;font-weight:800;color:var(--text)}

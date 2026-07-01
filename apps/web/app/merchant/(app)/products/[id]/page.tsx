@@ -4,6 +4,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
+import { ConfirmSubmit } from '../../ConfirmSubmit';
 import { SUBTYPES } from '../ProductForm';
 import { setProductFlagAction, deleteProductAction } from '../../../actions';
 
@@ -58,7 +59,7 @@ export default async function ProductDetail({ params }: { params: { id: string }
         <form action={setProductFlagAction.bind(null, p.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงให้ลูกค้าเห็น' : 'ซ่อนจากลูกค้า'}</button></form>
       </div>
       <form className="delwrap" action={deleteProductAction.bind(null, p.id)}>
-        <button className="dbtn danger" type="submit"><Icon n="trash" size={17} /> ลบสินค้านี้</button>
+        <ConfirmSubmit message="ลบสินค้านี้? (กู้คืนได้จากถังขยะ)" className="dbtn danger"><Icon n="trash" size={17} /> ลบสินค้านี้</ConfirmSubmit>
       </form>
     </>
   );

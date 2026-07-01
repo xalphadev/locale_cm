@@ -66,7 +66,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
               {qr ? <div style={{ textAlign: 'center', marginBottom: 8 }}><img src={qr} alt="PromptPay QR" style={{ width: 200, height: 200 }} /><div className="doc-ref">สแกนพร้อมเพย์ · ยอด {baht(outstanding)}</div></div> : null}
               <b>ชำระ {baht(outstanding)} ได้ที่:</b>{payTo.map((x, i) => <div key={i}>{x}</div>)}<div className="doc-ref" style={{ marginTop: 6 }}>โอนแล้วส่งสลิปให้เจ้าของที่พักเพื่อยืนยัน</div></div>
             : <p className="note" style={{ margin: '6px 0 0' }}>ติดต่อเจ้าของที่พักเพื่อชำระเงิน</p>)
-          : <p className="note" style={{ margin: '4px 0 0', color: '#12b76a' }}>✓ ไม่มียอดค้าง</p>}
+          : <p className="note" style={{ margin: '4px 0 0', color: 'var(--m-ok)' }}>ไม่มียอดค้าง</p>}
       </div>
 
       {latestUtil.length > 0 && (

@@ -4,6 +4,7 @@ import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
 import { Icon, Thumb, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
+import { ConfirmSubmit } from '../../ConfirmSubmit';
 import { setPostFlagAction, deletePostAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +53,7 @@ export default async function PostDetail({ params }: { params: { id: string } })
         <form action={setPostFlagAction.bind(null, p.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงในฟีดลูกค้า' : 'ซ่อนจากฟีด'}</button></form>
       </div>
       <form className="delwrap" action={deletePostAction.bind(null, p.id)}>
-        <button className="dbtn danger" type="submit"><Icon n="trash" size={17} /> ลบโพสต์นี้</button>
+        <ConfirmSubmit message="ลบโพสต์นี้? (กู้คืนได้จากถังขยะ)" className="dbtn danger"><Icon n="trash" size={17} /> ลบโพสต์นี้</ConfirmSubmit>
       </form>
     </>
   );

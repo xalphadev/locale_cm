@@ -111,7 +111,7 @@ export default async function TenantStatement({ params, searchParams }: { params
                 </Link>
                 {iv.status === 'issued' ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-                    {iv.overdue && lateFee > 0 && <form action={applyLateFeeAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm" type="submit">+ ค่าปรับ</button></form>}
+                    {iv.overdue && lateFee > 0 && <form action={applyLateFeeAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><ConfirmSubmit message={`เพิ่มค่าปรับจ่ายช้า ${baht(lateFee)} เข้าบิลนี้?`} className="dbtn sm">+ ค่าปรับ</ConfirmSubmit></form>}
                     <form action={recordPaymentAction.bind(null, iv.id)} style={{ display: 'flex', gap: 4 }}>
                       <input type="hidden" name="back" value={back} />
                       <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" className="pay-inline" />
