@@ -1936,7 +1936,7 @@ export async function recordMeterAction(roomId: string, formData: FormData) {
  *  (units × actual rate, from the room's last two readings) + common fee. Itemized, record-only. Idempotent per
  *  (lease, month). สคบ.: due ≥ issue+3; utilities shown units×rate; utilities in bills_included aren't charged. */
 // SELECT that loads everything genInvoiceForLease needs (shared by the single + batch actions).
-const LEASE_FOR_BILL = `l.id, l.room_id, l.tenant_id, l.rent_minor, COALESCE(l.billing_day,1) billing_day, l.attrs,
+const LEASE_FOR_BILL = `l.id, l.room_id, l.tenant_id, l.rent_minor, COALESCE(l.billing_day,1) billing_day, to_char(l.start_date,'YYYY-MM-DD') start_ymd, l.attrs,
             su.bills_included, p.utility_rates
        FROM stay_lease l
        LEFT JOIN stay_units su ON su.id=l.stay_unit_id
@@ -1963,12 +1963,30 @@ async function genInvoiceForLease(acc: any, ls: any, periodIn: string): Promise<
   const skipped: string[] = [];                                   // metered utilities configured but not billable yet
   const meterLine = async (utility: 'electricity' | 'water', label: string, rate: number, sort: number) => {
     if (!(rate > 0) || bills.includes(utility)) return;           // not charged (no rate, or included in rent)
-    const rows = await q<{ reading_value: string }>(
-      `SELECT reading_value FROM stay_meter_reading WHERE room_id=$1 AND utility=$2 ORDER BY read_on DESC, created_at DESC LIMIT 2`, [ls.room_id, utility]);
-    if (rows.length < 2) { skipped.push(utility); return; }        // need prev + curr → omit + warn (e.g. first month has only a baseline)
-    const curr = Number(rows[0].reading_value), prev = Number(rows[1].reading_value);
+    // Usage is chained PER LEASE, not "the room's last 2 raw readings" — so a new tenant never inherits the
+    // previous tenant's units across a move-out. Readings for this tenancy = stamped lease_id OR read on/after
+    // the lease start. curr = latest such reading; prev = last billed curr_reading for this lease (from a NON-void
+    // invoice — so a voided bill drops out of the chain), else the move-in baseline (earliest reading in tenancy).
+    const [cur] = await q<{ reading_value: string }>(
+      `SELECT reading_value FROM stay_meter_reading WHERE room_id=$1 AND utility=$2 AND (lease_id=$3 OR read_on >= $4::date)
+        ORDER BY read_on DESC, created_at DESC LIMIT 1`, [ls.room_id, utility, ls.id, ls.start_ymd]);
+    if (!cur) { skipped.push(utility); return; }
+    const curr = Number(cur.reading_value);
+    const [billed] = await q<{ curr_reading: string }>(
+      `SELECT il.curr_reading FROM stay_invoice_line il JOIN stay_invoice i ON i.id=il.invoice_id
+        WHERE i.lease_id=$1 AND i.status<>'void' AND i.deleted_at IS NULL AND il.kind=$2 AND il.curr_reading IS NOT NULL
+        ORDER BY i.period_ym DESC, i.created_at DESC LIMIT 1`, [ls.id, utility]);
+    let prev: number;
+    if (billed) prev = Number(billed.curr_reading);
+    else {
+      const [base] = await q<{ reading_value: string }>(
+        `SELECT reading_value FROM stay_meter_reading WHERE room_id=$1 AND utility=$2 AND (lease_id=$3 OR read_on >= $4::date)
+          ORDER BY read_on ASC, created_at ASC LIMIT 1`, [ls.room_id, utility, ls.id, ls.start_ymd]);
+      if (!base) { skipped.push(utility); return; }
+      prev = Number(base.reading_value);
+    }
     const units = curr - prev;
-    if (!(units >= 0)) { skipped.push(utility); return; }          // meter reset/typo → omit + warn (never bill negative)
+    if (!(units > 0)) { skipped.push(utility); return; }           // no new usage (or meter reset/typo) → omit + warn
     lines.push({ kind: utility, label, units, rate_minor: rate, prev, curr, amount: Math.round(units * rate), sort });
   };
   await meterLine('electricity', 'ค่าไฟ', Number(rates.electricity_minor_per_unit || 0), 1);
