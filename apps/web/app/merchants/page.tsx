@@ -33,7 +33,7 @@ export default async function Merchants({ searchParams }: { searchParams: { f?: 
          FROM places p
          JOIN brands b ON b.id=p.brand_id AND b.deleted_at IS NULL
          LEFT JOIN merchant_accounts ma ON ma.id=b.owner_account_id
-        WHERE p.source='merchant'
+        WHERE p.source='merchant' AND COALESCE(ma.approval_status,'approved') <> 'rejected'
         ORDER BY last_act DESC`);
   } catch { /* db down */ }
 

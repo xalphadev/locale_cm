@@ -11,8 +11,9 @@ export default async function Profile() {
   const loggedIn = !!sessionUserId();
   let name = 'ผู้ใช้ Locale', email: string | null = null, sparks = 0, coinMinor = 0, nSaved = 0, nReviews = 0;
   let saved: any[] = [], quests: any[] = [], down = false;
+  let uid: string | null = null;
   try {
-    const uid = await demoUserId();
+    uid = await demoUserId();
     if (uid) {
       const [pr] = await q<any>(`SELECT display_name FROM profiles WHERE user_id=$1`, [uid]);
       if (pr?.display_name) name = pr.display_name;
@@ -32,13 +33,16 @@ export default async function Profile() {
   } catch { down = true; }
 
   if (down) return (<><div className="top"><h1>โปรไฟล์</h1></div><div className="body"><p className="empty">ต่อฐานข้อมูลไม่ได้</p></div></>);
+  // a session cookie that no longer resolves to an active user = the account was suspended
+  // (demoUserId returns null for non-active users) — say so instead of a blank generic card
+  const suspended = loggedIn && !uid;
 
   return (
     <>
       <div className="top" style={{ paddingBottom: 0 }}>
         <div className="phead">
           <div className="pav">{name[0]}</div>
-          <div><div className="pn">{name}</div><div className="psub">{loggedIn ? (email || 'สมาชิก Locale') : 'ยังไม่ได้เข้าสู่ระบบ'}</div></div>
+          <div><div className="pn">{name}</div><div className="psub">{suspended ? 'บัญชีถูกระงับการใช้งาน' : loggedIn ? (email || 'สมาชิก Locale') : 'ยังไม่ได้เข้าสู่ระบบ'}</div></div>
         </div>
         <div className="body" style={{ paddingTop: 0 }}>
           <div className="pstats">
@@ -51,6 +55,11 @@ export default async function Profile() {
       </div>
 
       <div className="body" style={{ paddingTop: 4 }}>
+        {suspended && (
+          <div style={{ margin: '0 0 10px', padding: '10px 14px', borderRadius: 12, background: '#fef3c7', color: '#92400e', fontSize: '.9rem' }}>
+            บัญชีนี้ถูกระงับการใช้งานชั่วคราว — ติดต่อทีมงานหากคิดว่าเป็นความเข้าใจผิด
+          </div>
+        )}
         {loggedIn ? (
           <form action={logoutAction}><button className="authstrip out" type="submit">ออกจากระบบ</button></form>
         ) : (
