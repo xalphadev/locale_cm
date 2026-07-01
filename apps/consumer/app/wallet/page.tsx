@@ -108,7 +108,7 @@ export default async function Wallet() {
         {readyReward ? (
           <div className="reward-row">
             <div className="seal"><Icon n="coffee" size={22} style={{ color: '#fff' }} /></div>
-            <div><div style={{ fontWeight: 700 }}>ฟรีกาแฟ 1 แก้ว</div>
+            <div><div style={{ fontWeight: 600 }}>ฟรีกาแฟ 1 แก้ว</div>
               <div className="muted">ให้พนักงานสแกนที่เคาน์เตอร์เพื่อแลก</div></div>
             <span className="ready">พร้อมแลก</span>
           </div>

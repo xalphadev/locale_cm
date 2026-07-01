@@ -79,7 +79,7 @@ function Caption({ it, p }: { it: any; p: ReturnType<typeof poster> }) {
       {it.kind === 'product' && <><b className="ph-h">{i18n(it.pname)}</b> {i18n(it.prod_name)} · <span className="ph-price">{priceText(it)}</span></>}
       {it.kind === 'deal' && <><span className="dl">{dealLabel(it.deal_type, it.value_pct, it.value_minor)}</span> {i18n(it.dtitle)}{daysLeft(it.ends_at) != null ? ` — เหลืออีก ${daysLeft(it.ends_at)} วัน${it.quota_total ? ` · เหลือ ${it.quota_total - it.quota_used} สิทธิ์` : ''}` : ''}</>}
       {it.kind === 'event' && <><b className="ph-h">{p.name}</b> {i18n(it.description_i18n) || ''} · {it.d} {THM[it.m - 1]}</>}
-      {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 700 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
+      {it.kind === 'review' && <><span style={{ color: 'var(--gold)', fontWeight: 600 }}>{'★'.repeat(it.rating)}</span> {i18n(it.body_i18n)}</>}
       {it.kind === 'verified' && <>ทีมงานท้องถิ่นเพิ่งตรวจสอบข้อมูล <b className="ph-h">{i18n(it.pname)}</b> ว่าสด ใหม่ ถูกต้อง — เปิดจริง พิกัด/เวลาอัปเดตแล้ว</>}
       {it.kind === 'new' && <><b className="ph-h">{i18n(it.pname)}</b> เปิดใหม่แล้วในนิมมาน — {it.psub || catTH(it.pcat)} น่าไปลอง</>}
     </>

@@ -93,7 +93,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
       {hasHours ? (
         <div className="info">
           {DAYS.map(([k, label]) => (
-            <div className="info-row" key={k} style={k === today ? { fontWeight: 800 } : undefined}>
+            <div className="info-row" key={k} style={k === today ? { fontWeight: 600 } : undefined}>
               <span style={k === today ? { color: 'var(--m-accent)' } : undefined}>{label}{k === today ? ' · วันนี้' : ''}</span>
               <b style={hours[k] && hours[k] !== 'closed' ? undefined : { color: 'var(--m-muted)', fontWeight: 600 }}>{hr(k)}</b>
             </div>
@@ -118,7 +118,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
           {dfields.map((f) => (
             <div className="info-row" key={f.key}><Icon n={f.icon} className="flat-ico" size={17} />
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '.76rem', color: 'var(--m-muted)', fontWeight: 700 }}>{f.label}</div>
+                <div style={{ fontSize: '.76rem', color: 'var(--m-muted)', fontWeight: 600 }}>{f.label}</div>
                 <div style={{ color: 'var(--m-text)', whiteSpace: 'pre-wrap' }}>{details[f.key]}</div>
               </div>
             </div>

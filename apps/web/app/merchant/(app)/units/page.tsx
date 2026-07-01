@@ -107,7 +107,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
           ✓ เพิ่ม {searchParams.added ?? 0} ห้องแล้ว{Number(searchParams.skipped) > 0 ? ` · ข้าม ${searchParams.skipped} ห้องที่มีเลขซ้ำอยู่แล้ว` : ''}
         </div>
       )}
-      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}
+      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}
       {searchParams?.error === 'norooms' && <div className="banner-err">เพิ่มห้องจริงอย่างน้อย 1 ห้องก่อน แล้วค่อยเปิด “ใช้คำนวณ”</div>}
 
       {types.length === 0 ? (

@@ -65,7 +65,7 @@ export default async function Passport() {
 
               <div className="reward-row">
                 <div className="seal"><Icon n="gift" size={22} style={{ color: '#fff' }} /></div>
-                <div><div style={{ fontWeight: 700 }}>ฟรีกาแฟ 1 แก้ว</div>
+                <div><div style={{ fontWeight: 600 }}>ฟรีกาแฟ 1 แก้ว</div>
                   <div className="muted">แลกที่ร้านพาร์ตเนอร์</div></div>
                 {complete && (
                   <form action={redeemAction} style={{ marginLeft: 'auto' }}>

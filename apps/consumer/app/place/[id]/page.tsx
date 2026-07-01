@@ -381,7 +381,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
             </summary>
             <div className="hours">
               {DAYS.map(([k, label]) => (
-                <div className="hour-row" key={k} style={k === dkey ? { fontWeight: 700 } : undefined}>
+                <div className="hour-row" key={k} style={k === dkey ? { fontWeight: 600 } : undefined}>
                   <span>{label}{k === dkey ? ' · วันนี้' : ''}</span>
                   <span style={{ color: !hours[k] || hours[k] === 'closed' ? 'var(--muted)' : 'var(--text)', fontWeight: 600 }}>{!hours[k] || hours[k] === 'closed' ? 'ปิด' : hours[k]}</span>
                 </div>

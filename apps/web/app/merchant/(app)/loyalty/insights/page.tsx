@@ -110,7 +110,7 @@ export default async function Insights() {
       <div className="menu-label">ช่วงเวลาที่คนเข้าร้าน (30 วัน)</div>
       {enoughData ? (
         <div className="fsec" style={{ padding: '14px 14px 10px' }}>
-          {peak && <div className="note" style={{ margin: '0 0 10px', fontWeight: 700, color: 'var(--m-text)' }}>ชั่วโมงพีค: {String(peak.hr).padStart(2, '0')}:00 น.</div>}
+          {peak && <div className="note" style={{ margin: '0 0 10px', fontWeight: 600, color: 'var(--m-text)' }}>ชั่วโมงพีค: {String(peak.hr).padStart(2, '0')}:00 น.</div>}
           <div className="daybars">
             {[1, 2, 3, 4, 5, 6, 7].map((d) => (
               <div className="daybar" key={d}>

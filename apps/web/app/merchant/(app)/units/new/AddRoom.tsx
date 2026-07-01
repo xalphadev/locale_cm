@@ -50,7 +50,7 @@ export function AddRoom({ types, term, allowBeds }: { types: { id: string; name:
     return { state: 'ok' as const, count: codes.length, text };
   }, [codesText]);
 
-  const previewStyle = { background: 'var(--m-sec-bg)', color: 'var(--m-sec)', padding: '10px 12px', borderRadius: 10, fontSize: '.85rem', fontWeight: 700, margin: '2px 0 0' } as const;
+  const previewStyle = { background: 'var(--m-sec-bg)', color: 'var(--m-sec)', padding: '10px 12px', borderRadius: 10, fontSize: '.85rem', fontWeight: 600, margin: '2px 0 0' } as const;
 
   // shared status block (only ONE form is in the DOM at a time, so the duplicated name is never a conflict)
   const occupied = status === 'occupied' || status === 'reserved';

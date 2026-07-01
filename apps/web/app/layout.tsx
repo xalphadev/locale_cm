@@ -37,8 +37,8 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
 function FontHead({ merchant }: { merchant?: boolean }) {
   // Prompt (Google, Thai + Latin) across merchant + admin so the whole product shares one typeface.
   const href = merchant
-    ? 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap'
-    : 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800;900&display=swap';
+    ? 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap'
+    : 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600&display=swap';
   return (
     <head>
       <link rel="preconnect" href="https://fonts.googleapis.com" />

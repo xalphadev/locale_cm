@@ -70,7 +70,7 @@ export default async function AvailableRooms({ searchParams }: { searchParams: {
     <>
       <MTopbar back="/merchant/stay" backLabel="ห้องพัก" title="หาห้องว่าง" />
 
-      {searchParams?.ok === 'booked' && <div className="banner-ok">✓ จองห้อง {searchParams.bk || ''} ให้แล้ว · <Link href="/merchant/units/calendar" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>ดูในปฏิทิน</Link></div>}
+      {searchParams?.ok === 'booked' && <div className="banner-ok">✓ จองห้อง {searchParams.bk || ''} ให้แล้ว · <Link href="/merchant/units/calendar" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>ดูในปฏิทิน</Link></div>}
       {searchParams?.ok === 'blocked' && <div className="banner-ok">✓ กันห้อง {searchParams.bk || ''} ไว้แล้ว</div>}
       {searchParams?.error === 'overlap' && <div className="banner-err">ห้องนี้เพิ่งถูกจองไป — เลือกห้องอื่น</div>}
       {searchParams?.error === 'daterange' && <div className="banner-err">วันออกต้องอยู่หลังวันเข้า</div>}

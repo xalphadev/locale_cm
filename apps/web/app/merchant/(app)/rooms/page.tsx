@@ -52,7 +52,7 @@ export default async function Rooms({ searchParams }: { searchParams: { ok?: str
       {!pay?.pay_online_enabled && <Link className="banner-warn" href="/merchant/pricing" style={{ display: 'block', textDecoration: 'none' }}><b>ยังไม่ได้เปิดรับจองออนไลน์</b> — ตั้งบัญชี PromptPay/ธนาคาร เพื่อรับการจอง + ชำระเงินผ่านระบบ →</Link>}
       {searchParams?.ok === '1' && <div className="banner-ok">✓ เพิ่มห้องแล้ว</div>}
       {searchParams?.ok === 'updated' && <div className="banner-ok">✓ บันทึกการแก้ไขแล้ว</div>}
-      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบรูปแบบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 800, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}
+      {searchParams?.ok === 'deleted' && <div className="banner-ok">✓ ลบรูปแบบห้องแล้ว · <Link href="/merchant/trash" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>กู้คืนจากถังขยะ</Link></div>}
       <RoomList items={items} noun={noun} hasBoard={!!acc.manages_stay && acc.room_mode !== 'unique'} />
     </>
   );
