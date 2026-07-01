@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q, i18n } from '@/lib/db';
+import crypto from 'crypto';
+import { headers } from 'next/headers';
 import { isUuid } from '../../ui';
 import PrintBtn from './PrintBtn';
+import ShareLink from './ShareLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +22,7 @@ export default async function InvoiceDoc({ params }: { params: { id: string } })
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
   const [iv] = isUuid(params.id) ? await q<any>(
-    `SELECT i.period_ym, i.status, i.ref, i.total_minor,
+    `SELECT i.id, i.public_token, i.period_ym, i.status, i.ref, i.total_minor,
             to_char(i.issue_date,'DD/MM/YYYY') issue_d, to_char(i.due_date,'DD/MM/YYYY') due_d, to_char(i.paid_at,'DD/MM/YYYY') paid_d,
             r.code room_code, t.full_name tenant_name, t.phone tenant_phone,
             p.name_i18n pname, p.address_i18n paddr, p.phone pphone,
@@ -31,6 +34,17 @@ export default async function InvoiceDoc({ params }: { params: { id: string } })
       WHERE i.id=$1 AND i.place_id=$2 AND i.deleted_at IS NULL`, [params.id, acc.place_id]) : [];
   if (!iv) return (<div className="printsheet"><div className="print-bar"><Link className="dbtn sm" href="/merchant/bills">← กลับ</Link></div><p className="note">ไม่พบบิล</p></div>);
   const lines = await q<any>(`SELECT label, units, rate_minor, amount_minor FROM stay_invoice_line WHERE invoice_id=$1 ORDER BY sort`, [params.id]);
+  // lazy-mint the shareable public token the first time the owner opens this bill (idempotent, guarded by IS NULL)
+  let token: string = iv.public_token;
+  if (!token) {
+    const cand = crypto.randomBytes(9).toString('hex');
+    // conditional insert; if a concurrent load already minted one, fall back to the persisted value so the
+    // shown link is always the saved token (never a token that wasn't stored).
+    const [row] = await q<{ public_token: string }>(`UPDATE stay_invoice SET public_token=$2 WHERE id=$1 AND public_token IS NULL RETURNING public_token`, [iv.id, cand]);
+    token = row ? row.public_token : ((await q<{ public_token: string }>(`SELECT public_token FROM stay_invoice WHERE id=$1`, [iv.id]))[0]?.public_token || cand);
+  }
+  const host = headers().get('host') || '';
+  const shareUrl = `${host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https'}://${host}/bill/${token}`;
   const title = DOC_TITLE[iv.status] || 'ใบแจ้งหนี้';
   const payTo = [
     iv.pay_promptpay ? `PromptPay ${iv.pay_promptpay}` : '',
@@ -40,6 +54,7 @@ export default async function InvoiceDoc({ params }: { params: { id: string } })
   return (
     <div className="printsheet">
       <div className="print-bar"><PrintBtn /><Link className="dbtn sm" href="/merchant/bills">← กลับ</Link></div>
+      <div className="print-bar"><ShareLink url={shareUrl} /></div>
 
       <div className="doc-top">
         <div><div className="doc-title">{title}</div>{iv.ref ? <div className="doc-ref">เลขที่ {iv.ref}</div> : null}</div>

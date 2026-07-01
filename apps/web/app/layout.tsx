@@ -59,6 +59,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </html>
     );
   }
+  // Public tenant-facing bill link (/bill/<token>) — no staff shell, no auth; reuse the merchant CSS scope.
+  if (path.startsWith('/bill')) {
+    return (
+      <html lang="th">
+        <FontHead merchant />
+        <body className="merchant-root">{children}</body>
+      </html>
+    );
+  }
   return (
     <html lang="th">
       <FontHead />
