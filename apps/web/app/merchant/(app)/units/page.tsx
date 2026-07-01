@@ -133,7 +133,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                 {reserved > 0 && <span style={{ width: seg(reserved), background: ST.reserved.color }} title={`จอง ${reserved}`} />}
                 {maint > 0 && <span style={{ width: seg(maint), background: ST.maintenance.color }} title={`ปิดซ่อม ${maint}`} />}
               </div>
-              <span className="rb-hero-pct">ใช้งาน {rooms.length ? Math.round(((rooms.length - vacant) / rooms.length) * 100) : 0}%</span>
+              <span className="rb-hero-pct">ใช้งาน {rooms.length ? Math.round((occupied / rooms.length) * 100) : 0}%</span>
             </div>
             <div className="rb-hero-leg">
               {vacant > 0 && <span><i style={{ background: ST.vacant.color }} /> <em style={{ color: ST.vacant.color }}>○</em> ว่าง {vacant}</span>}
