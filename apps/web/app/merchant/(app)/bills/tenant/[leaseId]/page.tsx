@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
-import { q } from '@/lib/db';
+import { q, i18n } from '@/lib/db';
 import crypto from 'crypto';
 import { headers } from 'next/headers';
 import { Icon, isUuid } from '../../../ui';
 import { MTopbar } from '../../../MTopbar';
 import ShareLink from '../../../ShareLink';
+import CopyText from '../../../CopyText';
 import { markInvoicePaidAction, applyLateFeeAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,7 @@ export default async function TenantStatement({ params, searchParams }: { params
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
   const [ls] = isUuid(params.leaseId) ? await q<any>(
-    `SELECT l.id, l.rent_minor, l.room_id, l.portal_token, r.code room_code, t.full_name tenant_name, p.utility_rates
+    `SELECT l.id, l.rent_minor, l.room_id, l.portal_token, r.code room_code, t.full_name tenant_name, p.name_i18n pname, p.utility_rates
        FROM stay_lease l
        JOIN stay_room r ON r.id=l.room_id
        LEFT JOIN stay_tenant t ON t.id=l.tenant_id AND t.deleted_at IS NULL
@@ -51,6 +52,15 @@ export default async function TenantStatement({ params, searchParams }: { params
   }
   const host = headers().get('host') || '';
   const myUrl = `${host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https'}://${host}/my/${ptoken}`;
+  const outstanding = Number(sm?.outstanding || 0);
+  // pre-composed rent-due reminder the owner copies / sends over LINE (interim notifications — no LINE OA)
+  const reminderMsg = [
+    `เรียนคุณ${ls.tenant_name || 'ผู้เช่า'} (ห้อง ${ls.room_code})`,
+    `${i18n(ls.pname) || 'ที่พัก'} แจ้งยอดค้างชำระ ${baht(outstanding)}`,
+    (sm?.overdue_n || 0) > 0 ? `⚠ มีบิลเกินกำหนดชำระ ${sm.overdue_n} รายการ กรุณาชำระโดยเร็ว` : 'กรุณาชำระภายในวันครบกำหนด',
+    `ดูรายละเอียดและช่องทางชำระเงิน: ${myUrl}`,
+    'ขอบคุณครับ',
+  ].join('\n');
 
   return (
     <>
@@ -78,6 +88,12 @@ export default async function TenantStatement({ params, searchParams }: { params
         </div>
         {(sm?.overdue_n || 0) > 0 && <p className="note" style={{ margin: '4px 0 0', color: '#d92d20' }}>⚠ เกินกำหนด {sm.overdue_n} บิล · {baht(sm.overdue)}</p>}
       </div>
+
+      {outstanding > 0 && (
+        <div className="paycard" style={{ marginBottom: 12 }}>
+          <CopyText text={reminderMsg} label="ส่งข้อความเตือนค่าเช่า — ก๊อปไปวางใน LINE/SMS หรือกด “ส่งทาง LINE”" button="คัดลอกข้อความเตือน" />
+        </div>
+      )}
 
       {invs.length === 0 ? <p className="note">ยังไม่มีบิล</p> : (
         <div className="mlist">
