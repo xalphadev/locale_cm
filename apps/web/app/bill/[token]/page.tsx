@@ -1,4 +1,6 @@
+import QRCode from 'qrcode';
 import { q, i18n } from '@/lib/db';
+import { promptpayPayload } from '@/lib/promptpay';
 import PrintBtn from './PrintBtn';
 
 export const dynamic = 'force-dynamic';
@@ -30,6 +32,10 @@ export default async function PublicBill({ params }: { params: { token: string }
     iv.pay_promptpay ? `PromptPay ${iv.pay_promptpay}` : '',
     iv.pay_bank && iv.pay_account_no ? `${iv.pay_bank} ${iv.pay_account_no}${iv.pay_account_name ? ` (${iv.pay_account_name})` : ''}` : '',
   ].filter(Boolean);
+  // scannable PromptPay QR with the amount pre-filled — only for an unpaid bill with a PromptPay target
+  const ppPayload = (iv.status !== 'paid' && iv.status !== 'void' && iv.pay_promptpay && Number(iv.total_minor) > 0)
+    ? promptpayPayload(iv.pay_promptpay, Number(iv.total_minor) / 100) : '';
+  const qr = ppPayload ? await QRCode.toDataURL(ppPayload, { width: 220, margin: 1 }).catch(() => '') : '';
 
   return (
     <div className="printsheet" style={{ maxWidth: 560, margin: '0 auto', padding: '20px 18px' }}>
@@ -53,7 +59,10 @@ export default async function PublicBill({ params }: { params: { token: string }
         ? <div className="doc-paid">✓ ชำระแล้ว{iv.paid_d ? ` · ${iv.paid_d}` : ''}</div>
         : iv.status === 'void' ? <p className="note">บิลนี้ถูกยกเลิก</p>
         : payTo.length
-          ? <div className="doc-pay"><b>ชำระ {baht(iv.total_minor)} ได้ที่:</b>{payTo.map((x, i) => <div key={i}>{x}</div>)}<div className="doc-ref" style={{ marginTop: 6 }}>โอนตามยอดนี้แล้วส่งสลิปให้เจ้าของที่พักเพื่อยืนยัน</div></div>
+          ? <div className="doc-pay">
+              {qr ? <div style={{ textAlign: 'center', marginBottom: 8 }}><img src={qr} alt="PromptPay QR" style={{ width: 200, height: 200 }} /><div className="doc-ref">สแกนพร้อมเพย์ · ยอด {baht(iv.total_minor)}</div></div> : null}
+              <b>ชำระ {baht(iv.total_minor)} ได้ที่:</b>{payTo.map((x, i) => <div key={i}>{x}</div>)}<div className="doc-ref" style={{ marginTop: 6 }}>โอนตามยอดนี้แล้วส่งสลิปให้เจ้าของที่พักเพื่อยืนยัน</div>
+            </div>
           : <p className="note">ติดต่อเจ้าของที่พักเพื่อชำระเงิน</p>}
       <p className="note" style={{ marginTop: 16, fontSize: '.78rem' }}>ค่าน้ำ/ไฟคิดตามหน่วยที่ใช้จริง × อัตราที่แจ้ง</p>
     </div>

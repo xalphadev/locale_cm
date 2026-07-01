@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import QRCode from 'qrcode';
 import { q, i18n } from '@/lib/db';
+import { promptpayPayload } from '@/lib/promptpay';
 import { submitMaintenanceAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +45,8 @@ export default async function TenantPortal({ params, searchParams }: { params: {
     ls.pay_promptpay ? `PromptPay ${ls.pay_promptpay}` : '',
     ls.pay_bank && ls.pay_account_no ? `${ls.pay_bank} ${ls.pay_account_no}${ls.pay_account_name ? ` (${ls.pay_account_name})` : ''}` : '',
   ].filter(Boolean);
+  const ppPayload = (outstanding > 0 && ls.pay_promptpay) ? promptpayPayload(ls.pay_promptpay, outstanding / 100) : '';
+  const qr = ppPayload ? await QRCode.toDataURL(ppPayload, { width: 220, margin: 1 }).catch(() => '') : '';
   const kindTh: Record<string, string> = { electricity: 'ค่าไฟ', water: 'ค่าน้ำ' };
 
   return (
@@ -57,7 +61,9 @@ export default async function TenantPortal({ params, searchParams }: { params: {
           <div className="bk-stat"><span className={`bk-stat-n ${outstanding > 0 ? 'bk-amber' : ''}`}>{baht(outstanding)}</span><span className="bk-stat-l">ยอดค้างชำระ</span></div>
         </div>
         {outstanding > 0
-          ? (payTo.length ? <div className="doc-pay" style={{ marginTop: 10 }}><b>ชำระ {baht(outstanding)} ได้ที่:</b>{payTo.map((x, i) => <div key={i}>{x}</div>)}<div className="doc-ref" style={{ marginTop: 6 }}>โอนแล้วส่งสลิปให้เจ้าของที่พักเพื่อยืนยัน</div></div>
+          ? (payTo.length ? <div className="doc-pay" style={{ marginTop: 10 }}>
+              {qr ? <div style={{ textAlign: 'center', marginBottom: 8 }}><img src={qr} alt="PromptPay QR" style={{ width: 200, height: 200 }} /><div className="doc-ref">สแกนพร้อมเพย์ · ยอด {baht(outstanding)}</div></div> : null}
+              <b>ชำระ {baht(outstanding)} ได้ที่:</b>{payTo.map((x, i) => <div key={i}>{x}</div>)}<div className="doc-ref" style={{ marginTop: 6 }}>โอนแล้วส่งสลิปให้เจ้าของที่พักเพื่อยืนยัน</div></div>
             : <p className="note" style={{ margin: '6px 0 0' }}>ติดต่อเจ้าของที่พักเพื่อชำระเงิน</p>)
           : <p className="note" style={{ margin: '4px 0 0', color: '#12b76a' }}>✓ ไม่มียอดค้าง</p>}
       </div>
