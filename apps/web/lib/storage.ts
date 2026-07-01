@@ -9,7 +9,7 @@ import sharp from 'sharp';
 // Served publicly via ASSET_PUBLIC_BASE; dev/prod differ ONLY by env:
 //   prod  ASSET_PUBLIC_BASE=https://locale-assets.xalpha.co.th   (Caddy rewrites /<key> → /media/<key>)
 //   dev   ASSET_PUBLIC_BASE=http://127.0.0.1:9000/media          (MinIO direct, bucket in path)
-export type UploadKind = 'places' | 'products' | 'rooms' | 'posts' | 'brands';
+export type UploadKind = 'places' | 'products' | 'rooms' | 'posts' | 'brands' | 'repairs';
 
 const MAX_BYTES = 12 * 1024 * 1024;   // accept large phone originals — we downscale them anyway
 export const MAX_UPLOADS = 15;         // saveUploads persists at most this many per call

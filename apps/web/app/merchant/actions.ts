@@ -2111,6 +2111,39 @@ export async function setMaintenanceStatusAction(id: string, status: string, for
   redirect('/merchant/repairs?ok=1');
 }
 
+/** Owner logs a repair THEMSELVES (source='owner') — for the tenant who reported at the counter/LINE, or
+ *  a fault the owner spotted. Room optional (a corridor light has no room). Same 0063 log as tenant reports. */
+export async function createMaintenanceAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const detail = s(formData, 'detail').trim().slice(0, 500);
+  if (!detail) redirect('/merchant/repairs?error=detail');
+  const roomIdIn = s(formData, 'room_id');
+  let roomId: string | null = null;
+  if (UUID_RE.test(roomIdIn)) {
+    const [r] = await q<{ id: string }>(`SELECT id FROM stay_room WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [roomIdIn, acc.place_id]);
+    roomId = r?.id ?? null;
+  }
+  const photos = await saveUploads(formData.getAll('photos') as File[], 'repairs');
+  await q(
+    `INSERT INTO stay_maintenance(place_id, room_id, detail, photos, source, owner_note)
+     VALUES($1,$2,$3,$4,'owner',NULLIF($5,''))`,
+    [acc.place_id, roomId, detail, photos, s(formData, 'owner_note').trim().slice(0, 300)]);
+  revalidatePath('/merchant/repairs'); revalidatePath('/merchant');
+  redirect('/merchant/repairs?ok=1');
+}
+
+/** Owner note on a repair (นัดช่าง / อะไหล่ / ค่าซ่อมโดยประมาณ) — a jot, not a money record. */
+export async function setMaintenanceNoteAction(id: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(id)) redirect('/merchant/repairs');
+  await q(`UPDATE stay_maintenance SET owner_note=NULLIF($3,''), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`,
+    [id, acc.place_id, s(formData, 'owner_note').trim().slice(0, 300)]);
+  revalidatePath('/merchant/repairs');
+  redirect('/merchant/repairs?ok=1');
+}
+
 /** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for
  *  non-sequential / named units) — the fast way to lay out a dorm. Existing codes are skipped + reported. */
 export async function createRoomsBulkAction(formData: FormData) {
