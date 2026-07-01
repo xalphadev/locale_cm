@@ -76,7 +76,12 @@ issues the certificate. Admin (`locale-platform`) prompts for the basic-auth use
 git pull
 docker compose --env-file .env.prod -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
-New migrations: `for f in db/migrations/0*.sql; do docker exec -i locale-db psql -v ON_ERROR_STOP=1 -U postgres -d locale < "$f"; done` (or just re-run `deploy.sh`).
+New migrations — apply only the NEW ones with the upgrade helper (deploy.sh intentionally skips
+migrations when the schema already exists, and re-looping ALL files fails on the early
+non-idempotent `CREATE TYPE` migrations):
+```bash
+bash db/deploy/upgrade.sh 0048     # first NEW migration number .. latest, in order
+```
 
 ## Local dev parity
 `docker compose up -d` runs the SAME Postgres + MinIO locally (trust auth, auto-migrate via the dev

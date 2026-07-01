@@ -23,9 +23,10 @@ PSQL=(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q)
 echo "Target: ${DATABASE_URL%%\?*}"
 echo "PostGIS check (Supabase: enable in Dashboard → Database → Extensions, or it auto-creates in 0001)…"
 
-for n in 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022 0023 0024 0025 0026 0027 0028 0029 0030 0031 0032 0033 0034 0035 0036 0037 0038 0039 0040 0041 0042 0043 0044 0045 0046 0047; do
-  f=$(ls "$MIG/${n}"*.sql)
-  printf 'apply %s  %s\n' "$n" "$(basename "$f")"
+# Apply EVERY numbered migration in order — never hardcode the list again (a hardcoded
+# 0001..0047 list once silently skipped 0048+ on prod). ls sorts zero-padded names correctly.
+for f in "$MIG"/[0-9][0-9][0-9][0-9]_*.sql; do
+  printf 'apply %s\n' "$(basename "$f")"
   "${PSQL[@]}" -f "$f"
 done
 
