@@ -33,7 +33,7 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
       else if (!sort) order = `width_bucket(${distExpr}, 0, 10000, 5), ${order}`;
     }
     rows = await q<any>(`SELECT sp.id, sp.name_i18n, sp.subtype, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls,
-        sp.in_season, sp.available_today, sp.sold_out, p.id place_id, p.name_i18n shop_name, p.line_id, p.phone
+        sp.in_season, sp.available_today, sp.sold_out, sp.stock_qty, p.id place_id, p.name_i18n shop_name, p.line_id, p.phone
       FROM shop_products sp JOIN places p ON p.id=sp.place_id
       WHERE ${where.join(' AND ')} ORDER BY ${order} LIMIT 60`, params);
   } catch { /* db down */ }

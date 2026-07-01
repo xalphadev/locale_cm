@@ -17,7 +17,7 @@ export default async function Products({ searchParams }: { searchParams: { ok?: 
     `SELECT id, name_i18n, sort FROM shop_section WHERE place_id=$1 AND deleted_at IS NULL ORDER BY sort, created_at`, [acc.place_id]);
   // list follows the CUSTOMER's menu order: section (by sort) → item sort → newest
   const rows = await q<any>(
-    `SELECT sp.id, sp.name_i18n, sp.subtype, sp.price_minor, sp.price_unit, sp.image_urls, sp.status, sp.sold_out, sp.in_season, sp.is_recommended,
+    `SELECT sp.id, sp.name_i18n, sp.subtype, sp.price_minor, sp.price_unit, sp.image_urls, sp.status, sp.sold_out, sp.in_season, sp.is_recommended, sp.stock_qty,
             sec.name_i18n sec_name
        FROM shop_products sp LEFT JOIN shop_section sec ON sec.id=sp.section_id AND sec.deleted_at IS NULL
       WHERE sp.place_id=$1 AND sp.deleted_at IS NULL
@@ -25,7 +25,7 @@ export default async function Products({ searchParams }: { searchParams: { ok?: 
   const items = rows.map((r) => ({
     id: r.id,
     name: i18n(r.name_i18n),
-    meta: `${subLabel(r.subtype)}${r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}${r.price_unit ? '/' + r.price_unit : ''}` : ' · สอบถามราคา'}`,
+    meta: `${subLabel(r.subtype)}${r.price_minor != null ? ` · ฿${Math.round(r.price_minor / 100).toLocaleString()}${r.price_unit ? '/' + r.price_unit : ''}` : ' · สอบถามราคา'}${r.stock_qty != null ? ` · เหลือ ${r.stock_qty}` : ''}`,
     image_urls: r.image_urls, status: r.status, sold_out: r.sold_out, in_season: r.in_season,
     recommended: !!r.is_recommended,
     group: r.sec_name ? i18n(r.sec_name) : (sections.length ? 'ไม่จัดหมวด' : ''),

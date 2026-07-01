@@ -200,12 +200,33 @@ export async function createMerchantProductAction(formData: FormData) {
   const inSeason = !!formData.get('in_season');
   const sectionId = await resolveSectionId(acc.place_id, s(formData, 'section_id'));
   const recommended = !!formData.get('is_recommended');
+  const stockQty = parseStock(s(formData, 'stock'));
   await q(
-    `INSERT INTO shop_products(place_id, name_i18n, subtype, price_minor, price_unit, image_urls, image_count, in_season, section_id, is_recommended, status, author_kind)
-     VALUES($1, jsonb_build_object('th',$2::text), $3, $4, $5, $6, $7, $8, $9, $10, 'published', 'merchant')`,
-    [acc.place_id, nameTh, subtype, priceMinor, unit, urls.length ? urls : null, urls.length || 1, inSeason, sectionId, recommended]);
+    `INSERT INTO shop_products(place_id, name_i18n, subtype, price_minor, price_unit, image_urls, image_count, in_season, section_id, is_recommended, stock_qty, sold_out, status, author_kind)
+     VALUES($1, jsonb_build_object('th',$2::text), $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE($11 = 0, false), 'published', 'merchant')`,
+    [acc.place_id, nameTh, subtype, priceMinor, unit, urls.length ? urls : null, urls.length || 1, inSeason, sectionId, recommended, stockQty]);
   revalidatePath('/merchant/products');
   redirect('/merchant/products?ok=1');
+}
+
+/** '' → null (ไม่นับสต็อก); a number → clamped 0..99999. */
+function parseStock(raw: string): number | null {
+  if (raw === '') return null;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) ? Math.max(0, Math.min(99999, n)) : null;
+}
+
+/** ±1 on a TRACKED product's stock; sold_out follows the count (0 ⇄ >0) atomically. */
+export async function adjustProductStockAction(productId: string, delta: number) {
+  const acc = await currentAccount();
+  requireCap(acc, 'sells_products');
+  const d = delta > 0 ? 1 : -1;
+  await q(
+    `UPDATE shop_products SET stock_qty = GREATEST(0, stock_qty + $3),
+            sold_out = (GREATEST(0, stock_qty + $3) = 0), updated_at=now()
+      WHERE id=$1 AND place_id=$2 AND stock_qty IS NOT NULL AND deleted_at IS NULL`,
+    [productId, acc.place_id, d]);
+  revalidatePath('/merchant/products', 'layout');
 }
 
 // ── menu sections (0066): owner-defined groups ("กาแฟ", "เมนูข้าว") shown on the consumer menu ──
@@ -276,14 +297,16 @@ export async function updateMerchantProductAction(productId: string, formData: F
   const urls = [...saved, ...pasted];
   const sectionId = await resolveSectionId(acc.place_id, s(formData, 'section_id'));
   const recommended = !!formData.get('is_recommended');
+  const stockQty = parseStock(s(formData, 'stock'));
   await q(
     `UPDATE shop_products SET name_i18n=jsonb_build_object('th',$3::text), subtype=$4, price_minor=$5, price_unit=$6, in_season=$7,
        image_urls = CASE WHEN $8::text[] IS NOT NULL THEN $8 ELSE image_urls END,
        image_count = CASE WHEN $8::text[] IS NOT NULL THEN COALESCE(array_length($8,1),1) ELSE image_count END,
        section_id=$9, is_recommended=$10,
+       stock_qty=$11, sold_out = CASE WHEN $11::int IS NOT NULL THEN ($11 = 0) ELSE sold_out END,
        updated_at=now()
      WHERE id=$1 AND place_id=$2`,
-    [productId, acc.place_id, nameTh, subtype, priceMinor, unit, inSeason, urls.length ? urls : null, sectionId, recommended]);
+    [productId, acc.place_id, nameTh, subtype, priceMinor, unit, inSeason, urls.length ? urls : null, sectionId, recommended, stockQty]);
   revalidatePath('/merchant/products');
   redirect('/merchant/products?ok=updated');
 }

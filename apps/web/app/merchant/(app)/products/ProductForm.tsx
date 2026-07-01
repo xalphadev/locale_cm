@@ -34,6 +34,9 @@ export function ProductForm({ action, p, submitLabel, sections = [] }: {
           <div className="field"><label>ต่อหน่วย</label><select name="price_unit" defaultValue={p?.price_unit || ''}>{UNITS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
         </div>
         <p className="fhint">เว้นว่างราคาได้ถ้าต้องการให้ลูกค้าทักมาสอบถาม</p>
+        <div className="field"><label>สต็อกคงเหลือ (จำนวน)</label>
+          <input name="stock" type="number" min="0" step="1" defaultValue={p?.stock_qty ?? ''} placeholder="เว้นว่าง = ไม่นับสต็อก" /></div>
+        <p className="fhint">ใส่จำนวนแล้วระบบจะติ๊ก “หมด” ให้อัตโนมัติเมื่อเหลือ 0 (ปรับ +/− รายวันได้ที่หน้าสินค้า) · เว้นว่างถ้าไม่อยากนับ</p>
         <label className="check"><input type="checkbox" name="in_season" defaultChecked={!!p?.in_season} /> สินค้าตามฤดูกาล — แสดงป้าย “ในฤดู” ให้ลูกค้า</label>
       </section>
 

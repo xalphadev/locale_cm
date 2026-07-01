@@ -98,7 +98,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
       deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
       // menu order (0066): section (owner-sorted) → recommended first → item sort; sold-out sinks in-group
       products = await q<any>(`SELECT sp.id, sp.name_i18n, sp.subtype, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls,
-          sp.in_season, sp.available_today, sp.sold_out, sp.is_recommended, sec.name_i18n sec_name
+          sp.in_season, sp.available_today, sp.sold_out, sp.is_recommended, sp.stock_qty, sec.name_i18n sec_name
         FROM shop_products sp LEFT JOIN shop_section sec ON sec.id=sp.section_id AND sec.deleted_at IS NULL
         WHERE sp.place_id=$1 AND sp.status='published' AND sp.deleted_at IS NULL
         ORDER BY sec.sort NULLS LAST, sec.created_at, sp.sold_out, sp.is_recommended DESC, sp.sort, sp.created_at LIMIT 60`, [params.id]);

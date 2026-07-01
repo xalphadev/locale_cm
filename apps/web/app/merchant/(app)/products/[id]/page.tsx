@@ -6,7 +6,7 @@ import { Icon, Thumb, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
 import { SUBTYPES } from '../ProductForm';
-import { setProductFlagAction, deleteProductAction } from '../../../actions';
+import { setProductFlagAction, deleteProductAction, adjustProductStockAction } from '../../../actions';
 
 export const dynamic = 'force-dynamic';
 const subLabel = (k: string) => (SUBTYPES.find(([s]) => s === k) || [, k])[1];
@@ -40,6 +40,7 @@ export default async function ProductDetail({ params }: { params: { id: string }
           <span className="t cat"><Icon n="tag" size={12} /> {subLabel(p.subtype)}</span>
           {hidden && <span className="t off">ซ่อนอยู่</span>}
           {!hidden && p.sold_out && <span className="t sold">หมด</span>}
+          {!hidden && !p.sold_out && p.stock_qty != null && <span className="t cat">เหลือ {p.stock_qty}</span>}
           {!hidden && p.in_season && <span className="t season"><Icon n="spark" size={11} /> ในฤดู</span>}
         </div>
         <div className="dprice">{price}</div>
@@ -48,6 +49,7 @@ export default async function ProductDetail({ params }: { params: { id: string }
       <div className="info">
         <div className="info-row"><Icon n="tag" size={18} className="flat-ico" /><span>หมวดหมู่</span><b>{subLabel(p.subtype)}</b></div>
         <div className="info-row"><Icon n="wallet" size={18} className="flat-ico" /><span>ราคา</span><b>{price}</b></div>
+        {p.stock_qty != null && <div className="info-row"><Icon n="box" size={18} className="flat-ico" /><span>สต็อกคงเหลือ</span><b>{p.stock_qty} ชิ้น</b></div>}
         <div className="info-row"><Icon n={hidden ? 'eyeOff' : 'eye'} size={18} className="flat-ico" /><span>สถานะ</span><b>{hidden ? 'ซ่อนจากลูกค้า' : p.sold_out ? 'แสดงอยู่ (ของหมด)' : 'แสดงให้ลูกค้าเห็น'}</b></div>
         <div className="info-row last"><Icon n="clock" size={18} className="flat-ico" /><span>อัปเดตล่าสุด</span><b>{fmtDate(p.updated_at)}</b></div>
       </div>
@@ -55,7 +57,15 @@ export default async function ProductDetail({ params }: { params: { id: string }
       <h2 className="rsec"><span className="rsec-ic"><Icon n="store" size={15} /></span> จัดการสินค้า</h2>
       <div className="dbar">
         <Link className="dbtn primary" href={`/merchant/products/${p.id}/edit`}><Icon n="edit" size={18} /> แก้ไขสินค้า</Link>
-        {!hidden && <form action={setProductFlagAction.bind(null, p.id, 'sold_out')}><button className="dbtn" type="submit"><Icon n="check" size={18} /> {p.sold_out ? 'มีของแล้ว' : 'ทำเป็นของหมด'}</button></form>}
+        {/* tracked stock: the ± stepper IS the sold-out control (หมด flips itself at 0) — manual toggle only for untracked */}
+        {!hidden && p.stock_qty != null ? (
+          <>
+            <form action={adjustProductStockAction.bind(null, p.id, -1)}><button className="dbtn" type="submit" aria-label="ลดสต็อก 1">− ขายไป 1</button></form>
+            <form action={adjustProductStockAction.bind(null, p.id, 1)}><button className="dbtn" type="submit" aria-label="เพิ่มสต็อก 1">+ เพิ่ม 1</button></form>
+          </>
+        ) : !hidden && (
+          <form action={setProductFlagAction.bind(null, p.id, 'sold_out')}><button className="dbtn" type="submit"><Icon n="check" size={18} /> {p.sold_out ? 'มีของแล้ว' : 'ทำเป็นของหมด'}</button></form>
+        )}
         <form action={setProductFlagAction.bind(null, p.id, hidden ? 'show' : 'hide')}><button className="dbtn" type="submit"><Icon n={hidden ? 'eye' : 'eyeOff'} size={18} /> {hidden ? 'แสดงให้ลูกค้าเห็น' : 'ซ่อนจากลูกค้า'}</button></form>
       </div>
       <form className="delwrap" action={deleteProductAction.bind(null, p.id)}>
