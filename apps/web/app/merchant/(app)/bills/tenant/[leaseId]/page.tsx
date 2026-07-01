@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
 import { q } from '@/lib/db';
+import crypto from 'crypto';
+import { headers } from 'next/headers';
 import { Icon, isUuid } from '../../../ui';
 import { MTopbar } from '../../../MTopbar';
+import ShareLink from '../../../ShareLink';
 import { markInvoicePaidAction, applyLateFeeAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +22,7 @@ export default async function TenantStatement({ params, searchParams }: { params
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
   const [ls] = isUuid(params.leaseId) ? await q<any>(
-    `SELECT l.id, l.rent_minor, l.room_id, r.code room_code, t.full_name tenant_name, p.utility_rates
+    `SELECT l.id, l.rent_minor, l.room_id, l.portal_token, r.code room_code, t.full_name tenant_name, p.utility_rates
        FROM stay_lease l
        JOIN stay_room r ON r.id=l.room_id
        LEFT JOIN stay_tenant t ON t.id=l.tenant_id AND t.deleted_at IS NULL
@@ -39,6 +42,15 @@ export default async function TenantStatement({ params, searchParams }: { params
       ORDER BY period_ym DESC`, [ls.id, acc.place_id]);
   const lateFee = Number(ls.utility_rates?.late_fee_minor || 0);
   const back = `/merchant/bills/tenant/${ls.id}`;
+  // lazy-mint the tenant's private portal link (/my/<token>), race-safe (persist-or-reread)
+  let ptoken: string = ls.portal_token;
+  if (!ptoken) {
+    const cand = crypto.randomBytes(9).toString('hex');
+    const [row] = await q<{ portal_token: string }>(`UPDATE stay_lease SET portal_token=$2 WHERE id=$1 AND portal_token IS NULL RETURNING portal_token`, [ls.id, cand]);
+    ptoken = row ? row.portal_token : ((await q<{ portal_token: string }>(`SELECT portal_token FROM stay_lease WHERE id=$1`, [ls.id]))[0]?.portal_token || cand);
+  }
+  const host = headers().get('host') || '';
+  const myUrl = `${host.startsWith('localhost') || host.startsWith('127.') ? 'http' : 'https'}://${host}/my/${ptoken}`;
 
   return (
     <>
@@ -52,6 +64,10 @@ export default async function TenantStatement({ params, searchParams }: { params
         <span className="t cat"><Icon n="chat" size={12} /> {ls.tenant_name || 'ผู้เช่า'}</span>
         <span className="t off">ห้อง {ls.room_code}</span>
         {ls.rent_minor != null && <span className="t season">ค่าเช่า {baht(ls.rent_minor)}/ด</span>}
+      </div>
+
+      <div className="paycard" style={{ marginBottom: 12 }}>
+        <ShareLink url={myUrl} label="ลิงก์ของผู้เช่า (หน้าของฉัน — ดูบิล/ค่าน้ำไฟ/จ่ายเงิน) · ส่งให้ผู้เช่าทาง LINE" />
       </div>
 
       <div className="bk-summary">

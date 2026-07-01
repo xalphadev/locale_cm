@@ -7,6 +7,7 @@ import { saveUploads, MAX_UPLOADS } from '@/lib/storage';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
 import { NIMMAN_LNG, NIMMAN_LAT, inCmBbox } from '@/lib/geo';
 import { PLACE_DETAILS } from '@/lib/placedetails';
+import crypto from 'crypto';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: NIMMAN_LNG, lat: NIMMAN_LAT };
@@ -1983,9 +1984,9 @@ async function genInvoiceForLease(acc: any, ls: any, periodIn: string): Promise<
   let invId: string;
   try {
     const [inv] = await q<{ id: string }>(
-      `INSERT INTO stay_invoice(place_id, lease_id, room_id, tenant_id, period_ym, issue_date, due_date, subtotal_minor, total_minor, status, created_by)
-         VALUES($1,$2,$3,$4,$5,$6::date,$7::date,$8,$8,'issued',$9) RETURNING id`,
-      [acc.place_id, ls.id, ls.room_id, ls.tenant_id, dt.period, dt.issue, dt.due, subtotal, acc.id]);
+      `INSERT INTO stay_invoice(place_id, lease_id, room_id, tenant_id, period_ym, issue_date, due_date, subtotal_minor, total_minor, status, created_by, public_token)
+         VALUES($1,$2,$3,$4,$5,$6::date,$7::date,$8,$8,'issued',$9,$10) RETURNING id`,
+      [acc.place_id, ls.id, ls.room_id, ls.tenant_id, dt.period, dt.issue, dt.due, subtotal, acc.id, crypto.randomBytes(9).toString('hex')]);
     invId = inv.id;
   } catch (e: any) {
     if (e?.code === '23505') return { status: 'exists', skipped };   // one bill per lease per month

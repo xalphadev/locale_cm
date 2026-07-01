@@ -59,8 +59,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </html>
     );
   }
-  // Public tenant-facing bill link (/bill/<token>) — no staff shell, no auth; reuse the merchant CSS scope.
-  if (path.startsWith('/bill')) {
+  // Public tenant-facing pages — the bill link (/bill/<token>) + the tenant portal (/my/<token>): no staff
+  // shell, no auth; reuse the merchant CSS scope.
+  if (path.startsWith('/bill') || path.startsWith('/my')) {
     return (
       <html lang="th">
         <FontHead merchant />

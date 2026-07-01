@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { headers } from 'next/headers';
 import { isUuid } from '../../ui';
 import PrintBtn from './PrintBtn';
-import ShareLink from './ShareLink';
+import ShareLink from '../../ShareLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,3 +93,4 @@ export default async function InvoiceDoc({ params }: { params: { id: string } })
     </div>
   );
 }
+
