@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { Icon } from '../../icons';
+import GeoCapture from '../../GeoCapture';
 import StayFilterSheet from '../StayFilterSheet';
 import { PlaceStayCard } from '../PlaceStayCard';
 import { SearchControls } from '../SearchControls';
@@ -20,6 +22,7 @@ export default async function StaySearch({ searchParams }: { searchParams: Recor
 
   return (
     <div className="staybg">
+      <GeoCapture want={sort === 'near'} has={!!cookies().get('c_geo')?.value} />
       <div className="staytop">
         <Link className="back" href="/stay"><Icon n="back" size={18} /> ที่พัก</Link>
       </div>

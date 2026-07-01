@@ -6,8 +6,8 @@ import { STAY_KINDS, STAY_KIND_TH } from '@/lib/facets';
 
 type AmenOpt = { key: string; label: string };
 const SORTS: Record<string, [string, string][]> = {
-  monthly: [['', 'มาใหม่'], ['soon', 'ว่างเร็วๆนี้'], ['cheap', 'ราคาประหยัด']],
-  daily: [['', 'มาใหม่'], ['vacant', 'ว่างวันนี้'], ['cheap', 'ราคาประหยัด']],
+  monthly: [['', 'มาใหม่'], ['near', 'ใกล้ฉัน'], ['soon', 'ว่างเร็วๆนี้'], ['cheap', 'ราคาประหยัด']],
+  daily: [['', 'มาใหม่'], ['near', 'ใกล้ฉัน'], ['vacant', 'ว่างวันนี้'], ['cheap', 'ราคาประหยัด']],
 };
 const PRICE: Record<string, [string, string][]> = {
   monthly: [['lt5k', '<5พัน'], ['5_10k', '5–10พัน'], ['10_20k', '10–20พัน'], ['20k', '20พัน+']],

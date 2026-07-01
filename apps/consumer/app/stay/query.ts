@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { q, i18n, demoUserId } from '@/lib/db';
 import { roomVacancy, roomImg } from '../RoomCard';
 import { STAY_KINDS } from '@/lib/facets';
@@ -9,7 +10,7 @@ const AKEY = /^[a-z0-9_]+$/;   // amenity/building keys are an admin catalog now
 // so the two views are one continuous search: identical SQL, grouping, pins, filters, and URL state.
 // No money anywhere — search + display + a contact lead only.
 
-export const SORTS: Record<string, string[]> = { monthly: ['', 'soon', 'cheap', 'new', 'popular'], daily: ['', 'vacant', 'cheap', 'new', 'popular'] };
+export const SORTS: Record<string, string[]> = { monthly: ['', 'near', 'soon', 'cheap', 'new', 'popular'], daily: ['', 'near', 'vacant', 'cheap', 'new', 'popular'] };
 // price buckets (price_minor satang): key → [lo, hi]
 export const PRICE: Record<string, Record<string, [number | null, number | null]>> = {
   monthly: { lt5k: [null, 500000], '5_10k': [500000, 1000000], '10_20k': [1000000, 2000000], '20k': [2000000, null] },
@@ -116,12 +117,22 @@ export async function loadStay(searchParams: Record<string, string>) {
     if (district) { params.push(district); where.push(`d.slug=$${params.length}`); }
     if (savedOnly && uid) { params.push(uid); where.push(`EXISTS (SELECT 1 FROM saved_places sp2 WHERE sp2.place_id=p.id AND sp2.user_id=$${params.length})`); }
     const popOrder = `(SELECT avg(rv.rating) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') DESC NULLS LAST, (SELECT count(*) FROM reviews rv WHERE rv.place_id=p.id AND rv.moderation_status='approved') DESC, su.created_at DESC`;
-    const order = sort === 'popular' ? popOrder
+    let order = sort === 'popular' ? popOrder
       : sort === 'cheap' ? 'su.price_minor ASC NULLS LAST'
       : sort === 'new' ? 'su.created_at DESC'
       : mode === 'monthly'
         ? (sort === 'soon' ? 'su.available_from NULLS FIRST, su.created_at DESC' : 'su.created_at DESC')
         : (sort === 'vacant' ? `(su.daily_status='vacant') DESC, su.created_at DESC` : 'su.created_at DESC');
+    // near-me lens (same c_geo cookie as home): sort=near = pure distance; the DEFAULT sort goes
+    // near-first in 2km rings (recency breaks ties inside a ring). Un-pinned Nimman-default places
+    // aren't excluded — coarse is fine for ordering. No cookie → 'near' quietly falls back to default.
+    const gm = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(cookies().get('c_geo')?.value ?? '');
+    if (gm) {
+      params.push(+gm[2], +gm[1]);
+      const distExpr = `ST_Distance(p.geo, ST_SetSRID(ST_MakePoint($${params.length - 1},$${params.length}),4326)::geography)`;
+      if (sort === 'near') order = distExpr;
+      else if (sort === '') order = `width_bucket(${distExpr}, 0, 10000, 5), ${order}`;
+    }
     params.push(uid); const sIdx = params.length;
     rows = await q<any>(
       `SELECT su.id, su.name_i18n, su.rental_mode, su.price_minor, su.price_period, su.price_text_i18n, su.image_urls,

@@ -1,17 +1,22 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { q, i18n } from '@/lib/db';
 import { Icon } from '../icons';
+import GeoCapture from '../GeoCapture';
 import { ProductCard, SUBTYPE_TH } from '../ProductCard';
 
 export const dynamic = 'force-dynamic';
 
 const SUBS = ['fruit', 'vegetable', 'bakery', 'souvenir', 'craft', 'grocery', 'menu_item'];
-const SORTS = [{ k: '', l: 'มาใหม่' }, { k: 'season', l: 'ในฤดู' }, { k: 'today', l: 'วันนี้มีของ' }];
+const SORTS = [{ k: '', l: 'มาใหม่' }, { k: 'near', l: 'ใกล้ฉัน' }, { k: 'season', l: 'ในฤดู' }, { k: 'today', l: 'วันนี้มีของ' }];
 
 export default async function Market({ searchParams }: { searchParams: { sub?: string; sort?: string; q?: string } }) {
   const sub = searchParams?.sub && SUBTYPE_TH[searchParams.sub] ? searchParams.sub : '';
-  const sort = ['season', 'today'].includes(searchParams?.sort || '') ? searchParams!.sort! : '';
+  const sort = ['near', 'season', 'today'].includes(searchParams?.sort || '') ? searchParams!.sort! : '';
   const qtext = String(searchParams?.q || '').slice(0, 60).trim();
+  // near-me lens — same c_geo cookie/pattern as home; products rank by their SHOP's distance
+  const gm = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(cookies().get('c_geo')?.value ?? '');
+  const pt = gm ? { lat: +gm[1], lng: +gm[2] } : null;
 
   let rows: any[] = [];
   try {
@@ -20,7 +25,13 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
     if (sub) { params.push(sub); where.push(`sp.subtype=$${params.length}`); }
     if (sort === 'today') where.push(`sp.available_today`);
     if (qtext) { params.push('%' + qtext + '%'); const n = params.length; where.push(`(sp.name_i18n->>'th' ILIKE $${n} OR sp.name_i18n->>'en' ILIKE $${n} OR p.name_i18n->>'th' ILIKE $${n})`); }
-    const order = sort === 'season' ? 'sp.in_season DESC, sp.created_at DESC' : 'sp.created_at DESC';
+    let order = sort === 'season' ? 'sp.in_season DESC, sp.created_at DESC' : 'sp.created_at DESC';
+    if (pt) {
+      params.push(pt.lng, pt.lat);
+      const distExpr = `ST_Distance(p.geo, ST_SetSRID(ST_MakePoint($${params.length - 1},$${params.length}),4326)::geography)`;
+      if (sort === 'near') order = `${distExpr}, sp.created_at DESC`;
+      else if (!sort) order = `width_bucket(${distExpr}, 0, 10000, 5), ${order}`;
+    }
     rows = await q<any>(`SELECT sp.id, sp.name_i18n, sp.subtype, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls,
         sp.in_season, sp.available_today, sp.sold_out, p.id place_id, p.name_i18n shop_name, p.line_id, p.phone
       FROM shop_products sp JOIN places p ON p.id=sp.place_id
@@ -35,6 +46,7 @@ export default async function Market({ searchParams }: { searchParams: { sub?: s
 
   return (
     <>
+      <GeoCapture want={sort === 'near'} has={!!pt} />
       <div className="top">
         <Link className="back" href="/"><Icon n="back" size={18} /> สำรวจ</Link>
         <div className="hi">ของสด ของฝาก จากร้านในนิมมาน</div><h1>ตลาดท้องถิ่น</h1>
