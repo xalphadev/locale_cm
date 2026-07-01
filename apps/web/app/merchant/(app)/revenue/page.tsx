@@ -60,6 +60,24 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
        FROM days LEFT JOIN stay_booking_request b ON b.created_at::date = days.d AND b.place_id=$1 AND b.deleted_at IS NULL AND NOT (b.status='cancelled' OR b.payment_status IN ('rejected','refunded'))
       GROUP BY days.d ORDER BY days.d`, [pid]);
 
+  // monthly billing summary (invoice-based) — the meaningful money view for a รายเดือน property (the slip/ADR
+  // numbers above are nightly-booking based). Shown for monthly/both; nightly-only bits hidden for pure monthly.
+  const monthlyMode = acc.stay_mode !== 'nightly';
+  const nightlyMode = acc.stay_mode !== 'monthly';
+  const [mb] = monthlyMode ? await q<any>(
+    `SELECT COALESCE(SUM(total_minor) FILTER (WHERE status='paid' AND paid_at >= $2::date AND paid_at < ($2::date + interval '1 month')),0)::bigint collected,
+            COALESCE(SUM(total_minor) FILTER (WHERE status<>'void' AND period_ym=$3),0)::bigint billed,
+            COALESCE(SUM(total_minor) FILTER (WHERE status='issued'),0)::bigint outstanding,
+            COALESCE(SUM(total_minor) FILTER (WHERE status='issued' AND due_date < CURRENT_DATE),0)::bigint overdue,
+            count(*) FILTER (WHERE status='issued' AND due_date < CURRENT_DATE)::int overdue_n
+       FROM stay_invoice WHERE place_id=$1 AND deleted_at IS NULL`, [pid, mStart, fmtM(year, mon)]) : [];
+  const mtrend = monthlyMode ? await q<any>(
+    `SELECT period_ym, COALESCE(SUM(total_minor) FILTER (WHERE status='paid'),0)::bigint collected,
+            COALESCE(SUM(total_minor) FILTER (WHERE status<>'void'),0)::bigint billed
+       FROM stay_invoice WHERE place_id=$1 AND deleted_at IS NULL AND period_ym >= to_char(CURRENT_DATE - interval '5 months','YYYY-MM')
+      GROUP BY period_ym ORDER BY period_ym`, [pid]) : [];
+  const mtMax = Math.max(1, ...mtrend.map((x: any) => Number(x.billed)));
+
   const daysInMonth = new Date(year, mon + 1, 0).getDate();
   const roomN = rooms?.n || 0;
   const nights = nz?.nights || 0;
@@ -83,6 +101,41 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
           <span className="rev-mn-l">{MONTHS[mon]} {year + 543}</span>
           {isCurrent ? <span className="rev-mn-b off"><Icon n="chevR" size={18} /></span> : <Link className="rev-mn-b" href={`/merchant/revenue?month=${next}`} aria-label="เดือนถัดไป"><Icon n="chevR" size={18} /></Link>}
         </div>
+        {monthlyMode && (
+          <>
+            <div className="rev-hero">
+              <div className="rev-hero-l">
+                <span className="rev-cap">เก็บได้เดือน{MONTHS[mon]}</span>
+                <b className="rev-rev">{baht(Number(mb?.collected || 0))}</b>
+                <span className="rev-sub">ออกบิล {baht(Number(mb?.billed || 0))}{Number(mb?.outstanding || 0) > 0 ? <> · <b style={{ color: '#c2410c' }}>ค้างชำระรวม {baht(Number(mb.outstanding))}</b></> : ''}</span>
+              </div>
+              <div className="rev-occ" title={`${nights} ÷ ${capacity} คืน-ห้อง`}><b>{occ}%</b><span>อัตราเข้าพัก</span></div>
+            </div>
+            {Number(mb?.overdue_n || 0) > 0 && (
+              <Link href="/merchant/bills?f=unpaid" className="banner-err" style={{ display: 'block', textDecoration: 'none' }}>
+                ⚠ เกินกำหนด {mb.overdue_n} บิล · {baht(Number(mb.overdue))} — แตะเพื่อดูบิลค้าง
+              </Link>
+            )}
+            {mtrend.length > 1 && (
+              <div className="rev-chart-c">
+                <div className="rev-chart-h">เก็บได้ย้อนหลัง (บิลรายเดือน)</div>
+                <div className="rev-chart">
+                  {mtrend.map((t: any, i: number) => {
+                    const c = Number(t.collected);
+                    return (
+                      <div key={i} className="rev-bar-w" title={`${t.period_ym}: เก็บได้ ${baht(c)} / ออกบิล ${baht(Number(t.billed))}`}>
+                        <div className="rev-bar" style={{ height: `${Math.round((c / mtMax) * 100)}%` }}>{c > 0 ? <i>{Math.round(c / 100000).toLocaleString()}k</i> : null}</div>
+                        <span>{t.period_ym.slice(5)}/{t.period_ym.slice(2, 4)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {nightlyMode && (<>
         <div className="rev-hero">
           <div className="rev-hero-l">
             <span className="rev-cap">รายได้เดือน{MONTHS[mon]}</span>
@@ -97,7 +150,9 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
           <div className="rev-kpi"><span>จำนวนคืน</span><b>{nights}</b></div>
           <div className="rev-kpi"><span>การจอง</span><b>{m?.bookings || 0}</b></div>
         </div>
+        </>)}
 
+        {nightlyMode && (<>
         <div className="rev-today">
           <div className="rev-today-h"><Icon n="calendar" size={15} /> วันนี้</div>
           <div className="rev-today-g">
@@ -119,8 +174,9 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
             ))}
           </div>
         </div>
+        </>)}
 
-        <p className="note">รายได้นับจากสลิปที่คุณกด “ยืนยันการชำระ” แล้วเท่านั้น · เงินโอนเข้าบัญชีคุณโดยตรง ระบบไม่ถือเงินแทน</p>
+        <p className="note">{monthlyMode ? '“เก็บได้” นับจากบิลที่กด “รับชำระแล้ว” · ' : 'รายได้นับจากสลิปที่คุณกด “ยืนยันการชำระ” แล้วเท่านั้น · '}เงินโอนเข้าบัญชีคุณโดยตรง ระบบไม่ถือเงินแทน</p>
       </div>
     </>
   );
