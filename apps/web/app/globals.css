@@ -86,7 +86,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Prompt) ============ */
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
-  --m-bg:#F7F6F2; --m-surface:#fff; --m-text:#1c2434; --m-muted:#6b6f7a; --m-line:#EEF0F4; --m-sunk:#F1F3F6;
+  --m-bg:#F1F4F9; --m-surface:#fff; --m-text:#1c2434; --m-muted:#6b6f7a; --m-line:#EAEEF4; --m-sunk:#EFF2F7;
   --m-accent:#2b69fe; --m-accent-press:#2254cb; --m-soft:#e0e9ff; --m-navy:#16284D; --m-gold:#FFB81C; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
   /* semantic status tokens — ONE value per role (was ad-hoc hex scattered across billing screens) */
