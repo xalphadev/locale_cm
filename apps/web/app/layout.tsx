@@ -35,10 +35,10 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
 ];
 
 function FontHead({ merchant }: { merchant?: boolean }) {
-  // Merchant portal now shares the consumer app's typeface (Inter + Noto Sans Thai) so the two read as one product; admin keeps Inter.
+  // Prompt (Google, Thai + Latin) across merchant + admin so the whole product shares one typeface.
   const href = merchant
-    ? 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap'
-    : 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap';
+    ? 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800&display=swap'
+    : 'https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700;800;900&display=swap';
   return (
     <head>
       <link rel="preconnect" href="https://fonts.googleapis.com" />

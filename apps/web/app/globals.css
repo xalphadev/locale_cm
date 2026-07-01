@@ -1,6 +1,6 @@
 :root { --amber:#E8852C; --jade:#1E8E7E; --ink:#221B12; --muted:#5C5346; --paper:#FBF6EE; --card:#fff; --line:#E6DDCE; }
 * { box-sizing: border-box; }
-body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Noto Sans Thai", sans-serif;
+body { margin:0; font-family: 'Prompt', ui-sans-serif, system-ui, -apple-system, sans-serif;
   background: var(--paper); color: var(--ink); }
 a { color: var(--jade); text-decoration: none; }
 .nav { display:flex; gap:1rem; align-items:center; padding:.8rem 1.4rem; background:var(--card);
@@ -83,7 +83,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 .geopick-row label{display:flex;flex-direction:column;gap:.2rem;font-size:.78rem;color:var(--muted);font-weight:600}
 .geopick-row input{padding:.45rem .6rem;border:1px solid var(--line);border-radius:7px;background:var(--paper);font:inherit;width:130px}
 
-/* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Inter+Noto) ============ */
+/* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Prompt) ============ */
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
   --m-bg:#F8F7F3; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
@@ -102,7 +102,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   --m-sh:none;
   --m-sh-soft:none;
   --m-shlg:0 2px 6px rgba(16,20,12,.06), 0 26px 50px -22px rgba(16,20,12,.30);
-  font-family:'Inter','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  font-family:'Prompt',ui-sans-serif,system-ui,-apple-system,sans-serif;
   background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
   font-feature-settings:"tnum" 1,"cv11" 1; letter-spacing:-.005em; min-height:100vh;
 }
@@ -532,7 +532,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   --side:#141C2E; --side-2:#1E2942;
   --sh:0 1px 2px rgba(16,24,40,.04), 0 7px 20px -12px rgba(16,24,40,.18);
   --shlg:0 24px 50px -26px rgba(16,24,40,.36);
-  font-family:'Inter','Noto Sans Thai',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  font-family:'Prompt',ui-sans-serif,system-ui,-apple-system,sans-serif;
   background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased; letter-spacing:-.004em;
 }
 .adm :lang(th),.adm [lang="th"]{line-height:1.55}
