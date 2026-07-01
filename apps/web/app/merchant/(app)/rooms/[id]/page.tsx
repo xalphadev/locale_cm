@@ -103,7 +103,7 @@ export default async function RoomDetail({ params }: { params: { id: string } })
               const c = RST[r.occupancy_status]?.color || '#9aa0a6';
               return <Link key={r.id} className="rmchip" href={`/merchant/units/${r.id}`} style={{ background: `color-mix(in srgb,${c} 15%,#fff)`, color: `color-mix(in srgb,${c} 62%,#1a1a1a)`, boxShadow: `inset 0 0 0 1.5px color-mix(in srgb,${c} 32%,#fff)` }}>{r.code}</Link>;
             })}
-            {childRooms.length > 48 && <Link className="rmchip" href="/merchant/units" style={{ background: 'var(--m-soft)', color: 'var(--m-accent)' }}>+{childRooms.length - 48} →</Link>}
+            {childRooms.length > 48 && <Link className="rmchip" href="/merchant/units" style={{ background: 'var(--m-soft)', color: 'var(--m-accent-ink)' }}>+{childRooms.length - 48} →</Link>}
           </div>
           <p className="note" style={{ marginTop: 8 }}>แตะที่ห้องเพื่อดู/แก้สถานะในผังห้อง</p>
         </>) : (
