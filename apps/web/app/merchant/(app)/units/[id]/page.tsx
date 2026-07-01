@@ -5,7 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction, upsertLeaseAction, recordMeterAction, generateInvoiceAction, markInvoicePaidAction, voidInvoiceAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction, upsertLeaseAction, recordMeterAction, generateInvoiceAction, markInvoicePaidAction, voidInvoiceAction, saveInspectionAction, settleDepositAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import RoomCalendar from '../RoomCalendar';
 
@@ -19,6 +19,7 @@ const OCC: Record<string, { cls: string; label: string }> = {
 };
 const fmt = (d: any) => (d ? new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '');
 const INV_ST: Record<string, string> = { draft: 'ร่าง', issued: 'รอชำระ', paid: 'ชำระแล้ว', void: 'ยกเลิก' };
+const baht = (m: any) => '฿' + Math.round(Number(m || 0) / 100).toLocaleString();
 const BKIND: Record<string, string> = { tenancy: 'สัญญาเช่า', maintenance: 'ปิดซ่อม', hold: 'กันห้อง' };   // 'stay' = no prefix
 const ymd = (d: any) => (d ? (typeof d === 'string' ? d.slice(0, 10) : new Date(d).toLocaleDateString('en-CA')) : '');   // pg Date|string → YYYY-MM-DD for a date input
 const STATUSES = [
@@ -107,6 +108,15 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
   const linesByInv: Record<string, any[]> = {};
   for (const ln of invLines) (linesByInv[ln.invoice_id] ||= []).push(ln);
 
+  // deposit settlement + inspections for this lease (0060)
+  const inspections = lease?.lease_id ? await q<any>(
+    `SELECT kind, photos, note, to_char(created_at,'DD/MM/YY') at FROM stay_inspection WHERE lease_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 8`, [lease.lease_id]) : [];
+  const [settle] = lease?.lease_id ? await q<any>(
+    `SELECT deductions, deductions_minor, refund_minor, to_char(refunded_at,'DD/MM/YY') refunded_d, note FROM stay_deposit_settlement WHERE lease_id=$1 AND deleted_at IS NULL`, [lease.lease_id]) : [];
+  const dmap: Record<string, number> = {};
+  for (const d of (settle?.deductions || [])) dmap[d.label] = Number(d.amount_minor);
+  const dget = (l: string) => (dmap[l] ? dmap[l] / 100 : '');
+
   return (
     <>
       <MTopbar back="/merchant/units" backLabel="ผังห้อง" title={`ห้อง ${r.code}`} action={<Link href={`/merchant/units/${r.id}/edit`} aria-label="แก้ไข"><Icon n="edit" size={19} /></Link>} />
@@ -128,6 +138,9 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.ok === 'voided' && <div className="banner-ok">ยกเลิกบิลแล้ว</div>}
       {searchParams?.error === 'billexists' && <div className="banner-err">มีบิลของเดือนนี้อยู่แล้ว</div>}
       {searchParams?.error === 'norent' && <div className="banner-err">ยังไม่ได้ตั้งค่าเช่าในสัญญา — เพิ่มค่าเช่าก่อนออกบิล</div>}
+      {searchParams?.ok === 'inspect' && <div className="banner-ok">✓ บันทึกการตรวจห้องแล้ว</div>}
+      {searchParams?.ok === 'deposit' && <div className="banner-ok">✓ บันทึกการคืนเงินประกันแล้ว</div>}
+      {searchParams?.error === 'empty' && <div className="banner-err">แนบรูปหรือใส่บันทึกอย่างน้อยหนึ่งอย่าง</div>}
 
       <div className="dtags" style={{ marginBottom: 14 }}>
         <span className="t cat"><Icon n="bed" size={12} /> {r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'}</span>
@@ -286,6 +299,57 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
               ))}
             </div>
           )}
+        </>
+      )}
+
+      {lease?.lease_id && (
+        <>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="wallet" size={15} /></span> เงินประกัน &amp; ตรวจห้อง</h2>
+          <div className="factgrid">
+            <Fact ic="wallet" l="เงินประกันที่เก็บ" v={lease.deposit_minor ? baht(lease.deposit_minor) : '—'} />
+            {settle ? <Fact ic="wallet" l="หักรวม" v={baht(settle.deductions_minor)} /> : null}
+            {settle ? <Fact ic="wallet" l="คืน" v={baht(settle.refund_minor)} /> : null}
+            {settle?.refunded_d ? <Fact ic="check" l="คืนแล้ว" v={settle.refunded_d} /> : null}
+          </div>
+          <details className="usettings">
+            <summary><Icon n="grid" size={14} /> ตรวจห้อง (รูปเข้า/ออก){inspections.length ? ` · ${inspections.length}` : ''}</summary>
+            {inspections.map((ins: any, i: number) => (
+              <div key={i} style={{ margin: '8px 0', paddingBottom: 8, borderBottom: '1px solid var(--m-line)' }}>
+                <b>{ins.kind === 'move_in' ? 'ย้ายเข้า' : 'ย้ายออก'}</b> <span className="muted">{ins.at}</span>
+                {ins.note ? <div className="note" style={{ margin: '2px 0' }}>{ins.note}</div> : null}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                  {(ins.photos || []).map((u: string, j: number) => <a key={j} href={u} target="_blank" rel="noopener"><img src={u} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} /></a>)}
+                </div>
+              </div>
+            ))}
+            <form className="fsec" action={saveInspectionAction.bind(null, lease.lease_id)} encType="multipart/form-data">
+              <input type="hidden" name="back" value={`/merchant/units/${r.id}`} />
+              <div className="fgrid">
+                <div className="field"><label>ประเภท</label><select name="kind" defaultValue="move_in"><option value="move_in">ย้ายเข้า</option><option value="move_out">ย้ายออก</option></select></div>
+                <div className="field"><label>รูป (หลายรูปได้)</label><input type="file" name="photos" multiple accept="image/*" /></div>
+              </div>
+              <div className="field"><label>บันทึกสภาพห้อง</label><input name="note" placeholder="เช่น สภาพปกติ / ผนังมีรอย" /></div>
+              <button className="dbtn sm primary" type="submit">บันทึกการตรวจ</button>
+            </form>
+          </details>
+          <details className="usettings">
+            <summary><Icon n="wallet" size={14} /> คืนเงินประกัน (หัก + คืน)</summary>
+            <form className="fsec" action={settleDepositAction.bind(null, lease.lease_id)}>
+              <input type="hidden" name="back" value={`/merchant/units/${r.id}`} />
+              <p className="note" style={{ marginTop: 0 }}>เงินประกันที่เก็บ: <b>{lease.deposit_minor ? baht(lease.deposit_minor) : '—'}</b> · หักได้เฉพาะความเสียหายที่ผู้เช่าทำ (สคบ.) · คืนภายใน 7 วันหลังหมดสัญญา</p>
+              <div className="fgrid">
+                <div className="field"><label>ค่าเสียหาย/ซ่อม (บาท)</label><input name="d_damage" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={dget('ค่าเสียหาย/ซ่อม')} /></div>
+                <div className="field"><label>ค่าทำความสะอาด (บาท)</label><input name="d_clean" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={dget('ค่าทำความสะอาด')} /></div>
+              </div>
+              <div className="fgrid">
+                <div className="field"><label>ค่าน้ำ-ไฟ/ค่าเช่าค้าง (บาท)</label><input name="d_arrears" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={dget('ค่าน้ำ-ไฟ/ค่าเช่าค้าง')} /></div>
+                <div className="field"><label>อื่นๆ (บาท)</label><input name="d_other" type="number" min={0} step="0.01" inputMode="decimal" defaultValue={dget('อื่นๆ')} /></div>
+              </div>
+              <div className="field"><label>เหตุผล/รายละเอียดการหัก</label><input name="note" defaultValue={settle?.note || ''} placeholder="ระบุรายละเอียด" /></div>
+              <label className="check"><input type="checkbox" name="refunded" defaultChecked={!!settle?.refunded_d} /> คืนเงินประกันให้ผู้เช่าแล้ว</label>
+              <button className="dbtn sm primary" type="submit">บันทึก</button>
+            </form>
+          </details>
         </>
       )}
 

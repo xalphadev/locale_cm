@@ -2086,6 +2086,65 @@ export async function applyLateFeeAction(invoiceId: string, formData: FormData) 
   redirect(`${backTo}?ok=latefee`);
 }
 
+// ── deposit settlement + move-in/out inspection (0060): record-only. The owner returns the deposit directly;
+//    we record held → itemized deductions (สคบ.: tenant-caused damage only) → refundable → refunded date. ──
+
+/** Save a move-in/out room inspection (0060): photos (→ MinIO via saveUploads) + a note, to justify deductions. */
+export async function saveInspectionAction(leaseId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(leaseId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  const [ls] = await q<{ room_id: string }>(`SELECT room_id FROM stay_lease WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leaseId, acc.place_id]);
+  if (!ls) redirect(backTo);
+  const kind = s(formData, 'kind') === 'move_out' ? 'move_out' : 'move_in';
+  const note = s(formData, 'note').slice(0, 500) || null;
+  const files = (formData.getAll('photos') as File[]).filter((f) => f && f.size > 0);
+  const saved = files.length ? await saveUploads(files, 'rooms') : [];
+  if (!saved.length && !note) redirect(`${backTo}?error=empty`);
+  await q(`INSERT INTO stay_inspection(place_id, lease_id, room_id, kind, photos, note, created_by) VALUES($1,$2,$3,$4,$5,$6,$7)`,
+    [acc.place_id, leaseId, ls.room_id, kind, saved, note, acc.id]);
+  revalidatePath(backTo);
+  redirect(`${backTo}?ok=inspect`);
+}
+
+/** Settle the deposit for a lease (0060) — record itemized deductions + refundable balance, and (optionally)
+ *  stamp that it was refunded. Record-only, place-scoped, one settlement per lease (upsert). */
+export async function settleDepositAction(leaseId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(leaseId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  const [ls] = await q<any>(`SELECT room_id, tenant_id, deposit_minor FROM stay_lease WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leaseId, acc.place_id]);
+  if (!ls) redirect(backTo);
+  const deposit = Number(ls.deposit_minor || 0);
+  const items = [
+    { label: 'ค่าเสียหาย/ซ่อม', amount_minor: bahtToMinor(s(formData, 'd_damage')) ?? 0 },
+    { label: 'ค่าทำความสะอาด', amount_minor: bahtToMinor(s(formData, 'd_clean')) ?? 0 },
+    { label: 'ค่าน้ำ-ไฟ/ค่าเช่าค้าง', amount_minor: bahtToMinor(s(formData, 'd_arrears')) ?? 0 },
+    { label: 'อื่นๆ', amount_minor: bahtToMinor(s(formData, 'd_other')) ?? 0 },
+  ].filter((x) => x.amount_minor > 0);
+  const deductions = items.reduce((sum, x) => sum + x.amount_minor, 0);
+  const refund = Math.max(0, deposit - deductions);
+  const refundNow = !!formData.get('refunded');
+  const note = s(formData, 'note').slice(0, 500) || null;
+  const refundedNote = s(formData, 'refunded_note').slice(0, 300) || null;
+  const [ex] = await q<{ id: string }>(`SELECT id FROM stay_deposit_settlement WHERE lease_id=$1 AND place_id=$2 AND deleted_at IS NULL`, [leaseId, acc.place_id]);
+  if (ex) {
+    await q(`UPDATE stay_deposit_settlement SET deposit_minor=$2, deductions=$3::jsonb, deductions_minor=$4, refund_minor=$5, note=$6,
+               refunded_at = CASE WHEN $7 THEN COALESCE(refunded_at, now()) ELSE NULL END, refunded_note=$8, updated_at=now()
+             WHERE id=$1`, [ex.id, deposit, JSON.stringify(items), deductions, refund, note, refundNow, refundedNote]);
+  } else {
+    await q(`INSERT INTO stay_deposit_settlement(place_id, lease_id, room_id, tenant_id, deposit_minor, deductions, deductions_minor, refund_minor, note, refunded_at, refunded_note, created_by)
+               VALUES($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9, CASE WHEN $10 THEN now() END, $11, $12)`,
+      [acc.place_id, leaseId, ls.room_id, ls.tenant_id, deposit, JSON.stringify(items), deductions, refund, note, refundNow, refundedNote, acc.id]);
+  }
+  revalidatePath(backTo);
+  redirect(`${backTo}?ok=deposit`);
+}
+
 /** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for
  *  non-sequential / named units) — the fast way to lay out a dorm. Existing codes are skipped + reported. */
 export async function createRoomsBulkAction(formData: FormData) {
