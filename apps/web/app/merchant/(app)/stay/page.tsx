@@ -66,9 +66,13 @@ export default async function StayHome() {
 
   // booking/board/revenue belong to "ระบบการจอง" (manages_stay); a listing-only place sees just ประเภท&ราคา
   const booking = !!acc.manages_stay;
+  // monthly bills tile (0059) — only for a รายเดือน/ทั้งสอง managed property; badge the unpaid count
+  const monthlyBills = managed && acc.stay_mode !== 'nightly';
+  const [bills] = monthlyBills ? await q<any>(`SELECT count(*) FILTER (WHERE status='issued')::int unpaid FROM stay_invoice WHERE place_id=$1 AND deleted_at IS NULL`, [acc.place_id]) : [];
   const tiles: { href: string; icon: string; label: string; stat: string; hot?: boolean; badge?: number }[] = [
     ...(booking ? [{ href: '/merchant/bookings', icon: 'chat', label: 'การจอง', stat: newN > 0 ? 'มีคำขอรอตอบ' : 'คำขอ + การจอง', hot: newN > 0, badge: newN || undefined }] : []),
     ...(managed ? [{ href: '/merchant/units', icon: 'grid', label: 'ผังห้อง', stat: total > 0 ? `${rs!.vacant} ห้องว่าง` : 'เพิ่มห้องจริง' }] : []),
+    ...(monthlyBills ? [{ href: '/merchant/bills', icon: 'feed', label: 'บิล/ใบแจ้งหนี้', stat: (bills?.unpaid || 0) > 0 ? `${bills.unpaid} บิลรอชำระ` : 'ค่าเช่า · น้ำ/ไฟ', hot: (bills?.unpaid || 0) > 0, badge: bills?.unpaid || undefined }] : []),
     { href: '/merchant/rooms', icon: 'tag', label: 'ประเภท & ราคา', stat: `${tc?.n || 0} รูปแบบ` },
     ...((managed && nightly) ? [{ href: '/merchant/units/calendar', icon: 'calendar', label: 'ปฏิทินรวม', stat: 'ดูทั้งเดือน' }] : []),
     ...(managed ? [{ href: '/merchant/units/available', icon: 'search', label: 'หาห้องว่าง', stat: 'เช็คว่างตามวัน' }] : []),

@@ -1932,25 +1932,20 @@ export async function recordMeterAction(roomId: string, formData: FormData) {
 /** Generate the monthly rent+utility invoice for a lease (0059): rent (from lease) + metered electricity/water
  *  (units × actual rate, from the room's last two readings) + common fee. Itemized, record-only. Idempotent per
  *  (lease, month). สคบ.: due ≥ issue+3; utilities shown units×rate; utilities in bills_included aren't charged. */
-export async function generateInvoiceAction(leaseId: string, formData: FormData) {
-  const acc = await currentAccount();
-  requireCap(acc, 'manages_stay');
-  if (!UUID_RE.test(leaseId)) redirect('/merchant/units');
-  const back = s(formData, 'back');
-  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
-  const [ls] = await q<any>(
-    `SELECT l.id, l.room_id, l.tenant_id, l.rent_minor, COALESCE(l.billing_day,1) billing_day, l.attrs,
+// SELECT that loads everything genInvoiceForLease needs (shared by the single + batch actions).
+const LEASE_FOR_BILL = `l.id, l.room_id, l.tenant_id, l.rent_minor, COALESCE(l.billing_day,1) billing_day, l.attrs,
             su.bills_included, p.utility_rates
        FROM stay_lease l
        LEFT JOIN stay_units su ON su.id=l.stay_unit_id
-       JOIN places p ON p.id=l.place_id
-      WHERE l.id=$1 AND l.place_id=$2 AND l.status='active' AND l.deleted_at IS NULL`, [leaseId, acc.place_id]);
-  if (!ls) redirect(`${backTo}?error=lease`);
-  if (ls.rent_minor == null) redirect(`${backTo}?error=norent`);
-  const periodIn = s(formData, 'period');
+       JOIN places p ON p.id=l.place_id`;
+
+/** Build + insert ONE lease's invoice for a period (record-only). Returns a status (no redirect) so the
+ *  single-lease action and the batch action share the exact same logic. `ls` must be loaded via LEASE_FOR_BILL. */
+async function genInvoiceForLease(acc: any, ls: any, periodIn: string): Promise<{ status: 'ok' | 'exists' | 'norent'; skipped: string[] }> {
+  if (ls.rent_minor == null) return { status: 'norent', skipped: [] };
   const period = /^\d{4}-\d{2}$/.test(periodIn) ? periodIn : null;
-  // period + สคบ. dates computed in pg (no TZ drift): due = billing_day of the month (day clamped to month length),
-  // pushed to at least CURRENT_DATE+3 so the ≥3-day-notice rule always holds; issue = today.
+  // period + สคบ. dates in pg (no TZ drift): due = billing_day of the month (day clamped to month length),
+  // pushed to ≥ CURRENT_DATE+3 so the ≥3-day-notice rule always holds; issue = today.
   const [dt] = await q<{ period: string; issue: string; due: string }>(
     `WITH d AS (SELECT COALESCE($1, to_char(CURRENT_DATE,'YYYY-MM')) ym)
      SELECT ym period, to_char(CURRENT_DATE,'YYYY-MM-DD') issue,
@@ -1988,10 +1983,10 @@ export async function generateInvoiceAction(leaseId: string, formData: FormData)
     const [inv] = await q<{ id: string }>(
       `INSERT INTO stay_invoice(place_id, lease_id, room_id, tenant_id, period_ym, issue_date, due_date, subtotal_minor, total_minor, status, created_by)
          VALUES($1,$2,$3,$4,$5,$6::date,$7::date,$8,$8,'issued',$9) RETURNING id`,
-      [acc.place_id, leaseId, ls.room_id, ls.tenant_id, dt.period, dt.issue, dt.due, subtotal, acc.id]);
+      [acc.place_id, ls.id, ls.room_id, ls.tenant_id, dt.period, dt.issue, dt.due, subtotal, acc.id]);
     invId = inv.id;
   } catch (e: any) {
-    if (e?.code === '23505') redirect(`${backTo}?error=billexists`);
+    if (e?.code === '23505') return { status: 'exists', skipped };   // one bill per lease per month
     throw e;
   }
   for (const l of lines) {
@@ -2000,9 +1995,43 @@ export async function generateInvoiceAction(leaseId: string, formData: FormData)
       [invId, l.kind, l.label, l.units ?? null, l.rate_minor ?? null, l.prev ?? null, l.curr ?? null, l.amount, l.sort]);
   }
   await q(`UPDATE stay_invoice SET ref=$2 WHERE id=$1`, [invId, 'INV-' + invId.slice(0, 6).toUpperCase()]);
+  return { status: 'ok', skipped };
+}
+
+/** Generate ONE lease's monthly invoice (from the room/tenant detail). */
+export async function generateInvoiceAction(leaseId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(leaseId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  const [ls] = await q<any>(
+    `SELECT ${LEASE_FOR_BILL} WHERE l.id=$1 AND l.place_id=$2 AND l.status='active' AND l.deleted_at IS NULL`, [leaseId, acc.place_id]);
+  if (!ls) redirect(`${backTo}?error=lease`);
+  const r = await genInvoiceForLease(acc, ls, s(formData, 'period'));
+  if (r.status === 'norent') redirect(`${backTo}?error=norent`);
+  if (r.status === 'exists') redirect(`${backTo}?error=billexists`);
   revalidatePath(`/merchant/units/${ls.room_id}`); revalidatePath('/merchant/bills');
-  // "no silent caps": if a metered utility was configured but omitted (needs 2 readings), tell the owner.
-  redirect(`${backTo}?ok=billed${skipped.length ? '&warn=nometer' : ''}`);
+  redirect(`${backTo}?ok=billed${r.skipped.length ? '&warn=nometer' : ''}`);   // "no silent caps": warn if a metered utility was omitted
+}
+
+/** Batch: generate this month's invoice for EVERY active lease with rent set (skips leases already billed for
+ *  the period + leases with no rent). Record-only. Redirects to /merchant/bills with a made/existing/nometer count. */
+export async function generateAllInvoicesAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  const periodIn = s(formData, 'period');
+  const leases = await q<any>(
+    `SELECT ${LEASE_FOR_BILL} WHERE l.place_id=$1 AND l.status='active' AND l.deleted_at IS NULL`, [acc.place_id]);
+  let made = 0, existing = 0, norent = 0, nometer = 0;
+  for (const ls of leases) {
+    const r = await genInvoiceForLease(acc, ls, periodIn);
+    if (r.status === 'ok') { made++; if (r.skipped.length) nometer++; }
+    else if (r.status === 'exists') existing++;
+    else norent++;
+  }
+  revalidatePath('/merchant/bills'); revalidatePath('/merchant/units', 'layout');
+  redirect(`/merchant/bills?ok=batch&made=${made}&existing=${existing}&norent=${norent}&nometer=${nometer}`);
 }
 
 /** Mark an invoice paid (0059) — a RECORDED event only; owner collected offline. Never posts to the ledger. */
