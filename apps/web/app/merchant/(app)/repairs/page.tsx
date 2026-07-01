@@ -49,7 +49,7 @@ export default async function Repairs({ searchParams }: { searchParams: { f?: st
                 </span>
                 <span className={`t ${m.status === 'done' ? 'sold' : m.status === 'in_progress' ? 'cat' : m.status === 'cancelled' ? 'off' : 'season'}`}>{RP[m.status] || m.status}</span>
               </div>
-              {m.photos?.length ? <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '2px 0 6px' }}>{m.photos.map((u: string, j: number) => <a key={j} href={u} target="_blank" rel="noopener"><img src={u} alt="" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} /></a>)}</div> : null}
+              {m.photos?.length ? <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '2px 0 6px' }}>{m.photos.map((u: string, j: number) => <a key={j} href={u} target="_blank" rel="noopener"><img src={u} alt={`รูปแจ้งซ่อม ${j + 1}`} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} /></a>)}</div> : null}
               <div className="lead-acts">
                 {m.status === 'new' && <form action={setMaintenanceStatusAction.bind(null, m.id, 'in_progress')}><button className="dbtn sm primary" type="submit">รับเรื่อง</button></form>}
                 {(m.status === 'new' || m.status === 'in_progress') && <form action={setMaintenanceStatusAction.bind(null, m.id, 'done')}><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> เสร็จ</button></form>}

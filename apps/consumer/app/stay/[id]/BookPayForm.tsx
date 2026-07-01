@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 import { quoteStay, type Rate } from '@/lib/quote';
 import { promptpayPayload } from '@/lib/promptpay';
+import { Icon } from '../../icons';
 
 // Single-page online-booking form: pick dates/guests → see the amount → fill contact → transfer to the
 // host's account and attach the slip → submit (createPaidBookingAction). Price preview = base × nights/
@@ -108,7 +109,7 @@ export function BookPayForm({ action, mode, basePriceMinor, rates, depositPct, c
           {payNow > 0 && <div className="bp-acct-amt">โอน <b>{money(payNow)}</b>{isDeposit ? ' (มัดจำ)' : ''}</div>}
         </div>
         <label className="bp-slip">
-          <span>{slipName ? `📎 ${slipName}` : '＋ แนบรูปสลิปการโอน *'}</span>
+          <span>{slipName ? <><Icon n="check" size={14} /> {slipName}</> : <><Icon n="feed" size={14} /> แนบรูปสลิปการโอน *</>}</span>
           <input type="file" name="slip" accept="image/png,image/jpeg,image/webp" onChange={(e) => setSlipName(e.target.files?.[0]?.name || '')} required />
         </label>
       </section>

@@ -68,7 +68,7 @@ export default async function StaySearch({ searchParams }: { searchParams: Recor
             ? <>ไม่มีที่พักที่ยืนยันว่างช่วง {fromQ}–{toQ} · <Link href={href({})}>ดูทั้งหมด (ไม่ระบุวัน)</Link> เพื่อสอบถามที่พักโดยตรง</>
             : 'ไม่พบที่พักที่ตรงตัวกรอง — ลองเอาตัวกรองออกบ้าง'}</p>
       )}
-      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
+      <p className="shopnote" style={{ margin: '6px 16px 22px' }}><Icon n="chat" size={13} /> ส่งคำขอจองหรือนัดดูห้องได้ในแอป — บางที่พักรับชำระเงินออนไลน์ · ที่พักจะติดต่อกลับ</p>
     </div>
   );
 }

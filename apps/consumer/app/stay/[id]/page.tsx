@@ -298,7 +298,9 @@ export default async function StayUnitDetail({ params, searchParams }: { params:
           <div className="prail">{others.map((o) => <RoomCard key={o.id} u={{ ...o, stay_kind: u.stay_kind }} line_id={u.line_id} phone={u.phone} />)}</div>
         </>)}
 
-        <p className="shopnote"><Icon n="chat" size={13} /> ไม่มีระบบจอง/จ่ายเงินในแอป — ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง</p>
+        {booking
+          ? <p className="shopnote"><Icon n="chat" size={13} /> {u.pay_online_enabled ? 'จองและชำระเงินออนไลน์ได้ในแอป — หรือส่งคำขอจอง/นัดดูห้อง แล้วที่พักจะติดต่อกลับ' : 'ส่งคำขอจอง/นัดดูห้องได้ในแอป — ที่พักจะติดต่อกลับ'}</p>
+          : <p className="shopnote"><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง</p>}
       </div>
     </>
   );

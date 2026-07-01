@@ -34,7 +34,7 @@ export function StayAvailability({ days, months = 2 }: { days: { day: string; fr
         );
       })}
       <div className="savail-legend"><span><i className="fr" /> ว่าง</span><span><i className="no" /> เต็ม</span></div>
-      <p className="savail-note">ว่าง ณ ตอนนี้ — ยืนยัน/จองกับที่พักโดยตรง (ไม่มีระบบจอง/จ่ายเงินในแอป)</p>
+      <p className="savail-note">ว่าง ณ ตอนนี้ — ส่งคำขอจอง/นัดดูห้องได้ในแอป ที่พักจะยืนยันอีกครั้ง</p>
     </div>
   );
 }

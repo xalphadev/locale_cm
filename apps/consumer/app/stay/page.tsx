@@ -92,7 +92,7 @@ export default async function Stay({ searchParams }: { searchParams: Record<stri
         <Link className="staymaplink" href="/stay/map"><Icon n="map" size={16} /> ดูที่พักบนแผนที่</Link>
         <Link className="staymaplink" href="/stay/requests"><Icon n="chat" size={16} /> คำขอที่พักของฉัน</Link>
       </div>
-      <p className="shopnote" style={{ margin: '12px 16px 22px' }}><Icon n="chat" size={13} /> ติดต่อที่พักโดยตรงเพื่อสอบถาม/จอง — Locale ยังไม่มีระบบจอง/ชำระเงินในแอป</p>
+      <p className="shopnote" style={{ margin: '12px 16px 22px' }}><Icon n="chat" size={13} /> ส่งคำขอจองหรือนัดดูห้องได้ในแอป — บางที่พักรับชำระเงินออนไลน์ · ที่พักจะติดต่อกลับ</p>
     </div>
   );
 }

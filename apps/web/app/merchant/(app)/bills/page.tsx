@@ -68,7 +68,7 @@ export default async function Bills({ searchParams }: { searchParams: { f?: stri
       </div>
 
       {invoices.length === 0 ? (
-        <p className="note">{f === 'unpaid' ? 'ไม่มีบิลค้างชำระ 🎉' : 'ยังไม่มีบิลในหมวดนี้'}</p>
+        <p className="note">{f === 'unpaid' ? 'ไม่มีบิลค้างชำระ' : 'ยังไม่มีบิลในหมวดนี้'}</p>
       ) : (
         <div className="mlist">
           {invoices.map((iv) => {

@@ -45,7 +45,7 @@ export default async function Feed() {
     <>
       <div className="top"><div className="hi">อัปเดตล่าสุดรอบตัวคุณ</div><h1>ฟีด</h1></div>
       <div className="feed">
-        {d.feed.length === 0 && <p className="empty">ยังไม่มีอัปเดต — รัน <code>db/test/setup-dev-db.sh</code></p>}
+        {d.feed.length === 0 && <p className="empty">ยังไม่มีอัปเดตตอนนี้</p>}
         {d.feed.map((it: any, i: number) => {
           const key = postKey(it);
           return (

@@ -152,7 +152,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
   try { d = await load(tab, cat, sub, nameQ, facets, area, !!query); }
   catch {
     return (<><div className="appbar"><div><div className="greet">Locale</div><div className="loc">เชียงใหม่</div></div></div>
-      <div className="body"><p className="empty">ยังต่อฐานข้อมูลไม่ได้ — รัน <code>db/test/setup-dev-db.sh</code></p></div></>);
+      <div className="body"><p className="empty">ตอนนี้เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง</p></div></>);
   }
 
   const dp = daypart(bkkNow());

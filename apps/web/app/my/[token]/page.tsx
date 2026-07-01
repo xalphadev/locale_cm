@@ -2,6 +2,7 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { q, i18n } from '@/lib/db';
 import { promptpayPayload } from '@/lib/promptpay';
+import { Icon } from '../../merchant/(app)/ui';
 import { submitMaintenanceAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
        LEFT JOIN stay_tenant t ON t.id=l.tenant_id AND t.deleted_at IS NULL
        JOIN places p ON p.id=l.place_id
       WHERE l.portal_token=$1 AND l.deleted_at IS NULL`, [params.token]) : [];
-  if (!ls) return (<div style={{ maxWidth: 560, margin: '0 auto', padding: 24 }}><p className="note">ไม่พบข้อมูล — ลิงก์อาจไม่ถูกต้องหรือถูกยกเลิก</p></div>);
+  if (!ls) return (<div style={{ maxWidth: 560, margin: '0 auto', padding: 'calc(24px + env(safe-area-inset-top)) 20px 24px' }}><p className="note">ไม่พบข้อมูล — ลิงก์อาจไม่ถูกต้องหรือถูกยกเลิก</p></div>);
 
   const [sm] = await q<any>(`SELECT COALESCE(sum(total_minor - paid_minor) FILTER (WHERE status='issued'),0) outstanding FROM stay_invoice WHERE lease_id=$1 AND deleted_at IS NULL`, [ls.id]);
   const invs = await q<any>(
@@ -50,7 +51,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
   const kindTh: Record<string, string> = { electricity: 'ค่าไฟ', water: 'ค่าน้ำ' };
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 16px' }}>
+    <div style={{ maxWidth: 560, margin: '0 auto', padding: 'calc(18px + env(safe-area-inset-top)) 16px calc(18px + env(safe-area-inset-bottom))' }}>
       <div className="listhead"><h1>หน้าของฉัน</h1></div>
       {searchParams?.ok === 'repair' && <div className="banner-ok">✓ ส่งแจ้งซ่อมแล้ว — เจ้าของที่พักจะดำเนินการให้</div>}
       {searchParams?.error === 'empty' && <div className="banner-err">กรุณากรอกรายละเอียดที่ต้องการแจ้งซ่อม</div>}
@@ -70,7 +71,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
 
       {latestUtil.length > 0 && (
         <>
-          <h2 className="rsec">💡 ค่าน้ำ-ไฟ {latestPeriod ? `(${latestPeriod})` : ''}</h2>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="spark" size={15} /></span>ค่าน้ำ-ไฟ {latestPeriod ? `(${latestPeriod})` : ''}</h2>
           <div className="factgrid">
             {latestUtil.map((u: any, i: number) => (
               <div className="factitem" key={i}>
@@ -81,7 +82,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
         </>
       )}
 
-      <h2 className="rsec">🧾 บิลของฉัน</h2>
+      <h2 className="rsec"><span className="rsec-ic"><Icon n="bill" size={15} /></span>บิลของฉัน</h2>
       {invs.length === 0 ? <p className="note">ยังไม่มีบิล</p> : (
         <div className="mlist">
           {invs.map((iv: any) => {
@@ -101,7 +102,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
         </div>
       )}
 
-      <h2 className="rsec">🔧 แจ้งซ่อม</h2>
+      <h2 className="rsec"><span className="rsec-ic"><Icon n="chat" size={15} /></span>แจ้งซ่อม</h2>
       <form action={submitMaintenanceAction.bind(null, params.token)} encType="multipart/form-data" style={{ marginBottom: 10 }}>
         <div className="field"><textarea name="detail" placeholder="เช่น แอร์ไม่เย็น / ก๊อกน้ำรั่ว / หลอดไฟเสีย" style={{ minHeight: 60 }} required /></div>
         <div className="field"><label>แนบรูป (ถ้ามี)</label><input type="file" name="photos" multiple accept="image/*" /></div>
@@ -118,7 +119,7 @@ export default async function TenantPortal({ params, searchParams }: { params: {
         </div>
       )}
 
-      <h2 className="rsec">📄 สัญญา</h2>
+      <h2 className="rsec"><span className="rsec-ic"><Icon n="feed" size={15} /></span>สัญญา</h2>
       <div className="factgrid">
         {ls.rent_minor != null ? <div className="factitem"><div className="factitem-tx"><div className="factitem-l">ค่าเช่า/เดือน</div><div className="factitem-v">{baht(ls.rent_minor)}</div></div></div> : null}
         {ls.deposit_minor != null ? <div className="factitem"><div className="factitem-tx"><div className="factitem-l">เงินประกัน</div><div className="factitem-v">{baht(ls.deposit_minor)}</div></div></div> : null}
