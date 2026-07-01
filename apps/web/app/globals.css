@@ -86,7 +86,7 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
 /* ============ MERCHANT PORTAL — consumer-style theme (blue/navy/yellow, rounded, Prompt) ============ */
 .merchant-root{
   /* palette + type lifted straight from the consumer app so the two read as one product */
-  --m-bg:#F8F7F3; --m-surface:#fff; --m-text:#0E1322; --m-muted:#65656E; --m-line:#E9ECF1; --m-sunk:#EFF1F5;
+  --m-bg:#F7F6F2; --m-surface:#fff; --m-text:#1c2434; --m-muted:#6b6f7a; --m-line:#EEF0F4; --m-sunk:#F1F3F6;
   --m-accent:#2b69fe; --m-accent-press:#2254cb; --m-soft:#e0e9ff; --m-navy:#16284D; --m-gold:#FFB81C; --m-hint:#A0A0A8;
   --m-ink:#0E1322; --m-ink-press:#000; --m-jade:#16A06A;            /* near-black = primary CTA, jade = "live" */
   /* semantic status tokens — ONE value per role (was ad-hoc hex scattered across billing screens) */
@@ -97,11 +97,11 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
      and a theme change to --m-accent wouldn't reach them. */
   --muted:var(--m-muted); --text:var(--m-text); --hairline:var(--m-line); --accent:var(--m-accent);
   --accent-press:var(--m-accent-press); --surface:var(--m-surface); --sunk:var(--m-sunk); --soft:var(--m-soft);
-  --r-card:16px; --r-md:13px; --r-sm:11px; --r-chip:999px;
-  /* flat & clean — definition comes from hairline borders + spacing, not floating shadows */
-  --m-sh:none;
-  --m-sh-soft:none;
-  --m-shlg:0 2px 6px rgba(16,20,12,.06), 0 26px 50px -22px rgba(16,20,12,.30);
+  --r-card:18px; --r-md:14px; --r-sm:11px; --r-chip:999px;
+  /* soft & gentle — cards lift on a diffuse low-alpha shadow (paired with lighter hairlines), not hard borders */
+  --m-sh:0 1px 2px rgba(21,28,46,.04), 0 6px 16px -10px rgba(21,28,46,.10);
+  --m-sh-soft:0 1px 2px rgba(21,28,46,.03), 0 4px 12px -8px rgba(21,28,46,.07);
+  --m-shlg:0 2px 8px rgba(21,28,46,.06), 0 26px 50px -22px rgba(21,28,46,.24);
   font-family:'Prompt',ui-sans-serif,system-ui,-apple-system,sans-serif;
   background:var(--m-bg); color:var(--m-text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
   font-feature-settings:"tnum" 1,"cv11" 1; letter-spacing:-.005em; min-height:100vh;
