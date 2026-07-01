@@ -82,7 +82,7 @@ export async function currentAccount(): Promise<any | null> {
        ) AS eff_place_id
        FROM acct a
      )
-     SELECT r.id, r.email, r.display_name, r.phone, r.status,
+     SELECT r.id, r.email, r.display_name, r.phone, r.status, r.approval_status, r.approval_note,
             r.eff_place_id AS place_id,
             p.name_i18n place_name, p.status::text place_status,
             (p.claim_verified_at IS NOT NULL) AS verified, p.phone AS place_phone, p.source::text AS place_source,

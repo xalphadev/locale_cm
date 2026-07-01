@@ -22,6 +22,9 @@ const TABS: (Omit<Tab, 'badge'> & { cap: string | null })[] = [
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const acc = await currentAccount();
   if (!acc) redirect('/merchant/login');
+  // account-level approval gate (0065): pending/rejected accounts never see the console —
+  // /merchant/pending lives OUTSIDE this (app) group so the redirect can't loop.
+  if (acc.approval_status !== 'approved') redirect('/merchant/pending');
   const live = acc.place_status === 'published';
   // tab renames ห้องพัก → ห้อง in 'unique' mode (resort, no board); reflects the ACTIVE branch (Switcher).
   const mode = acc.room_mode || 'multi';

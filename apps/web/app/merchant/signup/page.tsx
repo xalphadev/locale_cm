@@ -40,7 +40,8 @@ export default function Signup({ searchParams }: { searchParams: { error?: strin
         <hr className="phr" />
         <div className="field"><label>อีเมล <span className="req">*</span></label><input name="email" type="email" required autoComplete="email" /></div>
         <div className="field"><label>รหัสผ่าน <span className="req">*</span> (อย่างน้อย 8 ตัวอักษร)</label><input name="password" type="password" required minLength={8} autoComplete="new-password" /></div>
-        <button className="btn btn-primary mform-save" type="submit">สมัครและเริ่มใช้งาน →</button>
+        <button className="btn btn-primary mform-save" type="submit">สมัครร้านค้า →</button>
+        <p className="note" style={{ marginTop: 8 }}>หลังสมัคร ทีมงานจะตรวจสอบข้อมูลและอนุมัติก่อนเริ่มใช้งาน (ปกติไม่เกิน 1 วันทำการ)</p>
       </form>
       <p className="note">ร้านมีอยู่ใน Locale แล้ว? <Link href="/merchant/claim">เคลมร้านของคุณ</Link></p>
       <p className="note">มีบัญชีแล้ว? <Link href="/merchant/login">เข้าสู่ระบบ</Link></p>

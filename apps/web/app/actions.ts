@@ -32,6 +32,25 @@ export async function unpublishMerchantPlaceAction(placeId: string) {
   redirect('/shops?ok=hidden');
 }
 
+/** Staff approves a merchant ACCOUNT (0065 gate) — the console opens on their next request.
+ *  Judgment-only review of the signup form data (founder decision 2026-07-02, no documents). */
+export async function approveMerchantAccountAction(accountId: string) {
+  await q(
+    `UPDATE merchant_accounts SET approval_status='approved', approved_at=now(), approval_note=NULL
+      WHERE id=$1 AND approval_status='pending'`, [accountId]);
+  revalidatePath('/shops');
+  redirect('/shops?ok=approved');
+}
+/** Staff rejects a merchant account; the optional note is shown to them on /merchant/pending. */
+export async function rejectMerchantAccountAction(accountId: string, formData: FormData) {
+  const note = String(formData.get('note') ?? '').trim().slice(0, 300);
+  await q(
+    `UPDATE merchant_accounts SET approval_status='rejected', approved_at=now(), approval_note=$2
+      WHERE id=$1 AND approval_status='pending'`, [accountId, note || null]);
+  revalidatePath('/shops');
+  redirect('/shops?ok=rejected');
+}
+
 /** Field agent submits a NEW place → POST /supply/proposals (lands as pending change_proposal). */
 export async function createPlaceAction(formData: FormData) {
   const s = (k: string) => String(formData.get(k) ?? '').trim();

@@ -159,7 +159,9 @@ export async function signupAction(formData: FormData) {
 
   setSession(accId);
   revalidatePath('/'); // staff dashboard place count
-  redirect('/merchant');
+  // approval_status defaults to 'pending' (0065) — the console stays closed until staff approve,
+  // so land on the waiting page, not the portal.
+  redirect('/merchant/pending');
 }
 
 export async function loginAction(formData: FormData) {
