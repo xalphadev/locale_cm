@@ -2146,6 +2146,18 @@ export async function settleDepositAction(leaseId: string, formData: FormData) {
   redirect(`${backTo}?ok=deposit`);
 }
 
+/** Owner updates a แจ้งซ่อม status (0063): new → in_progress → done | cancelled (or reopen → new). Place-scoped. */
+export async function setMaintenanceStatusAction(id: string, status: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(id)) redirect('/merchant/repairs');
+  const st = ['new', 'in_progress', 'done', 'cancelled'].includes(status) ? status : 'new';
+  await q(`UPDATE stay_maintenance SET status=$3, resolved_at=CASE WHEN $3 IN ('done','cancelled') THEN now() ELSE NULL END, updated_at=now()
+             WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [id, acc.place_id, st]);
+  revalidatePath('/merchant/repairs'); revalidatePath('/merchant');
+  redirect('/merchant/repairs?ok=1');
+}
+
 /** Bulk-add rooms from a numeric run (floor "1", 1–10 → 101–110) OR a free-typed list ("101, 102, A1" for
  *  non-sequential / named units) — the fast way to lay out a dorm. Existing codes are skipped + reported. */
 export async function createRoomsBulkAction(formData: FormData) {

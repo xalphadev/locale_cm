@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { q, i18n } from '@/lib/db';
+import { submitMaintenanceAction } from '../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,8 +10,9 @@ export const dynamic = 'force-dynamic';
 // the tenant pays the owner's PromptPay directly. (แจ้งซ่อม is added next.) Reuses the merchant CSS scope.
 const baht = (m: any) => '฿' + Math.round(Number(m || 0) / 100).toLocaleString();
 const INV_ST: Record<string, string> = { draft: 'ร่าง', issued: 'รอชำระ', paid: 'ชำระแล้ว', void: 'ยกเลิก' };
+const RP: Record<string, string> = { new: 'รอรับเรื่อง', in_progress: 'กำลังซ่อม', done: 'เสร็จแล้ว', cancelled: 'ยกเลิก' };
 
-export default async function TenantPortal({ params }: { params: { token: string } }) {
+export default async function TenantPortal({ params, searchParams }: { params: { token: string }; searchParams: { ok?: string; error?: string } }) {
   const okToken = /^[a-f0-9]{6,64}$/.test(params.token || '');
   const [ls] = okToken ? await q<any>(
     `SELECT l.id, l.rent_minor, l.deposit_minor, l.billing_day,
@@ -35,6 +37,7 @@ export default async function TenantPortal({ params }: { params: { token: string
       ORDER BY i.period_ym DESC, il.sort LIMIT 6`, [ls.id]);
   const latestPeriod = util[0]?.period_ym;
   const latestUtil = util.filter((u: any) => u.period_ym === latestPeriod);
+  const repairs = await q<any>(`SELECT detail, status, to_char(created_at,'DD/MM/YY') at FROM stay_maintenance WHERE lease_id=$1 AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 10`, [ls.id]);
   const outstanding = Number(sm?.outstanding || 0);
   const payTo = [
     ls.pay_promptpay ? `PromptPay ${ls.pay_promptpay}` : '',
@@ -45,6 +48,8 @@ export default async function TenantPortal({ params }: { params: { token: string
   return (
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '18px 16px' }}>
       <div className="listhead"><h1>หน้าของฉัน</h1></div>
+      {searchParams?.ok === 'repair' && <div className="banner-ok">✓ ส่งแจ้งซ่อมแล้ว — เจ้าของที่พักจะดำเนินการให้</div>}
+      {searchParams?.error === 'empty' && <div className="banner-err">กรุณากรอกรายละเอียดที่ต้องการแจ้งซ่อม</div>}
       <p className="roomhub-sub">{i18n(ls.pname) || 'ที่พัก'} · ห้อง {ls.room_code}{ls.tenant_name ? ` · ${ls.tenant_name}` : ''}</p>
 
       <div className="bk-summary">
@@ -87,6 +92,23 @@ export default async function TenantPortal({ params }: { params: { token: string
               ? <Link className="mrow" key={iv.id} href={`/bill/${iv.public_token}`} style={{ textDecoration: 'none', color: 'inherit' }}>{row}</Link>
               : <div className="mrow" key={iv.id} style={{ cursor: 'default' }}>{row}</div>;
           })}
+        </div>
+      )}
+
+      <h2 className="rsec">🔧 แจ้งซ่อม</h2>
+      <form action={submitMaintenanceAction.bind(null, params.token)} encType="multipart/form-data" style={{ marginBottom: 10 }}>
+        <div className="field"><textarea name="detail" placeholder="เช่น แอร์ไม่เย็น / ก๊อกน้ำรั่ว / หลอดไฟเสีย" style={{ minHeight: 60 }} required /></div>
+        <div className="field"><label>แนบรูป (ถ้ามี)</label><input type="file" name="photos" multiple accept="image/*" /></div>
+        <button className="dbtn sm primary" type="submit">ส่งแจ้งซ่อม</button>
+      </form>
+      {repairs.length > 0 && (
+        <div className="mlist">
+          {repairs.map((rp: any, i: number) => (
+            <div className="mrow" key={i} style={{ cursor: 'default' }}>
+              <span className="mrow-body"><span className="mrow-nm">{rp.detail}</span><span className="mrow-meta">{rp.at} · {RP[rp.status] || rp.status}</span></span>
+              <span className={`t ${rp.status === 'done' ? 'sold' : rp.status === 'in_progress' ? 'cat' : rp.status === 'cancelled' ? 'off' : 'season'}`}>{RP[rp.status] || rp.status}</span>
+            </div>
+          ))}
         </div>
       )}
 
