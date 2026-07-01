@@ -26,6 +26,8 @@ const NAV: { grp: string; items: { href: string; icon: string; label: string; ma
     { href: '/claims', icon: 'shield', label: 'ยืนยันเจ้าของร้าน', match: (p) => p.startsWith('/claims') },
     { href: '/reports', icon: 'shield', label: 'รายงาน & fraud', match: (p) => p.startsWith('/reports') },
     { href: '/shops', icon: 'store', label: 'ร้านสมัคร', match: (p) => p.startsWith('/shops') },
+    { href: '/merchants', icon: 'pulse', label: 'สุขภาพร้านค้า', match: (p) => p.startsWith('/merchants') },
+    { href: '/users', icon: 'users', label: 'ผู้ใช้', match: (p) => p.startsWith('/users') },
     { href: '/counter', icon: 'receipt', label: 'เคาน์เตอร์แลกรางวัล', match: (p) => p.startsWith('/counter') },
   ] },
   { grp: 'การเงิน', items: [

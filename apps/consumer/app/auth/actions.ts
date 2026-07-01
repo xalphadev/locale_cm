@@ -41,8 +41,11 @@ export async function signupEmailAction(formData: FormData) {
 export async function loginEmailAction(formData: FormData) {
   const email = s(formData, 'email').toLowerCase();
   const pw = s(formData, 'password');
-  const [cred] = await q<any>(`SELECT user_id, password_hash FROM user_credentials WHERE email=$1`, [email]);
+  const [cred] = await q<any>(
+    `SELECT uc.user_id, uc.password_hash, u.status::text status
+       FROM user_credentials uc JOIN users u ON u.id=uc.user_id WHERE uc.email=$1`, [email]);
   if (!cred || !verifyPassword(pw, cred.password_hash)) redirect('/login?error=1');
+  if (cred.status !== 'active') redirect('/login?error=suspended');
   setSession(cred.user_id);
   revalidatePath('/', 'layout');
   redirect('/wallet');

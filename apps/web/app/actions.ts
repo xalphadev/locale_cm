@@ -51,6 +51,16 @@ export async function rejectMerchantAccountAction(accountId: string, formData: F
   redirect('/shops?ok=rejected');
 }
 
+/** Staff suspends / restores a CONSUMER user (users.status enum). A suspended user's session stops
+ *  resolving on the consumer app (demoUserId checks status), so writes no-op and personal pages log out.
+ *  Content stays (reviews already go through moderation) — this stops the ACCOUNT, not history. */
+export async function setUserStatusAction(userId: string, status: string) {
+  const st = ['active', 'suspended'].includes(status) ? status : 'active';
+  await q(`UPDATE users SET status=$2::user_status WHERE id=$1 AND status<>'banned'`, [userId, st]);
+  revalidatePath('/users');
+  redirect(`/users?ok=${st}`);
+}
+
 /** Field agent submits a NEW place → POST /supply/proposals (lands as pending change_proposal). */
 export async function createPlaceAction(formData: FormData) {
   const s = (k: string) => String(formData.get(k) ?? '').trim();

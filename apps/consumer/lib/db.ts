@@ -26,7 +26,12 @@ export const DEMO_USER = '00000000-0000-4000-8000-0000000000d0';
  *  call-site compatibility — every page/action already calls this.) */
 export async function demoUserId(): Promise<string | null> {
   const sid = sessionUserId();
-  if (sid) return sid;
+  if (sid) {
+    // suspension takes effect immediately: a non-active user stops resolving, so every write
+    // action no-ops and personal pages render logged-out (admin /users flips users.status)
+    const [u] = await q<{ ok: boolean }>(`SELECT (status='active') ok FROM users WHERE id=$1`, [sid]);
+    return u?.ok ? sid : null;
+  }
   // Prod: NO shared demo persona. Anonymous visitors resolve to null, so write actions (check-in,
   // save, redeem, spend) no-op until they log in — otherwise every logged-out visitor would share
   // one identity and see/mutate each other's stamps & saves. The fallback below is dev/demo-only.
