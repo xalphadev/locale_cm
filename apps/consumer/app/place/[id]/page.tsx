@@ -96,8 +96,12 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
       videoUrl = vid?.storage_path ?? null;
       mediaImgs = await q<any>(`SELECT storage_path FROM media WHERE owner_type='place' AND owner_id=$1 AND kind='image' AND moderation_status='approved' LIMIT 12`, [params.id]);
       deals = await q<any>(`SELECT id, deal_type::text deal_type, value_pct, value_minor, title_i18n, terms_i18n, ends_at, quota_total, quota_used FROM deals WHERE place_id=$1 AND status='active' AND (ends_at IS NULL OR ends_at>=now()) ORDER BY ends_at NULLS LAST`, [params.id]);
-      products = await q<any>(`SELECT id, name_i18n, subtype, price_minor, price_unit, price_text_i18n, image_urls, in_season, available_today, sold_out
-        FROM shop_products WHERE place_id=$1 AND status='published' AND deleted_at IS NULL ORDER BY sold_out, sort, created_at LIMIT 20`, [params.id]);
+      // menu order (0066): section (owner-sorted) → recommended first → item sort; sold-out sinks in-group
+      products = await q<any>(`SELECT sp.id, sp.name_i18n, sp.subtype, sp.price_minor, sp.price_unit, sp.price_text_i18n, sp.image_urls,
+          sp.in_season, sp.available_today, sp.sold_out, sp.is_recommended, sec.name_i18n sec_name
+        FROM shop_products sp LEFT JOIN shop_section sec ON sec.id=sp.section_id AND sec.deleted_at IS NULL
+        WHERE sp.place_id=$1 AND sp.status='published' AND sp.deleted_at IS NULL
+        ORDER BY sec.sort NULLS LAST, sec.created_at, sp.sold_out, sp.is_recommended DESC, sp.sort, sp.created_at LIMIT 60`, [params.id]);
       units = await q<any>(`SELECT id, name_i18n, rental_mode, price_minor, price_period, price_text_i18n, image_urls,
           available_units, available_from, daily_status, availability_updated_at, capacity, deposit_minor, min_stay, furnished
         FROM stay_units WHERE place_id=$1 AND status='published' AND deleted_at IS NULL
@@ -343,13 +347,29 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           </>
         )}
 
-        {!isStay && products.length > 0 && (<>
-          <h2>{p.category === 'eat' ? 'เมนูแนะนำ' : p.category === 'do' ? 'กิจกรรม / คอร์ส' : 'สินค้า / ของฝาก'}</h2>
-          <div className="prail">
-            {products.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
-          </div>
-          <p className="shopnote"><Icon n="chat" size={13} /> {p.category === 'eat' ? 'สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ' : `สนใจ? ทักได้เลย — Locale ไม่มีระบบจ่ายเงินในแอป ติดต่อ${noun}โดยตรงเพื่อสอบถาม`}</p>
-        </>)}
+        {!isStay && products.length > 0 && (() => {
+          // group the (already section-ordered) rows into the owner's menu sections; a shop with no
+          // sections renders exactly the old flat rail (one group, no header)
+          const groups: { name: string | null; items: any[] }[] = [];
+          for (const pr of products) {
+            const nm = pr.sec_name ? i18n(pr.sec_name) : null;
+            const g = groups.length && groups[groups.length - 1].name === nm ? groups[groups.length - 1] : null;
+            if (g) g.items.push(pr); else groups.push({ name: nm, items: [pr] });
+          }
+          const hasSections = groups.some((g) => g.name);
+          return (<>
+            <h2>{p.category === 'eat' ? 'เมนูของร้าน' : p.category === 'do' ? 'กิจกรรม / คอร์ส' : 'สินค้า / ของฝาก'}</h2>
+            {groups.map((g, gi) => (
+              <div key={gi}>
+                {hasSections && <h3 style={{ padding: '0 16px', margin: '10px 0 2px', fontSize: '.95rem' }}>{g.name || 'อื่นๆ'}</h3>}
+                <div className="prail">
+                  {g.items.map((pr) => <ProductCard key={pr.id} pr={pr} line_id={p.line_id} phone={p.phone} />)}
+                </div>
+              </div>
+            ))}
+            <p className="shopnote"><Icon n="chat" size={13} /> {p.category === 'eat' ? 'สนใจสินค้า? ทักร้านได้เลย — ยังไม่มีระบบจ่ายเงินในแอป ติดต่อร้านโดยตรงเพื่อสั่งซื้อ' : `สนใจ? ทักได้เลย — Locale ไม่มีระบบจ่ายเงินในแอป ติดต่อ${noun}โดยตรงเพื่อสอบถาม`}</p>
+          </>);
+        })()}
 
         {isStay && units.length > 0 && (<>
           <h2>ห้องพัก / ห้องว่าง</h2>

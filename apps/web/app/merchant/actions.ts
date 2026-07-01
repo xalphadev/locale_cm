@@ -180,6 +180,13 @@ export async function logoutAction() {
 
 // ── scoped management (tenancy: always resolve place_id from the session, NEVER from the form) ──
 
+/** Validate a form-posted section id: must be a live section of THIS place (tenancy), else null. */
+async function resolveSectionId(placeId: string, raw: string): Promise<string | null> {
+  if (!UUID_RE.test(raw)) return null;
+  const [sec] = await q<{ id: string }>(`SELECT id FROM shop_section WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [raw, placeId]);
+  return sec?.id ?? null;
+}
+
 export async function createMerchantProductAction(formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'sells_products');
@@ -191,12 +198,50 @@ export async function createMerchantProductAction(formData: FormData) {
   const pasted = s(formData, 'image_urls').split(/[\n,]/).map((u) => u.trim()).filter((u) => /^https?:\/\//.test(u));
   const urls = [...await saveUploads(formData.getAll('photos') as File[], 'products'), ...pasted];
   const inSeason = !!formData.get('in_season');
+  const sectionId = await resolveSectionId(acc.place_id, s(formData, 'section_id'));
+  const recommended = !!formData.get('is_recommended');
   await q(
-    `INSERT INTO shop_products(place_id, name_i18n, subtype, price_minor, price_unit, image_urls, image_count, in_season, status, author_kind)
-     VALUES($1, jsonb_build_object('th',$2::text), $3, $4, $5, $6, $7, $8, 'published', 'merchant')`,
-    [acc.place_id, nameTh, subtype, priceMinor, unit, urls.length ? urls : null, urls.length || 1, inSeason]);
+    `INSERT INTO shop_products(place_id, name_i18n, subtype, price_minor, price_unit, image_urls, image_count, in_season, section_id, is_recommended, status, author_kind)
+     VALUES($1, jsonb_build_object('th',$2::text), $3, $4, $5, $6, $7, $8, $9, $10, 'published', 'merchant')`,
+    [acc.place_id, nameTh, subtype, priceMinor, unit, urls.length ? urls : null, urls.length || 1, inSeason, sectionId, recommended]);
   revalidatePath('/merchant/products');
   redirect('/merchant/products?ok=1');
+}
+
+// ── menu sections (0066): owner-defined groups ("กาแฟ", "เมนูข้าว") shown on the consumer menu ──
+
+export async function createShopSectionAction(formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'sells_products');
+  const name = s(formData, 'name').trim().slice(0, 60);
+  if (!name) redirect('/merchant/products?error=secname');
+  const sort = Math.max(0, Math.min(9999, parseInt(s(formData, 'sort'), 10) || 100));
+  await q(`INSERT INTO shop_section(place_id, name_i18n, sort) VALUES($1, jsonb_build_object('th',$2::text), $3)`, [acc.place_id, name, sort]);
+  revalidatePath('/merchant/products');
+  redirect('/merchant/products?ok=section');
+}
+
+export async function updateShopSectionAction(sectionId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'sells_products');
+  const name = s(formData, 'name').trim().slice(0, 60);
+  if (!name || !UUID_RE.test(sectionId)) redirect('/merchant/products?error=secname');
+  const sort = Math.max(0, Math.min(9999, parseInt(s(formData, 'sort'), 10) || 100));
+  await q(`UPDATE shop_section SET name_i18n=jsonb_build_object('th',$3::text), sort=$4, updated_at=now()
+            WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [sectionId, acc.place_id, name, sort]);
+  revalidatePath('/merchant/products');
+  redirect('/merchant/products?ok=section');
+}
+
+/** Soft-delete a section; its items fall back to "ไม่จัดหมวด" (section_id NULLed, items untouched). */
+export async function deleteShopSectionAction(sectionId: string) {
+  const acc = await currentAccount();
+  requireCap(acc, 'sells_products');
+  if (!UUID_RE.test(sectionId)) redirect('/merchant/products');
+  await q(`UPDATE shop_products SET section_id=NULL, updated_at=now() WHERE section_id=$1 AND place_id=$2`, [sectionId, acc.place_id]);
+  await q(`UPDATE shop_section SET deleted_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [sectionId, acc.place_id]);
+  revalidatePath('/merchant/products');
+  redirect('/merchant/products?ok=secdeleted');
 }
 
 /** Toggle a boolean flag on one of the merchant's OWN products. flag ∈ sold_out|in_season|available_today; or hide/show. */
@@ -229,13 +274,16 @@ export async function updateMerchantProductAction(productId: string, formData: F
   const saved = await saveUploads(photos, 'products');
   if (tried && saved.length < tried) redirect(`/merchant/products/${productId}/edit?error=upload&rej=${tried - saved.length}`);
   const urls = [...saved, ...pasted];
+  const sectionId = await resolveSectionId(acc.place_id, s(formData, 'section_id'));
+  const recommended = !!formData.get('is_recommended');
   await q(
     `UPDATE shop_products SET name_i18n=jsonb_build_object('th',$3::text), subtype=$4, price_minor=$5, price_unit=$6, in_season=$7,
        image_urls = CASE WHEN $8::text[] IS NOT NULL THEN $8 ELSE image_urls END,
        image_count = CASE WHEN $8::text[] IS NOT NULL THEN COALESCE(array_length($8,1),1) ELSE image_count END,
+       section_id=$9, is_recommended=$10,
        updated_at=now()
      WHERE id=$1 AND place_id=$2`,
-    [productId, acc.place_id, nameTh, subtype, priceMinor, unit, inSeason, urls.length ? urls : null]);
+    [productId, acc.place_id, nameTh, subtype, priceMinor, unit, inSeason, urls.length ? urls : null, sectionId, recommended]);
   revalidatePath('/merchant/products');
   redirect('/merchant/products?ok=updated');
 }

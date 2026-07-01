@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentAccount } from '@/lib/auth';
-import { q } from '@/lib/db';
+import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../../ui';
 import { ProductForm } from '../../ProductForm';
 import { updateMerchantProductAction } from '../../../../actions';
@@ -17,12 +17,14 @@ export default async function EditProduct({ params, searchParams }: { params: { 
   if (!p) {
     return (<><MTopbar back="/merchant/products" backLabel="สินค้า" title="ไม่พบสินค้า" /></>);
   }
+  const sections = (await q<any>(`SELECT id, name_i18n FROM shop_section WHERE place_id=$1 AND deleted_at IS NULL ORDER BY sort, created_at`, [acc.place_id]))
+    .map((sc) => ({ id: sc.id, name: i18n(sc.name_i18n) }));
   return (
     <>
       <MTopbar back={`/merchant/products/${p.id}`} backLabel="รายละเอียดสินค้า" title="แก้ไขสินค้า" />
       {searchParams?.error === 'name' && <div className="banner-err">กรุณากรอกชื่อสินค้า</div>}
       {searchParams?.error === 'upload' && <div className="banner-err">อัปโหลดรูปไม่สำเร็จ {searchParams.rej} รูป (ต้องเป็น JPG/PNG/WEBP/GIF และไม่เกิน 6MB) — รูปเดิมยังอยู่ ลองใหม่อีกครั้ง</div>}
-      <ProductForm action={updateMerchantProductAction.bind(null, p.id)} p={p} submitLabel="บันทึกการแก้ไข" />
+      <ProductForm action={updateMerchantProductAction.bind(null, p.id)} p={p} submitLabel="บันทึกการแก้ไข" sections={sections} />
     </>
   );
 }

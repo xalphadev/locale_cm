@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Icon, Thumb } from '../ui';
 import { FilterBar } from '../FilterBar';
 
-type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; sold_out: boolean; in_season: boolean };
+type Item = { id: string; name: string; meta: string; image_urls: string[] | null; status: string; sold_out: boolean; in_season: boolean; recommended?: boolean; group?: string };
 const TESTS: Record<string, (i: Item) => boolean> = {
   all: () => true,
   live: (i) => i.status !== 'hidden',
@@ -39,20 +39,27 @@ export function ProductList({ items }: { items: Item[] }) {
             <div className="nomatch">ไม่พบสินค้าที่ตรงกับที่ค้นหา</div>
           ) : (
             <div className="mlist">
-              {filtered.map((r) => (
-                <Link className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/products/${r.id}`} key={r.id}>
-                  <span className="mrow-img"><Thumb images={r.image_urls} kind="product" alt={r.name} /></span>
-                  <span className="mrow-body">
-                    <span className="mrow-nm">{r.name}</span>
-                    <span className="mrow-meta">{r.meta}</span>
-                    <span className="mrow-tags">
-                      {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
-                      {r.status !== 'hidden' && r.sold_out && <span className="t sold">หมด</span>}
-                      {r.status !== 'hidden' && r.in_season && <span className="t season">ในฤดู</span>}
+              {filtered.map((r, i) => (
+                <div key={r.id}>
+                  {/* section header — appears whenever the (server-ordered) group changes */}
+                  {r.group && (i === 0 || filtered[i - 1].group !== r.group) && (
+                    <div style={{ padding: '10px 2px 4px', fontSize: '.8rem', fontWeight: 600, color: 'var(--m-muted, #6b7280)' }}>{r.group}</div>
+                  )}
+                  <Link className={`mrow ${r.status === 'hidden' ? 'off' : ''}`} href={`/merchant/products/${r.id}`}>
+                    <span className="mrow-img"><Thumb images={r.image_urls} kind="product" alt={r.name} /></span>
+                    <span className="mrow-body">
+                      <span className="mrow-nm">{r.name}</span>
+                      <span className="mrow-meta">{r.meta}</span>
+                      <span className="mrow-tags">
+                        {r.status === 'hidden' && <span className="t off">ซ่อนอยู่</span>}
+                        {r.status !== 'hidden' && r.sold_out && <span className="t sold">หมด</span>}
+                        {r.recommended && <span className="t cat">แนะนำ</span>}
+                        {r.status !== 'hidden' && r.in_season && <span className="t season">ในฤดู</span>}
+                      </span>
                     </span>
-                  </span>
-                  <Icon n="chevR" size={20} className="mrow-go" />
-                </Link>
+                    <Icon n="chevR" size={20} className="mrow-go" />
+                  </Link>
+                </div>
               ))}
             </div>
           )}

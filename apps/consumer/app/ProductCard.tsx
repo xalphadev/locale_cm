@@ -43,8 +43,9 @@ export function ProductCard({ pr, line_id, phone, shopName, shopHref }: {
       <div className="pcimg">
         <img src={productImg(pr)} alt="" loading="lazy" />
         {pr.sold_out ? <span className="pchip sold">หมดแล้ว</span>
-          : pr.in_season ? <span className="pchip season">ในฤดู</span>
-            : pr.available_today ? <span className="pchip today">มีวันนี้</span> : null}
+          : pr.is_recommended ? <span className="pchip today">แนะนำ</span>
+            : pr.in_season ? <span className="pchip season">ในฤดู</span>
+              : pr.available_today ? <span className="pchip today">มีวันนี้</span> : null}
       </div>
       <div className="pcbody">
         {shopName && (shopHref
