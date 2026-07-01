@@ -5,7 +5,8 @@ import { Icon, CAT_ICON } from './icons';
 import GeoCapture from './GeoCapture';
 import MapPeek from './MapPeek';
 import LangSwitch from './LangSwitch';
-import { facetsFor, facetLabel } from '@/lib/facets';
+import { facetLabel } from '@/lib/facets';
+import { loadPlaceFacets, offerFacets, facetLabelMap } from '@/lib/amenities';
 import { parse as parseIntent, parsePlan } from '@/lib/intent';
 import { redirect } from 'next/navigation';
 import { daypart, bkkNow, openNow, freshLabel } from '@/lib/local';
@@ -170,8 +171,8 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
   const gm = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(cookies().get('c_geo')?.value ?? '');
   const userPt = gm ? { lat: +gm[1], lng: +gm[2] } : null;
 
-  let d: any;
-  try { d = await load(tab, cat, sub, nameQ, facets, area, userPt, !!query); }
+  let d: any; let pfacets: any[] = [];
+  try { [d, pfacets] = await Promise.all([load(tab, cat, sub, nameQ, facets, area, userPt, !!query), loadPlaceFacets()]); }
   catch {
     return (<><div className="appbar"><div><div className="greet">Locale</div><div className="loc">เชียงใหม่</div></div></div>
       <div className="body"><p className="empty">ตอนนี้เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง</p></div></>);
@@ -204,9 +205,11 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
       const ps = [...baseParams]; if (tok && n.size) ps.push(`f=${[...n].join(',')}`);
       return ps.length ? `/?${ps.join('&')}` : '/';
     };
-    const offered = facetsFor(cat, sub);
+    const offered = offerFacets(pfacets, cat, sub);
+    const flabels = facetLabelMap(pfacets);
+    const flabel = (t: string) => flabels[t] || facetLabel(t);
     const heading = area && !cat && !sub && !nameQ ? `ย่าน${areaName(area)} (${d.places.length})`
-      : interpChips.length ? `พบ ${d.places.length} ที่ตรงใจ` : nameQ ? `“${nameQ}” (${d.places.length})` : `${sub ? facetLabel(sub) : catTH(cat)}${area ? ' · ' + areaName(area) : ''} (${d.places.length})`;
+      : interpChips.length ? `พบ ${d.places.length} ที่ตรงใจ` : nameQ ? `“${nameQ}” (${d.places.length})` : `${sub ? flabel(sub) : catTH(cat)}${area ? ' · ' + areaName(area) : ''} (${d.places.length})`;
     return (
       <>
         {header}
@@ -220,7 +223,7 @@ export default async function Discover({ searchParams }: { searchParams: { tab?:
         <div className="segmented">{FILTERS.map((f) => <Link key={f.k} href={f.k ? `/?cat=${f.k}${area ? '&area=' + area : ''}` : (area ? `/?area=${area}` : '/')} className={`seg ${cat === f.k && !sub ? 'on' : ''}`}>{f.l}</Link>)}</div>
         {offered.length > 0 && (
           <div className="facetbar">
-            {offered.map((tok) => <Link key={tok} href={facetHref(tok)} className={`facet ${fset.has(tok) ? 'on' : ''}`}>{facetLabel(tok)}</Link>)}
+            {offered.map((tok) => <Link key={tok} href={facetHref(tok)} className={`facet ${fset.has(tok) ? 'on' : ''}`}>{flabel(tok)}</Link>)}
             {facets.length > 0 && <Link className="facet-clear" href={facetHref(null)}>ล้าง</Link>}
           </div>
         )}

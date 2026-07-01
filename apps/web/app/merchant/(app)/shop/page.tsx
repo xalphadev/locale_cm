@@ -6,6 +6,7 @@ import { Icon } from '../ui';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
 import { shopReadiness } from '@/lib/readiness';
 import { facetLabel } from '@/lib/facets';
+import { loadPlaceFacets, facetLabelMap } from '@/lib/amenities';
 import { detailFields } from '@/lib/placedetails';
 import { ShopGallery } from '../ShopGallery';
 
@@ -31,6 +32,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
   const hours: Record<string, string> = p?.opening_hours || {};
   const socials: Record<string, string> = p?.socials || {};
   const amen: string[] = p?.amenities || [];
+  const flabels = amen.length ? facetLabelMap(await loadPlaceFacets()) : {};
   const details: Record<string, string> = p?.details || {};
   const dfields = detailFields(p?.category).filter((f) => details[f.key]);
   const hasHours = Object.keys(hours).length > 0;
@@ -109,7 +111,7 @@ export default async function Shop({ searchParams }: { searchParams: { ok?: stri
 
       {amen.length > 0 && <>
         <h2 className="rsec"><span className="rsec-ic"><Icon n="spark" size={15} /></span> สิ่งอำนวยความสะดวก &amp; จุดเด่น</h2>
-        <div className="chips">{amen.map((t) => <span className="chip" key={t}><Icon n="check" size={12} /> {facetLabel(t)}</span>)}</div>
+        <div className="chips">{amen.map((t) => <span className="chip" key={t}><Icon n="check" size={12} /> {flabels[t] || facetLabel(t)}</span>)}</div>
       </>}
 
       {dfields.length > 0 && <>

@@ -9,7 +9,8 @@ import GeoPicker from '../GeoPicker';
 import { PhotoManager } from '../../PhotoUpload';
 import { HoursEditor } from '../../HoursEditor';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
-import { facetsFor, facetLabel } from '@/lib/facets';
+import { facetLabel } from '@/lib/facets';
+import { loadPlaceFacets, offerFacets, facetLabelMap } from '@/lib/amenities';
 import { detailFields } from '@/lib/placedetails';
 import { parsePoint } from '@/lib/geo';
 
@@ -30,7 +31,10 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
   // place facilities/highlights (places.amenities token[]): offer the facets relevant to this place's
   // category, plus any tokens already set (so an existing/legacy token is never silently dropped on save).
   const curAmen: string[] = p?.amenities || [];
-  const amenShown = [...new Set([...facetsFor(p?.category, p?.subcategory), ...curAmen])];
+  const pfacets = await loadPlaceFacets();   // admin catalog (0068) — no more hardcoded lists
+  const flabels = facetLabelMap(pfacets);
+  const flabel = (t: string) => flabels[t] || facetLabel(t);
+  const amenShown = [...new Set([...offerFacets(pfacets, p?.category, p?.subcategory), ...curAmen])];
   const pt = parsePoint(p?.geo);
   // word adapts to the account's reality: a single-location owner sees "ร้าน"; a multi-branch owner sees
   // "สาขา" for the location being edited (the business itself stays "ร้าน") — one vocabulary, never mixed.
@@ -81,7 +85,7 @@ export default async function ShopEdit({ searchParams }: { searchParams: { new?:
             <div className="fsec-h"><span className="fsec-ic"><Icon n="spark" size={15} /></span> สิ่งอำนวยความสะดวก &amp; จุดเด่น <span className="lbl-opt">(ลูกค้าใช้กรองค้นหา)</span></div>
             <div className="checkrow">
               {amenShown.map((t) => (
-                <label key={t} className="cbox"><input type="checkbox" name="amenity" value={t} defaultChecked={curAmen.includes(t)} /> {facetLabel(t)}</label>
+                <label key={t} className="cbox"><input type="checkbox" name="amenity" value={t} defaultChecked={curAmen.includes(t)} /> {flabel(t)}</label>
               ))}
             </div>
             <p className="fhint">ติ๊กสิ่งที่{noun}มี — แสดงเป็นชิปในหน้าของลูกค้า และช่วยให้ลูกค้ากรองหา{noun}เจอง่ายขึ้น</p>

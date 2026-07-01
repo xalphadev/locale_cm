@@ -37,30 +37,7 @@ export const STAY_KIND_TH: Record<string, string> = {
   homestay: 'โฮมสเตย์', guesthouse: 'เกสต์เฮาส์', hotel: 'โรงแรม', mixed: 'ที่พัก',
 };
 
-// Which facets to OFFER for a subcategory (preferred) or category (fallback).
-const SUB_FACETS: Record<string, string[]> = {
-  cafe: ['wifi', 'work_friendly', 'power_outlet', 'pet_friendly', 'kid_friendly', 'outdoor_seating', 'vegan'],
-  restaurant: ['thai_food', 'northern_food', 'chinese_food', 'buffet', 'live_music', 'halal', 'vegetarian', 'no_pets', 'alcohol'],
-  street_food: ['thai_food', 'halal', 'vegetarian', 'late_night', 'parking'],
-  dessert: ['vegetarian', 'vegan', 'aircon', 'kid_friendly'],
-  bar: ['live_music', 'alcohol', 'outdoor_seating'],
-  temple: ['free_entry', 'photo_spot', 'guided_tour', 'wheelchair', 'restroom', 'parking'],
-  viewpoint: ['photo_spot', 'sunset', 'free_entry', 'parking'],
-  market: ['local_crafts', 'photo_spot', 'parking', 'late_night'],
-  museum: ['aircon', 'guided_tour', 'wheelchair', 'kid_friendly', 'photo_spot'],
-  cooking_class: ['english_speaking', 'beginner_friendly', 'booking_required', 'pickup', 'vegetarian'],
-  spa: ['booking_required', 'couple_room', 'english_speaking', 'parking'],
-  muay_thai: ['beginner_friendly', 'english_speaking', 'drop_in', 'materials_included'],
-  workshop: ['english_speaking', 'beginner_friendly', 'booking_required', 'materials_included'],
-};
-const CAT_FACETS: Record<string, string[]> = {
-  eat: ['wifi', 'work_friendly', 'pet_friendly', 'kid_friendly', 'thai_food', 'buffet', 'live_music', 'vegetarian', 'halal', 'parking'],
-  see: ['free_entry', 'photo_spot', 'guided_tour', 'wheelchair', 'parking', 'kid_friendly'],
-  do: ['english_speaking', 'beginner_friendly', 'booking_required', 'pickup', 'parking'],
-};
-
-/** Facet tokens to offer given the active subcategory / category. */
-export function facetsFor(cat?: string | null, sub?: string | null): string[] {
-  return (sub && SUB_FACETS[sub]) || (cat && CAT_FACETS[cat]) || [];
-}
+// WHICH facets are offered per category/subcategory moved to the DB (place_facet, migration 0068,
+// seeded from the lists that lived here) — use loadPlaceFacets()/offerFacets() in lib/amenities.ts.
+// FACET_LABELS above stays only as a DISPLAY fallback for legacy tokens + the intent parser chips.
 export const facetLabel = (t: string) => FACET_LABELS[t] || t;

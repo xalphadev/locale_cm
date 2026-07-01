@@ -19,3 +19,28 @@ export async function stayAmenityLabels(): Promise<Record<string, string>> {
   for (const r of rows) m[r.key] = i18n(r.label_i18n);
   return m;
 }
+
+// ── place facets (place_facet, 0068) — the admin-managed successor of the hardcoded facets.ts lists ──
+
+export type PlaceFacet = { key: string; label: string; cats: string[]; subs: string[]; active: boolean };
+
+/** The whole place-facet catalog, admin sort order (one query; includes inactive for label lookups). */
+export async function loadPlaceFacets(): Promise<PlaceFacet[]> {
+  const rows = await q<any>(`SELECT key, label_i18n, cats, subs, active FROM place_facet ORDER BY sort, key`);
+  return rows.map((r) => ({ key: r.key, label: i18n(r.label_i18n), cats: r.cats || [], subs: r.subs || [], active: !!r.active }));
+}
+
+/** Facet tokens to OFFER for a subcategory (preferred) else category — the old facetsFor(), DB-backed. */
+export function offerFacets(list: PlaceFacet[], cat?: string | null, sub?: string | null): string[] {
+  const live = list.filter((f) => f.active);
+  const bySub = sub ? live.filter((f) => f.subs.includes(sub)) : [];
+  if (bySub.length) return bySub.map((f) => f.key);
+  return cat ? live.filter((f) => f.cats.includes(cat)).map((f) => f.key) : [];
+}
+
+/** key → label map from a loaded catalog (all rows — an inactive key still labels old places). */
+export function facetLabelMap(list: PlaceFacet[]): Record<string, string> {
+  const m: Record<string, string> = {};
+  for (const f of list) m[f.key] = f.label;
+  return m;
+}

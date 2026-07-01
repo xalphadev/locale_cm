@@ -4,6 +4,7 @@ import { openNow as computeOpen, bkkNow } from '@/lib/local';
 import { Icon, CAT_ICON, KIND_ICON } from '../../icons';
 import { toggleSaveAction } from '../../actions';
 import { facetLabel } from '@/lib/facets';
+import { loadPlaceFacets, facetLabelMap } from '@/lib/amenities';
 import { SOCIAL_CHANNELS, socialHref } from '@/lib/socials';
 import { detailFields } from '@/lib/placedetails';
 import { ProductCard, lineHref } from '../../ProductCard';
@@ -61,8 +62,10 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
   const dq = { from: reD.test(searchParams?.from || '') ? searchParams.from! : '', to: reD.test(searchParams?.to || '') ? searchParams.to! : '' };
   const dateQs = dq.from && dq.to && dq.to > dq.from ? `?from=${dq.from}&to=${dq.to}` : '';
   let p: any = null; let events: any[] = []; let quests: any[] = []; let rev: any = null; let reviews: any[] = []; let dist: any[] = []; let videoUrl: string | null = null; let deals: any[] = []; let products: any[] = []; let units: any[] = []; let mediaImgs: any[] = []; let stamp: any = null; let similar: any[] = []; let canReview = false; let myReview: any = null; let loggedIn = false; let brand: any = null; let siblings: any[] = [];
+  let pflabels: Record<string, string> = {};
   try {
     const uid = await demoUserId();
+    pflabels = facetLabelMap(await loadPlaceFacets());   // catalog labels (0068); FACET_LABELS stays the legacy fallback
     [p] = await q<any>(
       `SELECT p.id, p.name_i18n, p.description_i18n, p.address_i18n, p.category::text category, p.image_urls,
               p.subcategory, p.phone, p.line_id, p.website, p.socials, p.details, p.price_band::text price_band,
@@ -410,7 +413,7 @@ export default async function PlaceDetail({ params, searchParams }: { params: { 
           </details>
         )}
 
-        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{facetLabel(a)}</span>)}</div></>)}
+        {amen.length > 0 && (<><h2>สิ่งอำนวยความสะดวก</h2><div className="chips">{amen.map((a) => <span className="chip" key={a}>{pflabels[a] || facetLabel(a)}</span>)}</div></>)}
 
         {quests.length > 0 && (<>
           <h2>อยู่ในเควสต์</h2>

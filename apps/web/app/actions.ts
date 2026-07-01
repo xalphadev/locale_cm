@@ -261,3 +261,24 @@ export async function toggleAmenityAction(grp: string, key: string) {
   revalidatePath('/reports/amenities');
   redirect('/reports/amenities?ok=saved');
 }
+
+/** Admin: upsert a PLACE facet (place_facet, 0068) — key + label + where it's offered (cats/subs). */
+export async function addPlaceFacetAction(formData: FormData) {
+  const key = String(formData.get('key') ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+  const label = String(formData.get('label') ?? '').trim().slice(0, 60);
+  const sort = Number(formData.get('sort')) || 100;
+  const cats = (formData.getAll('cats') as string[]).filter((c) => ['eat', 'see', 'do'].includes(c));
+  const subs = String(formData.get('subs') ?? '').split(/[\s,]+/).map((x) => x.toLowerCase().replace(/[^a-z0-9_]/g, '')).filter(Boolean).slice(0, 20);
+  if (!key || !label) redirect('/reports/amenities?g=place&err=1');
+  await q(`INSERT INTO place_facet(key, label_i18n, cats, subs, sort) VALUES($1,jsonb_build_object('th',$2::text),$3,$4,$5)
+           ON CONFLICT (key) DO UPDATE SET label_i18n=EXCLUDED.label_i18n, cats=EXCLUDED.cats, subs=EXCLUDED.subs, sort=EXCLUDED.sort, active=true, updated_at=now()`,
+    [key, label, cats, subs, sort]);
+  revalidatePath('/reports/amenities');
+  redirect('/reports/amenities?g=place&ok=saved');
+}
+
+export async function togglePlaceFacetAction(key: string) {
+  await q(`UPDATE place_facet SET active = NOT active, updated_at=now() WHERE key=$1`, [key]);
+  revalidatePath('/reports/amenities');
+  redirect('/reports/amenities?g=place&ok=saved');
+}
