@@ -15,6 +15,9 @@
 # ── Merchant portal — opens on /merchant ─────────────────────────────────────────────
 {$MERCHANT_DOMAIN} {
 	encode gzip zstd
+	# never expose the headless auto-billing route publicly — it's only for the in-container crontab
+	@cron path /api/cron/*
+	respond @cron 404
 	redir / /merchant 302
 	reverse_proxy web:3002
 }
@@ -22,6 +25,8 @@
 # ── Platform admin (back-office) — HTTP basic-auth gate (no app-level admin login yet) ─
 {$PLATFORM_DOMAIN} {
 	encode gzip zstd
+	@cron path /api/cron/*
+	respond @cron 404
 	basic_auth {
 		{$CADDY_BASICAUTH_USER} {$CADDY_BASICAUTH_HASH}
 	}

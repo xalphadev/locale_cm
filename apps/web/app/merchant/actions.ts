@@ -7,7 +7,7 @@ import { saveUploads, MAX_UPLOADS } from '@/lib/storage';
 import { SOCIAL_CHANNELS } from '@/lib/socials';
 import { NIMMAN_LNG, NIMMAN_LAT, inCmBbox } from '@/lib/geo';
 import { PLACE_DETAILS } from '@/lib/placedetails';
-import crypto from 'crypto';
+import { LEASE_FOR_BILL, genInvoiceForLease, runMonthlyBilling } from '@/lib/billing';
 
 // Nimman center — default shop location at signup (the merchant can't drop a pin in the MVP form).
 const NIMMAN = { lng: NIMMAN_LNG, lat: NIMMAN_LAT };
@@ -1904,6 +1904,7 @@ export async function saveUtilityRatesAction(formData: FormData) {
     water_mode: s(formData, 'water_mode') === 'flat' ? 'flat' : 'metered',
     late_fee_minor: bahtToMinor(s(formData, 'late_fee')) ?? 0,                                    // flat ค่าปรับจ่ายช้า (owner-set; a flat fee is สคบ.-safer than %/day)
     late_fee_grace_days: Math.max(0, Math.min(60, parseInt(s(formData, 'late_fee_grace') || '0', 10) || 0)),
+    auto_bill: s(formData, 'auto_bill') === 'on',                                                  // headless monthly auto-billing (cron sweep) — see /api/cron/generate-bills
   };
   await q(`UPDATE places SET utility_rates=$2::jsonb, updated_at=now() WHERE id=$1`, [acc.place_id, JSON.stringify(rates)]);
   revalidatePath('/merchant/pricing');
@@ -1932,94 +1933,8 @@ export async function recordMeterAction(roomId: string, formData: FormData) {
   redirect(`/merchant/units/${roomId}?ok=meter`);
 }
 
-/** Generate the monthly rent+utility invoice for a lease (0059): rent (from lease) + metered electricity/water
- *  (units × actual rate, from the room's last two readings) + common fee. Itemized, record-only. Idempotent per
- *  (lease, month). สคบ.: due ≥ issue+3; utilities shown units×rate; utilities in bills_included aren't charged. */
-// SELECT that loads everything genInvoiceForLease needs (shared by the single + batch actions).
-const LEASE_FOR_BILL = `l.id, l.room_id, l.tenant_id, l.rent_minor, COALESCE(l.billing_day,1) billing_day, to_char(l.start_date,'YYYY-MM-DD') start_ymd, l.attrs,
-            su.bills_included, p.utility_rates
-       FROM stay_lease l
-       LEFT JOIN stay_units su ON su.id=l.stay_unit_id
-       JOIN places p ON p.id=l.place_id`;
-
-/** Build + insert ONE lease's invoice for a period (record-only). Returns a status (no redirect) so the
- *  single-lease action and the batch action share the exact same logic. `ls` must be loaded via LEASE_FOR_BILL. */
-async function genInvoiceForLease(acc: any, ls: any, periodIn: string): Promise<{ status: 'ok' | 'exists' | 'norent'; skipped: string[] }> {
-  if (ls.rent_minor == null) return { status: 'norent', skipped: [] };
-  const period = /^\d{4}-\d{2}$/.test(periodIn) ? periodIn : null;
-  // period + สคบ. dates in pg (no TZ drift): due = billing_day of the month (day clamped to month length),
-  // pushed to ≥ CURRENT_DATE+3 so the ≥3-day-notice rule always holds; issue = today.
-  const [dt] = await q<{ period: string; issue: string; due: string }>(
-    `WITH d AS (SELECT COALESCE($1, to_char(CURRENT_DATE,'YYYY-MM')) ym)
-     SELECT ym period, to_char(CURRENT_DATE,'YYYY-MM-DD') issue,
-            to_char(GREATEST(
-              (to_date(ym||'-01','YYYY-MM-DD')
-                 + (LEAST($2::int, EXTRACT(day FROM (to_date(ym||'-01','YYYY-MM-DD') + interval '1 month - 1 day'))::int) - 1) * interval '1 day')::date,
-              CURRENT_DATE + 3), 'YYYY-MM-DD') due
-       FROM d`, [period, ls.billing_day]);
-  const rates: any = { ...(ls.utility_rates || {}), ...((ls.attrs && ls.attrs.utility_rates) || {}) };
-  const bills: string[] = ls.bills_included || [];
-  const lines: any[] = [{ kind: 'rent', label: 'ค่าเช่า', amount: Number(ls.rent_minor), sort: 0 }];
-  const skipped: string[] = [];                                   // metered utilities configured but not billable yet
-  const meterLine = async (utility: 'electricity' | 'water', label: string, rate: number, sort: number) => {
-    if (!(rate > 0) || bills.includes(utility)) return;           // not charged (no rate, or included in rent)
-    // Usage is chained PER LEASE, not "the room's last 2 raw readings" — so a new tenant never inherits the
-    // previous tenant's units across a move-out. Readings for this tenancy = stamped lease_id OR read on/after
-    // the lease start. curr = latest such reading; prev = last billed curr_reading for this lease (from a NON-void
-    // invoice — so a voided bill drops out of the chain), else the move-in baseline (earliest reading in tenancy).
-    const [cur] = await q<{ reading_value: string }>(
-      `SELECT reading_value FROM stay_meter_reading WHERE room_id=$1 AND utility=$2 AND (lease_id=$3 OR read_on >= $4::date)
-        ORDER BY read_on DESC, created_at DESC LIMIT 1`, [ls.room_id, utility, ls.id, ls.start_ymd]);
-    if (!cur) { skipped.push(utility); return; }
-    const curr = Number(cur.reading_value);
-    const [billed] = await q<{ curr_reading: string }>(
-      `SELECT il.curr_reading FROM stay_invoice_line il JOIN stay_invoice i ON i.id=il.invoice_id
-        WHERE i.lease_id=$1 AND i.status<>'void' AND i.deleted_at IS NULL AND il.kind=$2 AND il.curr_reading IS NOT NULL
-        ORDER BY i.period_ym DESC, i.created_at DESC LIMIT 1`, [ls.id, utility]);
-    let prev: number;
-    if (billed) prev = Number(billed.curr_reading);
-    else {
-      const [base] = await q<{ reading_value: string }>(
-        `SELECT reading_value FROM stay_meter_reading WHERE room_id=$1 AND utility=$2 AND (lease_id=$3 OR read_on >= $4::date)
-          ORDER BY read_on ASC, created_at ASC LIMIT 1`, [ls.room_id, utility, ls.id, ls.start_ymd]);
-      if (!base) { skipped.push(utility); return; }
-      prev = Number(base.reading_value);
-    }
-    const units = curr - prev;
-    if (!(units > 0)) { skipped.push(utility); return; }           // no new usage (or meter reset/typo) → omit + warn
-    lines.push({ kind: utility, label, units, rate_minor: rate, prev, curr, amount: Math.round(units * rate), sort });
-  };
-  await meterLine('electricity', 'ค่าไฟ', Number(rates.electricity_minor_per_unit || 0), 1);
-  if ((rates.water_mode || 'metered') === 'flat') {
-    const wf = Number(rates.water_flat_minor || 0);
-    if (wf > 0 && !bills.includes('water')) lines.push({ kind: 'water', label: 'ค่าน้ำ (เหมาจ่าย)', amount: wf, sort: 2 });
-  } else {
-    await meterLine('water', 'ค่าน้ำ', Number(rates.water_minor_per_unit || 0), 2);
-  }
-  const common = Number(rates.common_fee_minor || 0);
-  if (common > 0 && !bills.includes('common_fee')) lines.push({ kind: 'common_fee', label: 'ค่าส่วนกลาง', amount: common, sort: 3 });
-  const subtotal = lines.reduce((sum, l) => sum + l.amount, 0);
-  let invId: string;
-  try {
-    const [inv] = await q<{ id: string }>(
-      `INSERT INTO stay_invoice(place_id, lease_id, room_id, tenant_id, period_ym, issue_date, due_date, subtotal_minor, total_minor, status, created_by, public_token)
-         VALUES($1,$2,$3,$4,$5,$6::date,$7::date,$8,$8,'issued',$9,$10) RETURNING id`,
-      [acc.place_id, ls.id, ls.room_id, ls.tenant_id, dt.period, dt.issue, dt.due, subtotal, acc.id, crypto.randomBytes(9).toString('hex')]);
-    invId = inv.id;
-  } catch (e: any) {
-    if (e?.code === '23505') return { status: 'exists', skipped };   // one bill per lease per month
-    throw e;
-  }
-  for (const l of lines) {
-    await q(`INSERT INTO stay_invoice_line(invoice_id, kind, label, units, rate_minor, prev_reading, curr_reading, amount_minor, sort)
-               VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [invId, l.kind, l.label, l.units ?? null, l.rate_minor ?? null, l.prev ?? null, l.curr ?? null, l.amount, l.sort]);
-  }
-  await q(`UPDATE stay_invoice SET ref=$2 WHERE id=$1`, [invId, 'INV-' + invId.slice(0, 6).toUpperCase()]);
-  return { status: 'ok', skipped };
-}
-
-/** Generate ONE lease's monthly invoice (from the room/tenant detail). */
+/** Generate ONE lease's monthly invoice (from the room/tenant detail). Builder lives in @/lib/billing
+ *  (shared with the batch action + the auto-billing cron route). Record-only, idempotent per (lease, month). */
 export async function generateInvoiceAction(leaseId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
@@ -2041,42 +1956,60 @@ export async function generateInvoiceAction(leaseId: string, formData: FormData)
 export async function generateAllInvoicesAction(formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const periodIn = s(formData, 'period');
-  const leases = await q<any>(
-    `SELECT ${LEASE_FOR_BILL} WHERE l.place_id=$1 AND l.status='active' AND l.deleted_at IS NULL`, [acc.place_id]);
-  let made = 0, existing = 0, norent = 0, nometer = 0;
-  for (const ls of leases) {
-    const r = await genInvoiceForLease(acc, ls, periodIn);
-    if (r.status === 'ok') { made++; if (r.skipped.length) nometer++; }
-    else if (r.status === 'exists') existing++;
-    else norent++;
-  }
+  const { made, existing, norent, nometer } = await runMonthlyBilling(acc, s(formData, 'period'));
   revalidatePath('/merchant/bills'); revalidatePath('/merchant/units', 'layout');
   redirect(`/merchant/bills?ok=batch&made=${made}&existing=${existing}&norent=${norent}&nometer=${nometer}`);
 }
 
-/** Mark an invoice paid (0059) — a RECORDED event only; owner collected offline. Never posts to the ledger. */
+/** Mark an invoice FULLY paid (0059) — a RECORDED event only; owner collected offline. Never posts to the
+ *  ledger. Sets paid_minor=total_minor so partial-aware read-sites (0064) see it as fully collected. */
 export async function markInvoicePaidAction(invoiceId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   if (!UUID_RE.test(invoiceId)) redirect('/merchant/units');
   const back = s(formData, 'back');
   const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
-  await q(`UPDATE stay_invoice SET status='paid', paid_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND status<>'void' AND deleted_at IS NULL`, [invoiceId, acc.place_id]);
+  await q(`UPDATE stay_invoice SET status='paid', paid_minor=total_minor, paid_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND status<>'void' AND deleted_at IS NULL`, [invoiceId, acc.place_id]);
   revalidatePath(backTo); revalidatePath('/merchant/bills');
   redirect(`${backTo}?ok=paid`);
 }
 
-/** Void an invoice (0059) — wrong/duplicate bill. Record-only. */
+/** Record a PARTIAL (or full) payment against an invoice (0064) — record-only; owner collected offline.
+ *  Adds `amount` (฿) to paid_minor, capped at total; flips status to 'paid' only once paid_minor >= total,
+ *  otherwise the bill stays 'issued' with a balance ("partial" is derived in the UI). Never posts to ledger. */
+export async function recordPaymentAction(invoiceId: string, formData: FormData) {
+  const acc = await currentAccount();
+  requireCap(acc, 'manages_stay');
+  if (!UUID_RE.test(invoiceId)) redirect('/merchant/units');
+  const back = s(formData, 'back');
+  const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
+  const amount = bahtToMinor(s(formData, 'amount'));
+  if (!amount || amount <= 0) redirect(`${backTo}?error=amount`);
+  // atomic: SET expressions read the pre-update paid_minor; cap at total; derive status + paid_at from the result
+  const [row] = await q<{ status: string }>(
+    `UPDATE stay_invoice
+        SET paid_minor = LEAST(total_minor, paid_minor + $3),
+            status = CASE WHEN paid_minor + $3 >= total_minor THEN 'paid' ELSE 'issued' END,
+            paid_at = now(), updated_at = now()
+      WHERE id=$1 AND place_id=$2 AND status<>'void' AND deleted_at IS NULL
+      RETURNING status`, [invoiceId, acc.place_id, amount]);
+  revalidatePath(backTo); revalidatePath('/merchant/bills');
+  redirect(`${backTo}?ok=${row?.status === 'paid' ? 'paid' : 'payment'}`);
+}
+
+/** Void an invoice (0059) — wrong/duplicate bill. Record-only. Blocked when a payment is already recorded
+ *  (paid_minor>0): voiding would silently drop that received money from every collected total. The owner must
+ *  reverse the payment (or issue a corrected bill some other way) first. */
 export async function voidInvoiceAction(invoiceId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
   if (!UUID_RE.test(invoiceId)) redirect('/merchant/units');
   const back = s(formData, 'back');
   const backTo = back.startsWith('/merchant/') ? back : '/merchant/units';
-  await q(`UPDATE stay_invoice SET status='void', updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL`, [invoiceId, acc.place_id]);
+  // atomic: only void if no payment has been recorded; a returned row means it voided, none means paid_minor>0 (or gone)
+  const [row] = await q<{ id: string }>(`UPDATE stay_invoice SET status='void', updated_at=now() WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND paid_minor=0 RETURNING id`, [invoiceId, acc.place_id]);
   revalidatePath(backTo); revalidatePath('/merchant/bills');
-  redirect(`${backTo}?ok=voided`);
+  redirect(`${backTo}?${row ? 'ok=voided' : 'error=voidpaid'}`);
 }
 
 /** Add a flat late-fee line to an OVERDUE unpaid invoice (0059) — record-only. Amount = the property's

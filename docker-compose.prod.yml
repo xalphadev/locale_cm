@@ -30,6 +30,7 @@ services:
       DATABASE_URL: ${WEB_DATABASE_URL:?app_content connection string}
       MONEY_API: http://api:3001
       MERCHANT_SESSION_SECRET: ${MERCHANT_SESSION_SECRET:?32-byte hex}
+      CRON_SECRET: ${CRON_SECRET:-}
       CONSUMER_BASE: https://${CONSUMER_DOMAIN:?}
       S3_ENDPOINT: minio
       S3_PORT: "9000"

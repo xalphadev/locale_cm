@@ -22,7 +22,7 @@ export default async function InvoiceDoc({ params }: { params: { id: string } })
   if (!acc?.place_id) redirect('/merchant/login');
   if (!acc.manages_stay) redirect('/merchant/rooms');
   const [iv] = isUuid(params.id) ? await q<any>(
-    `SELECT i.id, i.public_token, i.period_ym, i.status, i.ref, i.total_minor,
+    `SELECT i.id, i.public_token, i.period_ym, i.status, i.ref, i.total_minor, i.paid_minor,
             to_char(i.issue_date,'DD/MM/YYYY') issue_d, to_char(i.due_date,'DD/MM/YYYY') due_d, to_char(i.paid_at,'DD/MM/YYYY') paid_d,
             r.code room_code, t.full_name tenant_name, t.phone tenant_phone,
             p.name_i18n pname, p.address_i18n paddr, p.phone pphone,
@@ -81,6 +81,9 @@ export default async function InvoiceDoc({ params }: { params: { id: string } })
       </table>
 
       <div className="doc-total"><span>รวมทั้งสิ้น</span><span>{baht(iv.total_minor)}</span></div>
+      {iv.status !== 'paid' && iv.status !== 'void' && Number(iv.paid_minor) > 0 && (
+        <div className="doc-meta" style={{ marginTop: 4 }}><span>ชำระแล้ว {baht(iv.paid_minor)}</span><span><b>คงเหลือ {baht(Number(iv.total_minor) - Number(iv.paid_minor))}</b></span></div>
+      )}
 
       {iv.status === 'paid'
         ? <div className="doc-paid">✓ ชำระแล้ว{iv.paid_d ? ` · ${iv.paid_d}` : ''}</div>

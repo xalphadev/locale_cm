@@ -64,19 +64,40 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
   // numbers above are nightly-booking based). Shown for monthly/both; nightly-only bits hidden for pure monthly.
   const monthlyMode = acc.stay_mode !== 'nightly';
   const nightlyMode = acc.stay_mode !== 'monthly';
+  // partial-payment aware (0064): collected = SUM(paid_minor); outstanding = SUM(total − paid) for issued bills.
+  // "collected/billed this month" are keyed on the bill's period_ym (NOT the mutable paid_at) so the hero agrees
+  // with the trend chart + per-room drill-down below — a single mutable paid_at can't attribute cash cleanly.
   const [mb] = monthlyMode ? await q<any>(
-    `SELECT COALESCE(SUM(total_minor) FILTER (WHERE status='paid' AND paid_at >= $2::date AND paid_at < ($2::date + interval '1 month')),0)::bigint collected,
-            COALESCE(SUM(total_minor) FILTER (WHERE status<>'void' AND period_ym=$3),0)::bigint billed,
-            COALESCE(SUM(total_minor) FILTER (WHERE status='issued'),0)::bigint outstanding,
-            COALESCE(SUM(total_minor) FILTER (WHERE status='issued' AND due_date < CURRENT_DATE),0)::bigint overdue,
+    `SELECT COALESCE(SUM(paid_minor) FILTER (WHERE status<>'void' AND period_ym=$2),0)::bigint collected,
+            COALESCE(SUM(total_minor) FILTER (WHERE status<>'void' AND period_ym=$2),0)::bigint billed,
+            COALESCE(SUM(total_minor - paid_minor) FILTER (WHERE status='issued'),0)::bigint outstanding,
+            COALESCE(SUM(total_minor - paid_minor) FILTER (WHERE status='issued' AND due_date < CURRENT_DATE),0)::bigint overdue,
             count(*) FILTER (WHERE status='issued' AND due_date < CURRENT_DATE)::int overdue_n
-       FROM stay_invoice WHERE place_id=$1 AND deleted_at IS NULL`, [pid, mStart, fmtM(year, mon)]) : [];
+       FROM stay_invoice WHERE place_id=$1 AND deleted_at IS NULL`, [pid, fmtM(year, mon)]) : [];
   const mtrend = monthlyMode ? await q<any>(
-    `SELECT period_ym, COALESCE(SUM(total_minor) FILTER (WHERE status='paid'),0)::bigint collected,
+    `SELECT period_ym, COALESCE(SUM(paid_minor) FILTER (WHERE status<>'void'),0)::bigint collected,
             COALESCE(SUM(total_minor) FILTER (WHERE status<>'void'),0)::bigint billed
        FROM stay_invoice WHERE place_id=$1 AND deleted_at IS NULL AND period_ym >= to_char(CURRENT_DATE - interval '5 months','YYYY-MM')
       GROUP BY period_ym ORDER BY period_ym`, [pid]) : [];
   const mtMax = Math.max(1, ...mtrend.map((x: any) => Number(x.billed)));
+  // per-room drill-down for OCCUPIED rooms: current tenant + this-period billed/collected + that tenant's balance.
+  // All invoice figures are scoped to the CURRENT active lease (i.lease_id=ls.id) so a previous tenant's unpaid
+  // bill is never shown under the new tenant's name (a moved-out tenant's arrears still show in the bills hub).
+  const mrooms = monthlyMode ? await q<any>(
+    `SELECT r.id, r.code, ls.tenant_name, ls.rent_minor,
+            COALESCE(inv.billed,0)::bigint billed, COALESCE(inv.collected,0)::bigint collected, COALESCE(inv.outstanding,0)::bigint outstanding
+       FROM stay_room r
+       JOIN LATERAL (
+         SELECT l.id, l.rent_minor, t.full_name tenant_name FROM stay_lease l
+           LEFT JOIN stay_tenant t ON t.id=l.tenant_id AND t.deleted_at IS NULL
+          WHERE l.room_id=r.id AND l.status='active' AND l.deleted_at IS NULL ORDER BY l.created_at DESC LIMIT 1) ls ON true
+       LEFT JOIN LATERAL (
+         SELECT COALESCE(SUM(total_minor) FILTER (WHERE status<>'void' AND period_ym=$2),0) billed,
+                COALESCE(SUM(paid_minor) FILTER (WHERE status<>'void' AND period_ym=$2),0) collected,
+                COALESCE(SUM(total_minor - paid_minor) FILTER (WHERE status='issued'),0) outstanding
+           FROM stay_invoice i WHERE i.lease_id=ls.id AND i.deleted_at IS NULL) inv ON true
+      WHERE r.place_id=$1 AND r.status='active' AND r.deleted_at IS NULL
+      ORDER BY (inv.outstanding > 0) DESC, inv.outstanding DESC, r.code LIMIT 100`, [pid, fmtM(year, mon)]) : [];
 
   const daysInMonth = new Date(year, mon + 1, 0).getDate();
   const roomN = rooms?.n || 0;
@@ -132,6 +153,25 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
                 </div>
               </div>
             )}
+            {mrooms.length > 0 && (
+              <div style={{ marginTop: 4 }}>
+                <div className="rev-chart-h" style={{ marginBottom: 6 }}>รายห้อง (เดือน{MONTHS[mon]})</div>
+                <div className="mlist">
+                  {mrooms.map((rm: any) => {
+                    const out = Number(rm.outstanding || 0);
+                    return (
+                      <Link className="mrow" key={rm.id} href={`/merchant/units/${rm.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <span className="mrow-body">
+                          <span className="mrow-nm">ห้อง {rm.code}{rm.tenant_name ? ` · ${rm.tenant_name}` : ''}</span>
+                          <span className="mrow-meta">ออกบิล {baht(Number(rm.billed || 0))} · เก็บได้ {baht(Number(rm.collected || 0))}</span>
+                        </span>
+                        {out > 0 ? <span className="t" style={{ background: '#fef0c7', color: '#b54708' }}>ค้าง {baht(out)}</span> : <span className="t sold">ครบ</span>}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -176,7 +216,7 @@ export default async function Revenue({ searchParams }: { searchParams: { month?
         </div>
         </>)}
 
-        <p className="note">{monthlyMode ? '“เก็บได้” นับจากบิลที่กด “รับชำระแล้ว” · ' : 'รายได้นับจากสลิปที่คุณกด “ยืนยันการชำระ” แล้วเท่านั้น · '}เงินโอนเข้าบัญชีคุณโดยตรง ระบบไม่ถือเงินแทน</p>
+        <p className="note">{monthlyMode ? '“เก็บได้” นับจากยอดที่รับชำระจริง (รวมจ่ายบางส่วน) · ' : 'รายได้นับจากสลิปที่คุณกด “ยืนยันการชำระ” แล้วเท่านั้น · '}เงินโอนเข้าบัญชีคุณโดยตรง ระบบไม่ถือเงินแทน</p>
       </div>
     </>
   );

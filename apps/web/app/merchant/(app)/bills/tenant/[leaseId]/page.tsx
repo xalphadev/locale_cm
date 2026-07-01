@@ -8,7 +8,7 @@ import { Icon, isUuid } from '../../../ui';
 import { MTopbar } from '../../../MTopbar';
 import ShareLink from '../../../ShareLink';
 import CopyText from '../../../CopyText';
-import { markInvoicePaidAction, applyLateFeeAction } from '../../../../actions';
+import { markInvoicePaidAction, applyLateFeeAction, recordPaymentAction } from '../../../../actions';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,14 +32,14 @@ export default async function TenantStatement({ params, searchParams }: { params
   if (!ls) return (<MTopbar back="/merchant/bills" backLabel="บิล" title="ไม่พบสัญญา" />);
   const [sm] = await q<any>(
     `SELECT COALESCE(sum(total_minor) FILTER (WHERE status<>'void'),0) billed,
-            COALESCE(sum(total_minor) FILTER (WHERE status='paid'),0) paid,
-            COALESCE(sum(total_minor) FILTER (WHERE status='issued'),0) outstanding,
-            COALESCE(sum(total_minor) FILTER (WHERE status='issued' AND due_date<CURRENT_DATE),0) overdue,
+            COALESCE(sum(paid_minor) FILTER (WHERE status<>'void'),0) paid,
+            COALESCE(sum(total_minor - paid_minor) FILTER (WHERE status='issued'),0) outstanding,
+            COALESCE(sum(total_minor - paid_minor) FILTER (WHERE status='issued' AND due_date<CURRENT_DATE),0) overdue,
             count(*) FILTER (WHERE status='issued' AND due_date<CURRENT_DATE)::int overdue_n
        FROM stay_invoice WHERE lease_id=$1 AND place_id=$2 AND deleted_at IS NULL`, [ls.id, acc.place_id]);
   const invs = await q<any>(
     `SELECT id, period_ym, to_char(due_date,'DD/MM/YY') due_d, (status='issued' AND due_date<CURRENT_DATE) overdue,
-            total_minor, status FROM stay_invoice WHERE lease_id=$1 AND place_id=$2 AND deleted_at IS NULL
+            total_minor, paid_minor, status FROM stay_invoice WHERE lease_id=$1 AND place_id=$2 AND deleted_at IS NULL
       ORDER BY period_ym DESC`, [ls.id, acc.place_id]);
   const lateFee = Number(ls.utility_rates?.late_fee_minor || 0);
   const back = `/merchant/bills/tenant/${ls.id}`;
@@ -65,8 +65,10 @@ export default async function TenantStatement({ params, searchParams }: { params
   return (
     <>
       <MTopbar back="/merchant/bills" backLabel="บิล" title="บัญชีลูกหนี้" />
-      {searchParams?.ok === 'paid' && <div className="banner-ok">✓ บันทึกว่าชำระแล้ว</div>}
+      {searchParams?.ok === 'paid' && <div className="banner-ok">✓ บันทึกว่าชำระเต็มจำนวนแล้ว</div>}
+      {searchParams?.ok === 'payment' && <div className="banner-ok">✓ บันทึกการรับชำระแล้ว</div>}
       {searchParams?.ok === 'latefee' && <div className="banner-ok">✓ เพิ่มค่าปรับในบิลแล้ว</div>}
+      {searchParams?.error === 'amount' && <div className="banner-err">กรุณากรอกจำนวนเงินที่รับ (มากกว่า 0)</div>}
       {searchParams?.error === 'nolatefee' && <div className="banner-err">ยังไม่ได้ตั้งค่าปรับจ่ายช้า — ตั้งได้ในหน้า “ราคา”</div>}
       {searchParams?.error === 'notoverdue' && <div className="banner-err">บิลนี้ยังไม่เกินกำหนด</div>}
 
@@ -97,20 +99,29 @@ export default async function TenantStatement({ params, searchParams }: { params
 
       {invs.length === 0 ? <p className="note">ยังไม่มีบิล</p> : (
         <div className="mlist">
-          {invs.map((iv: any) => (
-            <div className="mrow" key={iv.id} style={{ cursor: 'default' }}>
-              <Link href={`/merchant/bills/${iv.id}`} className="mrow-body" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <span className="mrow-nm">{iv.period_ym} · {baht(iv.total_minor)}{iv.overdue ? ' · เกินกำหนด' : ''}</span>
-                <span className="mrow-meta">ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}</span>
-              </Link>
-              {iv.status === 'issued' ? (
-                <div className="lead-acts">
-                  {iv.overdue && lateFee > 0 && <form action={applyLateFeeAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm" type="submit">+ ค่าปรับ</button></form>}
-                  <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> จ่ายแล้ว</button></form>
-                </div>
-              ) : iv.status === 'paid' ? <span className="t sold">ชำระแล้ว</span> : null}
-            </div>
-          ))}
+          {invs.map((iv: any) => {
+            const remaining = Number(iv.total_minor) - Number(iv.paid_minor || 0);
+            const partial = iv.status === 'issued' && Number(iv.paid_minor) > 0;
+            return (
+              <div className="mrow" key={iv.id} style={{ cursor: 'default' }}>
+                <Link href={`/merchant/bills/${iv.id}`} className="mrow-body" style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <span className="mrow-nm">{iv.period_ym} · {baht(iv.total_minor)}{iv.overdue ? ' · เกินกำหนด' : ''}{partial ? ' · จ่ายบางส่วน' : ''}</span>
+                  <span className="mrow-meta">ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}{partial ? ` · จ่ายแล้ว ${baht(iv.paid_minor)} · เหลือ ${baht(remaining)}` : ''}</span>
+                </Link>
+                {iv.status === 'issued' ? (
+                  <div className="lead-acts">
+                    {iv.overdue && lateFee > 0 && <form action={applyLateFeeAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm" type="submit">+ ค่าปรับ</button></form>}
+                    <form action={recordPaymentAction.bind(null, iv.id)} style={{ display: 'flex', gap: 4 }}>
+                      <input type="hidden" name="back" value={back} />
+                      <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" style={{ width: 76, padding: '5px 6px', border: '1px solid var(--m-line)', borderRadius: 7, fontSize: '.8rem' }} />
+                      <button className="dbtn sm" type="submit">รับชำระ</button>
+                    </form>
+                    <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={back} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> จ่ายเต็ม</button></form>
+                  </div>
+                ) : iv.status === 'paid' ? <span className="t sold">ชำระแล้ว</span> : null}
+              </div>
+            );
+          })}
         </div>
       )}
     </>

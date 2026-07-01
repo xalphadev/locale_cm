@@ -28,9 +28,9 @@ export default async function TenantPortal({ params, searchParams }: { params: {
       WHERE l.portal_token=$1 AND l.deleted_at IS NULL`, [params.token]) : [];
   if (!ls) return (<div style={{ maxWidth: 560, margin: '0 auto', padding: 24 }}><p className="note">ไม่พบข้อมูล — ลิงก์อาจไม่ถูกต้องหรือถูกยกเลิก</p></div>);
 
-  const [sm] = await q<any>(`SELECT COALESCE(sum(total_minor) FILTER (WHERE status='issued'),0) outstanding FROM stay_invoice WHERE lease_id=$1 AND deleted_at IS NULL`, [ls.id]);
+  const [sm] = await q<any>(`SELECT COALESCE(sum(total_minor - paid_minor) FILTER (WHERE status='issued'),0) outstanding FROM stay_invoice WHERE lease_id=$1 AND deleted_at IS NULL`, [ls.id]);
   const invs = await q<any>(
-    `SELECT id, public_token, period_ym, to_char(due_date,'DD/MM/YY') due_d, (status='issued' AND due_date<CURRENT_DATE) overdue, total_minor, status
+    `SELECT id, public_token, period_ym, to_char(due_date,'DD/MM/YY') due_d, (status='issued' AND due_date<CURRENT_DATE) overdue, total_minor, paid_minor, status
        FROM stay_invoice WHERE lease_id=$1 AND deleted_at IS NULL ORDER BY period_ym DESC LIMIT 12`, [ls.id]);
   const util = await q<any>(
     `SELECT il.kind, il.units, il.amount_minor, i.period_ym
@@ -88,8 +88,8 @@ export default async function TenantPortal({ params, searchParams }: { params: {
             const row = (
               <>
                 <span className="mrow-body">
-                  <span className="mrow-nm">{iv.period_ym} · {baht(iv.total_minor)}{iv.overdue ? ' · เกินกำหนด' : ''}</span>
-                  <span className="mrow-meta">ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}</span>
+                  <span className="mrow-nm">{iv.period_ym} · {baht(iv.total_minor)}{iv.overdue ? ' · เกินกำหนด' : ''}{iv.status === 'issued' && Number(iv.paid_minor) > 0 ? ' · จ่ายบางส่วน' : ''}</span>
+                  <span className="mrow-meta">ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}{iv.status === 'issued' && Number(iv.paid_minor) > 0 ? ` · เหลือ ${baht(Number(iv.total_minor) - Number(iv.paid_minor))}` : ''}</span>
                 </span>
                 {iv.status === 'paid' ? <span className="t sold">จ่ายแล้ว</span> : iv.public_token ? <span className="mrow-editlink">ดู/จ่าย</span> : null}
               </>

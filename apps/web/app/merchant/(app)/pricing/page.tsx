@@ -79,6 +79,7 @@ export default async function Pricing({ searchParams }: { searchParams: { ok?: s
             <div className="field"><label>ผ่อนผัน (วันหลังครบกำหนด)</label><input name="late_fee_grace" type="number" min={0} max={60} inputMode="numeric" defaultValue={ur.late_fee_grace_days || ''} placeholder="เช่น 3" /></div>
           </div>
           <p className="fhint">ห้องที่ตั้ง “รวมค่าน้ำ/ไฟ” ในรูปแบบห้อง จะไม่ถูกคิดรายการนั้นในบิล · ค่าปรับเป็นยอดคงที่ (แจ้งเองในบัญชีลูกหนี้เมื่อเกินกำหนด)</p>
+          <label className="paysw" style={{ marginTop: 2 }}><input type="checkbox" name="auto_bill" defaultChecked={!!ur.auto_bill} /> <span>ออกบิลอัตโนมัติทุกเดือน — ระบบสร้างบิลรอบใหม่ให้เองตามวันครบกำหนด (ไม่คิดซ้ำห้องที่ออกบิลแล้ว)</span></label>
           <button type="submit" className="dbtn primary" style={{ alignSelf: 'flex-start' }}>บันทึกอัตรา</button>
         </form>
       )}

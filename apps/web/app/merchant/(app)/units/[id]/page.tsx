@@ -5,7 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction, upsertLeaseAction, recordMeterAction, generateInvoiceAction, markInvoicePaidAction, voidInvoiceAction, saveInspectionAction, settleDepositAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction, upsertLeaseAction, recordMeterAction, generateInvoiceAction, markInvoicePaidAction, recordPaymentAction, voidInvoiceAction, saveInspectionAction, settleDepositAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import RoomCalendar from '../RoomCalendar';
 
@@ -101,7 +101,7 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
   const elecLast = meters.find((m: any) => m.utility === 'electricity')?.reading_value ?? null;
   const waterLast = meters.find((m: any) => m.utility === 'water')?.reading_value ?? null;
   const invoices = lease?.lease_id ? await q<any>(
-    `SELECT id, period_ym, to_char(issue_date,'DD/MM/YY') issue_d, to_char(due_date,'DD/MM/YY') due_d, total_minor, status
+    `SELECT id, period_ym, to_char(issue_date,'DD/MM/YY') issue_d, to_char(due_date,'DD/MM/YY') due_d, total_minor, paid_minor, status
        FROM stay_invoice WHERE lease_id=$1 AND deleted_at IS NULL ORDER BY period_ym DESC LIMIT 12`, [lease.lease_id]) : [];
   const invLines = invoices.length ? await q<any>(
     `SELECT invoice_id, kind, label, units, rate_minor, amount_minor FROM stay_invoice_line WHERE invoice_id = ANY($1::uuid[]) ORDER BY sort`, [invoices.map((i: any) => i.id)]) : [];
@@ -135,7 +135,10 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.ok === 'billed' && <div className="banner-ok">✓ สร้างบิลเดือนนี้แล้ว</div>}
       {searchParams?.warn === 'nometer' && <div className="banner-err">บิลนี้ยังไม่รวมค่าน้ำ/ไฟ เพราะเลขมิเตอร์ยังไม่พอคำนวณ (ต้องมี ≥ 2 ครั้ง) — จดมิเตอร์เพิ่มก่อนออกบิลรอบหน้า</div>}
       {searchParams?.ok === 'paid' && <div className="banner-ok">✓ บันทึกว่าชำระแล้ว</div>}
+      {searchParams?.ok === 'payment' && <div className="banner-ok">✓ บันทึกการรับชำระแล้ว</div>}
+      {searchParams?.error === 'amount' && <div className="banner-err">กรุณากรอกจำนวนเงินที่รับ (มากกว่า 0)</div>}
       {searchParams?.ok === 'voided' && <div className="banner-ok">ยกเลิกบิลแล้ว</div>}
+      {searchParams?.error === 'voidpaid' && <div className="banner-err">ยกเลิกบิลไม่ได้ เพราะบันทึกการรับชำระไว้แล้ว — คืนเงิน/แก้ยอดให้เป็น 0 ก่อน</div>}
       {searchParams?.error === 'billexists' && <div className="banner-err">มีบิลของเดือนนี้อยู่แล้ว</div>}
       {searchParams?.error === 'norent' && <div className="banner-err">ยังไม่ได้ตั้งค่าเช่าในสัญญา — เพิ่มค่าเช่าก่อนออกบิล</div>}
       {searchParams?.ok === 'inspect' && <div className="banner-ok">✓ บันทึกการตรวจห้องแล้ว</div>}
@@ -270,12 +273,15 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
           </form>
           {invoices.length > 0 && (
             <div className="mlist">
-              {invoices.map((iv: any) => (
+              {invoices.map((iv: any) => {
+                const remaining = Number(iv.total_minor) - Number(iv.paid_minor || 0);
+                const partial = iv.status === 'issued' && Number(iv.paid_minor) > 0;
+                return (
                 <details className="mrow-d" key={iv.id}>
                   <summary className="mrow">
                     <span className="mrow-body">
-                      <span className="mrow-nm">บิล {iv.period_ym} · ฿{Math.round(Number(iv.total_minor) / 100).toLocaleString()}</span>
-                      <span className="mrow-meta">ออก {iv.issue_d} · ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}</span>
+                      <span className="mrow-nm">บิล {iv.period_ym} · ฿{Math.round(Number(iv.total_minor) / 100).toLocaleString()}{partial ? ' · จ่ายบางส่วน' : ''}</span>
+                      <span className="mrow-meta">ออก {iv.issue_d} · ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}{partial ? ` · เหลือ ฿${Math.round(remaining / 100).toLocaleString()}` : ''}</span>
                     </span>
                     <span className="mrow-editlink">ดู</span>
                   </summary>
@@ -286,17 +292,24 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
                         <span className="mrow-tags"><b>฿{Math.round(Number(ln.amount_minor) / 100).toLocaleString()}</b></span>
                       </div>
                     ))}
+                    {partial && <p className="note" style={{ margin: '2px 0' }}>ชำระแล้ว ฿{Math.round(Number(iv.paid_minor) / 100).toLocaleString()} · คงเหลือ ฿{Math.round(remaining / 100).toLocaleString()}</p>}
                     <div className="lead-acts" style={{ marginTop: 6 }}>
                       <Link className="dbtn sm" href={`/merchant/bills/${iv.id}`}><Icon n="feed" size={14} /> ใบแจ้งหนี้/พิมพ์</Link>
                       {iv.status !== 'paid' && iv.status !== 'void' && (<>
-                        <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> มาร์คว่าชำระแล้ว</button></form>
+                        <form action={recordPaymentAction.bind(null, iv.id)} style={{ display: 'flex', gap: 4 }}>
+                          <input type="hidden" name="back" value={`/merchant/units/${r.id}`} />
+                          <input name="amount" type="number" step="0.01" min="0" defaultValue={(remaining / 100).toString()} aria-label="จำนวนที่รับ (บาท)" style={{ width: 80, padding: '5px 6px', border: '1px solid var(--m-line)', borderRadius: 7, fontSize: '.8rem' }} />
+                          <button className="dbtn sm" type="submit">รับชำระ</button>
+                        </form>
+                        <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> จ่ายเต็ม</button></form>
                         <form action={voidInvoiceAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><ConfirmSubmit message="ยกเลิกบิลนี้?" className="dbtn sm danger">ยกเลิกบิล</ConfirmSubmit></form>
                       </>)}
                     </div>
                     {iv.status === 'paid' && <p className="note" style={{ margin: 0 }}>✓ ชำระแล้ว</p>}
                   </div>
                 </details>
-              ))}
+                );
+              })}
             </div>
           )}
         </>
