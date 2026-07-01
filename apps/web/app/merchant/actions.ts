@@ -1212,8 +1212,8 @@ export async function addRoomBlockAction(roomId: string, formData: FormData) {
 export async function editRoomBlockAction(blockId: string, formData: FormData) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const [b] = await q<{ room_id: string; stay_unit_id: string | null }>(
-    `SELECT b.room_id, r.stay_unit_id FROM stay_occupancy_block b JOIN stay_room r ON r.id=b.room_id
+  const [b] = await q<{ room_id: string; stay_unit_id: string | null; block_kind: string }>(
+    `SELECT b.room_id, b.block_kind, r.stay_unit_id FROM stay_occupancy_block b JOIN stay_room r ON r.id=b.room_id
       WHERE b.id=$1 AND r.place_id=$2 AND b.deleted_at IS NULL`, [blockId, acc.place_id]);
   if (!b) redirect('/merchant/units');
   const from = s(formData, 'start_date');
@@ -1230,6 +1230,8 @@ export async function editRoomBlockAction(blockId: string, formData: FormData) {
     if (e?.code === '23P01') redirect(`/merchant/units/${b.room_id}?error=overlap`);
     throw e;
   }
+  // keep the tenancy lease's span in step with its block (0058)
+  if ((blockKind || b.block_kind) === 'tenancy') await q(`UPDATE stay_lease SET start_date=$2, end_date=$3, updated_at=now() WHERE block_id=$1 AND place_id=$4 AND status='active' AND deleted_at IS NULL`, [blockId, from, end, acc.place_id]);
   await refreshUnitVacancy(b.stay_unit_id);
   revalidatePath(`/merchant/units/${b.room_id}`); revalidatePath('/merchant/units', 'layout');
   const back = s(formData, 'returnTo');
@@ -1275,6 +1277,8 @@ export async function moveTenantAction(srcId: string, formData: FormData) {
     if (e?.code === '23P01') redirect(`/merchant/units/${srcId}?error=occupied`);
     throw e;
   }
+  // keep the lease's denormalized room_id in step with the moved tenancy block (0058)
+  await q(`UPDATE stay_lease SET room_id=$2, updated_at=now() WHERE room_id=$1 AND place_id=$3 AND status='active' AND deleted_at IS NULL`, [srcId, destId, acc.place_id]);
   await q(`UPDATE stay_room SET occupancy_status='occupied', note=$3, occupied_until=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [destId, acc.place_id, src.note, src.occupied_until]);
   await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [srcId, acc.place_id]);
   await q(`INSERT INTO stay_room_event(room_id, place_id, event_kind, meta) VALUES
@@ -1310,6 +1314,8 @@ export async function moveBlockAction(blockId: string, formData: FormData) {
     if (e?.code === '23P01') err('overlap');
     throw e;
   }
+  // a tenancy block carries a lease (0058) — keep its denormalized room_id in step (no-op for stay blocks)
+  await q(`UPDATE stay_lease SET room_id=$2, updated_at=now() WHERE block_id=$1 AND place_id=$3 AND status='active' AND deleted_at IS NULL`, [blockId, dest, acc.place_id]);
   if (b.block_kind === 'stay' || b.block_kind === 'tenancy') {
     await q(`UPDATE stay_room SET occupancy_status='occupied', note=$3, occupied_until=$4::date, updated_at=now()
                WHERE id=$1 AND place_id=$2
@@ -1477,7 +1483,7 @@ export async function upsertLeaseAction(blockId: string, formData: FormData) {
 export async function verifySlipAction(leadId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const [b] = await q<any>(`SELECT id, ref, requester_user_id, stay_unit_id, desired_from, desired_to, desired_months, rental_mode, contact_name, status, converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND payment_status='submitted'`, [leadId, acc.place_id]);
+  const [b] = await q<any>(`SELECT id, ref, requester_user_id, stay_unit_id, desired_from, desired_to, desired_months, rental_mode, contact_name, contact_phone, contact_line, status, converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND deleted_at IS NULL AND payment_status='submitted'`, [leadId, acc.place_id]);
   if (!b) redirect('/merchant/bookings');
   await q(`UPDATE stay_booking_request SET payment_status='verified', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
   // notify the guest their booking is confirmed (consumer inbox → /stay/requests). Walk-ins have no user → skip.
@@ -1518,6 +1524,8 @@ export async function verifySlipAction(leadId: string) {
           blockId = blk.id;
         } catch (e: any) { if (e?.code === '23P01') redirect(`/merchant/bookings/${leadId}?error=full`); throw e; }
         await q(`UPDATE stay_room SET occupancy_status='occupied', occupied_until=(COALESCE($3::date, CURRENT_DATE) + ($4 || ' months')::interval)::date, note=$5, updated_at=now() WHERE id=$1 AND place_id=$2`, [room.id, acc.place_id, b.desired_from, String(months), tnote]);
+        const [tn] = await q<{ id: string }>(`INSERT INTO stay_tenant(place_id, requester_user_id, full_name, phone, line_id) VALUES($1,$2,$3,NULLIF($4,''),NULLIF($5,'')) RETURNING id`, [acc.place_id, b.requester_user_id || null, b.contact_name || 'ผู้เช่า', b.contact_phone || '', b.contact_line || '']);
+        await q(`INSERT INTO stay_lease(place_id, tenant_id, room_id, block_id, stay_unit_id, booking_request_id, start_date, end_date, status, created_by) VALUES($1,$2,$3,$4,$5,$6, COALESCE($7::date, CURRENT_DATE), (COALESCE($7::date, CURRENT_DATE) + ($8 || ' months')::interval)::date, 'active', $9)`, [acc.place_id, tn.id, room.id, blockId, b.stay_unit_id, leadId, b.desired_from, String(months), acc.id]);
         await q(`UPDATE stay_booking_request SET status='converted', converted_block_id=$3, updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id, blockId]);
       } else {
         await q(`UPDATE stay_units SET available_units=GREATEST(0, available_units-1), availability_updated_at=now(), updated_at=now() WHERE id=$1 AND place_id=$2 AND available_units>0`, [b.stay_unit_id, acc.place_id]);
@@ -1582,10 +1590,12 @@ export async function collectBalanceAction(leadId: string, formData: FormData) {
 export async function cancelRoomBlockAction(blockId: string) {
   const acc = await currentAccount();
   requireCap(acc, 'manages_stay');
-  const [b] = await q<{ room_id: string; stay_unit_id: string | null }>(
+  const [b] = await q<{ room_id: string; stay_unit_id: string | null; block_kind: string }>(
     `UPDATE stay_occupancy_block b SET status='cancelled', deleted_at=now(), updated_at=now()
        FROM stay_room r WHERE b.id=$1 AND b.room_id=r.id AND r.place_id=$2 AND b.deleted_at IS NULL
-       RETURNING b.room_id, r.stay_unit_id`, [blockId, acc.place_id]);
+       RETURNING b.room_id, r.stay_unit_id, b.block_kind`, [blockId, acc.place_id]);
+  // a tenancy block carries a lease (0058) — cancel it too so no orphan active lease lingers on the room
+  if (b?.block_kind === 'tenancy') await q(`UPDATE stay_lease SET status='cancelled', updated_at=now() WHERE block_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [blockId, acc.place_id]);
   if (b) await refreshUnitVacancy(b.stay_unit_id);
   revalidatePath('/merchant/units', 'layout');
 }
@@ -1614,13 +1624,14 @@ export async function markNoShowAction(leadId: string) {
   const acc = await currentAccount();
   if (!acc?.place_id) redirect('/merchant/login');
   const [b] = await q<{ converted_block_id: string | null }>(`SELECT converted_block_id FROM stay_booking_request WHERE id=$1 AND place_id=$2 AND status='converted' AND deleted_at IS NULL`, [leadId, acc.place_id]);
-  // only DAILY bookings hold a recorded occupancy block we can release; a monthly stay occupies a room with no
-  // back-link, so freeing it must be done from the room board. Bail (no orphaned status) if there's no block.
+  // no-show is a DAILY-only action in the UI; release the recorded occupancy block. Bail if there's no block.
   if (!b || !b.converted_block_id) redirect('/merchant/bookings');
-  const [blk] = await q<{ stay_unit_id: string | null }>(
+  const [blk] = await q<{ stay_unit_id: string | null; block_kind: string }>(
     `UPDATE stay_occupancy_block bk SET status='cancelled', deleted_at=now(), updated_at=now()
        FROM stay_room r WHERE bk.id=$1 AND bk.room_id=r.id AND r.place_id=$2 AND bk.deleted_at IS NULL
-       RETURNING r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
+       RETURNING r.stay_unit_id, bk.block_kind`, [b.converted_block_id, acc.place_id]);
+  // defensive: if a tenancy block ever reaches here, don't leave an orphan active lease (0058)
+  if (blk?.block_kind === 'tenancy') await q(`UPDATE stay_lease SET status='cancelled', updated_at=now() WHERE block_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [b.converted_block_id, acc.place_id]);
   if (blk) await refreshUnitVacancy(blk.stay_unit_id);
   await q(`UPDATE stay_booking_request SET status='no_show', updated_at=now() WHERE id=$1 AND place_id=$2`, [leadId, acc.place_id]);
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
@@ -1655,6 +1666,7 @@ export async function cancelBookingAction(leadId: string) {
          RETURNING bk.room_id, bk.block_kind, r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
     if (blk?.block_kind === 'tenancy') {
       await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [blk.room_id, acc.place_id]);
+      await q(`UPDATE stay_lease SET status='cancelled', updated_at=now() WHERE block_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [b.converted_block_id, acc.place_id]);
     }
     if (blk) await refreshUnitVacancy(blk.stay_unit_id);
   } else if (b.rental_mode === 'monthly' && b.stay_unit_id) {
@@ -1728,13 +1740,18 @@ export async function createBookingAction(formData: FormData) {
     throw e;
   }
   if (monthly) await q(`UPDATE stay_room SET occupancy_status='occupied', occupied_until=$3, note=$4, updated_at=now() WHERE id=$1 AND place_id=$2`, [roomId, acc.place_id, end, note]);
-  await q(
+  const [br] = await q<{ id: string }>(
     `INSERT INTO stay_booking_request(place_id, stay_unit_id, room_id, request_kind, rental_mode, desired_from, desired_to, desired_months, party_size, contact_name, contact_phone, channel, status, converted_block_id, expires_at,
         amount_minor, paid_minor, payment_method, paid_at, payment_status)
      VALUES($1,$2,$3,'booking',$4,$5,$6,$7,$8,$9,$10,'walk_in','converted',$11, now() + interval '60 days',
-        $12,$12,$13, CASE WHEN $12 IS NOT NULL THEN now() END, $14)`,
+        $12,$12,$13, CASE WHEN $12 IS NOT NULL THEN now() END, $14) RETURNING id`,
     [acc.place_id, unitId, roomId, su.rental_mode, from, monthly ? null : end, monthly ? months : null, party, name || null, phone || null, blockId,
      paidNow ? amountMinor : null, paidNow ? 'cash' : null, paidNow ? 'verified' : 'none']);
+  // walk-in monthly with a named tenant → seed a tenant + lease record too (0058); owner fills terms later
+  if (monthly && name) {
+    const [tn] = await q<{ id: string }>(`INSERT INTO stay_tenant(place_id, full_name, phone) VALUES($1,$2,NULLIF($3,'')) RETURNING id`, [acc.place_id, name, phone || '']);
+    await q(`INSERT INTO stay_lease(place_id, tenant_id, room_id, block_id, stay_unit_id, booking_request_id, start_date, end_date, status, created_by) VALUES($1,$2,$3,$4,$5,$6,$7::date,$8::date,'active',$9)`, [acc.place_id, tn.id, roomId, blockId, unitId, br.id, from, end, acc.id]);
+  }
   await refreshUnitVacancy(unitId);
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');
   redirect('/merchant/bookings?ok=created');
@@ -1772,7 +1789,10 @@ export async function checkOutAction(leadId: string, formData?: FormData) {
        RETURNING bk.room_id, bk.block_kind, r.stay_unit_id`, [b.converted_block_id, acc.place_id]);
   if (blk) {
     await q(`INSERT INTO stay_room_event(room_id, block_id, place_id, event_kind) VALUES($1,$2,$3,'check_out')`, [blk.room_id, b.converted_block_id, acc.place_id]);
-    if (blk.block_kind === 'tenancy') await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [blk.room_id, acc.place_id]);
+    if (blk.block_kind === 'tenancy') {
+      await q(`UPDATE stay_room SET occupancy_status='vacant', note=NULL, occupied_until=NULL, updated_at=now() WHERE id=$1 AND place_id=$2`, [blk.room_id, acc.place_id]);
+      await q(`UPDATE stay_lease SET status='ended', end_date=COALESCE(end_date, CURRENT_DATE), updated_at=now() WHERE block_id=$1 AND place_id=$2 AND status='active' AND deleted_at IS NULL`, [b.converted_block_id, acc.place_id]);
+    }
     await refreshUnitVacancy(blk.stay_unit_id);
   }
   revalidatePath('/merchant/bookings'); revalidatePath('/merchant/units', 'layout'); revalidatePath('/merchant');

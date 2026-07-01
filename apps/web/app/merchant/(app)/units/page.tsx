@@ -31,7 +31,8 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const types = await q<any>(`SELECT id, name_i18n, rental_mode, managed FROM stay_units WHERE place_id=$1 AND deleted_at IS NULL ORDER BY rental_mode, sort, created_at`, [acc.place_id]);
   const rooms = await q<any>(
     `SELECT r.id, r.code, r.floor, r.room_kind, r.occupancy_status, r.occupied_until, r.note, r.stay_unit_id,
-            su.name_i18n unit_name, su.rental_mode, g.contact_name guest_name, g.contact_phone guest_phone
+            su.name_i18n unit_name, su.rental_mode, g.contact_name guest_name, g.contact_phone guest_phone,
+            ten.tenant_name, ten.rent_minor
        FROM stay_room r LEFT JOIN stay_units su ON su.id = r.stay_unit_id
        -- "who's in this room right now": the guest on the active booking covering today (zero new tables)
        LEFT JOIN LATERAL (
@@ -42,6 +43,13 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
             AND bk.block_kind IN ('stay','tenancy') AND bk.span @> CURRENT_DATE
           ORDER BY bk.start_date DESC LIMIT 1
        ) g ON true
+       -- structured tenant + rent from the active lease (0058), if recorded
+       LEFT JOIN LATERAL (
+         SELECT t.full_name tenant_name, l.rent_minor
+           FROM stay_lease l JOIN stay_tenant t ON t.id = l.tenant_id AND t.deleted_at IS NULL
+          WHERE l.room_id = r.id AND l.status='active' AND l.deleted_at IS NULL
+          ORDER BY l.created_at DESC LIMIT 1
+       ) ten ON true
       WHERE r.place_id=$1 AND r.deleted_at IS NULL ORDER BY r.floor NULLS FIRST, r.code`, [acc.place_id]);
 
   const vacant = rooms.filter((r) => r.occupancy_status === 'vacant').length;
@@ -53,7 +61,8 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
   const roomsData = rooms.map((r) => ({
     id: r.id, code: r.code, floor: r.floor, room_kind: r.room_kind, status: r.occupancy_status,
     occupied_until: r.occupied_until, note: r.note, type: r.unit_name ? i18n(r.unit_name) : '', monthly: r.rental_mode !== 'daily',
-    guest: r.guest_name || null, guestPhone: r.guest_phone || null,
+    guest: r.tenant_name || r.guest_name || null, guestPhone: r.guest_phone || null,
+    rent: r.rent_minor ? Math.round(Number(r.rent_minor) / 100) : null,
   }));
   const term = acc.room_group_term || 'ชั้น';
   const soonRows = await q<any>(
@@ -155,6 +164,7 @@ export default async function Units({ searchParams }: { searchParams: { ok?: str
                       <Link href={`/merchant/units/${r.id}`} className="guestrow-l">
                         <span className="guestrow-rm" style={{ color: ST[r.status]?.color }}>ห้อง {r.code}</span>
                         <span className="guestrow-nm">{r.guest || r.note || <i style={{ opacity: .5 }}>ยังไม่ระบุชื่อ</i>}</span>
+                        {r.rent && <span className="guestrow-until">฿{r.rent.toLocaleString()}/ด</span>}
                         {r.occupied_until && <span className="guestrow-until">ว่าง {fmtD(r.occupied_until)}</span>}
                       </Link>
                       {r.guestPhone && <a className="dbtn sm" href={`tel:${r.guestPhone}`} aria-label={`โทร ${r.guestPhone}`}><Icon n="chat" size={14} /> โทร</a>}

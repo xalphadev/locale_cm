@@ -5,7 +5,7 @@ import { q, i18n } from '@/lib/db';
 import { Icon, isUuid } from '../../ui';
 import { MTopbar } from '../../MTopbar';
 import { ConfirmSubmit } from '../../ConfirmSubmit';
-import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction } from '../../../actions';
+import { setRoomOccupancyAction, setRoomOccupiedUntilAction, addRoomBlockAction, editRoomBlockAction, cancelRoomBlockAction, blockTonightAction, moveTenantAction, checkInAction, checkOutAction, upsertLeaseAction } from '../../../actions';
 import DateRangePicker from '../../DateRangePicker';
 import RoomCalendar from '../RoomCalendar';
 
@@ -81,6 +81,18 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
         AND bk.block_kind IN ('stay','tenancy') AND bk.span @> CURRENT_DATE
       ORDER BY bk.start_date DESC LIMIT 1`, [r.id]) : [];
 
+  // active tenancy block on this room → its lease + tenant (0058). block_id is present whenever there's a
+  // current monthly tenant; lease may be null (a pre-feature note-only tenancy not yet recorded as a lease).
+  const [lease] = monthly ? await q<any>(
+    `SELECT bk.id block_id, l.id lease_id, l.rent_minor, l.deposit_minor, l.advance_minor, l.billing_day,
+            t.full_name, t.phone, t.line_id, t.national_id_last4, t.emergency_name, t.emergency_phone
+       FROM stay_occupancy_block bk
+       LEFT JOIN stay_lease l ON l.block_id=bk.id AND l.status='active' AND l.deleted_at IS NULL
+       LEFT JOIN stay_tenant t ON t.id=l.tenant_id AND t.deleted_at IS NULL
+      WHERE bk.room_id=$1 AND bk.place_id=$2 AND bk.block_kind='tenancy' AND bk.status='active' AND bk.deleted_at IS NULL
+        AND bk.span @> CURRENT_DATE
+      ORDER BY bk.start_date DESC LIMIT 1`, [r.id, acc.place_id]) : [];
+
   return (
     <>
       <MTopbar back="/merchant/units" backLabel="ผังห้อง" title={`ห้อง ${r.code}`} action={<Link href={`/merchant/units/${r.id}/edit`} aria-label="แก้ไข"><Icon n="edit" size={19} /></Link>} />
@@ -93,6 +105,8 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
       {searchParams?.ok === 'moved' && <div className="banner-ok">✓ ย้ายผู้เช่าแล้ว</div>}
       {searchParams?.error === 'occupied' && <div className="banner-err">ห้องปลายทางไม่ว่าง</div>}
       {searchParams?.error === 'dest' && <div className="banner-err">เลือกห้องปลายทางก่อน</div>}
+      {searchParams?.ok === 'lease' && <div className="banner-ok">✓ บันทึกข้อมูลผู้เช่า/สัญญาแล้ว</div>}
+      {searchParams?.error === 'deposit' && <div className="banner-err">เงินประกัน + เงินล่วงหน้า รวมกันต้องไม่เกิน 3 เท่าของค่าเช่า/เดือน (ตาม สคบ.)</div>}
 
       <div className="dtags" style={{ marginBottom: 14 }}>
         <span className="t cat"><Icon n="bed" size={12} /> {r.unit_name ? i18n(r.unit_name) : 'ไม่ระบุรูปแบบ'}</span>
@@ -158,6 +172,47 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
         {monthly && r.occupied_until && r.occupancy_status !== 'vacant' ? <Fact ic="clock" l="ว่างอีกครั้ง" v={fmt(r.occupied_until)} /> : null}
       </div>
       {r.note ? <p className="note" style={{ marginTop: 8 }}><b>โน้ต:</b> {r.note} <span style={{ opacity: .6 }}>(เห็นเฉพาะคุณ)</span></p> : null}
+
+      {lease?.block_id && (
+        <>
+          <h2 className="rsec"><span className="rsec-ic"><Icon n="users" size={15} /></span> ผู้เช่า · สัญญาเช่า</h2>
+          {lease.lease_id ? (
+            <div className="factgrid">
+              <Fact ic="chat" l="ผู้เช่า" v={lease.full_name || '—'} />
+              {lease.rent_minor ? <Fact ic="wallet" l="ค่าเช่า/เดือน" v={`฿${Math.round(Number(lease.rent_minor) / 100).toLocaleString()}`} /> : null}
+              {lease.deposit_minor ? <Fact ic="wallet" l="เงินประกัน" v={`฿${Math.round(Number(lease.deposit_minor) / 100).toLocaleString()}`} /> : null}
+              {lease.billing_day ? <Fact ic="clock" l="วันชำระ" v={`ทุกวันที่ ${lease.billing_day}`} /> : null}
+              {lease.phone ? <Fact ic="phone" l="โทร" v={lease.phone} /> : null}
+            </div>
+          ) : <p className="note" style={{ marginTop: 0 }}>ยังไม่มีข้อมูลผู้เช่า/สัญญาของห้องนี้ — เพิ่มด้านล่างเพื่อบันทึกค่าเช่า/เงินประกัน/วันชำระ</p>}
+          <details className="usettings">
+            <summary><Icon n="tag" size={14} /> {lease.lease_id ? 'แก้ไขผู้เช่า/สัญญา' : 'เพิ่มข้อมูลผู้เช่า/สัญญา'}</summary>
+            <form className="fsec" action={upsertLeaseAction.bind(null, lease.block_id)}>
+              <input type="hidden" name="back" value={`/merchant/units/${r.id}`} />
+              <div className="field"><label>ชื่อผู้เช่า</label><input name="full_name" defaultValue={lease.full_name || r.note || ''} required /></div>
+              <div className="fgrid">
+                <div className="field"><label>โทร</label><input name="phone" inputMode="tel" defaultValue={lease.phone || ''} /></div>
+                <div className="field"><label>LINE</label><input name="line_id" defaultValue={lease.line_id || ''} /></div>
+              </div>
+              <div className="fgrid">
+                <div className="field"><label>ค่าเช่า/เดือน (บาท)</label><input name="rent" type="number" min={0} inputMode="numeric" defaultValue={lease.rent_minor ? Math.round(Number(lease.rent_minor) / 100) : ''} /></div>
+                <div className="field"><label>วันชำระ (วันที่)</label><input name="billing_day" type="number" min={1} max={31} inputMode="numeric" defaultValue={lease.billing_day || ''} /></div>
+              </div>
+              <div className="fgrid">
+                <div className="field"><label>เงินประกัน (บาท)</label><input name="deposit" type="number" min={0} inputMode="numeric" defaultValue={lease.deposit_minor ? Math.round(Number(lease.deposit_minor) / 100) : ''} /></div>
+                <div className="field"><label>เงินล่วงหน้า (บาท)</label><input name="advance" type="number" min={0} inputMode="numeric" defaultValue={lease.advance_minor ? Math.round(Number(lease.advance_minor) / 100) : ''} /></div>
+              </div>
+              <div className="fgrid">
+                <div className="field"><label>บัตรปชช. 4 ตัวท้าย</label><input name="national_id_last4" maxLength={4} inputMode="numeric" defaultValue={lease.national_id_last4 || ''} /></div>
+                <div className="field"><label>ผู้ติดต่อฉุกเฉิน</label><input name="emergency_name" defaultValue={lease.emergency_name || ''} /></div>
+              </div>
+              <div className="field"><label>เบอร์ฉุกเฉิน</label><input name="emergency_phone" inputMode="tel" defaultValue={lease.emergency_phone || ''} /></div>
+              <button className="dbtn sm primary" type="submit"><Icon n="check" size={15} /> บันทึก</button>
+              <p className="note" style={{ margin: '6px 0 0' }}>เก็บข้อมูลเท่าที่จำเป็นเพื่อทำสัญญา/ออกบิล · ไม่ต้องถ่ายสำเนาบัตรประชาชน</p>
+            </form>
+          </details>
+        </>
+      )}
 
       {!monthly && (
         <>
