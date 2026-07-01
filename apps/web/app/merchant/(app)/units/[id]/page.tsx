@@ -272,12 +272,13 @@ export default async function RoomUnit({ params, searchParams }: { params: { id:
                         <span className="mrow-tags"><b>฿{Math.round(Number(ln.amount_minor) / 100).toLocaleString()}</b></span>
                       </div>
                     ))}
-                    {iv.status !== 'paid' && iv.status !== 'void' && (
-                      <div className="lead-acts" style={{ marginTop: 6 }}>
+                    <div className="lead-acts" style={{ marginTop: 6 }}>
+                      <Link className="dbtn sm" href={`/merchant/bills/${iv.id}`}><Icon n="feed" size={14} /> ใบแจ้งหนี้/พิมพ์</Link>
+                      {iv.status !== 'paid' && iv.status !== 'void' && (<>
                         <form action={markInvoicePaidAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><button className="dbtn sm primary" type="submit"><Icon n="check" size={14} /> มาร์คว่าชำระแล้ว</button></form>
                         <form action={voidInvoiceAction.bind(null, iv.id)}><input type="hidden" name="back" value={`/merchant/units/${r.id}`} /><ConfirmSubmit message="ยกเลิกบิลนี้?" className="dbtn sm danger">ยกเลิกบิล</ConfirmSubmit></form>
-                      </div>
-                    )}
+                      </>)}
+                    </div>
                     {iv.status === 'paid' && <p className="note" style={{ margin: 0 }}>✓ ชำระแล้ว</p>}
                   </div>
                 </details>

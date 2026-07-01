@@ -72,7 +72,7 @@ export default async function Bills({ searchParams }: { searchParams: { f?: stri
         <div className="mlist">
           {invoices.map((iv) => (
             <div className="mrow" key={iv.id} style={{ cursor: 'default' }}>
-              <Link href={`/merchant/units/${iv.room_id}`} className="mrow-body" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <Link href={`/merchant/bills/${iv.id}`} className="mrow-body" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <span className="mrow-nm">ห้อง {iv.room_code} · {iv.tenant_name || 'ผู้เช่า'}</span>
                 <span className="mrow-meta">{iv.period_ym} · {baht(iv.total_minor)} · ครบกำหนด {iv.due_d} · {INV_ST[iv.status] || iv.status}</span>
               </Link>

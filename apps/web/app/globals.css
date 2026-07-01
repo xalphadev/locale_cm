@@ -1177,6 +1177,22 @@ th { background:var(--paper); color:var(--muted); font-weight:600; }
   .printsheet{max-width:none}
 }
 
+/* printable bill document (0059) — ใบแจ้งหนี้ / ใบเสร็จรับเงิน */
+.merchant-root .doc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:6px}
+.merchant-root .doc-title{font-size:1.4rem;font-weight:800;color:var(--m-text)}
+.merchant-root .doc-ref{color:var(--m-muted);font-size:.83rem;line-height:1.4}
+.merchant-root .doc-parties{display:flex;gap:24px;flex-wrap:wrap;margin:14px 0;font-size:.92rem}
+.merchant-root .doc-party{flex:1;min-width:180px}
+.merchant-root .doc-party h4{font-size:.76rem;color:var(--m-muted);font-weight:700;margin:0 0 3px}
+.merchant-root .doc-meta{display:flex;gap:20px;flex-wrap:wrap;font-size:.85rem;color:var(--m-muted);margin-bottom:8px}
+.merchant-root .doc-tbl{width:100%;border-collapse:collapse;font-size:.92rem;margin:6px 0}
+.merchant-root .doc-tbl th{text-align:left;border-bottom:2px solid var(--m-line);padding:7px 6px;font-size:.78rem;color:var(--m-muted);font-weight:700}
+.merchant-root .doc-tbl td{padding:8px 6px;border-bottom:1px solid var(--m-line)}
+.merchant-root .doc-tbl .num{text-align:right;font-variant-numeric:tabular-nums}
+.merchant-root .doc-total{display:flex;justify-content:space-between;font-weight:800;font-size:1.1rem;padding:11px 6px 4px;margin-top:2px;border-top:2px solid var(--m-text);color:var(--m-text)}
+.merchant-root .doc-pay{margin-top:14px;padding:11px 13px;border:1px dashed var(--m-line);border-radius:10px;font-size:.9rem;line-height:1.6}
+.merchant-root .doc-paid{margin-top:14px;color:#12b76a;font-weight:800;font-size:1.05rem;border:2px solid #12b76a;border-radius:10px;padding:8px 14px;display:inline-block}
+
 /* Bet A: onboarding — building-type mode cards + setup checklist */
 .merchant-root .modecards{display:flex;flex-direction:column;gap:8px;margin-top:4px}
 .merchant-root .modecard{display:flex;gap:10px;align-items:flex-start;padding:12px 13px;border:1.5px solid var(--m-line);border-radius:13px;cursor:pointer}
